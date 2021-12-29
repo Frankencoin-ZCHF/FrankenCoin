@@ -1,0 +1,42 @@
+
+
+MCDEX:
+======
+Preparation for settlements:
+------------------------------------------------------------------
+Perpetual.clear(perpetual) -> 
+    clear(..., msg.sender())
+LiquidityPoolModule.clear(pool, peridx, traderAddr) ->
+    pay gas reward
+    PerpetualModule.clear()
+        countMargin (calc total margin)
+        removeFromActiveAccounts
+        clear(next trader)
+    if all traders cleared in perpetual (for us: in pool)
+        PerpetualModule.setClearedState -> settleCollateral(perpetual);
+
+actual settlement
+------------------------------------------------------------------
+Perpetual.sol settle(uint256 perpetualIndex, address trader)
+LiquidityPoolModule settle()
+    perpetualModule.settle()
+        getSettleableMargin
+        resetaccount
+    withdraw settleable margin: transferFromPerpetualToUser
+
+SOVRYN:
+=======
+settlePool(liqpool):
+    loop through perpetuals
+        if emergency 
+            clear perpetual
+    setRedemptionRate for entire liq pool
+
+Open points:
+    - MCDEX pays keeper rewards to traders, otherwise no incentive structure apparent
+    - do we need an incentive structure? Maybe not because traders want to unlock their funds
+    - added pool state initializing and running in PerpetualManager -> not checked yet that pools are set to isrunning
+    - what if perpetuals cleared but not all margin collected. Now another perpetual defaults and 
+      we need to recalculate redemption rate --> ok?
+    - added SOVLibraryEvents, Settlement
+    - note: perpetuals need same collateral currency in pool. however, base and quote can differ!

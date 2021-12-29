@@ -1,0 +1,16 @@
+.idea
+.vscode
+artifacts/
+cache/
+misc/
+node_modules/
+typechain/
+.gitignore
+.mocharc.yml
+.solcover.js
+hardhat.config.ts
+notes.txt
+package.json
+package-lock.json
+README.md
+*.iml
