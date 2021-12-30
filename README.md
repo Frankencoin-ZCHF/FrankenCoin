@@ -9,7 +9,7 @@ The base contract is open to accept any type of minting contracts that adhere to
 Each minting contract inherits from Minting.sol, the base contract, and implements its virtual functions.
 
 ZCHF minting contracts have the following properties
-* The minter deposits collateral in the form of an ERC-20 token into the minting contract
+* The minter deposits collateral in the form of a token (that is compatible with the concrete minting contract) into the minting contract
 * The required amount of initial collateral, respectively the amount of ZCHF minted per amount of collateral, is determined by the concrete minting contract
 * A *position* is defined by an ID which is unique across the tuple `(minting contract, collateral token address, sender of the collateral)`
 * A position can be liquidated if the collateral falls below a certain threshold. The threshold is defined by the concrete minting contract. Anyone can liquidate a position, if `meetsCollateralRequirement(positionID)` returns `true`.
