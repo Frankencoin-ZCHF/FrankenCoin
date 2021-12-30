@@ -32,12 +32,12 @@ abstract contract Minting {
     function mint(address _collateralTokenAddr, int256 _fAmount, int256 _optionMask) requireAllowList public returns (bytes32, int256) {
         // TODO: require reserve requirement met
         int256 fAmountZCHF;
-        bytes32 positionId = keccak256(abi.encodePacked(msg.sender, _collateralTokenAddr, address(this)));
-        fAmountZCHF = _mint(_collateralTokenAddr, _fAmount, _optionMask, positionId);
-        require(meetsCollateralRequirement(positionId), "Position must meet collateral requirement after minting");
-        require(getPositionOwner(positionId) == msg.sender, "Position must be registered for message sender");
+        bytes32 positionID = keccak256(abi.encodePacked(msg.sender, _collateralTokenAddr, address(this)));
+        fAmountZCHF = _mint(_collateralTokenAddr, _fAmount, _optionMask, positionID);
+        require(meetsCollateralRequirement(positionID), "Position must meet collateral requirement after minting");
+        require(getPositionOwner(positionID) == msg.sender, "Position must be registered for message sender");
         // TODO: event
-        return (positionId, fAmountZCHF);
+        return (positionID, fAmountZCHF);
     }
 
     /** 
@@ -45,30 +45,30 @@ abstract contract Minting {
     * @param    _collateralTokenAddr  address if the collateral token to be sent into the minting contract
     * @param    _fAmount              decimal-18 number specifying the amount of the collateral tokens to be swapped
     * @param    _optionMask           depending on the concrete implementation, this field can encode options
-    * @param    _positionId           bytes32: unique position ID. To be stored in contract.
+    * @param    _positionID           bytes32: unique position ID. To be stored in contract.
     * @return amount of ZCHF (decimal-18) minted and sent to msg.sender
     */
-    function _mint(address _collateralTokenAddr, int256 _fAmount, int256 _optionMask, bytes32 _positionId) internal virtual returns (int256);
+    function _mint(address _collateralTokenAddr, int256 _fAmount, int256 _optionMask, bytes32 _positionID) internal virtual returns (int256);
 
     /** 
     * User can redeem their collateral by depositing ZCHF (reverse Minting). Sends the collateral to the
     * message sender. Redeem can be called also if the minting contract is no longer in the allowlist.
-    * @param    _positionId  unique position ID (trader, collateral, minting contract)
+    * @param    _positionID  unique position ID (trader, collateral, minting contract)
     * @param    _fAmountZCHF  decimal-18 number specifying the amount of ZCHF to be paid
     * @param    _optionMask   depending on the concrete implementation, this field can encode options
     */
-    function redeem(bytes32 _positionId, int256 _fAmountZCHF, int256 _optionMask) public {
-        require(getPositionOwner(_positionId)==msg.sender, "Only position owner can redeem");
-        _redeem(_positionId, _fAmountZCHF, _optionMask);
+    function redeem(bytes32 _positionID, int256 _fAmountZCHF, int256 _optionMask) public {
+        require(getPositionOwner(_positionID)==msg.sender, "Only position owner can redeem");
+        _redeem(_positionID, _fAmountZCHF, _optionMask);
     }
 
     /** 
     * Concrete redeem function to be implemented in child contract. 
-    * @param    _positionId   unique ID of position
-    * @param    _fAmountZCHF  decimal-18 number specifying the amount of ZCHF to be paid
+    * @param    _positionID   unique ID of position
+    * @param    _fAmountZCHF  decimal-18 number specifying the amount of ZCHF to be paID
     * @param    _optionMask   depending on the concrete implementation, this field can encode options
     */
-    function _redeem(bytes32 _positionId, int256 _fAmountZCHF, int256 _optionMask) internal virtual;
+    function _redeem(bytes32 _positionID, int256 _fAmountZCHF, int256 _optionMask) internal virtual;
 
     /** 
     * Partially or fully liquidate a position which is undercollateralized by sending ZCHF.
@@ -94,16 +94,16 @@ abstract contract Minting {
 
     /** 
     * Get the owner address for the given position
-    * @param  _positionId unique ID for the position
+    * @param  _positionID unique ID for the position
     * @return address
     */
-    function getPositionOwner(bytes32 _positionId) public virtual returns (address);
+    function getPositionOwner(bytes32 _positionID) public virtual returns (address);
     
     /** 
     * Checks whether collateral requirement is met. Otherwise trader can be liquidated.
-    * @param  _positionId unique ID for the position
+    * @param  _positionID unique ID for the position
     * @return true if collateral requirement met
     */
-    function meetsCollateralRequirement(bytes32 _positionId) public virtual returns (bool);
+    function meetsCollateralRequirement(bytes32 _positionID) public virtual returns (bool);
     
 }
