@@ -6,6 +6,6 @@
 * cd to FrankenCoin directory
 * npm -i
 * npx hardhat compile
-* npx hardhat test test
-    * npx hardhat test tests/yourtest.ts
+* Run tests
+    * npx hardhat test tests/yourtest.ts *or run all tests with*
     * npx hardhat test
