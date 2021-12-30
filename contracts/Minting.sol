@@ -23,6 +23,14 @@ abstract contract Minting {
     function getReserveRequirement() public virtual view returns (int256);
     
     /** 
+    * Returns the amount of circulating ZCHF minted by this contract. 
+    * This amount is reduced
+    * with every liquidation and redemption, it is increased by minting. 
+    * @return int256 number that represents a decimal 18
+    */
+    function getCirculatingAmount() public virtual view returns (int256);
+
+    /** 
     * The minting function, applies checks and calls concrete minting function. Sends ZCHF to the message sender
     * @param    _collateralTokenAddr  address if the collateral token to be sent into the minting contract
     * @param    _fAmount              decimal-18 number specifying the amount of the collateral tokens to be swapped
