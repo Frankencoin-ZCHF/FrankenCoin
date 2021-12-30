@@ -1,5 +1,6 @@
 # FrankenCoin Genesis
 
+## Testing with hardhat 
 * clone repo
 * install npm
 * cd to FrankenCoin directory
