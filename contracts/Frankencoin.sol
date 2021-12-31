@@ -14,4 +14,7 @@ mint(address target, uint256 amount){
    require(capital >= required, "insufficient equity");
 }
 
-burn(
+burn(address owner, uint256 amount){
+   burn_(owner, amount);
+   required -= (amount * IMinter(msg.sender).capitalRatio() / 100;
+}
