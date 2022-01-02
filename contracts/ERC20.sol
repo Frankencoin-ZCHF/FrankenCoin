@@ -46,7 +46,7 @@ abstract contract ERC20 is IERC20 {
 
     uint256 private _totalSupply;
 
-    uint8 public override decimals;
+    uint8 public immutable override decimals;
 
     constructor(uint8 _decimals) {
         decimals = _decimals;

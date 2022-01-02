@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "./ERC20.sol";
-import "./IMinter.sol";
 
 contract Frankencoin is ERC20 {
 
@@ -10,14 +9,14 @@ contract Frankencoin is ERC20 {
 
    uint256 public required;
 
-   address public immutable governance;
+   address public immutable brain;
    mapping (address => uint256) public minters;
 
    event MinterApplied(address indexed minter);
    event MinterDenied(address indexed minter);
 
-   constructor(address _governance) ERC20(18){
-      governance = _governance;
+   constructor(address _brain) ERC20(18){
+      brain = _brain;
    }
 
    function name() external pure returns (string memory){
@@ -31,12 +30,14 @@ contract Frankencoin is ERC20 {
    function applyForMinting() public payable {
       // Charge an application fee
       uint256 fee = totalSupply() / 1000;
-      _transfer(msg.sender, governance, fee > MAX_FEE ? MAX_FEE : fee);
+      _transfer(msg.sender, brain, fee > MAX_FEE ? MAX_FEE : fee);
       minters[msg.sender] = block.timestamp + 2 weeks;
       emit MinterApplied(msg.sender);
    }
 
-   function denyMinter(address minter) public gov {
+   function denyMinter(address minter) external {
+      require(msg.sender == brain, "not brain");
+      require(block.timestamp < minters[msg.sender], "already approved");
       delete minters[minter];
       emit MinterDenied(minter);
    }
@@ -46,20 +47,15 @@ contract Frankencoin is ERC20 {
       _;
    }
 
-   modifier gov {
-      require(msg.sender == governance, "not governance");
-      _;
-   }
-
-   function mint(address target, uint256 amount) external minterOnly {
-      uint256 capital = balanceOf(governance);
-      required += amount * IMinter(msg.sender).capitalRatio() / 1000000;
+   function mint(address target, uint256 amount, uint32 capitalRatio) external minterOnly {
+      uint256 capital = balanceOf(brain);
+      required += amount * capitalRatio / 1000000;
       require(capital >= required, "insufficient equity");
       _mint(target, amount);
    }
 
-   function burn(address owner, uint256 amount) external minterOnly {
+   function burn(address owner, uint256 amount, uint32 capitalRatio) external minterOnly {
       _burn(owner, amount);
-      required -= amount * IMinter(msg.sender).capitalRatio() / 1000000;
+      required -= amount * capitalRatio / 1000000;
    }
 }
