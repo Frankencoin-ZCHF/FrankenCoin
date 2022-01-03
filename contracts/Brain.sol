@@ -69,7 +69,7 @@ contract Brain is ERC20 {
     }
 
     modifier qualified {
-        require(balanceOf(msg.sender) >= quorum(block.timestamp) * zchf.totalSupply() / 10000, "not enough votes");
+        require(balanceOf(msg.sender) * 10000 >= quorum(block.timestamp) * zchf.totalSupply(), "not enough votes");
         _;
     }
 

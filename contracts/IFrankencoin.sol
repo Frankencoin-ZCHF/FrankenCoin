@@ -5,7 +5,7 @@ import "./IERC20.sol";
 
 interface IFrankencoin is IERC20 {
 
-    function applyForMinting() external;
+    function suggestMinter(address minter) external;
 
     function denyMinter(address minter) external;
     
@@ -13,6 +13,9 @@ interface IFrankencoin is IERC20 {
 
     function burn(address owner, uint256 amount, uint32 capitalRatio) external;
 
-    function excessReserves() external returns (uint256);
+    function notifyLoss(uint256 amount, uint32 capitalRatio) external;
 
+    function brain() external returns (address);
+
+    function excessReserves() external returns (uint256);
 }

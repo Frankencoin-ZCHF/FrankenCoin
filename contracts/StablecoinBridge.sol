@@ -17,7 +17,7 @@ contract StablecoinBridge {
     constructor(address other, address zchfAddress){
         chf = IERC20(other);
         zchf = IFrankencoin(zchfAddress);
-        zchf.applyForMinting();
+        zchf.suggestMinter(address(this));
     }
 
     function mint(address target, uint256 amount) external {
