@@ -1,0 +1,255 @@
+\documentclass[english,11pt]{article}
+\usepackage{url}
+\usepackage{threeparttable}
+\usepackage{geometry}
+\usepackage{lscape}
+%\usepackage{mdwlis}
+
+%%%%%%%%%%%%%%%% Reasonable Margins
+\setlength{\textwidth}{6.5in} \setlength{\textheight}{9in} % 6.2 and 8.5 normal...
+\setlength{\topmargin}{-1.1in} \setlength{\oddsidemargin}{0in}
+\setlength{\parskip}{2mm}
+\usepackage{paralist}
+\usepackage{amsmath}
+\usepackage{amssymb,epsfig,amsthm,amsfonts,bm}
+\usepackage{graphicx}
+%\usepackage[T1]{fontenc}
+%\usepackage[ansinew]{inputenc}
+%\usepackage{a4}
+\usepackage{babel}
+\usepackage{array}
+%\usepackage{natbib}
+\usepackage{cite}
+%\usepackage{biblatex}
+\usepackage{xr}
+\usepackage{setspace}
+\usepackage[small,bf]{caption}%[1995/04/05]
+\usepackage[dvipsnames]{xcolor}
+\usepackage{color}
+\usepackage{dcolumn}
+\usepackage{lscape}
+
+\newcolumntype{.}{D{.}{.}{1}}
+%\setlength{\abovecaptionskip}{-0.01cm}
+%\setlength{\belowcaptionskip}{0.05cm}
+%\usepackage[ruled,vlined]{algorithm2e}
+%\usepackage{algorithm, algpseudocode}%loads algorithmicx
+%\usepackage{algorithmicx}
+\everydisplay{
+\abovedisplayskip=.47\baselineskip  plus.2ex minus.2ex
+\abovedisplayshortskip=-0.13\baselineskip plus.2ex minus.2ex
+\belowdisplayskip=.37\baselineskip plus.2ex minus.2ex
+\belowdisplayshortskip=.37\baselineskip plus.2ex minus.2ex
+}
+
+% nothing command
+\newcommand{\nothing}[1]{}
+\usepackage{arydshln}
+\usepackage{booktabs}
+\usepackage{array,hhline}
+\usepackage{rotating}
+\usepackage{tabularx}
+
+\newcommand{\blue}[1]{{\color{RoyalBlue}#1}}
+
+\usepackage{soul}
+\setlength{\parskip}{1.5ex plus 0.5ex minus 0.5ex}
+
+%\DeclareMathOperator{\Cov}{cov}
+\newcommand{\E}{\mathbb{E}}    % E, expectation
+\newcommand{\Var}{\mathsf{Var}}% Var, variance
+\newcommand{\Cov}{\mathsf{Cov}}% Cov, covariance
+\newcommand{\EWMA}{\mathsf{ewma}}% Cov, covariance
+\usepackage{paralist}
+
+% font
+\usepackage[T1]{fontenc}
+%\usepackage{lxfonts}
+
+
+\definecolor{DarkBlue}{rgb}{0,0.0,0.5}
+\definecolor{DarkGreen}{rgb}{0.01,0.4,0.01}
+
+% THEOREMS
+\newtheorem{theorem}{Theorem}[section]
+\renewcommand\qedsymbol{$\blacksquare$}
+\newtheorem{cor}{Corollary}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{defn}{Definition}
+\newtheorem{rem}{Remark}
+\newtheorem{assumption}{Assumption}
+\newtheorem{hypo}{Hypothesis}
+
+% <thanks symbol>
+\makeatletter
+\renewcommand*{\@fnsymbol}[1]{\ensuremath{\ifcase#1\or *\or **\or ***\or
+   \mathsection\or \mathparagraph\or \|\or **\or \dagger\dagger
+   \or \ddagger\ddagger \else\@ctrerr\fi}}
+\makeatother
+% </thanks symbol>
+
+% short comment
+\def\query#1{\marginpar{\begin{flushleft}\textcolor{red}{\footnotesize#1}\end{flushleft}}}%
+% longer comment
+\def\cmnt#1{ \textcolor{red}{#1} }
+%\onehalfspacing
+% rephrasing
+\def\rephr#1{\textcolor{blue}{#1}}
+
+%\onehalfspacing
+
+\begin{document}
+\title{An Automated Market Maker for On-Chain Perpetual Swaps\thanks{Frankencoin v1.0,
+Document v0.1}}
+\bigskip
+\bigskip
+
+
+
+{
+\date{ \today  }
+
+
+\author{
+Basile Maire\thanks{\texttt{basile.maire@desma8.io}}\\}
+}
+
+\bigskip
+\bigskip
+
+\bigskip
+\date{\today }
+
+
+
+
+\newpage
+\newpage
+%\nothing{%blind
+%>>>>>>>>>>>>>>>>>>>>\maketitle
+\thispagestyle{empty}
+%}%blind
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\nothing{
+	\newpage
+	\thispagestyle{empty}
+	
+	\vspace{2.5cm}
+	
+	\thispagestyle{empty}
+	
+	\vspace{2.5cm}
+	\smallskip
+	\centerline{\bf {\Large Frankencoin - Risk Considerations}}
+	
+	\vspace{.5cm}
+	\begin{abstract}
+	\nopagebreak 
+	\end{abstract}
+	\bigskip
+	\bigskip
+	
+	%\vspace{1cm}
+	%\noindent{\it JEL Classification Codes: D40, G21, and L11}
+	
+	%\vspace{1cm}
+	\bigskip
+	%{{\noindent \it{Key Words}: 
+	%}  }
+	
+	
+	\bigskip
+
+	\newpage
+%>>>\tableofcontents
+
+	\newpage
+}
+\setcounter{page}{1}
+
+% !TEX root = ./perpetual.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fee Calibration}
+We approach the calibration of minting fees similar to credit pricing. We calibrate the fees that we charge to the minters 
+so that the expected losses to the stakers are paid for by fees.
+The Liquid Collateral Contract, as outlined in the Frankencoin Manifesto, has the following features.
+\begin{itemize}
+\item The participants are minters, challengers, auction participants, and ZCHF stakers.
+\item The minter deposits collateral and thereby mints ZCHF. The ZCHF are overcollateralized at the time
+of minting, that is, the value of collateral deposited exceeds the value of the minted ZCHF.
+\item Challengers can initiate an auction process for a given position at any time. Afterwards, auction participant
+bid for the collateral.
+\begin{enumerate}
+\item If, according to the auction, the value of the collateral falls below a specified threshold, the position is liquidated
+and the minter loses their collateral. \emph{E.g., the collateral deposited is 1500 LUSD, 1000 ZCHF were minted. Now, the position
+is challenged and the best bid for 1500 LUSD closes at 1095 ZCHF. Let's assume that the threshold is 10\%. Now, because 
+1095 ZCHF < 1000 (1+10\%) ZCHF, the position is closed out.}
+\item If, according to the auction, the collateral value is above the threshold, the position remains in the
+minter's ownership
+\item If, according to the auction, the collateral value falls below the minted amount of ZCHF, ZCHF in the staking pool have to be burnt, i.e.,
+a loss to ZCHF stakers.
+\end{enumerate}
+\end{itemize}
+
+The system outlined above has the following parameters. Let $h$ be the threshold that defines whether the position
+can be liquidated or not. That is, if, according to the auction, the value of the collateral is below 
+$Z(1+h)$, where $Z$ is the amount of ZCHF minted for a given position, the position is liquidated.
+Let $c$ be the challenger reward (e.g., 2\% of the ZCHF position). Finally, $\tau$ is the duration of the auction
+(e.g., 3 days).
+\begin{align}
+h &: \text{$h>0$, liquidation threshold, liquidate if highest bid is below Z(1+h)}\\
+\tau &: \text{duration of liquidation process}\\
+c &: \text{$0<c<h$, challenger reward}
+\end{align}
+
+By $\tilde{r}$ we denote the random variable that corresponds to the log-return of the collateral using CHF as the quote-currency (or numeraire).
+Now, we can express the loss to the stakers as the following random variable:
+\begin{align}
+\tilde{L} = -\min\left[(1 + h) e^{\tilde{r}} - (1+c), 0\right],
+\end{align}
+per unit of ZCHF minted (e.g., if the position consists of $Z$ ZCHF, the loss to the stakers is $Z\tilde{L}$).
+To see this, first note that the starting value of the position is at least $(1 + h)$ per unit of $Z$. Since $\tilde{L}$ is per ZCHF, we set $Z=1$.
+The value of the position
+at the end of the auction is $Z(1 + h) e^{\tilde{r}}$. Stakers need to burn ZCHF for the amount that the end-of-auction value falls short
+of the minted amount plus the challenger reward, hence we subtract $(1+c)Z$. We need the $\min[\cdot]$-function because
+only losses are charged to the stakers, profits in the liquidation process are not distributed to stakers. Finally, the negative sign is 
+convention to have a positive number for the loss.
+
+If we assume that the auction process will result in prices similar to what we would observe on liquid exchanges,
+then a remaining risk is that the price falls into a loss region during the auction period.
+With a known density function for the return distribution over the period $\tau$, $f_{\tau}(x)$, we can calculate the expected loss as follows
+\begin{align}
+\mathbb{E}_{\tau}\left[\tilde{L} \right] &= - \int_{-\infty}^k \left((1 + h) e^{x} - (1+c) \right) f_{\tau}(x) dx\label{eq:E}\\
+k &= \log \frac{1+c}{1+h},
+\end{align}
+where the subscript $\tau$ emphasizes that the distribution depends on the time-horizon of the auction.
+
+\begin{table}[]
+\caption{\textbf{Minting Fees.}
+    We calibrate minting fees for a collateral with 5\% daily volatility,
+    assuming a t-distribution with 4 degrees of freedom (left), or a normal
+    distribution (right). The volatility is scaled by $\sqrt{\tau}$, and the
+    mean is assumed to be zero. Values are in percentages.} % title of Table
+	\begin{center}
+	\begin{tabular}{lll}
+	\hline
+	\textbf{$\mathbf{\tau}$} & \textbf{t-distr} & \textbf{normal} \\
+	\hline
+	\textbf{1}                   & 0.38             & 0.08            \\
+	\textbf{2}                   & 0.90             & 0.38            \\
+	\textbf{3}                   & 1.38             & 0.72   \\        
+	\hline
+	\end{tabular}
+	\label{tab:calibration}
+	\end{center}
+\end{table}
+
+Table~\ref{tab:calibration} shows results
+from calibrating Eq.~\eqref{eq:E}. BTC-USD has a daily volatility of about 5\%. 
+The table compares the result for Eq.~\eqref{eq:E} when assuming
+either a t-distribution or a normal distribution for the return.
+
+\end{document}
