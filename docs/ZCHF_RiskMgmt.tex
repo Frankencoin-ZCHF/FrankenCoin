@@ -172,7 +172,162 @@ Basile Maire\thanks{\texttt{basile.maire@desma8.io}}\\}
 
 % !TEX root = ./perpetual.tex
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fee Calibration}
+\section{Introduction}
+We start from the use-case of a Swiss Frank Lombard loan, collateralized with tokens such as Bitcoin, or tokenized shares. The borrower deposits collateral into the system and thereby
+mints a token, the ``Frankencoin'' ZCHF, that is pegged to the Swiss Frank. If the value of the borrower's collateral falls below a certain threshold, the loan can be liquidated and the borrower incurs a haircut. If the value of the collateral falls below the loan value before the liquidation ends, the loss eats into capital. Implementing this system in
+a fully decentralized way on the Blockchain leads us to our main contribution.
+
+First, we introduce an algorithmic stablecoin that allows for 
+\emph{different collateral types and liquidation rules}.
+This diversification of collateral and liquidation rules reduces the 
+impact of non-systemic market events to the stablecoin peg.
+Second, we propose a specific mint plugin setup for which
+\begin{itemize}
+\item We use an \emph{auction mechanism} that avoids using external Oracle price feeds
+\item To calibrate the system, we apply traditional risk management techniques that have not found their way into the world of stablecoins
+\end{itemize}
+
+The system entails a decentralized governance that governs risk parameters and can deny the community's addition of new peg-methodologies if deemed unfit.
+
+The Frankencoin can be minted by anyone using one of the available 
+mint plugins. We define mint plugins as smart contracts that have the ability to mint Frankencoin in accordance with their rules. 
+Mint plugins have to be approved by the governance msimilarechanism and there might be different types of mint plugins for different types of collateral and different liquidation mechanisms. Anyone can propose to add a new mint plugin and if it is approved by the governance mechanism, it can be used according to its rules. These rules can include interest rates that are owed by the minters, liquidation mechanisms, collateral requirements, and required ZCHF
+to be held by ``stakers'' as a reserve per ZCHF token minted.
+While every mint plugin defines their required reserve capital,
+the reserves are shared among all mint plugins.
+
+Stakers are participants that lock their Frankencoin into the system. 
+Stakers
+earn interest rates paid for by borrowers and in turn risk
+to lose Frankencoin in case the liquidation process is not able to recover
+the loan amount with the available collateral.
+Staked Frankencoin are subject to a lockup period. This ensures that in case of a "bank run" on the system, stakers are the last who can liquidate their Frankencoin and will therefore also suffer from the greatest losses while the other participants are likely to be able to reclaim the full value.
+
+This paper focuses on two aspects of Frankencoin. First, we discuss
+how the Frankencoin embeds with the wider economy. Many
+existing stablecoin systems fall short of this aspect and can
+arguably only be sustained with significant growth of the system
+or demand of their own token, see e.g., \cite{clements2021built}.
+We propose a specific setup of mint plugins for which
+we use standard risk methodology techniques
+to quantify adverse events and calibrate
+capital reserves and fees. This is in stark opposition
+to existing stablecoins that set parameters such as the
+collateralization-ratio without risk methodological quantification
+methods. \emph{TODO: reference??}
+
+\section{Economy}
+The immediate participants of Frankencoin consist of 
+\emph{minters}, \emph{users}, and \emph{stakers}.
+
+\emph{Minters} deposit collateral into a mint plugin and thereby
+enter a Frankencoin Lombard loan. Minters benefit from the system to the extent that it allows them to use liquid or illiquid assets that
+they want to hold long-term, to generate short-term liquidity. This
+can be motivated e.g., by tax considerations in some juristicions, or
+by justifications that hold for traditional Lombard loans.
+Similar to Lombard loans, the position is overcollateralized.
+
+\emph{Stakers} stake Frankencoin in a dedicated contract, thereby locking
+these funds up for a certain period of time. As a consequence, stakers 
+are the last to be able to liquidate their holdings in case of a collapse of the value of Frankencoin. Stakers have to be compensated for their risk. 
+This compensation is provided by the minters. Fees and interest rates
+paid by the minters are distributed to the stakers. By staking Frankencoin,
+stakers release governance tokens that give them voting rights.
+
+\emph{Users} hold and transfer Frankencoin as a means of payment or
+store of value. No fees are charged to the users, but they also are not provided with any financial gain from holding Frankencoin by the system. The system should be designed such that the tail risk of a complete default is negligible for the users as that risk is outsourced to the stakers.
+
+This setup separates risk-takers (stakers) from the users.
+Governance token holders have "skin in the game" and are thus
+incentivized to maintain a healthy system.
+For instance, because staker capital is shared for all mint plugins, 
+stakers have a vested interest to retain a healthy ecosystem of mint plugins.
+
+Creditors of Frankencoin loans should be paid a risk-free rate
+corresponding to the Swiss Frank, plus a risk-premium. Otherwise,
+there is no rationale why stakers should sustainably 
+lock their funds in Frankencoin (other than for non-pecuniary reasons).
+From the perspective of the minters, this means that costs to minters 
+should be in line with the market capital costs for their loan.
+
+We now address the conditions
+under which the \emph{peg to the Swiss Frank} should hold.
+We approach the valuation of the Frankencoin from the perspective
+of a \emph{perpetual bond}. A perpetual bond, or consol, is
+a bond with coupon payments but no redemption date, see, e.g.,
+\cite{jorion2010financial}.
+The staked Frankencoin is subject to default risk, because the system
+burns ZCHF when a minter's position is undercollateralized. 
+We price this credit-risky perpetual along the lines of \cite{jarrow2000derivative},
+by discounting the interest payments on a credit-risky term structure.
+Let's assume that interest payments happen at discrete time-steps $0,...,\infty$
+and we have corresponding risky rates of the term-structure
+so that the date-0 value of a promised Swiss Franc at time $t$ of a credit-risky
+Franc promise is equal
+to $\exp(-r_t t)$. Let the constant coupon rate per Frankencoin be $c$. 
+Now, the value of the perpetual can be written as
+\begin{align}
+v(0) &= \sum_{t=0}^{\infty} c e^{-r_t t} \\
+	 &= \sum_{t=0}^{\infty} c e^{-y t} \\
+	 &= \frac{c}{1-e^{-y}},
+\end{align}
+where the second line replaces the time-specific discount rates by
+a yield, and the last line is an application of geometric series.
+For the value to be at par, $v(0)=1$, we have to choose the coupon rate
+accordingly: $c = 1-e^{-y}$. Hence, if the interest earned from staking 
+ZCHF are in line with discounting, the present value of one ZCHF is equal 
+to one Swiss Franc.
+
+The credit risky term-structure corresponds to the Swiss Franc risk-free term-structure
+plus a spread that compensates the investor for the risks. 
+Hence whenever the risk-free term-structure, or the Swiss Franc risk
+changes, $c$ hast to be adapted for the value $v(0$) to be equal to one.
+This is difficult to automate, and
+we therefore allow the stakers to collectively set the interest 
+rate (i.e., the risk-free rate plus spread). That is, if the 
+exchange rate of the ZCHF is too low, the stakers use the governance mechanism to increase the interest rate and vice versa.
+
+We design the system so that it is in the interest of the stakers 
+to set the parameters of the system such that the peg is maintained. 
+There should be no abuse of power, for example to set interest rates too high, therefore pushing the value of their ZCHF way beyond one CHF and essentially stealing the collateral as it would become too expensive for the minters to buy ZCHF to get their collateral back. To prevent such an attack, we ensure that stakers can only slowly adjust the interest rate, 
+so that it is possible for the participants to trade-in their ZCHF 
+before rates are too punitive (e.g., minters redeem their collateral by repaying their loan).
+
+The next section presents a specific setup of mint plugins and proposes
+a calibration method to determine the appropriate spread that should
+bring the value of the Frankencoin close to a valuation of one Swiss Franc. 
+
+\section{Specific Mint Plugin Setup}
+The Frankencoin system is open to accept any type of mint plugins. 
+In this paper we describe a setup with two specific mint plugins that 
+we consider to be of particular relevance when bootstrapping and growing the Frankencoin.
+
+\subsection{Direct Peg Plugin}
+The simplest possible mint plugin is one that is based on a stablecoin with the same reference currency. Specifically, "off-chain" custodial stablecoins. For the Frankencoin, this could for example be the CryptoFranc (XCHF) issued by Bitcoin Suisse or the Digital Swiss Franc (DCHF) issued by Sygnum. 
+This mint plugin allows anyone to deposit the specified stablecoin and to get Frankencoins in return. Also, the minting contract would allow anyone to convert Frankencoins back into the specific stablecoin for as long as there are any left.
+
+Direct peg plugins have the advantage of strongly anchoring the value of the Frankencoin to one Swiss Franc by delegating the collateralization mechanism
+(e.g., directly backed by Swiss Francs).  
+The disadvantage for direct peg plugins is the dependency on 
+the issuers. Overall, direct peg are a great method to bootstrap 
+the Frankencoin and diversify the Frankencoin system.
+
+\subsubsection{Calibration}
+In case of issuer default, stakers have to burn ZCHF equal to the amount of
+loss given issuer default times the exposure to that stablecoin. 
+To compensate stakers for this risk,
+we charge a minting fee. Again, we have the advantage that 
+calibration is outsourced to the market.
+If the value of one stablecoin trades at $1-\delta$ to the Swiss Franc, governance
+sets a minting fee equal to $\delta$.
+
+\nothing{
+To guard against default risk of an issuer, minting should be limited to the staked amount of Frankencoins in the governance contract. That way, the Frankencoin could absorb a total loss of value of one of the pegged stablecoins. In case of a loss of trust in the pegged stablecoin, it would be challenged in a vote of distrust the remaining coins auctioned off, with the stakers having to take a loss in case the auction does reach a 1:1 conversion rate.
+}
+
+\subsection{Liquid Collateral Plugin}
+
+\subsubsection{Calibration}
 We approach the calibration of minting fees similar to credit pricing. We calibrate the fees that we charge to the minters 
 so that the expected losses to the stakers are paid for by fees.
 The Liquid Collateral Contract, as outlined in the Frankencoin Manifesto, has the following features.
@@ -251,5 +406,7 @@ Table~\ref{tab:calibration} shows results
 from calibrating Eq.~\eqref{eq:E}. BTC-USD has a daily volatility of about 5\%. 
 The table compares the result for Eq.~\eqref{eq:E} when assuming
 either a t-distribution or a normal distribution for the return.
-
+\newpage
+\bibliographystyle{apalike}
+\bibliography{references}
 \end{document}

@@ -17,8 +17,8 @@ def lossfuncT(r):
 
 resultNorm = integrate.quad(lossfunc, -np.inf, k)
 resultT = integrate.quad(lossfuncT, -np.inf, k)
-print("integration Norm = ", resultNorm)
-print("integration T = ", resultT)
+#print("integration Norm = ", resultNorm)
+#print("integration T = ", resultT)
 premT = -resultT[0]
 print("premium t-dist= ", premT * 100, "%")
 premNorm = -resultNorm[0]
