@@ -2,8 +2,10 @@
 
 It shall support a wide range of collateralized minting methods that are governed by a democratic process.
 
+## Fee calibration 
+For liquid collateral contracts, see [PDF](docs/ZCHF_RiskMgmt.pdf)
 
-
+Calculations in [Risk folder](Risk/parameters.py)
 ## Testing with hardhat 
 * clone repo
 * install npm
