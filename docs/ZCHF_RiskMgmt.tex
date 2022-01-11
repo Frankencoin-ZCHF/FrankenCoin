@@ -3,6 +3,7 @@
 \usepackage{threeparttable}
 \usepackage{geometry}
 \usepackage{lscape}
+\usepackage{tabularx}
 %\usepackage{mdwlis}
 
 %%%%%%%%%%%%%%%% Reasonable Margins
@@ -308,6 +309,10 @@ The Frankencoin system is open to accept any type of mint plugins.
 In this paper we describe a setup with two specific mint plugins that 
 we consider to be of particular relevance when bootstrapping and growing the Frankencoin.
 
+Each mint plugin $i \in 1,...,K$ charges a minting fee $f_i \geq 0$, and can define
+a coupon rate paid to stakers $c_i \geq 0$. Depending on the plugin type,
+there can be additional plugin-specific parameters.
+
 \subsection{Direct Peg Plugin}
 The simplest possible mint plugin is one that is based on a stablecoin with the same reference currency. Specifically, "off-chain" custodial stablecoins. For the Frankencoin, this could for example be the CryptoFranc (XCHF) issued by Bitcoin Suisse or the Digital Swiss Franc (DCHF) issued by Sygnum. 
 This mint plugin allows anyone to deposit the specified stablecoin and to get Frankencoins in return. Also, the minting contract would allow anyone to convert Frankencoins back into the specific stablecoin for as long as there are any left.
@@ -325,7 +330,13 @@ To compensate stakers for this risk,
 we charge a minting fee. Again, we have the advantage that 
 calibration is outsourced to the market.
 If the value of one stablecoin trades at $1-\delta$ to the Swiss Franc, governance
-sets a minting fee equal to $\delta$.
+sets a minting fee equal to $f_i = \delta$.
+
+\subsubsection{Reserves}
+Each mint plugin defines the required reserves of ZCHF to be held against
+the issued volume of ZCHF. XCHF and DCHF come with their own guarantee
+that extend beyond the issuer default. Therefore, for the direct peg 
+plugin and XCHF and DCHF as collateral, we require no reserves.
 
 \nothing{
 To guard against default risk of an issuer, minting should be limited to the staked amount of Frankencoins in the governance contract. That way, the Frankencoin could absorb a total loss of value of one of the pegged stablecoins. In case of a loss of trust in the pegged stablecoin, it would be challenged in a vote of distrust the remaining coins auctioned off, with the stakers having to take a loss in case the auction does reach a 1:1 conversion rate.
@@ -456,8 +467,11 @@ weight on adverse market events, see, e.g., \cite{breeden1978prices}, leading
 to a higher risk-neutral price of $\tilde{L}$, compared to the value obtained
 when integrating Equation~\eqref{eq:E} under the objective measure.
 We therefore proceed by calibrating a probability distribution to observed
-market data and use this as a lower bound for the price of $\tilde{L}$.
-
+market data and use this as a lower bound for the price of $\tilde{L}$, or,
+equivalently the minting fee should be at least equal to the price of $\tilde{L}$:
+\begin{align}
+f_i \geq \mathbb{E}_{\tau}\left[\tilde{L} \right].
+\end{align}
 
 
 \emph{TODO: BTCHF data, calibrate distribution, show results
@@ -487,18 +501,19 @@ either a t-distribution or a normal distribution for the return.}
 	\end{center}
 \end{table}
 
-\section{Capital Reserves}
-In this section, we define overarching rules to make the Frankencoin system
-resilient. We regard the system as a bank and apply similar risk mitigations
-that are standard for banks.
+\subsubsection{Reserves}
+Each mint plugin defines the required reserves of ZCHF to be held against
+the issued volume of ZCHF. In the previous section we have calibrated
+the minimal fee that should be charged to minters via expected loss.
+We proceed in a similar manner and calculate the expected shortfall
+for the liquidity provider under a 1\%-quantile, assuming all
+loans start at their minimal loan to value ratio at $(1+h)$.
 
-\begin{figure}[h]
-    \center
-    \includegraphics[width=0.25\textwidth]{FCBalanceSheet.pdf}
-    \caption{\textbf{Balance Sheet}. This diagram
-    schematizes the balance sheet of the Frankencoin system for
-    a specific mint plugin setup.}\label{fig:bs}
-\end{figure}
+
+\section{Minimum Capital Requirement}
+In this section, we define overarching rules to make the Frankencoin system
+resilient. We regard the system as a bank and apply risk mitigation methods
+used for banks.
 
 Figure~\ref{fig:bs} presents a balance sheet view of the Frankencoin system
 and to illustrate the risks, we deviate from usual accounting rules.
@@ -513,12 +528,123 @@ are no longer backed and reserves have to be burned. This leads
 to a reduction of ZCHF in circulation and puts the balance sheet back to
 a healthier state.
 
-We borrow the following measures from the banking systems:
-\begin{itemize}
-\item risk-based capital requirements
-\item concentration limits
-\item leverage limits
-\end{itemize}
+\begin{figure}[h]
+    \center
+    \includegraphics[width=0.25\textwidth]{FCBalanceSheet.pdf}
+    \caption{\textbf{Balance Sheet}. This diagram
+    schematizes the balance sheet of the Frankencoin system for
+    a specific mint plugin setup.}\label{fig:bs}
+\end{figure}
+
+We motivate the following risk mitigating measures from 
+the Basel III banking regulation and the Dodd-Frank Act, see, e.g., \cite{basel3}
+and \cite{acharya2010regulating}:
+\begin{enumerate}
+\item \emph{Risk-based capital requirements}: each mint-plugin defines its own
+	risk-based reserve requirement. E.g., for the liquid collateral
+	plugin, we choose to estimate a reserve requirement based on expected shortfall.
+	The fact that the system used shared capital but individual reserve requirements
+	adds a diversification benefit.
+\item \emph{Leverage limits} provide a supplementary measure to
+	risk-based capital requirements due to their simplicity and independency. 
+	It is a safeguard against model risk and was introduced with the
+	Basel III regulation. Our system is subject to model risk too, for instance
+	due to the risk-based calibration of the Liquid Collateral Plugin capital
+	reserve, and we thus define leverage limits too.
+\item \emph{Countercyclical buffer}: risk-based capital requirements
+	show cyclicality. In crisis times, more capital is required
+	than during expansionary periods. It is more difficult to
+	attract capital in exactly these times. Therefore we
+	introduce a countercyclical buffer, that governance reduces
+	in downturns and increases during expansionary periods.\footnote{E.g., 
+	loss given default is typically higher
+	in a crisis. The Basel II framework required banks to use downturn LGD
+	estimates to dampen countercyclicality, see \cite{engelmann2006basel}.
+	Basel III introduced a countercyclical buffer to dampen the cyclicality
+	emphasized by the banking system}
+\item \emph{Concentration limits}. If the collateral of Frankencoin
+	is singularly exposed to the price of Bitcoin, the Frankencoin is doomed
+	to collapse when the Bitcoin price falls sufficiently. We therefore aim
+	to limit the concentration of collateral. 
+\end{enumerate}
+
+If the capital is below the minimal capital derived from the above measures,
+no more Frankencoins can be issued.
+The above measures provide us with a capital requirement per ZCHF issued.
+We propose to define the \emph{countercyclical buffer} as a multiplicative add-on to the
+capital requirement resulting from the remaining measures. That is,
+if the requirement from 1, 2, and 4 result in a buffer of $C$, the
+countercyclical buffer is a number $b$, so that the minimal capital is equal
+to $C(1+b)$. The system-wide buffer $b$ is set by governance.
+
+We have detailed the \emph{risk-based capital} requirements in the previous sections.
+The risk-based capital requirements involve relatively complex calculations
+(for current blockchain capabilities), however, they are done off-chain and we are only required to store the resulting
+parameters in the blockchain.
+
+A simple way to measure \emph{concentration} is the one-firm concentration ratio,
+see \cite{curry1983industrial}, which equals the percentage of market share held by the largest firm. We apply this to our context. Let $K$ be the number of mint plugins. Each mint plugin tracks the amount of ZCHF issued and not burned, $Z_j$.\footnote{Direct Peg Plugins
+do not have the notion of a position and therefore set $Z_j$ equal to the
+collateral}
+The relative amount issued by plugin $j$ is given by $p_j=Z_j/\sum_i^K Z_i$. We aim to prevent that the largest
+$p_j$ is beyond a threshold $\theta_C$. If a single mint plugin reaches the threshold 
+$\theta_C$,
+the plugin cannot issue any more ZCHF until the concentration is reduced. The
+concentration threshold is set by governance.
+
+Finally, we detail the \emph{leverage limits}. In the spirit of the
+creators of the leverage limits, we aim to have the least possible assumptions
+to define leverage limits in our system. We therefore do not want to rely on any 
+collateral valuations or distributional assumptions.
+Direct Peg Plugins should not count towards the leverage ratio,
+because their value is stable and diversified through the concentration limits,
+and because they provide a convenient way to issue new 
+ZCHF that are subsequently staked. However, we want to limit the
+amount of ZCHF issued through Liquid Collateral Plugins relative to the ZCHF
+held as a reserve in the staking pool. We therefore define the leverage ratio
+as
+\begin{align}
+LR = \sum_{i \in \mathcal{C}} Z_i/S,
+\end{align}
+where $Z_i$ is the amount of tokens issued by mint plugin $i$, $\mathcal{C}$
+is the set of plugin indices that are to be included in the leverage
+calculation (i.e., not the Direct Peg plugins), and $S$ is the total amount
+of staked ZCHF. If the leverage ratio is larger than a governance set threshold $\theta_L$,
+plugins other than the Direct Peg plugins can no longer mint ZCHF.
+
+\begin{table}[htbp]
+ \caption{\textbf{Summary of Data used in Smart Contracts.}
+    This table lists the parameters and data that needs to
+    be stored to implement the desired risk mitigation measures.} % title of Table
+    \centering % used for centering table
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+Element To Store & Type & Description \\
+\midrule
+$Z_i$                        & Data          & Each mint plugin keeps track of ZCHF issued by the plugin and not burned                                     \\
+$Z$, $Z^{\mathcal{C}}$ & Data          & The governance contract keeps track of the sum of $Z_i$ and the sum over the $Z_i$ issued by leverage constraint relevant contracts\\
+$S$                         & Data          & Amount of ZCHF staked                                                                                        \\
+$b$                         & Parameter     & Countercyclical buffer                                                                                       \\
+$\Theta_C$                  & Parameter     & Maximal relative amount of ZCHF issued
+by a single mint plugin to limit concentration risk                                                  \\
+$\mathcal{C}$               & Parameter     & Each mint plugin defines whether they are part of the leverage ratio calculation or not                      \\
+$\Theta_L$                   & Parameter     & Maximal leverage ratio                                                                                       \\
+$h$, $\tau$, $k$                 & Parameter     & Parameters for Liquid Collateral Plugin                                                                      \\
+$\delta$     & Parameter     & Parameter for the Direct Peg Plugin                                                                          \\
+$f_i$                      & Parameter     & Each mint plugin has a minting fee                                                                           \\
+$c_i$                     & Parameter     & Each mint plugin can define a coupon rate paid to stakers (can be zero, e.g., in case of Direct Peg Plugins)\\
+\bottomrule
+\end{tabularx}\label{tab:summary}
+\end{table}
+
+Table~\ref{tab:summary} summarizes the parameters and data that needs to be
+stored to implement these risk measures. Despite the comprehensive
+measures, there are only a few parameters that need to be stored.
+
+\emph{TODO: address how credit issuance works. Proposal: last price * 1.8 loan amount}
+\clearpage
+\section{Conclusion}
+TODO
 
 \newpage
 \bibliographystyle{apalike}
