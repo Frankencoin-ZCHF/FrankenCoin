@@ -318,7 +318,7 @@ The disadvantage for direct peg plugins is the dependency on
 the issuers. Overall, direct peg are a great method to bootstrap 
 the Frankencoin and diversify the Frankencoin system.
 
-\subsubsection{Calibration}
+\subsubsection{Fee Calibration}
 In case of issuer default, stakers have to burn ZCHF equal to the amount of
 loss given issuer default times the exposure to that stablecoin. 
 To compensate stakers for this risk,
@@ -335,68 +335,141 @@ To guard against default risk of an issuer, minting should be limited to the sta
 The second type of mint plugin is designed for liquid collateral, such as
 Bitcoin. This type of plugin implements the use case of a Lombard loan that
 we motivated the paper with.
+
 \begin{itemize}
 \item The participants are minters, challengers, auction participants, and ZCHF stakers.
 \item The minter deposits collateral and thereby mints ZCHF. The ZCHF are overcollateralized at the time
 of minting, that is, the value of collateral deposited exceeds the value of the minted ZCHF.
 \item Challengers can initiate an auction process for a given position at any time.
 To do so, they deposit collateral of the same type. 
-After the challenge initiation, auction participant bid for the collateral.
+After the challenge initiation, auction participant bid for the collateral by despositing
+ZCHF.
 \begin{enumerate}
 \item If, according to the auction, the value of the collateral falls below a specified threshold, the position is liquidated
 and the minter loses their collateral. \emph{E.g., the collateral deposited is 1500 LUSD, 1000 ZCHF were minted. Now, the position
 is challenged and the best bid for 1500 LUSD closes at 1095 ZCHF. Let's assume that the threshold is 10\%. Now, because 
 1095 ZCHF < 1000 (1+10\%) ZCHF, the position is closed out.}
-The challenger earns a fee, and the bidder gets the remaining part of the collateral.
+The challenger earns a fee, and the bidder gets the the collateral he was bidding for.
+The ZCHF posted by the bidder are distributed as follows. The challenger
+receives a reward. An amount equal to the outstanding loan is burned:
+\begin{itemize}
+\item If any ZCHF above the loan amount is left, the stakers get this amount
+\item If the posted ZCHF are not sufficient to burn an amount equal to the outstanding loan,
+the stakers lose this amount
+\end{itemize}
 \item If, according to the auction, the collateral value is above the threshold, the position remains in the minter's ownership. The bidder gets the challenger's collateral and
 the challenger get's the bidder's amount of ZCHF.
-\item If, according to the auction, the collateral value falls below the minted amount of ZCHF, the bidder gets the minter's collateral, the challenger gets his collateral back
-plus he earns a fee, the bidder's ZCHF plus an additional amount belonging to stakers 
-is burnt.
 \end{enumerate}
 \end{itemize}
 
-The system outlined above has the following parameters. Let $h$ be the threshold that defines whether the position
+Figure~\ref{fig:auction} illustrates this auction mechanism graphically.
+\begin{figure}[h]
+    \center
+    \includegraphics[width=0.75\textwidth]{auction.pdf}
+    \caption{\textbf{Auction}. Any participant can challenge a
+    loan position consisting of the ZCHF loan and the deposited collateral.
+    The challenger deposits collateral of the size of the loan.
+    Auction participants bid for the collateral (here BTC) by depositing ZCHF. 
+    If the best bid price in ZCHF is above (1+h) times the notional ZCHF lent,
+    the challenger receives the best bidder's ZCHF and the bidder the challenger's
+    collateral (green zone). If the best bid price is below (1+h),
+    the borrower loses their collateral (position is liquidated).
+    In this case the challenger gets back their collateral and earns a fee of
+    $k$ times the loan amount. The bidder gets the collateral deposited
+    by the borrower. The ZCHF posted by the bidder are used to
+    pay a reward $k$ to the challenger, $(1+h-k)$ times the loan amount 
+    go to the staking pool, and an amount equal to the loan 
+    amount is burned. If the ZCHF are not sufficient to burn
+    an amount equal to the loan amount after paying $k$, stakers have
+    to burn this amount of ZCHF. Hence the unshaded area
+    in the center is where stakers earn liquidation rewards,
+    the area to the left is costly for stakers.}\label{fig:auction}
+\end{figure}
+
+Our liquid collateral mint plugin has the following parameters. Variable $h$ denotes the threshold that defines whether the position
 can be liquidated or not. That is, if, according to the auction, the value of the collateral is below 
 $Z(1+h)$, where $Z$ is the amount of ZCHF minted for a given position, the position is liquidated.
-Let $k$ be the challenger reward (e.g., 2\% of the ZCHF position). Finally, $\tau$ is the duration of the auction
-(e.g., 3 days).
+Variable $k$ denotes the challenger reward (e.g., 2\% of the ZCHF position). 
+Finally, $\tau$ is the duration of the auction (e.g., 24 hours). To summarize:
 \begin{align}
 h &: \text{$h>0$, liquidation threshold, liquidate if highest bid is below Z(1+h)}\\
 \tau &: \text{duration of liquidation process}\\
 k &: \text{$0<k<h$, challenger reward}
 \end{align}
 
-\subsubsection{Calibration}
-We approach the calibration of minting fees similar to credit pricing. We calibrate the fees that we charge to the minters 
-so that the expected losses to the stakers are paid for by fees.
+Since our choice of collateral is liquid and can be traded at many different venues,
+we expect arbitrageurs to bid in the liquidation process and arbitrage
+between the liquid collateral mint plugin and other exchanges.
+This is best done via algorithmic trading, and we therefore propose to use a short
+liquidation horizon (minutes or hours, rather than days), with the lower
+bound being dictated by the block-time of the blockchain.
 
+\subsubsection{Fee Calibration}
+We define an "efficient liquidation process" as a situation where
+the collateral is challenged at a price $(1+h)$, and at the end of the
+liquidation period $\tau$, the collateral is filled at a competitive price.
 
-By $\tilde{r}$ we denote the random variable that corresponds to the log-return of the collateral using CHF as the quote-currency (or numeraire).
+Stakers are at risk to lose funds between the liquidation start and liquidation end.
+Specifically, if during the liquidation horizon the value of the collateral drops 
+from $(1+h)$ to below $(1+k)$, see Figure~\ref{fig:auction}.
+The key challenge now is to value this risk so that the stakers
+are adequatly compensated. To do so, we resort to the arbitrage free pricing principle,
+which states that the value of a contingent claim is given by
+its discounted expected value under the risk-neutral probability measure,
+see e.g., \cite{bjork2009arbitrage}.
+
+Formally, we assume a single period, denoted by $\tau$, a random
+variable, $\tilde{r}_{\tau}$, that corresponds to the log-return of the collateral over this period (using CHF as the numeraire).
 Now, we can express the loss to the stakers as the following random variable:
 \begin{align}
-\tilde{L} = -\min\left[(1 + h) e^{\tilde{r}} - (1+k), 0\right],
+\tilde{L} = -\min\left[(1 + h) e^{\tilde{r}} - (1+k), h-k\right],\label{eq:loss}
 \end{align}
 per unit of ZCHF minted (e.g., if the position consists of $Z$ ZCHF, the loss to the stakers is $Z\tilde{L}$).
-To see this, first note that the starting value of the position is at least $(1 + h)$ per unit of $Z$. Since $\tilde{L}$ is per ZCHF, we set $Z=1$.
+To see this, first note that the starting value of the position is $(1 + h)$ per unit of $ZCHF$.
 The value of the position
-at the end of the auction is $Z(1 + h) e^{\tilde{r}}$. Stakers need to burn ZCHF for the amount that the end-of-auction value falls short
-of the minted amount plus the challenger reward, hence we subtract $(1+k)Z$. We need the $\min[\cdot]$-function because
-only losses are charged to the stakers, profits in the liquidation process are not distributed to stakers. Finally, the negative sign is 
+at the end of the auction is $(1 + h) e^{\tilde{r}_{\tau}}$. Stakers need to burn ZCHF for the amount that the end-of-auction value falls short
+of the minted amount plus the challenger reward, hence we subtract $(1+k)$. 
+Second, the stakers earn in the liquidation process a maximal amount of $h-k$, see
+Figure~\ref{fig:auction}, so we need the $\min[\cdot]$-function. 
+Finally, the negative sign is 
 convention to have a positive number for the loss.
 
-If we assume that the auction process will result in prices similar to what we would observe on liquid exchanges,
-then a remaining risk is that the price falls into a loss region during the auction period.
-With a known density function for the return distribution over the period $\tau$, $f_{\tau}(x)$, we can calculate the expected loss as follows
+To value the contingent claim $\tilde{L}$, we calculate its discounted expected
+value. We assume that the risk-free rate used for discounting is equal to zero,
+which we consider adequate especially since the period $\tau$ is very short.
+Let $f_{\tau}(x)$ be the density function for the return distribution over the period $\tau$. Now, we can value $\tilde{L}$ as follows
 \begin{align}
-\mathbb{E}_{\tau}\left[\tilde{L} \right] &= - \int_{-\infty}^{\ell} \left((1 + h) e^{x} - (1+k) \right) f_{\tau}(x) dx\label{eq:E}\\
-\ell &= \log \frac{1+k}{1+h},
+\mathbb{E}_{\tau}\left[\tilde{L} \right] &= - \int_{-\infty}^{\ell} \left[(1 + h) e^{x} - (1+k) \right] f_{\tau}(x) dx\label{eq:E}\\
+\ell &= \log \frac{h-1}{h+1},
 \end{align}
-where the subscript $\tau$ emphasizes that the distribution depends on the time-horizon of the auction.
+where the subscript $\tau$ emphasizes that the distribution depends on the time-horizon of the auction. We got rid of the min-function of Equation~\eqref{eq:loss} by
+integrating only up to the return $\ell$ that yields $\tilde{L}=h-k$.
+
+Equation~\eqref{eq:E} uses the risk-neutral probability measure, often referred to as
+$\mathbb{Q}$, rather than the objective measure $\mathbb{P}$. In practice,
+parameters for the measure $\mathbb{P}$ are extracted directly from market data
+(e.g., sample volatilities and expected returns), whereas
+parameters for the measure $\mathbb{Q}$ have to be extracted from option data
+under the same model assumptions (e.g., option implied volatilities). 
+With risk averse investors, the $\mathbb{Q}$-measure puts more
+weight on adverse market events, see, e.g., \cite{breeden1978prices}, leading
+to a higher risk-neutral price of $\tilde{L}$, compared to the value obtained
+when integrating Equation~\eqref{eq:E} under the objective measure.
+We therefore proceed by calibrating a probability distribution to observed
+market data and use this as a lower bound for the price of $\tilde{L}$.
+
+
+
+\emph{TODO: BTCHF data, calibrate distribution, show results
+Table~\ref{tab:calibration} shows results
+from calibrating Eq.~\eqref{eq:E}. BTC-USD has a daily volatility of about 5\%. 
+The table compares the result for Eq.~\eqref{eq:E} when assuming
+either a t-distribution or a normal distribution for the return.}
+
 
 \begin{table}[]
 \caption{\textbf{Minting Fees.}
-    We calibrate minting fees for a collateral with 5\% daily volatility,
+    TODO We calibrate minting fees for a collateral with 5\% daily volatility,
     assuming a t-distribution with 4 degrees of freedom (left), or a normal
     distribution (right). The volatility is scaled by $\sqrt{\tau}$, and the
     mean is assumed to be zero. Further, $h=0.10$, $k=0.02$. Fees displayed are in percentages.} % title of Table
@@ -414,10 +487,39 @@ where the subscript $\tau$ emphasizes that the distribution depends on the time-
 	\end{center}
 \end{table}
 
-Table~\ref{tab:calibration} shows results
-from calibrating Eq.~\eqref{eq:E}. BTC-USD has a daily volatility of about 5\%. 
-The table compares the result for Eq.~\eqref{eq:E} when assuming
-either a t-distribution or a normal distribution for the return.
+\section{Capital Reserves}
+In this section, we define overarching rules to make the Frankencoin system
+resilient. We regard the system as a bank and apply similar risk mitigations
+that are standard for banks.
+
+\begin{figure}[h]
+    \center
+    \includegraphics[width=0.25\textwidth]{FCBalanceSheet.pdf}
+    \caption{\textbf{Balance Sheet}. This diagram
+    schematizes the balance sheet of the Frankencoin system for
+    a specific mint plugin setup.}\label{fig:bs}
+\end{figure}
+
+Figure~\ref{fig:bs} presents a balance sheet view of the Frankencoin system
+and to illustrate the risks, we deviate from usual accounting rules.
+Collateral is depicted on the asset side.\footnote{Per accounting rules, 
+securities for collateralized credits are not reported as assets
+if they cannot be sold by the entity without default of the borrower.}
+Like on a central bank balance sheet, the ZCHF in circulation are shown
+as a liability. The "book value of equity" is the difference between assets
+and liabilities. If the collateral of the liquid collateral plugin falls in value so that
+the book value of equity is zero or negative, the ZCHF in circulation
+are no longer backed and reserves have to be burned. This leads
+to a reduction of ZCHF in circulation and puts the balance sheet back to
+a healthier state.
+
+We borrow the following measures from the banking systems:
+\begin{itemize}
+\item risk-based capital requirements
+\item concentration limits
+\item leverage limits
+\end{itemize}
+
 \newpage
 \bibliographystyle{apalike}
 \bibliography{references}
