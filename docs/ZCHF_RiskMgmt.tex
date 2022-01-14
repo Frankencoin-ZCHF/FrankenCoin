@@ -585,7 +585,8 @@ parameters in the blockchain.
 A simple way to measure \emph{concentration} is the one-firm concentration ratio,
 see \cite{curry1983industrial}, which equals the percentage of market share held by the largest firm. We apply this to our context. Let $K$ be the number of mint plugins. Each mint plugin tracks the amount of ZCHF issued and not burned, $Z_j$.\footnote{Direct Peg Plugins
 do not have the notion of a position and therefore set $Z_j$ equal to the
-collateral}
+collateral. If collateral is liquidated, the ZCHF burnt are subtracted from
+$Z_j$.}
 The relative amount issued by plugin $j$ is given by $p_j=Z_j/\sum_i^K Z_i$. We aim to prevent that the largest
 $p_j$ is beyond a threshold $\theta_C$. If a single mint plugin reaches the threshold 
 $\theta_C$,
@@ -649,4 +650,67 @@ TODO
 \newpage
 \bibliographystyle{apalike}
 \bibliography{references}
+
+\clearpage
+\appendix
+\section{Data}
+\begin{figure}[h]
+    \center
+    \includegraphics[width=0.5\textwidth]{time_series.png}
+    \caption{\textbf{BTCCHF Level Data}. This figure plots
+    the level data of the BTCCHF time-series.
+    We have 8,413 observations of hourly candle data with gaps.}\label{fig:timeseries}
+\end{figure}
+
+We collect BTCCHF data from Bitpanda via their public 
+API, see Figure~\ref{fig:timeseries}.\footnote{For example: \url{https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04:59:59.999Z&to=2020-12-03T07:59:59.999Z}}
+Figure~\ref{fig:missing} shows that a lot of 1h-candles are missing.
+However, since one candle offers open/close, we can calculate 1h returns without
+the need for consecutive data. Furthermore, with non-autoregressive stationary returns,
+we can pool these returns without ordering.
+
+Our return data has the following summary statistics.
+\begin{center}
+\begin{tabular}{lr}
+\hline
+num. observations & 8,413\\
+min, max &(-21.07\%, 14.54\%) \\
+mean & -0.07\% \\
+variance & 9.25e-05 \\ 
+skewness & -1.748 \\
+kurtosis & 63.46 \\
+\hline
+\end{tabular}
+\end{center}
+
+The high Kurtosis number shows the data is heavy-tailed.
+Figure~\ref{fig:qqplots} present quantile-quantile plots against the normal distribution
+and the t-distribution with 4 degrees of freedom. The QQ-plots show the typical
+pattern for fat tailed distributions.
+
+\begin{figure}[h]
+    \center
+    \includegraphics[width=1\textwidth]{BTCCHFMissingData.png}
+    \caption{\textbf{Missing Data}. We collect BTCCHF 1h-candle data
+    (open/low/high/close) from Bitpanda via public API.
+    This plot illustrates the share of missing candles per month.
+    Over the whole period almost 50\% of the candles are missing.}\label{fig:missing}
+\end{figure}
+
+\begin{figure}[h]
+    \center
+    \begin{tabular}{ll}
+    \includegraphics[width=0.5\textwidth]{qq_normal.png} &
+    \includegraphics[width=0.5\textwidth]{qq_tdist.png} \\
+    \end{tabular}
+    \caption{\textbf{QQ-Plots}. The lhs plot shows a quantile-quantile plot
+    of the log-return data against a normal distribution, the rhs
+    against a t-distribution with 4 degrees of freedom.
+    The deviation at the left and right ends of the graph and the better 
+    fit to the fat-tailed t-distribution shows us that our data
+    is fat-tailed. In the center of the distribution, the 
+    returns move less than the both distributions would imply.}\label{fig:qqplots}
+\end{figure}
+
+
 \end{document}
