@@ -1,3 +1,5 @@
+# Taps into API of bitpanda and analyses data
+# Conclusion: data not useful (cumulative log return are far from the overall return of the BTCHF price levels)
 import datetime
 from math import dist
 import requests
@@ -8,6 +10,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import statsmodels.api as sm
 
+#https://api.kraken.com/0/public/OHLC?interval=60&since=1589281199&pair=XBTCHF <-- too short
 #https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04%3A59%3A59.999Z&to=2020-12-03T07%3A59%3A59.999Z
 #https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04:59:59.999Z&to=2020-12-03T07:59:59.999Z
 def minutes_between(d1, d2):
@@ -29,6 +32,9 @@ def update_data(response, DF):
         return DF
     # timestamp in seconds
     df['timestamp'] = df['time'].apply(lambda x: int(pd.Timestamp(x).value/1e9))
+    sHeaders = ['close', 'open', 'low', 'high', 'total_amount', 'volume']
+    for s in sHeaders:
+        df[s] = pd.to_numeric(df[s])
     return DF.append(df)
 
 def analyze_gaps(DF):
@@ -54,20 +60,26 @@ def analyze_gaps(DF):
     plt.ylabel("#Missing Observations / #Expected Observations")
     plt.show()
 
-def monthly_boxplot(DF):
+def timeseries_plot(DF, plot_cumulative=False):
     DF["Y-MM"] = DF['timestamp'].apply(lambda x: datetime.datetime.utcfromtimestamp(x).strftime('%Y-%m'))
-    DF['open'] = DF["open"].apply(lambda x: float(x))
-    DF['datetime'] = pd.to_datetime(DF['time'])
-    df = DF[['datetime', 'open']]
+    if 'time' in DF:
+        DF['datetime'] = pd.to_datetime(DF['time'])
+    DF["logRet"] = DF["close"].apply(lambda x: np.log(x)) - DF["open"].apply(lambda x: np.log(x))
+    DF["logRetCum"] = np.exp(DF["logRet"].cumsum())*DF["open"].iloc[0]
+    df = DF[['datetime', 'open', 'logRetCum']]
     df.set_index('datetime')
-    plt.plot(df['datetime'], df['open'])
+    plt.plot(df['datetime'], df['open'], label="Open Price")
+    if plot_cumulative:
+        plt.plot(df['datetime'], df['logRetCum'], color='r', label="Cumulative Return")
+        plt.legend()
     plt.title("time series")
     plt.ylabel("BTCCHF")
     plt.grid()
+    
     plt.show()
 
 def analyze_returns(DF):
-    DF["logRet"] = DF["close"].apply(lambda x: np.log(float(x))) - DF["open"].apply(lambda x: np.log(float(x)))
+    DF["logRet"] = DF["close"].apply(lambda x: np.log(x)) - DF["open"].apply(lambda x: np.log(x))
     M = DF[["timestamp", "logRet"]].to_numpy()
     print("Return statistics")
     print(stats.describe(M[:,1]))
@@ -90,7 +102,7 @@ def analyze_returns(DF):
 
 
 def poll_data():
-    MAX_POLL = 500
+    MAX_POLL = 400
     date_from = datetime.datetime.strptime('2020-03-01T16:41:24+0200', "%Y-%m-%dT%H:%M:%S%z")
     date_to = datetime.datetime.strptime('2022-01-14T16:41:24+0200', "%Y-%m-%dT%H:%M:%S%z")
 
@@ -110,15 +122,16 @@ def poll_data():
 
     H.sort_values(by = "timestamp", inplace=True)  
     print("data collected")
-    H.to_pickle("./Risk/data_raw.pkl")
+    H.to_pickle("./data_raw.pkl")
     print("data stored")
 
-#poll_data()
-DF = pd.read_pickle("./Risk/data_raw.pkl")
-print("Price statistics")
-print(stats.describe(DF["close"].apply(lambda x: (float(x)))))
+if __name__ == "__main__":
+    #poll_data()
+    DF = pd.read_pickle("./data_raw.pkl")
+    print("Price statistics")
+    print(stats.describe(DF["close"].apply(lambda x: (float(x)))))
 
 
-#analyze_gaps(DF)
-#analyze_returns(DF)
-monthly_boxplot(DF)
+    #analyze_gaps(DF)
+    #analyze_returns(DF)
+    timeseries_plot(DF)
