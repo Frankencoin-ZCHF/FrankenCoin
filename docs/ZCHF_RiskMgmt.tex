@@ -473,7 +473,25 @@ equivalently the minting fee should be at least equal to the price of $\tilde{L}
 f_i \geq \mathbb{E}_{\tau}\left[\tilde{L} \right].
 \end{align}
 
+In Appendix~\ref{appx:data} we describe the BTCCHF data that we use to calibrate the
+fees. The distribution of 1-hour log-returns is heavy-tailed and, as we demonstrate in the appendix,
+even a quantile-plot against a t-distribution with 4 degrees of freedom show less extreme quantiles,
+while in the center of the distribution the sample data shows less extreme returns.
+Instead of fitting a parametric distribution and integrating Equation~\eqref{eq:E}, we therefore use 
+Monte Carlo simulation to perform the integration. To arrive at samples of log-returns for period
+$\tau$, we block-bootstrap $\tau$ samples from the 1-hour returns (sample with replacement). Let $\hat{r}_{\tau}^{(j)}$ be the 
+sum of the $\tau$ elements of a block-sample. This sum corresponds to a log-return for period $\tau$ (assuming $\tau$ is an integer in hours). 
+Hence with $\hat{r}_{\tau}^{(j)}$ we can use Equation~\eqref{eq:loss} 
+to construct one particular sample of $L$. By the Monte Carlo method we average these samples
+to arrive at an estimate for $\mathbb{E}_{\tau}\left[\tilde{L} \right]$:
+\begin{align}
+\mathbb{\hat{E}}_{\tau}\left[\tilde{L} \right] &= - \frac{1}{N} \sum_{j=0}^N \min\left[(1 + h) e^{\hat{r}_{\tau}^{(j)}} - (1+k), h-k\right]
+\end{align}
 
+We arrive at $-0.0652$ DISCUSS: profit for stakers.
+
+
+%circular block bootstrap https://core.ac.uk/download/pdf/213979989.pdf
 \emph{TODO: BTCHF data, calibrate distribution, show results
 Table~\ref{tab:calibration} shows results
 from calibrating Eq.~\eqref{eq:E}. BTC-USD has a daily volatility of about 5\%. 
@@ -653,17 +671,24 @@ TODO
 
 \clearpage
 \appendix
-\section{Data}
+\section{Data}\label{appx:data}
 \begin{figure}[h]
     \center
-    \includegraphics[width=0.5\textwidth]{time_series.png}
+    \includegraphics[width=0.75\textwidth]{time_series.png}
     \caption{\textbf{BTCCHF Level Data}. This figure plots
-    the level data of the BTCCHF time-series.
-    We have 8,413 observations of hourly candle data with gaps.}\label{fig:timeseries}
+    the level data of the BTCCHF time-series. 
+    We have 16,744 observations of hourly candle data with gaps.}\label{fig:timeseries}
 \end{figure}
 
-We collect BTCCHF data from Bitpanda via their public 
+We gather 1-hour candle data from Kraken, consisting of a timestamp, open, low,
+high, close, number of trades, and volume.\footnote{See \url{https://support.kraken.com/hc/en-us/articles/360047124832-Downloadable-historical-OHLCVT-Open-} \url{High-Low-Close-Volume-Trades-data}}
+For comparison we also collect BTCCHF data from Bitpanda via their public 
 API, see Figure~\ref{fig:timeseries}.\footnote{For example: \url{https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04:59:59.999Z&to=2020-12-03T07:59:59.999Z}}
+Bitpanda data has about 50\% of the candles missing in the period for which 
+data is available, Kraken only about 8\%. 
+We therefore base our analysis on Kraken data and use Bitpanda for comparison
+only.
+
 Figure~\ref{fig:missing} shows that a lot of 1h-candles are missing.
 However, since one candle offers open/close, we can calculate 1h returns without
 the need for consecutive data. Furthermore, with non-autoregressive stationary returns,
@@ -673,12 +698,12 @@ Our return data has the following summary statistics.
 \begin{center}
 \begin{tabular}{lr}
 \hline
-num. observations & 8,413\\
-min, max &(-21.07\%, 14.54\%) \\
-mean & -0.07\% \\
-variance & 9.25e-05 \\ 
-skewness & -1.748 \\
-kurtosis & 63.46 \\
+num. observations & 16,744\\
+min, max &(-19.88\%, 20.50\%) \\
+mean & 3.3e-5\% \\
+variance & 9.45e-05 \\ 
+skewness & -1.06 \\
+kurtosis & 74.62 \\
 \hline
 \end{tabular}
 \end{center}
@@ -688,13 +713,34 @@ Figure~\ref{fig:qqplots} present quantile-quantile plots against the normal dist
 and the t-distribution with 4 degrees of freedom. The QQ-plots show the typical
 pattern for fat tailed distributions.
 
+Figure~\ref{fig:qqplots2} plots the same graphs for the Bitpanda data.
+The extremes are similar in magnitude and the quantiles are similar too,
+despite the large amount of missing data for Bitpanda.
+
 \begin{figure}[h]
     \center
     \includegraphics[width=1\textwidth]{BTCCHFMissingData.png}
     \caption{\textbf{Missing Data}. We collect BTCCHF 1h-candle data
-    (open/low/high/close) from Bitpanda via public API.
+    (open/low/high/close) from Kraken.
     This plot illustrates the share of missing candles per month.
-    Over the whole period almost 50\% of the candles are missing.}\label{fig:missing}
+    As the date becomes more recent,
+    less candles are missing. Overall, 7.7\% of the expected
+    hours are missing.}\label{fig:missing}
+\end{figure}
+
+\begin{figure}[h]
+    \center
+    \begin{tabular}{ll}
+    \includegraphics[width=0.5\textwidth]{qq_normal_kraken.png} &
+    \includegraphics[width=0.5\textwidth]{qq_tdist_kraken.png} \\
+    \end{tabular}
+    \caption{\textbf{QQ-Plots for Kraken}. The lhs plot shows a quantile-quantile plot
+    of the log-return data against a normal distribution, the rhs
+    against a t-distribution with 4 degrees of freedom.
+    The deviation at the left and right ends of the graph and the better 
+    fit to the fat-tailed t-distribution shows us that our data
+    is fat-tailed. In the center of the distribution, the 
+    returns move less than the both distributions would imply.}\label{fig:qqplots}
 \end{figure}
 
 \begin{figure}[h]
@@ -703,13 +749,11 @@ pattern for fat tailed distributions.
     \includegraphics[width=0.5\textwidth]{qq_normal.png} &
     \includegraphics[width=0.5\textwidth]{qq_tdist.png} \\
     \end{tabular}
-    \caption{\textbf{QQ-Plots}. The lhs plot shows a quantile-quantile plot
+    \caption{\textbf{QQ-Plots for Bitpanda}. The lhs plot shows a quantile-quantile plot
     of the log-return data against a normal distribution, the rhs
     against a t-distribution with 4 degrees of freedom.
-    The deviation at the left and right ends of the graph and the better 
-    fit to the fat-tailed t-distribution shows us that our data
-    is fat-tailed. In the center of the distribution, the 
-    returns move less than the both distributions would imply.}\label{fig:qqplots}
+    The extremes and heavy-taildness of the return distribution is similar
+    to that observed on the Kraken data.}\label{fig:qqplots2}
 \end{figure}
 
 
