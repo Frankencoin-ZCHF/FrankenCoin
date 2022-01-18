@@ -309,8 +309,8 @@ The Frankencoin system is open to accept any type of mint plugins.
 In this paper we describe a setup with two specific mint plugins that 
 we consider to be of particular relevance when bootstrapping and growing the Frankencoin.
 
-Each mint plugin $i \in 1,...,K$ charges a minting fee $f_i \geq 0$, and can define
-a coupon rate paid to stakers $c_i \geq 0$. Depending on the plugin type,
+Each mint plugin $i \in 1,...,K$ charges a minting fee $\Theta_{i}^{(F)} \geq 0$, and can define
+a coupon rate paid to stakers $\Theta_i^{(I)} \geq 0$. Depending on the plugin type,
 there can be additional plugin-specific parameters.
 
 \subsection{Direct Peg Plugin}
@@ -330,7 +330,7 @@ To compensate stakers for this risk,
 we charge a minting fee. Again, we have the advantage that 
 calibration is outsourced to the market.
 If the value of one stablecoin trades at $1-\delta$ to the Swiss Franc, governance
-sets a minting fee equal to $f_i = \delta$.
+sets a minting fee equal to $\Theta_F^{(i)} = \delta$.
 
 \subsubsection{Reserves}
 Each mint plugin defines the required reserves of ZCHF to be held against
@@ -412,49 +412,76 @@ Since our choice of collateral is liquid and can be traded at many different ven
 we expect arbitrageurs to bid in the liquidation process and arbitrage
 between the liquid collateral mint plugin and other exchanges.
 This is best done via algorithmic trading, and we therefore propose to use a short
-liquidation horizon (minutes or hours, rather than days), with the lower
-bound being dictated by the block-time of the blockchain.
+liquidation horizon (hours, rather than days).
+
+We define an "efficient liquidation process" as the situation in which
+the collateral is challenged at a price $(1+h)$, and at the end of the
+liquidation period $\tau$, the collateral is sold at a competitive price.
+In practice, likely the challenge will not be issued at a price $(1+h)$ but
+rather at a lower price $(1+h')$ where $h'<h$.
+We proceed by setting the period $\tau$ to 24 hours and calibrate the remaining parameters:
+$h$, $h'$, $\Theta_F^{(i)}$.
 
 \subsubsection{Fee Calibration}
-We define an "efficient liquidation process" as a situation where
-the collateral is challenged at a price $(1+h)$, and at the end of the
-liquidation period $\tau$, the collateral is filled at a competitive price.
-
 Stakers are at risk to lose funds between the liquidation start and liquidation end.
 Specifically, if during the liquidation horizon the value of the collateral drops 
-from $(1+h)$ to below $(1+k)$, see Figure~\ref{fig:auction}.
+from $(1+h')$ to below $(1+k)$, see Figure~\ref{fig:auction}.
 The key challenge now is to value this risk so that the stakers
-are adequatly compensated. To do so, we resort to the arbitrage free pricing principle,
-which states that the value of a contingent claim is given by
-its discounted expected value under the risk-neutral probability measure,
-see e.g., \cite{bjork2009arbitrage}.
+are adequatly compensated.
 
-Formally, we assume a single period, denoted by $\tau$, a random
+We have a single period, of duration $\tau$, a random
 variable, $\tilde{r}_{\tau}$, that corresponds to the log-return of the collateral over this period (using CHF as the numeraire).
 Now, we can express the loss to the stakers as the following random variable:
 \begin{align}
-\tilde{L} = -\min\left[(1 + h) e^{\tilde{r}} - (1+k), h-k\right],\label{eq:loss}
+\tilde{L} = - \left[(1 + h') e^{\tilde{r}_{\tau}} - (1+k)\right] \mathbf{1}_{\tilde{r}_{\tau}<\log \frac{1+h}{1+h'}},\label{eq:loss}
 \end{align}
 per unit of ZCHF minted (e.g., if the position consists of $Z$ ZCHF, the loss to the stakers is $Z\tilde{L}$).
-To see this, first note that the starting value of the position is $(1 + h)$ per unit of $ZCHF$.
+To see this, first note that the starting value of the position is $(1 + h')$ per unit of $ZCHF$.
 The value of the position
-at the end of the auction is $(1 + h) e^{\tilde{r}_{\tau}}$. Stakers need to burn ZCHF for the amount that the end-of-auction value falls short
+at the end of the auction is $(1 + h') e^{\tilde{r}_{\tau}}$. Stakers need to burn ZCHF for the amount that the end-of-auction value falls short
 of the minted amount plus the challenger reward, hence we subtract $(1+k)$. 
-Second, the stakers earn in the liquidation process a maximal amount of $h-k$, see
-Figure~\ref{fig:auction}, so we need the $\min[\cdot]$-function. 
-Finally, the negative sign is 
-convention to have a positive number for the loss.
-
-To value the contingent claim $\tilde{L}$, we calculate its discounted expected
-value. We assume that the risk-free rate used for discounting is equal to zero,
-which we consider adequate especially since the period $\tau$ is very short.
-Let $f_{\tau}(x)$ be the density function for the return distribution over the period $\tau$. Now, we can value $\tilde{L}$ as follows
+Second, the stakers earn in the liquidation process only if the return $\tilde{r}_{\tau}$ leads to a value below $(1+h)$, otherwise
+there is no liquidation, see
+Figure~\ref{fig:auction}, so we need the indicator function $\mathbf{1}_{.}$ that equals one if
 \begin{align}
-\mathbb{E}_{\tau}\left[\tilde{L} \right] &= - \int_{-\infty}^{\ell} \left[(1 + h) e^{x} - (1+k) \right] f_{\tau}(x) dx\label{eq:E}\\
-\ell &= \log \frac{h-1}{h+1},
+\text{condition for liquidation:} \qquad(1+h')e^{\tilde{r}_{\tau}} < (1+h)\label{eq:liqcond}
 \end{align}
-where the subscript $\tau$ emphasizes that the distribution depends on the time-horizon of the auction. We got rid of the min-function of Equation~\eqref{eq:loss} by
-integrating only up to the return $\ell$ that yields $\tilde{L}=h-k$.
+holds, zero otherwise. Note that if the liquidation starts at $h'=h$, 
+the indicator function simplifies to $\mathbf{1}_{\tilde{r}_{\tau}<0}$.
+Finally, the negative sign is 
+convention to have a positive number for a loss and a negative number for gains.
+
+To tackle the valuation of $\tilde{L}$, we resort to the arbitrage free pricing principle,
+which states that the value of a contingent claim is given by
+its discounted expected value under the risk-neutral probability measure,
+see for example \cite{bjork2009arbitrage}.
+We assume that the risk-free rate used for discounting is equal to zero,
+which we consider adequate especially since the period $\tau$ is very short.
+Let $f_{\tau}(x)$ be the density function for the return distribution over the period $\tau$. Now, we can value $\tilde{L}$ conditional
+on the starting level of liquidation $h'$ as follows
+\begin{align}
+\mathbb{E}_{\tau}\left[\tilde{L} \vert h' \right]  &= - \int_{-\infty}^{\log \frac{1+h}{1+h'}} \left[(1 + h') e^{x} - (1+k) \right] f_{\tau}(x) dx\label{eq:E}
+\end{align}
+where the subscript $\tau$ emphasizes that the distribution depends on the time-horizon of the auction.
+If we knew the distribution of starting levels $h'$, we could integrate out $h'$ to arrive at $\mathbb{E}_{\tau}[\tilde{L}]$.
+
+We now discuss $h'$. The challenger does not receive the challenger reward in case the auction finalizes at a price above $(1+h)$, but 
+they instead swap their collateral posted against the best ZCHF bid. Even if the challenger is likely to
+get a competitive price, they are arguably more interested in collecting the 2\% liquidation 
+reward than performing a trade. From this perspective, the challenger would be better off not starting the challenge
+at $(1+h)$ but a price quite below that to increase the probability that the auction ends below $(1+h)$. However,
+if the challenger target too low entry points, other challengers could enter above, or prices could correct to above $(1+h)$
+so that no more challenge is possible.
+Hence, challengers trade off the probability of collecting the reward given they issue a challenge versus the probability of not being able to enter
+a challenge anymore. To investigate this trade off, we assume that challengers issue a challenge when the collateral value
+reaches a level for which there is a probability $\alpha$ that they receive the challenger reward. Formally, using
+Equation~\eqref{eq:liqcond}, we determine
+$h'$ so that the following equation holds:
+\begin{align}
+	%\mathbb{P}[(1+h')e^{\tilde{r}_{\tau}} < (1+h)] = \alpha \\
+	\mathbb{P}\left[\tilde{r}_{\tau}<\log \frac{1+h}{1+h'}\right] = \alpha,\label{eq:hdash}
+\end{align}
+for a given $\alpha$. We then assume that the liquidation level is given and equal to the value $h'$ that solves \eqref{eq:hdash}.
 
 Equation~\eqref{eq:E} uses the risk-neutral probability measure, often referred to as
 $\mathbb{Q}$, rather than the objective measure $\mathbb{P}$. In practice,
@@ -463,72 +490,143 @@ parameters for the measure $\mathbb{P}$ are extracted directly from market data
 parameters for the measure $\mathbb{Q}$ have to be extracted from option data
 under the same model assumptions (e.g., option implied volatilities). 
 With risk averse investors, the $\mathbb{Q}$-measure puts more
-weight on adverse market events, see, e.g., \cite{breeden1978prices}, leading
+weight on adverse market events, see for example \cite{breeden1978prices}, leading
 to a higher risk-neutral price of $\tilde{L}$, compared to the value obtained
 when integrating Equation~\eqref{eq:E} under the objective measure.
 We therefore proceed by calibrating a probability distribution to observed
 market data and use this as a lower bound for the price of $\tilde{L}$, or,
 equivalently the minting fee should be at least equal to the price of $\tilde{L}$:
 \begin{align}
-f_i \geq \mathbb{E}_{\tau}\left[\tilde{L} \right].
+\Theta_F^{(i)} \geq \mathbb{E}_{\tau}\left[\tilde{L} \right].
 \end{align}
 
+We are now ready to calibrate the parameters. To do so, we set the level $\alpha$ 
+to estimate $h'$, and then estimate the fee $\Theta_F^{(i)}$ for the given level of $\alpha$.
 In Appendix~\ref{appx:data} we describe the BTCCHF data that we use to calibrate the
-fees. The distribution of 1-hour log-returns is heavy-tailed and, as we demonstrate in the appendix,
-even a quantile-plot against a t-distribution with 4 degrees of freedom show less extreme quantiles,
-while in the center of the distribution the sample data shows less extreme returns.
-Instead of fitting a parametric distribution and integrating Equation~\eqref{eq:E}, we therefore use 
-Monte Carlo simulation to perform the integration. To arrive at samples of log-returns for period
-$\tau$, we block-bootstrap $\tau$ samples from the 1-hour returns (sample with replacement). Let $\hat{r}_{\tau}^{(j)}$ be the 
-sum of the $\tau$ elements of a block-sample. This sum corresponds to a log-return for period $\tau$ (assuming $\tau$ is an integer in hours). 
-Hence with $\hat{r}_{\tau}^{(j)}$ we can use Equation~\eqref{eq:loss} 
-to construct one particular sample of $L$. By the Monte Carlo method we average these samples
-to arrive at an estimate for $\mathbb{E}_{\tau}\left[\tilde{L} \right]$:
+fees. The normal distribution does not fit the empirical distribution of 24-hour log-returns well, as we demonstrate in the appendix.
+Therefore, instead of fitting another parametric distribution and integrating Equation~\eqref{eq:E}, we use 
+the bootstrap method introduced by \cite{efron1992bootstrap} for estimation.
+
+For the bootstrap, we define the following variables. Let $N$ be the number of return observations, $B$ the number of bootstrap replications,
+and let $\mathbf{\hat{r}}_b = \{\hat{r}_{\tau}^{(b,1)},...,\hat{r}_{\tau}^{(b,N)}\}$ be
+the $b^{th}$ bootstrap replication. We use the variance of the quantiles for each bootstrap replication to estimate confidence intervals.
+
+We can estimate $h'$ for a given $\alpha$ using Equation~\eqref{eq:hdash}, by extracting the sample quantile from
+each bootstrap replication:
 \begin{align}
-\mathbb{\hat{E}}_{\tau}\left[\tilde{L} \right] &= - \frac{1}{N} \sum_{j=0}^N \min\left[(1 + h) e^{\hat{r}_{\tau}^{(j)}} - (1+k), h-k\right]
+	\hat{h}' = \frac{1}{B} \sum_{b=0}^{B-1} Q((1+h)\exp(-\mathbf{\hat{r}}_b)-1, 1-\alpha),
 \end{align}
+where $Q(\mathbf{x}, a)$ is the empirical quantile function for level $a$ applied to vector $\mathbf{x}$, 
+and we define $\exp(\cdot)$ to be an element-wise application of the natural exponentiation.
+Finally, we use use Equation~\eqref{eq:loss} 
+to arrive at our bootstrap point estimate for the value of $L$:
+\begin{align}
+\mathbb{\hat{E}}_{\tau}\left[\tilde{L} | h' \right] &= - \frac{1}{BN} \sum_{j=0}^{B-1} \sum_{n=1}^N 
+	\mathbf{1}_{\{\hat{r}_{\tau}^{(jN+n)}<\log \frac{1+h}{1+h'}\}} 
+	\left[(1 + h') e^{\hat{r}_{\tau}^{(j,n)}} - (1+k)\right].
+\end{align}
+Again, we use the variance of the elements from each bootstrap replication to estimate confidence intervals.
 
-We arrive at $-0.0652$ DISCUSS: profit for stakers.
+Table~\eqref{tab:calibration} shows the results of the calibration. We use $B=5,000$
+bootstrap replications and calculate confidence intervals at the 1\%-level by applying
+the central limit theorem, that is, recycling the variances described above and 
+normal-quantiles.\footnote{Having a vector of bootstrap estimates 
+$\mathbf{x}$, we report the point estimate as the mean of $\mathbf{x}$, and the
+error at the a-level as $z_{1-a}\sqrt{V[\mathbf{x}]/B}$ with $z_{1-a}$ the standard normal quantile.}
+In Table~\eqref{tab:calibration}, we see that if the challenger want a 95\% chance of earning
+the challenger reward, they start the challenge at $(1+3\%)$. At this low level, the 
+stakers still make a profit of 0.63\% on average. From the first row of the table, we 
+see that if the challenger starts their challenge at the liquidation level of $(1+0.1)$,
+there is about a 50\% chance that the position will be liquidated at the end of the
+24h-period. The earnings for the stakers decrease when moving from $h'=0.10$ to a
+lower $\alpha$. This is because in many cases, the stakers have no profit when
+starting from $0.10$, because there is no liquidation, and hence, the expected profit
+is slightly higher when starting from a lower $h'$.
+From the last row of the table we see that if challenges are issued only after the
+collateral fell below the loan value by 1\%, the stakers expect a loss of 2\%.
 
+A 95\% probability of receiving a challenger reward seems a very good position
+to be in for the following reason. The challenger at this point has the option of 
+waiting for the prices to change more.
+The collateral could either depreciate more (which would increase
+the 95\% chance of getting the reward), or appreciate, in which case the probability
+is decreased. So very likely at this point, the challenger would issue the challenge.
+At $\alpha=0.95$, the stakers still earn on average. Therefore we conclude
+that for the Liquid Collateral Plugin collateralized with Bitcoin and the chosen risk parameters,
+no minting fee has to be charged, unless the risk-premium exceeds about 0.60\%.
 
-%circular block bootstrap https://core.ac.uk/download/pdf/213979989.pdf
-\emph{TODO: BTCHF data, calibrate distribution, show results
-Table~\ref{tab:calibration} shows results
-from calibrating Eq.~\eqref{eq:E}. BTC-USD has a daily volatility of about 5\%. 
-The table compares the result for Eq.~\eqref{eq:E} when assuming
-either a t-distribution or a normal distribution for the return.}
-
-
-\begin{table}[]
-\caption{\textbf{Minting Fees.}
-    TODO We calibrate minting fees for a collateral with 5\% daily volatility,
-    assuming a t-distribution with 4 degrees of freedom (left), or a normal
-    distribution (right). The volatility is scaled by $\sqrt{\tau}$, and the
-    mean is assumed to be zero. Further, $h=0.10$, $k=0.02$. Fees displayed are in percentages.} % title of Table
-	\begin{center}
-	\begin{tabular}{lll}
-	\hline
-	\textbf{$\mathbf{\tau}$} & \textbf{t-distr} & \textbf{normal} \\
-	\hline
-	\textbf{1}                   & 0.38             & 0.08            \\
-	\textbf{2}                   & 0.90             & 0.38            \\
-	\textbf{3}                   & 1.38             & 0.72   \\        
-	\hline
-	\end{tabular}
-	\label{tab:calibration}
-	\end{center}
+\begin{table}[h]
+\caption{\textbf{Liquid Collateral Minting Fees.} The column labelled $\alpha$ shows the probability
+that the challenge results in a liquidation and the challenger is paid a reward.
+The second column shows the challenge level $h'$ for which the challenge ends in a
+liquidation with probability $\alpha$ for a liquidation level $h=10\%$ and a challenge
+period of 24 hours. For each given $h'$ we calculate the expected loss for the stakers
+(last column; negative numbers are gains).
+The numbers followed after $\pm$ correspond to the error of our estimates at the 1\%-level.
+We see that if challenges are issued at a collateral value of $(1+0.03)$, quite below the 
+liquidation level of 1.1, there is
+a 95\% probability that the collateral is liquidated, while stakers will still on average
+earn 0.69\%.\label{tab:calibration}}
+\center
+\begin{tabular}{lll}
+\toprule
+\textbf{$\alpha$} & \textbf{$h'$}   & \textbf{$\hat{E}_{\tau}\left[\tilde{L} | h' \right]$}\\
+\midrule
+0.50                           & 0.10 $\pm$ 0.00 & -2.59\% $\pm$ 0.00\% \\
+0.75                           & 0.08 $\pm$0.00  & -3.30\% $\pm$ 0.00\% \\
+0.80                           & 0.07 $\pm$0.00  & -3.21\% $\pm$ 0.00\% \\
+0.90                           & 0.05 $\pm$0.00  & -2.37\% $\pm$ 0.00\% \\
+0.95                           & 0.03 $\pm$0.00  & -0.63\% $\pm$ 0.00\% \\
+0.99                           & -0.01 $\pm$0.00 & 2.99\% $\pm$ 0.00\% \\
+\bottomrule
+\end{tabular}
 \end{table}
 
+\clearpage
 \subsubsection{Reserves}
 Each mint plugin defines the required reserves of ZCHF to be held against
 the issued volume of ZCHF. In the previous section we have calibrated
 the minimal fee that should be charged to minters via expected loss.
 We proceed in a similar manner and calculate the expected shortfall
-for the liquidity provider under a 1\%-quantile, assuming all
-loans start at their minimal loan to value ratio at $(1+h)$.
+for the liquidity providers under a 1\%-quantile, conditional on $h'$.
+
+We bootstrap the expected loss:
+\begin{align}
+EL_{\gamma} &= - \frac{1}{B} \sum_{b=0}^{B-1} \frac{1}{|\{ \hat{r}_{\tau}^{(b,n)} < Q(\mathbf{\hat{r}}_b, \gamma) | n=1,...,N \}|} \sum_{n=1}^N 
+	\mathbf{1}_{\{ \hat{r}_{\tau}^{(b,n)} < Q(\mathbf{\hat{r}}_b, \gamma) \}} 
+	\left[(1 + h') e^{\hat{r}_{\tau}^{(b,n)}} - (1+k)\right].
+\end{align}
+Table~\ref{tab:calibration2} shows the results. We can see that with a conservative assumption of 
+challengers entering when the probability of earning the reward is $alpha=90%$, stakers
+face a 15\% average loss in the worst 1\% outcomes. We choose this number, 15\%, as our conservative risk-based
+buffer $\Theta_i^{R}$.
+
+\begin{table}[h]
+\caption{\textbf{Liquid Collateral Capital Reserves.} The column labelled $\alpha$ shows the probability
+that the challenge results in a liquidation and the challenger is paid a reward.
+Given this level, we can calculate the corresponding $h'$, see Table~\ref{tab:calibration}.
+The last second column shows the expected shortfall at the 1\%-quantile. The value
+after $\pm$ is the confidence area at a 1\%-limit. For example, if challengers wait to issue a challenge until
+there is a 90\% chance that they receive a challenger reward, the average loss in the worst 1\% of outcomes
+is equal to 15\%.
+\label{tab:calibration2}}
+\center
+\begin{tabular}{lll}
+\toprule
+\textbf{$\alpha$} & \textbf{ES}   \\
+\midrule
+0.50                           & 0.11 $\pm$ 0.00 \\
+0.75                           & 0.13 $\pm$ 0.00 \\
+0.80                           & 0.14 $\pm$ 0.00 \\
+0.90                           & 0.15 $\pm$ 0.00 \\
+0.95                           & 0.17 $\pm$ 0.00 \\
+0.99                           & 0.20 $\pm$ 0.00\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 
-\section{Minimum Capital Requirement}
+\section{System-wide Minimum Capital Requirements}
 In this section, we define overarching rules to make the Frankencoin system
 resilient. We regard the system as a bank and apply risk mitigation methods
 used for banks.
@@ -643,15 +741,13 @@ Element To Store & Type & Description \\
 $Z_i$                        & Data          & Each mint plugin keeps track of ZCHF issued by the plugin and not burned                                     \\
 $Z$, $Z^{\mathcal{C}}$ & Data          & The governance contract keeps track of the sum of $Z_i$ and the sum over the $Z_i$ issued by leverage constraint relevant contracts\\
 $S$                         & Data          & Amount of ZCHF staked                                                                                        \\
-$b$                         & Parameter     & Countercyclical buffer                                                                                       \\
-$\Theta_C$                  & Parameter     & Maximal relative amount of ZCHF issued
-by a single mint plugin to limit concentration risk                                                  \\
-$\mathcal{C}$               & Parameter     & Each mint plugin defines whether they are part of the leverage ratio calculation or not                      \\
-$\Theta_L$                   & Parameter     & Maximal leverage ratio                                                                                       \\
-$h$, $\tau$, $k$                 & Parameter     & Parameters for Liquid Collateral Plugin                                                                      \\
-$\delta$     & Parameter     & Parameter for the Direct Peg Plugin                                                                          \\
-$f_i$                      & Parameter     & Each mint plugin has a minting fee                                                                           \\
-$c_i$                     & Parameter     & Each mint plugin can define a coupon rate paid to stakers (can be zero, e.g., in case of Direct Peg Plugins)\\
+$\mathcal{C}=\{c_0, ...,c_{N-1}\} \in \{0,1\}^N$               & Parameter     & Each mint plugin defines whether they are part of the leverage ratio calculation or not                      \\
+$h$, $\tau$, $k$                 & Parameter     & Parameters for Liquid Collateral Plugin                                                                    \\
+$\Theta^{(L)}$                   & Parameter     & Maximal leverage ratio                                                                                       \\
+$\Theta_i^{(C)}$             & Parameter     & Maximal relative amount of ZCHF issued by mint plugin $i$ to limit concentration risk                                                  \\
+$\Theta_i^{(F)}$             & Parameter     & Each mint plugin has a minting fee                                                                           \\
+$\Theta_i^{(R)}$             & Parameter     & Each mint plugin sets its own risk-based reserve requirement, relative to the issued ZCHF                     \\
+$\Theta_i^{(I)}$                        & Parameter     & Each mint plugin can define an interest rate paid to stakers (can be zero, e.g., in case of Direct Peg Plugins)\\
 \bottomrule
 \end{tabularx}\label{tab:summary}
 \end{table}
@@ -677,83 +773,59 @@ TODO
     \includegraphics[width=0.75\textwidth]{time_series.png}
     \caption{\textbf{BTCCHF Level Data}. This figure plots
     the level data of the BTCCHF time-series. 
-    We have 16,744 observations of hourly candle data with gaps.}\label{fig:timeseries}
+    We have 756 observations of daily candle data without gaps from 2019-12-07 to
+    2021-12-31.}\label{fig:timeseries}
 \end{figure}
 
 We gather 1-hour candle data from Kraken, consisting of a timestamp, open, low,
 high, close, number of trades, and volume.\footnote{See \url{https://support.kraken.com/hc/en-us/articles/360047124832-Downloadable-historical-OHLCVT-Open-} \url{High-Low-Close-Volume-Trades-data}}
-For comparison we also collect BTCCHF data from Bitpanda via their public 
-API, see Figure~\ref{fig:timeseries}.\footnote{For example: \url{https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04:59:59.999Z&to=2020-12-03T07:59:59.999Z}}
-Bitpanda data has about 50\% of the candles missing in the period for which 
-data is available, Kraken only about 8\%. 
-We therefore base our analysis on Kraken data and use Bitpanda for comparison
-only.
-
-Figure~\ref{fig:missing} shows that a lot of 1h-candles are missing.
-However, since one candle offers open/close, we can calculate 1h returns without
-the need for consecutive data. Furthermore, with non-autoregressive stationary returns,
-we can pool these returns without ordering.
-
-Our return data has the following summary statistics.
-\begin{center}
+From each open and close price we calculate 24h log-returns. Our return data has the following summary statistics.
+\begin{table}[!h]
+\caption{\textbf{Summary Statistics for 24h log-return data}.}
+%\begin{center}
+\centering
 \begin{tabular}{lr}
 \hline
-num. observations & 16,744\\
-min, max &(-19.88\%, 20.50\%) \\
-mean & 3.3e-5\% \\
-variance & 9.45e-05 \\ 
-skewness & -1.06 \\
-kurtosis & 74.62 \\
+num. observations & 756\\
+min, max &[-49.09\%, 25.13\%] \\
+mean & 0.26\% \\
+variance & 0.0019 \\ 
+skewness & -2.07 \\
+kurtosis & 27.31 \\
 \hline
 \end{tabular}
-\end{center}
+%\end{center}
+\end{table}
+Table~\ref{tab:adf} test the time-series of 24h log-returns for stationarity via Augmented Dickey-Fuller test and rejects the null-hypothesis
+of non-stationarity.
+\begin{table}[!h]
+\caption{\textbf{Stationarity Test}. The ADF test suggests that the log-return data is stationary.\label{tab:adf}}
+\centering
+\begin{tabular}{lrr}
+\hline
+ADF Statistic: &-12.6\\
+p-value: &0.000000\\
+Critical Value for 1\%:& -3.4\\
+\hline
+\end{tabular}
+\end{table}
 
-The high Kurtosis number shows the data is heavy-tailed.
-Figure~\ref{fig:qqplots} present quantile-quantile plots against the normal distribution
-and the t-distribution with 4 degrees of freedom. The QQ-plots show the typical
-pattern for fat tailed distributions.
+Figure~\ref{fig:qqplots} present a quantile-quantile plot against the normal distribution
+and a histogram.
 
-Figure~\ref{fig:qqplots2} plots the same graphs for the Bitpanda data.
-The extremes are similar in magnitude and the quantiles are similar too,
-despite the large amount of missing data for Bitpanda.
-
-\begin{figure}[h]
-    \center
-    \includegraphics[width=1\textwidth]{BTCCHFMissingData.png}
-    \caption{\textbf{Missing Data}. We collect BTCCHF 1h-candle data
-    (open/low/high/close) from Kraken.
-    This plot illustrates the share of missing candles per month.
-    As the date becomes more recent,
-    less candles are missing. Overall, 7.7\% of the expected
-    hours are missing.}\label{fig:missing}
-\end{figure}
 
 \begin{figure}[h]
     \center
     \begin{tabular}{ll}
-    \includegraphics[width=0.5\textwidth]{qq_normal_kraken.png} &
-    \includegraphics[width=0.5\textwidth]{qq_tdist_kraken.png} \\
+    \includegraphics[width=0.5\textwidth]{qq_normal_kraken24h.png} &
+    \includegraphics[width=0.5\textwidth]{hist24hreturns_kraken.png} \\
     \end{tabular}
-    \caption{\textbf{QQ-Plots for Kraken}. The lhs plot shows a quantile-quantile plot
-    of the log-return data against a normal distribution, the rhs
-    against a t-distribution with 4 degrees of freedom.
-    The deviation at the left and right ends of the graph and the better 
-    fit to the fat-tailed t-distribution shows us that our data
-    is fat-tailed. In the center of the distribution, the 
-    returns move less than the both distributions would imply.}\label{fig:qqplots}
-\end{figure}
-
-\begin{figure}[h]
-    \center
-    \begin{tabular}{ll}
-    \includegraphics[width=0.5\textwidth]{qq_normal.png} &
-    \includegraphics[width=0.5\textwidth]{qq_tdist.png} \\
-    \end{tabular}
-    \caption{\textbf{QQ-Plots for Bitpanda}. The lhs plot shows a quantile-quantile plot
-    of the log-return data against a normal distribution, the rhs
-    against a t-distribution with 4 degrees of freedom.
-    The extremes and heavy-taildness of the return distribution is similar
-    to that observed on the Kraken data.}\label{fig:qqplots2}
+    \caption{\textbf{Return Data from Kraken}. The lhs plot shows a quantile-quantile plot
+    of the 24h log-return data against a normal distribution, the rhs
+    plots a histogram of the 24h log-returns.
+    From the lhs graph we see that we have more extreme returns than what a normal
+    distribution would suggest. In the center of the distribution, the 
+    returns move less than the normal distribution would imply.}\label{fig:qqplots}
 \end{figure}
 
 

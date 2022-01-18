@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
 import statsmodels.api as sm
+from statsmodels.tsa.stattools import adfuller
 
 #https://api.kraken.com/0/public/OHLC?interval=60&since=1589281199&pair=XBTCHF <-- too short
 #https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04%3A59%3A59.999Z&to=2020-12-03T07%3A59%3A59.999Z
@@ -37,11 +38,12 @@ def update_data(response, DF):
         df[s] = pd.to_numeric(df[s])
     return DF.append(df)
 
-def analyze_gaps(DF):
+def analyze_gaps(DF, tauInMin=60):
+    tauInSec = 60*tauInMin
     print("#duplicates=", sum(DF['timestamp'].duplicated()))
     ts_start = np.min(DF["timestamp"])
     ts_end = np.max(DF["timestamp"])
-    timestamp_expected = np.arange(ts_start, ts_end+1, 3600)
+    timestamp_expected = np.arange(ts_start, ts_end+1, tauInSec)
     timestamp_missing = np.setdiff1d(timestamp_expected, DF["timestamp"])
     print("Missing ", len(timestamp_missing)/len(timestamp_expected))
     DF["Y-MM"] = DF['timestamp'].apply(lambda x: datetime.datetime.utcfromtimestamp(x).strftime('%Y-%m'))
@@ -51,7 +53,7 @@ def analyze_gaps(DF):
         df_ts_curr = DF["timestamp"][DF["Y-MM"]==YM[k]]
         ts_start = np.min(df_ts_curr)
         ts_end = np.max(df_ts_curr)
-        timestamp_expected = np.arange(ts_start, ts_end+1, 3600)
+        timestamp_expected = np.arange(ts_start, ts_end+1, tauInSec)
         timestamp_missing = np.setdiff1d(timestamp_expected, df_ts_curr)
         missing_ratio[k] = len(timestamp_missing)/len(timestamp_expected)
     plt.bar(YM, missing_ratio)
@@ -78,16 +80,26 @@ def timeseries_plot(DF, plot_cumulative=False):
     
     plt.show()
 
-def analyze_returns(DF):
+def analyze_returns(DF, degree_of_f=4):
     DF["logRet"] = DF["close"].apply(lambda x: np.log(x)) - DF["open"].apply(lambda x: np.log(x))
     M = DF[["timestamp", "logRet"]].to_numpy()
+    X = M[:,1]
+    result = adfuller(X)
+    print('ADF Statistic: %f' % result[0])
+    print('p-value: %f' % result[1])
+    print('Critical Values:')
+    for key, value in result[4].items():
+	    print('\t%s: %.3f' % (key, value))
+    
     print("Return statistics")
     print(stats.describe(M[:,1]))
+    print("from=", DF[["datetime"]].iloc[0])
+    print("to=", DF[["datetime"]].iloc[DF.shape[0]-1])
     m = np.mean(M[:,1])
     s = np.sqrt(np.var(M[:,1]))
-    sm.qqplot((M[:,1]-m)/s, stats.t, distargs=(4,), loc=0, scale=1, line='s')
+    sm.qqplot((M[:,1]-m)/s, stats.t, distargs=(degree_of_f,), loc=0, scale=1, line='s')
     plt.grid(True)
-    plt.xlabel("Quantile t-distribution, df=4")
+    plt.xlabel("Quantile t-distribution, df="+str(degree_of_f))
     #plt.savefig("docs/qq_tdist.png")
     plt.show()
     sm.qqplot((M[:,1]-m)/s, stats.norm, loc=0, scale=1, line='s')
@@ -96,8 +108,12 @@ def analyze_returns(DF):
     #plt.savefig("docs/qq_normal.png")
     plt.show()
     plt.boxplot(M[:,1])
+    plt.grid(True)
     plt.show()
     plt.hist(M[:,1], 100)
+    plt.xlabel("Log-return")
+    plt.ylabel("#observations")
+    plt.grid(True)
     plt.show()
 
 
