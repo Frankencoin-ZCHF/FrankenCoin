@@ -590,37 +590,26 @@ the minimal fee that should be charged to minters via expected loss.
 We proceed in a similar manner and calculate the expected shortfall
 for the liquidity providers under a 1\%-quantile, conditional on $h'$.
 
-We bootstrap the expected loss:
-\begin{align}
-EL_{\gamma} &= - \frac{1}{B} \sum_{b=0}^{B-1} \frac{1}{|\{ \hat{r}_{\tau}^{(b,n)} < Q(\mathbf{\hat{r}}_b, \gamma) | n=1,...,N \}|} \sum_{n=1}^N 
-	\mathbf{1}_{\{ \hat{r}_{\tau}^{(b,n)} < Q(\mathbf{\hat{r}}_b, \gamma) \}} 
-	\left[(1 + h') e^{\hat{r}_{\tau}^{(b,n)}} - (1+k)\right].
-\end{align}
-Table~\ref{tab:calibration2} shows the results. We can see that with a conservative assumption of 
+The bootstrap is not a suitable method to estimate expected shortfall. Therefore we resort
+to a parametric approach. We estimate a generalized pareto distribution via
+Maximum Likelihood, see \cite{mcneil2015quantitative}.
+
+Table~\ref{tab:calibration2} shows the results. \nothing{We can see that with a conservative assumption of 
 challengers entering when the probability of earning the reward is $alpha=90\%$, stakers
 face a $15\%$ average loss in the worst $1\%$ outcomes. We choose this number, $15\%$, as our conservative risk-based
-buffer $\Theta_i^{(R)}$.
+buffer $\Theta_i^{(R)}$.}
 
 \begin{table}[h]
 \caption{\textbf{Liquid Collateral Capital Reserves.} The column labelled $\alpha$ shows the probability
 that the challenge results in a liquidation and the challenger is paid a reward.
 Given this level, we can calculate the corresponding $h'$, see Table~\ref{tab:calibration}.
-The last second column shows the expected shortfall at the 1\%-quantile. The value
-after $\pm$ is the confidence area at a 1\%-limit. For example, if challengers wait to issue a challenge until
-there is a 90\% chance that they receive a challenger reward, the average loss in the worst 1\% of outcomes
-is equal to 15\%.
+The last second column shows the expected shortfall at the 1\%-quantile. .....
 \label{tab:calibration2}}
 \center
 \begin{tabular}{lll}
 \toprule
 \textbf{$\alpha$} & \textbf{ES}   \\
 \midrule
-0.50                           & 0.11 $\pm$ 0.00 \\
-0.75                           & 0.13 $\pm$ 0.00 \\
-0.80                           & 0.14 $\pm$ 0.00 \\
-0.90                           & 0.15 $\pm$ 0.00 \\
-0.95                           & 0.17 $\pm$ 0.00 \\
-0.99                           & 0.20 $\pm$ 0.00\\
 \bottomrule
 \end{tabular}
 \end{table}

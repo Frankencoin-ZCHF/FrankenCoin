@@ -12,6 +12,7 @@ import random
 from scipy.stats import norm
 from scipy.stats import t as tdist
 
+
 def get_bootstrap_mtrx(rvec, tau, N):
     #Construct matrix of bootstrapped log-returns. Period tau-hours,
     #N columns, rvec rows
@@ -45,12 +46,10 @@ def estimate_hDash(alpha, Rtau):
     # check quantile: sum( (1+HDash[1])*np.exp(Rtau[1,:])-1 > h)/Rtau.shape[1] 
     return HDash
 
-def estimate_ES(ESlvl, Rtau, hDash):
-    [B,N] = Rtau.shape
-    thresh = np.quantile(Rtau, ESlvl, axis=1)
-    Th = np.repeat(thresh, N).reshape((B,N))
-    num_obs = np.sum(Rtau<Th, 1)
-    LCondvec = -np.sum((Rtau<Th) * ((1+hDash)*np.exp(Rtau)-(1+rateK)), 1)/num_obs    
+def estimate_ES(ESlvl, r, hDash):
+    thresh = np.quantile(r, ESlvl)
+    num_obs = np.sum(r<thresh)
+    LCondvec = -np.sum((r<thresh) * ((1+hDash)*np.exp(r)-(1+rateK)), 1)/num_obs    
     return LCondvec
 
 TauIn = 1440#60
@@ -61,6 +60,8 @@ r = DF["logRet"].to_numpy()
 h = 0.10 # required maintenance margin and ultimately the haircut
 rateK = 0.02 # challenger fee
 tau = 24 # 24 hours of duration for liquidation
+
+
 
 
 B = 5000
@@ -81,7 +82,7 @@ for hD in np.arange(-0.05, 0.15, 0.01):
     print("h\'={:.2f} : L={:.2f}%".format(hD, np.mean(Lvec)*100))
 
 
-ES = estimate_ES(0.01, Rtau, hDash)
+ES = estimate_ES(0.01, r, hDash)
 ESmean = np.mean(ES)
 ESstd = np.sqrt(np.var(ES)/Rtau.shape[0])
 alpha_conf = 0.01
