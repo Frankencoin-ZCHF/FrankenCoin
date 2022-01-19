@@ -568,7 +568,7 @@ liquidation level of 1.1, there is
 a 95\% probability that the collateral is liquidated, while stakers will still on average
 earn 0.69\%.\label{tab:calibration}}
 \center
-\begin{tabular}{lll}
+\begin{tabular}{rrr}
 \toprule
 \textbf{$\alpha$} & \textbf{$h'$}   & \textbf{$\hat{E}_{\tau}\left[\tilde{L} | h' \right]$}\\
 \midrule
@@ -585,34 +585,88 @@ earn 0.69\%.\label{tab:calibration}}
 \clearpage
 \subsubsection{Reserves}
 Each mint plugin defines the required reserves of ZCHF to be held against
-the issued volume of ZCHF. In the previous section we have calibrated
-the minimal fee that should be charged to minters via expected loss.
-We proceed in a similar manner and calculate the expected shortfall
-for the liquidity providers under a 1\%-quantile, conditional on $h'$.
+the issued volume of ZCHF. The assessment we perform now differs from the one we made
+to determine the minimal fee in two main aspects, (1) we want to estimate a loss for
+the whole Liquid Collateral plugin not only for an individual position, and (2) we
+are not looking for an insurance valuation but for the capital required.
+The latter point implies that we do not need any assumption on risk-neutral measures
+but we can directly work with the observed data.
 
-The bootstrap is not a suitable method to estimate expected shortfall. Therefore we resort
-to a parametric approach. We estimate a generalized pareto distribution via
-Maximum Likelihood, see \cite{mcneil2015quantitative}.
+We would like to base out capital reserves on
+a risk-measure such as Expected Shortfall, see for example \cite{mcneil2015quantitative}.
+We may want to set our risk-appetite via quantile-level of 1\% so the system could survive
+an average loss observed in the worst 1\% cases.
+The plugin-wide loss depends heavily on the current loan-to-value ratios in the system, which
+we do not dare to model without having gathered historical data.
 
-Table~\ref{tab:calibration2} shows the results. \nothing{We can see that with a conservative assumption of 
-challengers entering when the probability of earning the reward is $alpha=90\%$, stakers
-face a $15\%$ average loss in the worst $1\%$ outcomes. We choose this number, $15\%$, as our conservative risk-based
-buffer $\Theta_i^{(R)}$.}
+In the worst case, the loan-to-value ratios are all at 1:(1+h), just before liquidation can occur,
+and a single shock could wipe out the system. 
+We construct empirical samples of loss data by applying the 24h log-returns to the loss function
+given by Equation~\eqref{eq:loss}. Figure~\ref{fig:boxplot} gives an overview of the loss data for
+different challenger levels $h'$ via boxplots. We see that
+the median level of losses are benign, even for very low challenger levels of $h'=-1\%$ 
+(meaning the liquidation is only started when the collateral has a value of 99\% of the loan
+notional, although the position would liquidate if the collateral is at 110\% of the loan notional).
+However, we also see that there are high losses for all levels of $h'$ depicted,
+driven by two extreme returns in the data, where the loss exceeds 20\% of the loan notional.
+These losses are at a loan level and apply if the loan challenge starts at a loan-to-value
+ratio of $1:(1+h')$. On a plugin-wide level, we would only lose the same percentage of the
+outstanding loan notional, if all loans started at $1:(1+h')$ simultaneously.
+Realistically, loan-to-value ratios are more spread
+out and hence, the loan-level losses observed in Figure~\ref{fig:boxplot} are an upper bound 
+on the plugin-wide loss.
 
-\begin{table}[h]
-\caption{\textbf{Liquid Collateral Capital Reserves.} The column labelled $\alpha$ shows the probability
-that the challenge results in a liquidation and the challenger is paid a reward.
-Given this level, we can calculate the corresponding $h'$, see Table~\ref{tab:calibration}.
-The last second column shows the expected shortfall at the 1\%-quantile. .....
-\label{tab:calibration2}}
-\center
+
+\begin{figure}[h]
+    \center
+    \begin{tabular}{ll}
+    \includegraphics[width=0.75\textwidth]{loss_boxplot.png}
+    \end{tabular}
+    \caption{\textbf{Empirical Loss Boxplot}. This figure shows standard boxplots for
+    different challenger levels $h'$, given that a liquidation is triggered when
+    the challenge results in a collateral value of below 110\% of the loan.
+    The vertical bar depicts the median, the boxes reach from the first quartile
+    to the third quartile, the whiskers extend to the max/min or at most 1.5 times the range of the box,
+    circles are plotted outside the span of the whiskers. For values $h'$ close to $h=0.10$,
+    the loss usually ends in a gain (negative number). Losses stay on average
+    benign but we also observe a few very high losses that exceed
+    20\% of the loan notional.}\label{fig:boxplot}
+\end{figure}
+
+
+To gain further insight into the loan-level loss distribution that serves as an upper bound
+for the plugin-wide loss, we estimate employ a parametric approach.
+expected shortfall.
+
+To do so, we estimate the expected shortfall by fitting a Generalized Pareto 
+Distribution.\footnote{One necessary condition for the loan-level ES being an
+upper bound is the subbadditivity of expected shortfall, see \cite{artzner1999coherent}}
+Appendix~\ref{appx:es} describes details of the estimation and presents sensitivities. 
+We choose a quantile of 5\%
+and assume a conservative challenge level $h'=0.05$ (which corresponds to a 90\% probability
+that the challenge results in a liquidation, see Table~\ref{tab:calibration}).
+The result, 
+
+\begin{center}
 \begin{tabular}{lll}
 \toprule
-\textbf{$\alpha$} & \textbf{ES}   \\
+\textbf{Quantile} & \textbf{ES}   \\
 \midrule
+5\% & 25\%\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
+
+suggests that 25\% of the outstanding loan amount should be held as capital reserves.
+As we demonstrate in Appendix~\ref{appx:es}, there is a high sensitivity of this estimate
+to the parameters. However, the 25\% seem to be a reasonable upper bound, when
+comparing to the empirical extremes presented in Figure~\ref{fig:boxplot}, and
+considering that this is on loan level.
+
+Once the upper bound for the capital reserve is estimated, the next question is how far can 
+we deviate from the upper bound. We suggest to first set the capital requirement according
+to the upper bound. Once data on loan-to-value ratios is available, the protocol governance can
+reassess.
 
 
 \section{System-wide Minimum Capital Requirements}
@@ -800,22 +854,100 @@ Critical Value for 1\%:& -3.4\\
 \end{table}
 
 Figure~\ref{fig:qqplots} present a quantile-quantile plot against the normal distribution
-and a histogram.
+and a histogram. Figure~\ref{fig:qqplots} also analyses serial correlation of the
+24h log-returns. The Autocorrelation Function shows a significant negative correlation
+at lag one, which however turns out to be driven from extreme returns, as we can
+see on plot (d).
 
+
+\begin{figure}[p]
+    \center
+    \begin{tabular}{cc}
+    \includegraphics[width=0.5\textwidth]{qq_normal_kraken24h.png} &
+    \includegraphics[width=0.5\textwidth]{hist24hreturns_kraken.png} \\
+	(a) & (b)\\    
+    \includegraphics[width=0.5\textwidth]{acf_kraken.png} & 
+    \includegraphics[width=0.5\textwidth]{return_lag_kraken.png}\\
+    (c) & (d)\\    
+    \end{tabular}
+    \caption{\textbf{Return Data from Kraken}. Plot (a) shows a quantile-quantile plot
+    of the 24h log-return data against a normal distribution, (b)
+    plots a histogram of the 24h log-returns.
+    From (a) we see that we have more extreme returns than what a normal
+    distribution would suggest. In the center of the distribution, the 
+    returns move less than the normal distribution would imply.
+    Plot (c) shows the autocorrelation function and a confidence band at the 0.95-level.
+    Chart (d) plots the returns against the previous day return. The
+    figure indicates that the significant autocorrelation at level 1 must be driven
+    by rare extreme returns.
+    }\label{fig:qqplots}
+\end{figure}
+
+
+\section{Expected Shortfall}\label{appx:es}
+We construct the loss data by applying the 24-h log-returns to the loss
+function, Equation~\eqref{eq:loss}. We then calibrate a Generalized Pareto Distribution.
+Table~\ref{tab:losssummary} summarizes the loss data for $h'=0.05$.
+
+\begin{table}[!h]
+\caption{\textbf{Summary Statistics for loss distribution data ($h'=0.05$)}.\label{tab:losssummary}}
+\centering
+\begin{tabular}{lr}
+\hline
+num. observations & 756\\
+min, max &[-7.94\%, 37.73\%] \\
+mean & -2.25\% \\
+variance & 0.001153 \\ 
+skewness & 3.33 \\
+kurtosis & 30.72 \\
+\hline
+\end{tabular}
+\end{table}
+
+The calibration procedure requires us to choose a cutoff point $u$, beyond which
+the Generalized Pareto Distribution is fitted. We choose the cut-off level using the Mean Excess plot, see Figure~\ref{fig:hmef}.
+If the Mean Excess plot is close to linear
+for high values of the threshold then there is no evidence against use of a GPD model,
+see \cite{davison1990models}, or \cite{ghosh2010discussion}.
+We choose $u=0.03$. After choosing the cutoff point $u$, we proceed by estimating the distribution
+parameters via Maximum Likelihood, see \cite{mcneil2015quantitative}.
+Table~\ref{tab:sensi} presents sensitivities to the Expected Shortfall estimate to the choice of cutoff points and quantiles.
+
+
+\begin{table}[h]
+\caption{\textbf{Sensitivities.} 
+This table selects cutoff points and quantiles
+to show the sensitivities of the Expected Shortfall
+(ES) estimates.
+\label{tab:sensi}}
+\center
+\begin{tabular}{rrrr}
+\toprule
+\textbf{Challenge Level} & \textbf{Cutoff Point} & \textbf{Quantile} & \textbf{ES}   \\
+\midrule
+0.05 & 0.03 & 1\%  & 35.1\%\\
+0.05 & 0.02 & 5\%  & 28.8\%\\
+0.05 & 0.03 & 5\%  & 25.1\%\\
+0.05 & 0.04 & 5\%  & 37.8\%\\
+0.05 & 0.03 & 10\% & 20.9\%\\
+0.05 & 0.04 & 10\% & 28.0\%\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[h]
     \center
     \begin{tabular}{ll}
-    \includegraphics[width=0.5\textwidth]{qq_normal_kraken24h.png} &
-    \includegraphics[width=0.5\textwidth]{hist24hreturns_kraken.png} \\
+    \includegraphics[width=0.5\textwidth]{emp_mean_excess_h05.png}
     \end{tabular}
-    \caption{\textbf{Return Data from Kraken}. The lhs plot shows a quantile-quantile plot
-    of the 24h log-return data against a normal distribution, the rhs
-    plots a histogram of the 24h log-returns.
-    From the lhs graph we see that we have more extreme returns than what a normal
-    distribution would suggest. In the center of the distribution, the 
-    returns move less than the normal distribution would imply.}\label{fig:qqplots}
+    \caption{\textbf{Historical Mean Excess Plot}. This plot shows the mean observed
+    over a threshold loss $u$, plotted against $u$. For example, on average we
+    observe a loss of about 0.04 above u=0.03 if the loss exceeds u=0.03. Losses are relative
+    to the loan notional and calculated for a liquidation start level of $h'=0.05$. 
+    As often done for the mean excess plot, the last part of
+    the data is omitted (0.5\%). This chart indicates that we might set the threshold for the
+    Generalized Pareto Distribution to $u=0.03$.
+    }\label{fig:hmef}
 \end{figure}
-
 
 \end{document}

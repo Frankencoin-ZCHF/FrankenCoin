@@ -47,10 +47,13 @@ def estimate_hDash(alpha, Rtau):
     return HDash
 
 def estimate_ES(ESlvl, r, hDash):
+    # empirical estimation of Expected Shortfall at quantile ESlvl
     thresh = np.quantile(r, ESlvl)
     num_obs = np.sum(r<thresh)
     LCondvec = -np.sum((r<thresh) * ((1+hDash)*np.exp(r)-(1+rateK)), 1)/num_obs    
     return LCondvec
+
+
 
 TauIn = 1440#60
 DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed.pkl")
@@ -60,9 +63,6 @@ r = DF["logRet"].to_numpy()
 h = 0.10 # required maintenance margin and ultimately the haircut
 rateK = 0.02 # challenger fee
 tau = 24 # 24 hours of duration for liquidation
-
-
-
 
 B = 5000
 # bootstrap returns

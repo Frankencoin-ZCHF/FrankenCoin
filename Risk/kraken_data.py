@@ -24,5 +24,6 @@ tau = "1440"#"60"
 DF = load_from_file(tau)
 #data_roller.analyze_gaps(DF, 1440)
 data_roller.analyze_returns(DF, 8)
+
 #data_roller.timeseries_plot(DF)
 #DF.to_pickle("XBTCHF_"+str(tau)+"_Processed.pkl")

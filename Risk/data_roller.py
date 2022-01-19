@@ -2,6 +2,7 @@
 # Conclusion: data not useful (cumulative log return are far from the overall return of the BTCHF price levels)
 import datetime
 from math import dist
+from socketserver import ForkingUDPServer
 import requests
 import json
 import pandas as pd
@@ -10,6 +11,9 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.formula.api import ols
+from statsmodels.stats.stattools import durbin_watson
 
 #https://api.kraken.com/0/public/OHLC?interval=60&since=1589281199&pair=XBTCHF <-- too short
 #https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04%3A59%3A59.999Z&to=2020-12-03T07%3A59%3A59.999Z
@@ -89,8 +93,7 @@ def analyze_returns(DF, degree_of_f=4):
     print('p-value: %f' % result[1])
     print('Critical Values:')
     for key, value in result[4].items():
-	    print('\t%s: %.3f' % (key, value))
-    
+        print(key, '{:.3f}'.format(value))
     print("Return statistics")
     print(stats.describe(M[:,1]))
     print("from=", DF[["datetime"]].iloc[0])
@@ -116,6 +119,25 @@ def analyze_returns(DF, degree_of_f=4):
     plt.grid(True)
     plt.show()
 
+    plot_acf(M[:,1], lags = 7, alpha=0.01, title='')
+    plt.grid()
+    plt.xlabel('lags')
+    plt.ylabel('Autocorrelation')
+    plt.show()
+
+    # durbin watson
+    plt.figure()
+    plt.plot(M[1:(M.shape[0]-1),1], M[0:(M.shape[0]-2),1], '.')
+    df = pd.DataFrame({'y':M[1:(M.shape[0]-1),1], 'x':M[0:(M.shape[0]-2),1]} )
+    ols_res = ols('y~x', df).fit()
+    print(durbin_watson(ols_res.resid))
+    #x_line = np.array([np.min(df['x']), np.max(df['x'])])
+    #y_line = ols_res.params[0] + ols_res.params[1] * x_line
+    #plt.plot(x_line,y_line, 'r-')
+    plt.grid()
+    plt.xlabel('r[t-1]')
+    plt.ylabel('r[t]')
+    plt.show()
 
 def poll_data():
     MAX_POLL = 400
