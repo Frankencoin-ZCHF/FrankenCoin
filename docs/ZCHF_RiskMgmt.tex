@@ -373,6 +373,11 @@ the challenger get's the bidder's amount of ZCHF.
 \end{enumerate}
 \end{itemize}
 
+Loan issuance can be implemented by using the last auction price and the requirement of 
+a collateral $x$-times above the last price, e.g., the minter sets the loan amount to their own value
+and it is granted if the amount of the collateral is at least equal to the last price times $x=1.8$.
+
+
 Figure~\ref{fig:auction} illustrates this auction mechanism graphically.
 \begin{figure}[h]
     \center
@@ -668,7 +673,6 @@ we deviate from the upper bound. We suggest to first set the capital requirement
 to the upper bound. Once data on loan-to-value ratios is available, the protocol governance can
 reassess.
 
-
 \section{System-wide Minimum Capital Requirements}
 In this section, we define overarching rules to make the Frankencoin system
 resilient. We regard the system as a bank and apply risk mitigation methods
@@ -702,25 +706,12 @@ and \cite{acharya2010regulating}:
 \item \emph{Risk-based capital requirements}: each mint-plugin defines its own
 	risk-based reserve requirement. E.g., for the liquid collateral
 	plugin, we choose to estimate a reserve requirement based on expected shortfall.
-	The fact that the system used shared capital but individual reserve requirements
+	The fact that the system uses shared capital, but plugins define individual reserve requirements
 	adds a diversification benefit.
-\item \emph{Leverage limits} provide a supplementary measure to
-	risk-based capital requirements due to their simplicity and independency. 
-	It is a safeguard against model risk and was introduced with the
-	Basel III regulation. Our system is subject to model risk too, for instance
-	due to the risk-based calibration of the Liquid Collateral Plugin capital
-	reserve, and we thus define leverage limits too.
-\item \emph{Countercyclical buffer}: risk-based capital requirements
-	show cyclicality. In crisis times, more capital is required
-	than during expansionary periods. It is more difficult to
-	attract capital in exactly these times. Therefore we
-	introduce a countercyclical buffer, that governance reduces
-	in downturns and increases during expansionary periods.\footnote{E.g., 
-	loss given default is typically higher
-	in a crisis. The Basel II framework required banks to use downturn LGD
-	estimates to dampen countercyclicality, see \cite{engelmann2006basel}.
-	Basel III introduced a countercyclical buffer to dampen the cyclicality
-	emphasized by the banking system}
+\item \emph{Leverage limits} have two main benefits. First, 
+    they are largely model-free and are therefore a safeguard against model risk 
+    (e.g., model risk	due to the risk-based calibration of capital).	
+	Second, a leverage limit provides us a global (i.e., Frankencoin-system-wide) capital limit.
 \item \emph{Concentration limits}. If the collateral of Frankencoin
 	is singularly exposed to the price of Bitcoin, the Frankencoin is doomed
 	to collapse when the Bitcoin price falls sufficiently. We therefore aim
@@ -729,12 +720,6 @@ and \cite{acharya2010regulating}:
 
 If the capital is below the minimal capital derived from the above measures,
 no more Frankencoins can be issued.
-The above measures provide us with a capital requirement per ZCHF issued.
-We propose to define the \emph{countercyclical buffer} as a multiplicative add-on to the
-capital requirement resulting from the remaining measures. That is,
-if the requirement from 1, 2, and 4 result in a buffer of $C$, the
-countercyclical buffer is a number $b$, so that the minimal capital is equal
-to $C(1+b)$. The system-wide buffer $b$ is set by governance.
 
 We have detailed the \emph{risk-based capital} requirements in the previous sections.
 The risk-based capital requirements involve relatively complex calculations
@@ -746,11 +731,13 @@ see \cite{curry1983industrial}, which equals the percentage of market share held
 do not have the notion of a position and therefore set $Z_j$ equal to the
 collateral. If collateral is liquidated, the ZCHF burnt are subtracted from
 $Z_j$.}
-The relative amount issued by plugin $j$ is given by $p_j=Z_j/\sum_i^K Z_i$. We aim to prevent that the largest
-$p_j$ is beyond a threshold $\theta_C$. If a single mint plugin reaches the threshold 
-$\theta_C$,
-the plugin cannot issue any more ZCHF until the concentration is reduced. The
-concentration threshold is set by governance.
+The relative amount issued by plugin $j$ is given by $p_j=Z_j/\sum_i^K Z_i$. 
+We aim to prevent that the largest $p_j$ is beyond a threshold. 
+However, when applying this restriction on a system-wide level, we run into
+the problem that the system could consist of multiple different plugins with
+the same or very similar collateral. We therefore require that
+each mint plugin sets its own threshold $\theta_i^{(C)}$. If a single mint plugin reaches its threshold,
+$\theta_i^{(C)}$, the plugin cannot issue any more ZCHF until the concentration is reduced.
 
 Finally, we detail the \emph{leverage limits}. In the spirit of the
 creators of the leverage limits, we aim to have the least possible assumptions
@@ -764,12 +751,12 @@ amount of ZCHF issued through Liquid Collateral Plugins relative to the ZCHF
 held as a reserve in the staking pool. We therefore define the leverage ratio
 as
 \begin{align}
-LR = \sum_{i \in \mathcal{C}} Z_i/S,
+LR = \frac{1}{S}\sum_{i \in \mathcal{C}} Z_i,
 \end{align}
 where $Z_i$ is the amount of tokens issued by mint plugin $i$, $\mathcal{C}$
 is the set of plugin indices that are to be included in the leverage
 calculation (i.e., not the Direct Peg plugins), and $S$ is the total amount
-of staked ZCHF. If the leverage ratio is larger than a governance set threshold $\theta_L$,
+of staked ZCHF. If the leverage ratio is larger than a governance set threshold $\theta^{(L)}$,
 plugins other than the Direct Peg plugins can no longer mint ZCHF.
 
 \begin{table}[htbp]
@@ -799,7 +786,6 @@ Table~\ref{tab:summary} summarizes the parameters and data that needs to be
 stored to implement these risk measures. Despite the comprehensive
 measures, there are only a few parameters that need to be stored.
 
-\emph{TODO: address how credit issuance works. Proposal: last price * 1.8 loan amount}
 \clearpage
 \section{Conclusion}
 TODO
