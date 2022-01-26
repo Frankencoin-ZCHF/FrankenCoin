@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # parameters
     h = 0.10 # required maintenance margin and ultimately the haircut
     rateK = 0.02 # challenger fee
-    tau = 24 # 24 hours of duration for liquidation
+    tau = 24 # duration for liquidation in hours. 24 hours is used in main part of paper
 
     B = 10_000#10000
     # bootstrap returns
