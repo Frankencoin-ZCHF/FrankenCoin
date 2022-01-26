@@ -89,15 +89,23 @@ def plot_max_loss_given_h(r):
     plt.xticks(ticks=100*(1+hDashVec), labels = lbls)
     plt.show()
 
+def construct_overlapping_returns(r_in, TauIn_min, tau_min):
+    num_roll = int(np.round(tau_min/TauIn_min))
+    R = np.zeros((r_in.shape[0], num_roll))
+    for k in range(num_roll):
+        R[:,k]=np.roll(r_in, -k)
+    R = R[0:R.shape[0]-2,:]
+    return np.sum(R, 1)
+
 # 1) data
 TauIn = 1440#60
 DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed.pkl")
-r = DF["logRet"].to_numpy()
+r_in = DF["logRet"].to_numpy()
 # 2) parameters
 h = 0.10 # required maintenance margin and ultimately the haircut
 rateK = 0.02 # challenger fee
-tau = 24 # 24 hours of duration for liquidation
-
+tau_min = 3 * 24 * 60# 3 * 24 hours of duration for liquidation
+r = construct_overlapping_returns(r_in, TauIn, tau_min)
 
 plot_max_loss_given_h(r)
 
