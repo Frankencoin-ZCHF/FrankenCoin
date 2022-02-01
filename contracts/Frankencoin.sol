@@ -52,8 +52,7 @@ contract Frankencoin is ERC20 {
       require(status != 0 && status != MINTER_REMOVED && block.timestamp > status, "not an approved minter");
       required += amount * capitalRatio / 1000000;
       _mint(target, amount);
-      uint256 capital = balanceOf(brain);
-      require(capital >= required, "insufficient equity"); // do the check in the end in case target is brain
+      require(capitalRatio == 0 || balanceOf(brain) >= required, "insufficient reserve"); // do the check in the end in case target is brain
    }
 
    function burn(address owner, uint256 amount, uint32 capitalRatio) public {
