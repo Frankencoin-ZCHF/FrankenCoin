@@ -22,14 +22,12 @@ contract StablecoinBridge {
 
     function mint(address target, uint256 amount) external {
         minted += amount;
-        require(minted <= 1000000*(10**18)); // do not allow more than 1 million with this first bridge version
         chf.transferFrom(msg.sender, address(this), amount);
-        // no capital required, we trust XCHF
+        // no capital required, we trust the other coin
         zchf.mint(target, amount, 0);
     }
 
     function burn(address target, uint256 amount) external {
-        // no capital required, we trust XCHF
         zchf.burn(msg.sender, amount, 0);
         chf.transfer(target, amount);
         minted -= amount;

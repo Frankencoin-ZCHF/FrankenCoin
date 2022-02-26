@@ -7,8 +7,9 @@ import "./IERC677Receiver.sol";
 import "./ERC20.sol";
 
 /** 
- * @title Governance contract for ZCHF
- * @dev 
+ * @title Simple governance contract for ZCHF
+ * Allows new contributors to come in with fresh capital and getting shares (ZOM) in
+ * return at a 
  */
 contract Brain is ERC20 {
 

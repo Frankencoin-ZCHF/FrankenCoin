@@ -5,24 +5,22 @@ import "./IERC20.sol";
 import "./IFrankencoin.sol";
 
 /**
- * A minting contract for another CHF stablecoin that we trust.
+ * A simple collateralized minting contract.
+ * This is a proof of concept that only allows one challenge at a time
+ * and does not support fractional challenges.
  */
-contract SimpleCollateralizedMinter {
+contract CollateralizedMinter {
 
-    uint32 public constant RISK_FEE = 40000; // 4%
-    uint32 public constant CAPITAL_RATIO = 200000; // 20%
-    uint32 public constant COLLATERALIZATION = 2000000; // 200% 
-    uint32 public constant CHALLENGER_REWARD = 50000; // 5% 
-    uint32 public constant BRAIN_REWARD = 50000; // 5% 
+    uint32 public constant CAPITAL_RATIO = 250000; // 25%
+    uint32 public constant COLLATERALIZATION = 1100000; // 110% 
+    uint32 public constant CHALLENGER_REWARD = 20000; // 2% 
 
-    uint256 public constant CHALLENGE_PERIOD = 5 days;
+    uint256 public constant CHALLENGE_PERIOD = 3 days;
 
     IERC20 immutable collateral;
     IFrankencoin immutable zchf;
     address immutable brain;
     address immutable owner;
-
-    uint256 public feeDue;
 
     uint256 public minted;
     uint256 public mintingLimit;
@@ -40,21 +38,15 @@ contract SimpleCollateralizedMinter {
         owner = msg.sender;
     }
 
+    // Reapply for new minting license whenever implied price changes
+    // (Differs from solution described in paper)
+    // Note: this not work, collateral must be present for challenge to function
     function pushlimit(uint256 maxMinting, uint256 maxCollateral) external {
         require(msg.sender == owner);
         // the two limits imply a price
         mintingLimit = maxMinting;
         collateralLimit = maxCollateral;
         zchf.suggestMinter(address(this)); // suspend minting until approved again
-    }
-
-    function collectFee() external {
-        require(msg.sender == brain);
-        require(feeDue <= block.timestamp);
-        feeDue = block.timestamp + 365 days;
-        uint256 amount = minted * RISK_FEE / 1000000;
-        zchf.mint(brain, amount, CAPITAL_RATIO);
-        minted += amount;
     }
 
     /**
@@ -104,9 +96,9 @@ contract SimpleCollateralizedMinter {
 
     function endChallenge() external {
         require(block.timestamp >= challengeEnd);
-        uint256 necessaryValue = COLLATERALIZATION / 1000000 * minted;
+        uint256 necessaryValue = COLLATERALIZATION * minted  / 1000000;
         uint256 balance = collateral.balanceOf(address(this));
-        uint256 collateralAmount = balance / 2;
+        uint256 collateralAmount = balance / 2; // half of all collateral came from challenger, half from minter
         if (highestBid >= necessaryValue){
             // we are safe, challenge failed, someone bid enough, challenger sells challenge amount to highest bidder
             collateral.transfer(highestBidder, collateralAmount);
@@ -117,30 +109,27 @@ contract SimpleCollateralizedMinter {
             collateral.transfer(challenger, balance - collateralAmount);
 
             // pay out reward to challenger
-            payReward(challenger, CHALLENGER_REWARD);
+            uint256 challengerReward = CHALLENGER_REWARD * minted / 1000000;
+            if (challengerReward >= highestBid){
+                zchf.transfer(challenger, challengerReward);
+            } else {
+                // highest bid was lower than challenger reward, this is an
+                // edge case, solved slightly differently than in paper
+                zchf.transfer(challenger, highestBid);
+            }
 
             // bring money supply back into balance
             uint256 moneyLeft = zchf.balanceOf(address(this));
             if (moneyLeft >= minted){
                 zchf.burn(msg.sender, minted, CAPITAL_RATIO); // return minted tokens
-                zchf.transfer(owner, moneyLeft - minted); // return what's left to owner
+                zchf.transfer(brain, moneyLeft - minted); // send surplus to governance contract
             } else {
                 zchf.burn(msg.sender, moneyLeft, CAPITAL_RATIO); // return as much as we can
-                zchf.notifyLoss(minted - moneyLeft, CAPITAL_RATIO); // let the brain cover the loss
+                zchf.notifyLoss(minted - moneyLeft, CAPITAL_RATIO); // notify Frankencoin about loss
             }
             minted = 0;
         }
         challenger = address(0x0);
-    }
-
-    function payReward(address target, uint32 permillion) internal {
-        uint256 moneyToDistribute = zchf.balanceOf(address(this));
-        uint256 reward = minted * permillion / 1000000;
-        if (reward <= moneyToDistribute){
-            zchf.transfer(target, reward);
-        } else {
-            zchf.transfer(target, moneyToDistribute);
-        }
     }
 
 }
