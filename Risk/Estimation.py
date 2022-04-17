@@ -3,6 +3,7 @@
 
 import datetime
 from math import dist
+from turtle import color
 import requests
 import json
 import pandas as pd
@@ -74,10 +75,10 @@ def estimate_ES(ESlvl, r, hDash):
     PnLCondvec = np.sum((r<thresh) * ((1+hDash)*np.exp(r)-(1+rateK)))/num_obs    
     return -PnLCondvec
 
-def calc_pnl(hDash, Rtau):
+def calc_pnl(hDash, Rtau, RtauMax):
     global h
     thresh = np.log(1+h) - np.log(1+hDash)
-    PnLvec = np.sum((Rtau<thresh) * ((1+hDash)*np.exp(Rtau)-(1+rateK)), 1)/K  
+    PnLvec = np.sum((RtauMax<thresh) * ((1+hDash)*np.exp(Rtau)-(1+rateK)), 1)/K  
     B = Rtau.shape[0]  
     # check for threshold: ((1+hDash)*np.exp(Rtau)<1+h) == (Rtau<thresh)
     s = np.sqrt(np.var(PnLvec)/B)
@@ -85,33 +86,36 @@ def calc_pnl(hDash, Rtau):
     return [mu, s]
 
 if __name__ == "__main__":
-    # candle time for the data
+    # candle time for the data (minutes)
     TauIn = 1440#60
 
-    DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed.pkl")
+    DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v2.pkl")
 
     r = DF["logRet"].to_numpy()
+    r_max = DF["maxRet"].to_numpy()
     # parameters
     h = 0.10 # required maintenance margin and ultimately the haircut
     rateK = 0.02 # challenger fee
     tau = 24 # duration for liquidation in hours. 24 hours is used in main part of paper
 
-    B = 10_000#10000
+    B = 10_000#10_000
     # bootstrap returns
     #Rtau = get_bootstrap_mtrx(r, tau, N)
     Rtau = get_block_bootstrap_mtrx(r, tau, TauIn, B)
+    RtauMax = get_block_bootstrap_mtrx(r_max, tau, TauIn, B)
     K = Rtau.shape[1]
     # monte-carlo integration
     #Lvec[j] = -np.sum(np.minimum((1+h)*np.exp(Rtau)-(1+k), h-k))/K
 
     alpha = 0.9
-    hDashVec = estimate_hDash(alpha, Rtau)
-    hDash  = np.mean(hDashVec)
-    hDashVar = np.var(hDashVec)
-    for hD in np.arange(-0.05, 0.15, 0.01):
-        thresh = np.log(1+h) - np.log(1+hD)
-        PnLvec = np.sum((Rtau<thresh) * ((1+hD)*np.exp(Rtau)-(1+rateK)), 1)/K
-        print("h\'={:.2f} : P={:.2f}%".format(hD, np.mean(PnLvec)*100))
+    # hDashVec = estimate_hDash(alpha, Rtau)
+    # hDash  = np.mean(hDashVec)
+    # hDashVar = np.var(hDashVec)
+    # for hD in np.arange(-0.05, 0.15, 0.01):
+    #     thresh = np.log(1+h) - np.log(1+hD)
+    #     #no_early_liq = (RtauMax<thresh) #\hat{D}_{\tau}^{(j,n)}
+    #     PnLvec = np.sum((RtauMax<thresh) * ((1+hD)*np.exp(Rtau)-(1+rateK)), 1)/K
+    #     print("h\'={:.2f} : P={:.2f}%".format(hD, np.mean(PnLvec)*100))
 
     # estimate alpha from h-dash
 
@@ -123,14 +127,17 @@ if __name__ == "__main__":
     T = norm.ppf(0.99)
     hDashVec = np.arange(-0.05, 0.25, 0.005);
     Prob = np.zeros((hDashVec.shape[0],2))
+    Prob_noearly = np.zeros((hDashVec.shape[0],2)) #no early end
     Prob_theo = np.zeros((hDashVec.shape[0],1))
     pnl_vec = np.zeros((hDashVec.shape[0],2))
     t=0
     for hD in hDashVec:
-        [m,s] = estimate_alpha_from_hDash(hD, Rtau)
+        [m,s] = estimate_alpha_from_hDash(hD, RtauMax)
         Prob[t,:] = [m*100, T*s*100]
+        [m,s] = estimate_alpha_from_hDash(hD, Rtau)
+        Prob_noearly[t,:] = [m*100, T*s*100]
         Prob_theo[t] = eval_prob_theo(hD) * 100.0
-        [m_pnl,s_pnl] = calc_pnl(hD, Rtau);
+        [m_pnl,s_pnl] = calc_pnl(hD, Rtau, RtauMax);
         pnl_vec[t,:] = [m_pnl*100, T*s_pnl*100]
         print(f"h'={hD:.2f} alpha={m*100:.2f} +/- {T*s*100:.2f} PnL={m_pnl*100:.2f} +/- {T*s_pnl*100:.2f}");
         t = t + 1
@@ -140,7 +147,8 @@ if __name__ == "__main__":
     plot_ticks = np.arange(-0.04, 0.25, 0.02)
     lbls = [ "{:0.0f}".format(x) for x in 100*(1+plot_ticks) ]
     plt.plot(100*(1+hDashVec), Prob[:,0], 'k-', label='empirical')
-    plt.plot(100*(1+hDashVec), Prob_theo[:], 'b:', label='normal implied')
+    plt.plot(100*(1+hDashVec), Prob_noearly[:,0], '--', color="cadetblue", label='empirical: not averted early')
+    plt.plot(100*(1+hDashVec), Prob_theo[:,0], 'b:', label='normal: not averted early')
     plt.xticks(ticks=100*(1+plot_ticks), labels = lbls)
     plt.yticks(ticks=np.arange(0,101,10), labels = [ "{:0.0f}".format(x) for x in np.arange(0,101,10) ])
     plt.xlabel("(1+h'), %")

@@ -17,6 +17,7 @@ def load_from_file(tau="60"):
     DF = pd.read_csv("./Risk/XBTCHF_"+str(tau)+".csv", header=0, names = col_names)
     DF["datetime"] =DF['timestamp'].apply(lambda x: datetime.datetime.utcfromtimestamp(x))
     DF["logRet"] = np.log(DF["close"]) - np.log(DF["open"])
+    DF["maxRet"] = np.log(DF["high"]) - np.log(DF["open"])
     return DF
 
 
@@ -26,4 +27,5 @@ DF = load_from_file(tau)
 data_roller.analyze_returns(DF, 8)
 
 #data_roller.timeseries_plot(DF)
-#DF.to_pickle("XBTCHF_"+str(tau)+"_Processed.pkl")
+# first version was without maxRet
+#DF.to_pickle("XBTCHF_"+str(tau)+"_Processed_v2.pkl")
