@@ -78,7 +78,10 @@ def estimate_ES(ESlvl, r, hDash):
 def calc_pnl(hDash, Rtau, RtauMax):
     global h
     thresh = np.log(1+h) - np.log(1+hDash)
-    PnLvec = np.sum((RtauMax<thresh) * ((1+hDash)*np.exp(Rtau)-(1+rateK)), 1)/K  
+    #Eq.(21) D 
+    D = (RtauMax<thresh)
+    #Eq.(24) E[P|h']
+    PnLvec = np.sum(D * ((1+hDash)*np.exp(Rtau)-(1+rateK)), 1)/K  
     B = Rtau.shape[0]  
     # check for threshold: ((1+hDash)*np.exp(Rtau)<1+h) == (Rtau<thresh)
     s = np.sqrt(np.var(PnLvec)/B)
@@ -117,7 +120,7 @@ if __name__ == "__main__":
     #     PnLvec = np.sum((RtauMax<thresh) * ((1+hD)*np.exp(Rtau)-(1+rateK)), 1)/K
     #     print("h\'={:.2f} : P={:.2f}%".format(hD, np.mean(PnLvec)*100))
 
-    # estimate alpha from h-dash
+    # estimate probability of liquidation, given h-dash
 
     # theoretical probability of liquidation assuming a normal distribution
     mu_r = np.mean(r)

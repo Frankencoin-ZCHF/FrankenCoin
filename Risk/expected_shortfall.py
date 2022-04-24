@@ -6,14 +6,16 @@ from scipy.stats import genpareto
 import statsmodels.api as sm
 import statsmodels.graphics.gofplots as gofplots
 
-def loss_dist(r, hDash):
+def loss_dist(r, r_max, hDash):
     thresh = np.log(1+h) - np.log(1+hDash)
-    L = -((r<thresh) * ((1+hDash)*np.exp(r)-(1+rateK)))
+    D = r_max < thresh
+    L = -(D * ((1+hDash)*np.exp(r)-(1+rateK)))
     return L
 
-def get_tail_loss(r, hDash, uThresh):
+def get_tail_loss(r, r_max, hDash, uThresh):
     thresh = np.log(1+h) - np.log(1+hDash)
-    L = -((r<thresh) * ((1+hDash)*np.exp(r)-(1+rateK)))
+    D = r_max < thresh
+    L = -(D * ((1+hDash)*np.exp(r)-(1+rateK)))
     return L[L>=uThresh]
 
 def empirical_mean_excess_function(L, u):
@@ -40,11 +42,10 @@ def plot_eme(L, u_start):
     plt.grid()
     plt.show()
     
-def estimate_tail_loss():
+def estimate_tail_loss(u_thresh):
     # tail loss
-    u_thresh = 0.02
-    X = get_tail_loss(r, hDash, u_thresh)
-
+    X = get_tail_loss(r, r_max, hDash, u_thresh)
+    print(f"Number of observations for u={u_thresh:.2f}: {X.shape[0]:.0f}")
     plt.hist(X,50, density=True,histtype='stepfilled', alpha=0.5, label='data')
     plt.xlabel("loss, h'="+str(hDash))
     #plt.plot(q, 0, 'r*')
@@ -54,7 +55,7 @@ def estimate_tail_loss():
 
     [c, loc, scale] = genpareto.fit(X)
     print("c={:.4f} l={:.4f} s={:.4f}".format(c,loc,scale))
-    x_rand = genpareto.rvs(c, loc, scale, 1000)
+    #x_rand = genpareto.rvs(c, loc, scale, 5000)
     #plt.hist(x_rand,100, density=True,histtype='stepfilled', alpha=0.5, label='random')
 
     x_plt = np.arange(np.min(X), np.max(X), 0.005)
@@ -73,13 +74,13 @@ def estimate_tail_loss():
     print("ES empirical = {:.4f} ES pareto = {:.4f}".format(ES_emp, ES1))
     print("Max loss = ", np.max(X))
 
-def plot_max_loss_given_h(r):
+def plot_max_loss_given_h(r, r_max):
     hDashVec = np.arange(0.99, 1.1, 0.01)-1
     lmaxminmed= np.zeros((hDashVec.shape[0],3))
     cnt = 0
     plt.figure()
     for hD in hDashVec:
-        L = loss_dist(r, hD)
+        L = loss_dist(r, r_max, hD)
         plt.boxplot(L, positions=[100*(1+hD)])
         cnt = cnt + 1
     plt.grid()
@@ -99,23 +100,25 @@ def construct_overlapping_returns(r_in, TauIn_min, tau_min):
 
 # 1) data
 TauIn = 1440#60
-DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed.pkl")
+DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v2.pkl")
 r_in = DF["logRet"].to_numpy()
+r_in_max = DF["maxRet"].to_numpy()
 # 2) parameters
 h = 0.10 # required maintenance margin and ultimately the haircut
 rateK = 0.02 # challenger fee
-tau_min = 3 * 24 * 60# 3 * 24 hours of duration for liquidation
+tau_min = 1 * 24 * 60# 1 * 24 hours of duration for liquidation
 r = construct_overlapping_returns(r_in, TauIn, tau_min)
+r_max = construct_overlapping_returns(r_in_max, TauIn, tau_min)
 
-plot_max_loss_given_h(r)
+plot_max_loss_given_h(r, r_max)
 
 # plain loss distribution
-hDash = 0.10
-L = loss_dist(r, hDash)
+hDash = 0.05
+L = loss_dist(r, r_max, hDash)
 print(stats.describe(L))
 
 # EME
 plot_eme(L, u_start=0)
 
 # GPD
-estimate_tail_loss()
+estimate_tail_loss(u_thresh=0.05)
