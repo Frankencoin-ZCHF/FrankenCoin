@@ -49,4 +49,4 @@ DFmerged = merge_data(DF, DF2)
 #data_roller.timeseries_plot(DFmerged)
 # first version was without maxRet
 # third version has data up to May (before end of Jan)
-DF.to_pickle("XBTCHF_"+str(tau)+"_Processed_v3.pkl")
+DFmerged.to_pickle("XBTCHF_"+str(tau)+"_Processed_v3.pkl")

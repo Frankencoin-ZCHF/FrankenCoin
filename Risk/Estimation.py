@@ -3,7 +3,7 @@
 
 import datetime
 from math import dist
-from turtle import color
+#from turtle import color
 import requests
 import json
 import pandas as pd
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # candle time for the data (minutes)
     TauIn = 1440#60
 
-    DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v2.pkl")
+    DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v3.pkl")
 
     r = DF["logRet"].to_numpy()
     r_max = DF["maxRet"].to_numpy()
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     rateK = 0.02 # challenger fee
     tau = 24 # duration for liquidation in hours. 24 hours is used in main part of paper
 
-    B = 10_000#10_000
+    B = 5_000#10_000
     # bootstrap returns
     #Rtau = get_bootstrap_mtrx(r, tau, N)
     Rtau = get_block_bootstrap_mtrx(r, tau, TauIn, B)
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     #T = tdist.ppf(1-alpha_conf/2, B-1)
     #print('Empirical ES={:.2f} +/- {:.2f}'.format(ESmean, ESstd*T))
 
-
+    """ hDash = 0.05
     thresh = np.log(1+h) - np.log(1+hDash)
     PnLvec = np.sum((Rtau<thresh) * ((1+hDash)*np.exp(Rtau)-(1+rateK)), 1)/K    
     # check for threshold: ((1+hDash)*np.exp(Rtau)<1+h) == (Rtau<thresh)
@@ -199,4 +199,4 @@ if __name__ == "__main__":
 
     sH = np.sqrt(hDashVar/B)
 
-    print(txt.format(alpha, hDash, T*sH, 100*S.mean, T*s))
+    print(txt.format(alpha, hDash, T*sH, 100*S.mean, T*s)) """
