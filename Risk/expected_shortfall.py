@@ -81,6 +81,7 @@ def plot_max_loss_given_h(r, r_max):
     plt.figure()
     for hD in hDashVec:
         L = loss_dist(r, r_max, hD)
+        print(f"1%-quantile for h'={hD:.2f} is {100*np.quantile(L,0.99):.2f}%")
         plt.boxplot(L, positions=[100*(1+hD)])
         cnt = cnt + 1
     plt.grid()
@@ -89,6 +90,7 @@ def plot_max_loss_given_h(r, r_max):
     lbls = [ "{:0.0f}".format(x) for x in 100*(1+hDashVec) ]
     plt.xticks(ticks=100*(1+hDashVec), labels = lbls)
     plt.show()
+    
 
 def construct_overlapping_returns(r_in, TauIn_min, tau_min):
     num_roll = int(np.round(tau_min/TauIn_min))
@@ -100,8 +102,9 @@ def construct_overlapping_returns(r_in, TauIn_min, tau_min):
 
 # 1) data
 TauIn = 1440#60
-DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v2.pkl")
+DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v3.pkl")
 r_in = DF["logRet"].to_numpy()
+stats.describe(r_in)
 r_in_max = DF["maxRet"].to_numpy()
 # 2) parameters
 h = 0.10 # required maintenance margin and ultimately the haircut
