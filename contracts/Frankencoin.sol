@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "./ERC20.sol";
 import "./IReservePool.sol";
+import "./IFrankencoin.sol";
 
-contract Frankencoin is ERC20 {
+contract Frankencoin is ERC20, IFrankencoin {
 
    uint256 private constant MINTER_REMOVED = 1;
 
@@ -34,6 +35,7 @@ contract Frankencoin is ERC20 {
    function suggestMinter(address minter, uint256 applicationPeriod, uint256 applicationFee) external {
       require(applicationPeriod >= MIN_APPLICATION_PERIOD || totalSupply() == 0, "period too short");
       require(applicationFee >= MIN_FEE || totalSupply() == 0, "fee too low");
+      require(minters[minter] == 0);
       _transfer(msg.sender, reserve, applicationFee);
       minters[minter] = block.timestamp + applicationPeriod;
       emit MinterApplied(minter, applicationPeriod, applicationFee);
@@ -65,6 +67,11 @@ contract Frankencoin is ERC20 {
 
    function burn(uint256 amount) external {
       _burn(msg.sender, amount);
+   }
+
+   function notifyLoss(uint256 amount) external {
+      require(isMinter(msg.sender));
+      _transfer(reserve, msg.sender, amount);
    }
 
    function isMinter(address minter) public view returns (bool){
