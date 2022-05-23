@@ -53,7 +53,7 @@ contract ReservePool is ERC20 {
             }
             votes += balanceOf(current);
         }
-        return votes * 10000 >= QUORUM * zchf.totalSupply();
+        return votes * 10000 >= QUORUM * totalSupply();
     }
 
     function delegateVoteTo(address delegate) external {

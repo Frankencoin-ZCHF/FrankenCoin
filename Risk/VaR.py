@@ -28,12 +28,16 @@ if __name__ == "__main__":
     r = roll_window(r_raw, num_days)
 
     r99 = np.quantile(r, 0.01)
-    VaR = 1-np.exp(r99)
+    k = 0.02
+    VaR = (1-np.exp(r99)) + k 
     plt.hist(r,50, density=True,histtype='stepfilled', alpha=0.5, label='data')
     print(f"VaR {num_days}-day: return = {100*r99:.2f}%, VaR={100*VaR:.2f}%")
     
+
+
     h=0.1
     E = VaR*(1+h)-h
     RWA = E*1.5
+
     print(f"E={100*E:.2f}% RWA={RWA*100:.2f}%")
     plt.show()
