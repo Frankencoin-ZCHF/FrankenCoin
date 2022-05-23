@@ -9,28 +9,26 @@ import "./IFrankencoin.sol";
  */
 contract StablecoinBridge {
 
-    IERC20 immutable chf;
-    IFrankencoin immutable zchf;
+    IERC20 public immutable chf;
+    IFrankencoin public immutable zchf;
 
-    uint256 public minted;
+    uint256 public immutable horizon;
 
     constructor(address other, address zchfAddress){
         chf = IERC20(other);
         zchf = IFrankencoin(zchfAddress);
-        zchf.suggestMinter(address(this));
+        horizon = block.timestamp + 52 weeks;
     }
 
     function mint(address target, uint256 amount) external {
-        minted += amount;
+        require(block.timestamp <= horizon);
         chf.transferFrom(msg.sender, address(this), amount);
-        // no capital required, we trust the other coin
         zchf.mint(target, amount, 0);
     }
 
     function burn(address target, uint256 amount) external {
         zchf.burn(msg.sender, amount, 0);
         chf.transfer(target, amount);
-        minted -= amount;
     }
     
 }
