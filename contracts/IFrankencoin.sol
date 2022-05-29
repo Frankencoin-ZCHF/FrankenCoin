@@ -5,22 +5,26 @@ import "./IERC20.sol";
 
 interface IFrankencoin is IERC20 {
 
-    function suggestMinter(address minter, uint256 applicationPeriod, uint256 applicationFee) external;
+    function suggestMinter(address minter, uint256 applicationPeriod, uint256 applicationFee, string calldata message) external;
 
-    function denyMinter(address minter, address[] calldata helpers) external;
+    function registerPosition(address position) external;
 
-    function reserve() external returns (address);
+    function denyMinter(address minter, address[] calldata helpers, string calldata message) external;
 
-    function isMinter(address minter) external returns (bool);
+    function reserve() external view returns (address);
+
+    function isMinter(address minter) external view returns (bool);
     
     function mint(address target, uint256 amount) external;
 
     function mint(address target, uint256 amount, uint32 reservePPM, uint32 feePPM) external;
 
-    function burn(uint256 amount) external;
+    function burn(uint256 amount, uint32 reservePPM) external;
 
     function burn(address target, uint256 amount) external;
 
     function notifyLoss(uint256 amount) external;
+
+    function reserveTargetFulfilled() external view returns (bool);
 
 }

@@ -39,6 +39,8 @@ interface IERC20 {
      */
     function transfer(address recipient, uint256 amount) external returns (bool);
 
+    function transferAndCall(address recipient, uint256 amount, bytes calldata data) external returns (bool);
+
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
      * allowed to spend on behalf of `owner` through `transferFrom`. This is

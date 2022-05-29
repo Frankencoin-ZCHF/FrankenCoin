@@ -146,7 +146,7 @@ abstract contract ERC20 is IERC20 {
     }
 
     // ERC-677 functionality, can be useful for swapping and wrapping tokens
-    function transferAndCall(address recipient, uint amount, bytes calldata data) external virtual returns (bool) {
+    function transferAndCall(address recipient, uint256 amount, bytes calldata data) external virtual returns (bool) {
         bool success = transfer(recipient, amount);
         if (success){
             success = IERC677Receiver(recipient).onTokenTransfer(msg.sender, amount, data);

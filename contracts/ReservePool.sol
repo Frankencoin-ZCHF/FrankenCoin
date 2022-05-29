@@ -5,11 +5,12 @@ pragma solidity >=0.8.0 <0.9.0;
 import "./IFrankencoin.sol";
 import "./IERC677Receiver.sol";
 import "./ERC20.sol";
+import "./IReservePool.sol";
 
 /** 
  * @title Reserve pool for the Frankencoin
  */
-contract ReservePool is ERC20 {
+contract ReservePool is ERC20, IReservePool {
 
     uint32 private constant QUORUM = 300;
 
@@ -41,8 +42,8 @@ contract ReservePool is ERC20 {
             return balance / totalSupply();
         }
     }
-    
-    function isQualified(address sender, address[] calldata helpers) external returns (bool) {
+
+    function isQualified(address sender, address[] calldata helpers) external view returns (bool) {
         uint256 votes = balanceOf(sender);
         for (uint i=0; i<helpers.length; i++){
             address current = helpers[i];
@@ -60,7 +61,7 @@ contract ReservePool is ERC20 {
         delegates[msg.sender] = delegate;
     }
 
-    function canVoteFor(address delegate, address owner) public returns (bool) {
+    function canVoteFor(address delegate, address owner) public view returns (bool) {
         if (owner == delegate){
             return true;
         } else if (owner == address(0x0)){
@@ -82,11 +83,15 @@ contract ReservePool is ERC20 {
         return true;
     }
 
-    function redeem(uint256 shares) external returns (uint256) {
+    function redeemFraction(uint256 partsPerMillion) external returns (uint256){
+        return redeem(partsPerMillion * balanceOf(msg.sender) / 1000000);
+    }
+
+    function redeem(uint256 shares) public returns (uint256) {
         uint256 proceeds = shares * zchf.balanceOf(address(this)) / totalSupply();
         _burn(msg.sender, shares);
         zchf.transfer(msg.sender, proceeds);
-        require(zchf.hasEnoughReserves() || zchf.isMinter(msg.sender), "reserve requirement");
+        require(zchf.reserveTargetFulfilled() || zchf.isMinter(msg.sender), "reserve requirement");
         return proceeds;
     }
 
