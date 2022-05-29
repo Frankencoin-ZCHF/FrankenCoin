@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./IERC20.sol";
+import "./IERC677Receiver.sol";
 import "./IFrankencoin.sol";
 
 /**
@@ -21,14 +22,29 @@ contract StablecoinBridge {
     }
 
     function mint(address target, uint256 amount) external {
-        require(block.timestamp <= horizon);
+        require(block.timestamp <= horizon, "expired");
         chf.transferFrom(msg.sender, address(this), amount);
-        zchf.mint(target, amount, 0);
+        zchf.mint(target, amount);
     }
 
     function burn(address target, uint256 amount) external {
-        zchf.burn(msg.sender, amount, 0);
+        burnInternal(msg.sender, target, amount);
+    }
+
+    function burnInternal(address zchfHolder, address target, uint256 amount) internal {
+        zchf.burn(zchfHolder, amount);
         chf.transfer(target, amount);
+    }
+
+    function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool){
+        if (msg.sender == address(chf)){
+            zchf.mint(from, amount);
+        } else if (msg.sender == address(zchf)){
+            burnInternal(address(this), from, amount);
+        } else {
+            require(false, "unsupported token");
+        }
+        return true;
     }
     
 }

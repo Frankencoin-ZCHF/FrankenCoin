@@ -7,15 +7,13 @@ import "./IFrankencoin.sol";
 
 contract Frankencoin is ERC20, IFrankencoin {
 
-   uint256 private constant MINTER_REMOVED = 1;
-
    uint256 public constant MIN_FEE = 1000 * (10**18);
-   uint256 public constant MIN_APPLICATION_PERIOD = 1000 * (10**18);
+   uint256 public constant MIN_APPLICATION_PERIOD = 10 days;
 
    address public immutable reserve;
-   uint256 public reserveRequirement;
 
    mapping (address => uint256) public minters;
+   mapping (address => address) public positions;
 
    event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee);
    event MinterDenied(address indexed minter);
@@ -35,10 +33,15 @@ contract Frankencoin is ERC20, IFrankencoin {
    function suggestMinter(address minter, uint256 applicationPeriod, uint256 applicationFee) external {
       require(applicationPeriod >= MIN_APPLICATION_PERIOD || totalSupply() == 0, "period too short");
       require(applicationFee >= MIN_FEE || totalSupply() == 0, "fee too low");
-      require(minters[minter] == 0);
+      require(minters[minter] == 0, "already registered");
       _transfer(msg.sender, reserve, applicationFee);
       minters[minter] = block.timestamp + applicationPeriod;
       emit MinterApplied(minter, applicationPeriod, applicationFee);
+   }
+
+   function registerPosition(address position) external {
+      require(isMinter(msg.sender), "not minter");
+      positions[position] = msg.sender;
    }
 
    function denyMinter(address minter, address[] calldata helpers) external {
@@ -48,30 +51,40 @@ contract Frankencoin is ERC20, IFrankencoin {
       emit MinterDenied(minter);
    }
 
-   function mintAndCall(address target, uint256 amount, uint256 reserveRequirementIncrement) external {
-      mint(target, amount, reserveRequirementIncrement);
-      IERC677Receiver(target).onTokenTransfer(msg.sender, amount, new bytes(0));
+   function mint(address target, uint256 amount, uint32 reservePPM, uint32 feesPPM) external minterOnly {
+      require(isMinter(msg.sender) || isMinter(positions[msg.sender]), "not approved minter");
+      uint256 reserveAmount = amount * reservePPM / 1000000;
+      uint256 fees = amount * feesPPM / 1000000;
+      _mint(target, amount - reserveAmount - fees);
+      _mint(reserve, reserveAmount + fees);
+      IERC677Receiver(reserve).onTokenTransfer(msg.sender, reserveAmount, new bytes(0));
    }
 
-   function mint(address target, uint256 amount, uint256 reserveRequirementIncrement) public {
-      require(isMinter(msg.sender), "not approved minter");
-      reserveRequirement += reserveRequirementIncrement;
+   function mint(address target, uint256 amount) external minterOnly {
       _mint(target, amount);
-   }
-
-   function burn(address target, uint256 amount, uint256 reserveRequirementDecrement) external {
-      require(isMinter(msg.sender), "not approved minter");
-      reserveRequirement -= reserveRequirementDecrement;
-      _burn(target, amount);
    }
 
    function burn(uint256 amount) external {
       _burn(msg.sender, amount);
    }
 
-   function notifyLoss(uint256 amount) external {
-      require(isMinter(msg.sender));
-      _transfer(reserve, msg.sender, amount);
+   function burn(address owner, uint256 amount) external minterOnly {
+      _burn(owner, amount);
+   }
+
+   modifier minterOnly() {
+      require(isMinter(msg.sender) || isMinter(positions[msg.sender]), "not approved minter");
+      _;
+   }
+
+   function notifyLoss(uint256 amount) external minterOnly {
+      uint256 reserveLeft = balanceOf(reserve);
+      if (reserveLeft >= amount){
+         _transfer(reserve, msg.sender, amount);
+      } else {
+         _transfer(reserve, msg.sender, reserveLeft);
+         _mint(msg.sender, amount - reserveLeft);
+      }
    }
 
    function isMinter(address minter) public view returns (bool){
@@ -80,10 +93,6 @@ contract Frankencoin is ERC20, IFrankencoin {
 
    function reserves() external view returns (uint256) {
       return balanceOf(reserve);
-   }
-
-   function hasEnoughReserves() external view returns (bool){
-      return balanceOf(reserve) >= reserveRequirement;
    }
 
 }

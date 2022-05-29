@@ -11,15 +11,15 @@ interface IFrankencoin is IERC20 {
 
     function reserve() external returns (address);
 
-    function hasEnoughReserves() external returns (bool);
-
     function isMinter(address minter) external returns (bool);
     
-    function mint(address target, uint256 amount, uint256 reserveRequirementIncrement) external;
+    function mint(address target, uint256 amount) external;
 
-    function mintAndCall(address target, uint256 amount, uint256 reserveRequirementIncrement) external;
+    function mint(address target, uint256 amount, uint32 reservePPM, uint32 feePPM) external;
 
-    function burn(address target, uint256 amount, uint256 reserveRequirementDecrement) external;
+    function burn(uint256 amount) external;
+
+    function burn(address target, uint256 amount) external;
 
     function notifyLoss(uint256 amount) external;
 

@@ -8,4 +8,5 @@ interface IReservePool is IERC20 {
    function isQualified(address sender, address[] calldata helpers) external returns (bool);
    function redeem(uint256 shares) external returns (uint256);
    function redeemableBalance(address holder) external returns (uint256);
+   function redeemFraction(uint256 partsPerMillion) external returns (uint256);
 }
