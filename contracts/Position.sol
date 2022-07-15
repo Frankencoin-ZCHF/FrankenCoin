@@ -8,9 +8,7 @@ import "./Ownable.sol";
 import "./IERC677Receiver.sol";
 
 /**
- * A simple collateralized minting contract.
- * This is a proof of concept that only allows one challenge at a time
- * and does not support fractional challenges.
+ * A collateralized minting position.
  */
 contract Position is Ownable, IERC677Receiver {
 
@@ -43,6 +41,7 @@ contract Position is Ownable, IERC677Receiver {
         reserveContribution = _reserve;
         expiration = block.timestamp + duration;
         creation = block.timestamp;
+        restrictMinting(3 days);
         minChallenge = initialCollateral / 10;
         hub.reserve().delegateVoteTo(owner);
         emit PositionOpened(msg.sender, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
