@@ -41,7 +41,7 @@ contract Position is Ownable, IERC677Receiver {
         reserveContribution = _reserve;
         expiration = block.timestamp + duration;
         creation = block.timestamp;
-        restrictMinting(3 days);
+        restrictMinting(7 days);
         minChallenge = initialCollateral / 10;
         hub.reserve().delegateVoteTo(owner);
         emit PositionOpened(msg.sender, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
@@ -99,14 +99,12 @@ contract Position is Ownable, IERC677Receiver {
     function onTokenTransfer(address, uint256 amount, bytes calldata) external returns (bool){
         if (msg.sender == address(collateral)){
             handleCollateral(amount);
-            return true;
         } else if (msg.sender == address(zchf)){
             repay();
-            return true;
         } else {
             require(false);
-            return false;
         }
+        return true;
     }
 
     /**

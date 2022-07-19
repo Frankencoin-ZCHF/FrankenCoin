@@ -14,17 +14,32 @@ contract StablecoinBridge {
     IFrankencoin public immutable zchf;
 
     uint256 public immutable horizon;
+    uint256 public immutable limit;
 
-    constructor(address other, address zchfAddress){
+    constructor(address other, address zchfAddress, uint256 limit_){
         chf = IERC20(other);
         zchf = IFrankencoin(zchfAddress);
         horizon = block.timestamp + 52 weeks;
+        limit = limit_;
     }
 
-    function mint(address target, uint256 amount) external {
-        require(block.timestamp <= horizon, "expired");
+    function mint(uint256 amount) external {
+        mint(msg.sender, amount);
+    }
+
+    function mint(address target, uint256 amount) public {
         chf.transferFrom(msg.sender, address(this), amount);
-        zchf.mint(target, amount);
+        mintInternal(target, amount);
+    }
+
+    function mintInternal(addres target, uint256 amount) internal {
+        require(block.timestamp <= horizon, "expired");
+        require(chf.balanceOf(address(this)) <= limit, "limit");
+        zchf.mint(from, amount);
+    
+    
+    function burn(uint256 amount) external {
+        burnInternal(msg.sender, msg.sender, amount);
     }
 
     function burn(address target, uint256 amount) external {
@@ -38,7 +53,7 @@ contract StablecoinBridge {
 
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool){
         if (msg.sender == address(chf)){
-            zchf.mint(from, amount);
+            mintInternal(from, amount);
         } else if (msg.sender == address(zchf)){
             burnInternal(address(this), from, amount);
         } else {
