@@ -33,7 +33,10 @@ contract Position is Ownable, IERC677Receiver {
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 limit, uint256 minted);
 
-    constructor(address owner, address _zchf, address _collateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) Ownable(owner){
+    constructor(address owner, address _zchf, address _collateral, uint256 initialCollateral, 
+        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) 
+        Ownable(owner)
+    {
         hub = IMintingHub(msg.sender);
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
@@ -96,7 +99,9 @@ contract Position is Ownable, IERC677Receiver {
         }
     }
     
-    function onTokenTransfer(address, uint256 amount, bytes calldata) external returns (bool){
+    function onTokenTransfer(address, uint256 amount, bytes calldata) override
+        external returns (bool)
+    {
         if (msg.sender == address(collateral)){
             handleCollateral(amount);
         } else if (msg.sender == address(zchf)){

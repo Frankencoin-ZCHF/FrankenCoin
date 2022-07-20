@@ -26,11 +26,11 @@ contract ReservePool is ERC20, IReservePool {
         zchf = IFrankencoin(frankencoin);
     }
 
-    function name() external pure returns (string memory) {
+    function name() override external pure returns (string memory) {
         return "Frankencoin Pool Share";
     }
 
-    function symbol() external pure returns (string memory) {
+    function symbol() override external pure returns (string memory) {
         return "FPS";
     }
 
@@ -43,7 +43,9 @@ contract ReservePool is ERC20, IReservePool {
         }
     }
 
-    function isQualified(address sender, address[] calldata helpers) external view returns (bool) {
+    function isQualified(address sender, address[] calldata helpers) 
+        override external view returns (bool) 
+    {
         uint256 votes = balanceOf(sender);
         for (uint i=0; i<helpers.length; i++){
             address current = helpers[i];
@@ -57,7 +59,7 @@ contract ReservePool is ERC20, IReservePool {
         return votes * 10000 >= QUORUM * totalSupply();
     }
 
-    function delegateVoteTo(address delegate) external {
+    function delegateVoteTo(address delegate) override external {
         delegates[msg.sender] = delegate;
     }
 
@@ -83,11 +85,11 @@ contract ReservePool is ERC20, IReservePool {
         return true;
     }
 
-    function redeemFraction(uint256 partsPerMillion) external returns (uint256){
+    function redeemFraction(uint256 partsPerMillion) override external returns (uint256){
         return redeem(partsPerMillion * balanceOf(msg.sender) / 1000000);
     }
 
-    function redeem(uint256 shares) public returns (uint256) {
+    function redeem(uint256 shares) override public returns (uint256) {
         uint256 proceeds = shares * zchf.balanceOf(address(this)) / totalSupply();
         _burn(msg.sender, shares);
         zchf.transfer(msg.sender, proceeds);
@@ -95,7 +97,7 @@ contract ReservePool is ERC20, IReservePool {
         return proceeds;
     }
 
-    function redeemableBalance(address holder) public view returns (uint256){
+    function redeemableBalance(address holder) override public view returns (uint256){
         return balanceOf(holder) * zchf.balanceOf(address(this)) / totalSupply();
     }
 

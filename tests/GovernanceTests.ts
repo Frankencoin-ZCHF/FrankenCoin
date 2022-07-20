@@ -10,6 +10,9 @@ describe("TestTemplate", () => {
     });
 
     describe("setWhitelistActive", () => {
+        it("tests work", async () => {
+            expect(true).to.be.true;
+        });
         /*
         it("should fail if not an owner", async () => {
             await expect(
