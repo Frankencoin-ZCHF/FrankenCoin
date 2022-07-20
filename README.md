@@ -10,7 +10,8 @@ Calculations in [Risk folder](Risk/parameters.py)
 * clone repo
 * install npm
 * cd to FrankenCoin directory
-* npm -i
+* npm install
+* npm install --save-dev hardhat
 * npx hardhat compile
 * Run tests
     * npx hardhat test tests/yourtest.ts *or run all tests with*
