@@ -3,16 +3,21 @@
 It shall support a wide range of collateralized minting methods that are governed by a democratic process.
 
 ## Fee calibration 
-For liquid collateral contracts, see [PDF](docs/ZCHF_RiskMgmt.pdf)
+See 
+[Frankencoin Research Paper](https://www.snb.ch/n/mmr/reference/sem_2022_06_03_maire/source/sem_2022_06_03_maire.n.pdf)
 
 Calculations in [Risk folder](Risk/parameters.py)
-## Testing with hardhat 
-* clone repo
-* install npm
-* cd to FrankenCoin directory
-* npm install
-* npm install --save-dev hardhat
-* npx hardhat compile
-* Run tests
-    * npx hardhat test tests/yourtest.ts *or run all tests with*
-    * npx hardhat test
+
+# Hardhat
+
+This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+
+Try running some of the following tasks:
+
+```shell
+npx hardhat help
+npx hardhat test
+GAS_REPORT=true npx hardhat test
+npx hardhat node
+npx hardhat run scripts/deploy.ts
+```
