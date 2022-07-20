@@ -46,7 +46,7 @@ contract Position is Ownable, IERC677Receiver {
         creation = block.timestamp;
         restrictMinting(7 days);
         minChallenge = initialCollateral / 10;
-        hub.reserve().delegateVoteTo(owner);
+        IMintingHub(msg.sender).reserve().delegateVoteTo(owner);
         emit PositionOpened(msg.sender, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
     }
 
