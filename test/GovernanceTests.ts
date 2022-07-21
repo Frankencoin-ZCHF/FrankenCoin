@@ -1,15 +1,14 @@
 // @ts-nocheck
 import {expect} from "chai";
-import { floatToDec18 } from "../scripts/math";
+import { floatToDec18, dec18ToFloat } from "../scripts/math";
 const { ethers } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
-import { toDec18 } from "../scripts/utils";
 
 let ZCHFContract, reservePoolContract, mintingHubContract, accounts;
 let owner;
 
-describe("TestTemplate", () => {
+describe("Basic Tests", () => {
 
     before(async () => {
         accounts = await ethers.getSigners();
@@ -39,6 +38,23 @@ describe("TestTemplate", () => {
             let otherAddr = mockXCHF.address;
             let limit : BigNumber = floatToDec18(100_000);
             bridge = await createContract("StablecoinBridge", [otherAddr, ZCHFContract.address, limit]);
+        });
+        it("depositor of XCHF should receive ZCHF", async () => {
+            let amount = floatToDec18(100);
+            let tx1 = await mockXCHF.mint(owner, amount);
+            let balanceBefore = await ZCHFContract.balanceOf(owner);
+            let tx2 = await mockXCHF.connect(accounts[0]).transfer(bridge.address, amount);
+            let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
+            let balanceAfter = await ZCHFContract.balanceOf(owner);
+            let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
+            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==100;
+            let isSenderBalanceCorrect = ZCHFReceived==100;
+            if (!isBridgeBalanceCorrect || !isSenderBalanceCorrect) {
+                console.log("Bridge received XCHF tokens expected 100 = ", dec18ToFloat(balanceXCHFOfBridge));
+                console.log("Sender received ZCH tokens expected 100 = ", ZCHFReceived);
+                expect(isBridgeBalanceCorrect).to.be.true;
+                expect(isSenderBalanceCorrect).to.be.true;
+            }
             
         });
     });

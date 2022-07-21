@@ -16,6 +16,19 @@ export function floatToDec18(x) {
     return xIntBig.add(xDec).mul(sg);
 }
 
+export function dec18ToFloat(x) {
+    //x: BigNumber in Dec18 format to float
+    let s = x.lt(0) ? -1 : 1;
+    x = x.mul(s);
+    let xInt = x.div(DECIMALS);
+    let xDec = x.sub(xInt.mul(DECIMALS));
+    let k = 18 - xDec.toString().length;
+    let sPad = "0".repeat(k);
+    let NumberStr = xInt.toString() + "." + sPad + xDec.toString();
+    return parseFloat(NumberStr) * s;
+}
+
+
 export function divDec18(x, y) {
     return x.mul(DECIMALS).div(y);
 }
