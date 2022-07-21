@@ -2,37 +2,25 @@
 import {expect} from "chai";
 const { ethers } = require("hardhat");
 const BN = ethers.BigNumber;
+import { createContract } from "../scripts/utils";
+
+let ZCHFContract, reservePoolContract, accounts;
+let owner;
 
 describe("TestTemplate", () => {
 
     before(async () => {
-        // do something
+        accounts = await ethers.getSigners();
+        owner = accounts[0].address;
     });
 
-    describe("setWhitelistActive", () => {
-        it("tests work", async () => {
-            expect(true).to.be.true;
+    describe("basic initialization", () => {
+        it("symbol should be ZCHF", async () => {
+            reservePoolContract= await createContract("ReservePool");
+            ZCHFContract = await createContract("Frankencoin", [reservePoolContract.address]);
+            let symbol = await ZCHFContract.symbol();
+            expect(symbol).to.be.equal("ZCHF");
         });
-        /*
-        it("should fail if not an owner", async () => {
-            await expect(
-                manager.connect(accounts[1]).setWhitelistActive(true)
-            ).to.be.revertedWith("Ownable: caller is not the owner");
-        });
-
-        it("should set flag", async () => {
-            let isWhitelistActive = await manager.isWhitelistActive();
-            expect(isWhitelistActive).to.be.false;
-
-            await manager.setWhitelistActive(true);
-            isWhitelistActive = await manager.isWhitelistActive();
-            expect(isWhitelistActive).to.be.true;
-
-            await manager.setWhitelistActive(false);
-            isWhitelistActive = await manager.isWhitelistActive();
-            expect(isWhitelistActive).to.be.false;
-        });
-        */
     });
 
 });
