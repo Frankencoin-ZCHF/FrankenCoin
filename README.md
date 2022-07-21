@@ -1,6 +1,7 @@
 # FrankenCoin Genesis
 
 It shall support a wide range of collateralized minting methods that are governed by a democratic process.
+See [frontend discussion](website/frontpage.md)
 
 ## Fee calibration 
 See 
@@ -9,7 +10,6 @@ See
 Calculations in [Risk folder](Risk/parameters.py)
 
 # Hardhat
-
 Try running some of the following tasks:
 
 ```shell
