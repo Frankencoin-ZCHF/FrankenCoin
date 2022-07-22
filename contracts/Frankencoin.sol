@@ -61,8 +61,8 @@ contract Frankencoin is ERC20, IFrankencoin {
    {
       uint256 reserveAmount = amount * reservePPM;
       reserveTarget += reserveAmount;
-      reserveAmount /= 1000000;
-      uint256 fees = amount * feesPPM / 1000000;
+      reserveAmount /= 1000_000;
+      uint256 fees = amount * feesPPM / 1000_000;
       _mint(target, amount - reserveAmount - fees);
       _mint(reserve, reserveAmount + fees);
       IERC677Receiver(reserve).onTokenTransfer(msg.sender, reserveAmount, new bytes(0));

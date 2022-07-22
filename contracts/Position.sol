@@ -70,11 +70,11 @@ contract Position is Ownable, IERC677Receiver {
      * to buy reserve pool shares.
      */
     function getUsableMint(uint256 totalMint, bool beforeFees) public view returns (uint256){
-        uint256 usable = totalMint * (1000000 - reserveContribution) / 1000000;
+        uint256 usable = totalMint * (1000_000 - reserveContribution) / 1000_000;
         if (beforeFees){
             return usable;
         } else {
-            return totalMint * (1000000 - mintingFeePPM) / 1000000;
+            return totalMint * (1000_000 - mintingFeePPM) / 1000_000;
         }
     }
 
@@ -158,7 +158,7 @@ contract Position is Ownable, IERC677Receiver {
      * Withdraw any token that might have ended up on this address, except for collateral
      * and reserve tokens, which also serve as a collateral.
      */
-    function widthdraw(address token, address target, uint256 amount) external onlyOwner {
+    function withdraw(address token, address target, uint256 amount) external onlyOwner {
         require(token != zchf.reserve() || minted == 0); // if there are zchf, use them to repay first
         if (token == address(collateral)){
             require(pendingChallenges == 0, "challenges pending");
