@@ -40,7 +40,20 @@ contract MintingHub {
         zchf = IFrankencoin(_zchf);
     }
 
-    function openPosition(address collateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 fees, uint32 reserve) public returns (address) {
+     /**
+     * @notice open a collateralized loan position
+     * @param collateral        address of collateral token
+     * @param initialCollateral amount of initial collateral to be deposited
+     * @param initialLimit      maximal amount of ZCHF that can be minted by the position owner 
+     * @param duration          maturity of the loan in unit of timestamp (seconds)
+     * @param fees              percentage minting fee that will be added to reserve
+     * @param reserve           percentage reserve amount that is added as the 
+     *                          borrower's stake into reserve
+     * @return address of resulting position
+     */
+    function openPosition(address collateral, uint256 initialCollateral, uint256 initialLimit, 
+        uint256 duration, uint32 fees, uint32 reserve) public returns (address) 
+    {
         Position pos = new Position(msg.sender, address(zchf), collateral, initialCollateral, initialLimit, duration, fees, reserve);
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, zchf.reserve(), OPENING_FEE);
