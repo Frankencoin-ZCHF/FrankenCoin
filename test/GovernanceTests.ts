@@ -1,7 +1,7 @@
 // @ts-nocheck
 import {expect} from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
-const { ethers } = require("hardhat");
+const { ethers, bytes } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
@@ -16,6 +16,7 @@ describe("Basic Tests", () => {
         // create contracts
         reservePoolContract= await createContract("ReservePool");
         ZCHFContract = await createContract("Frankencoin", [reservePoolContract.address]);
+        await reservePoolContract.initialize(ZCHFContract.address);
         mintingHubContract = await createContract("MintingHub", [ZCHFContract.address]);
     });
 
@@ -84,6 +85,19 @@ describe("Basic Tests", () => {
                 expect(isSenderBalanceCorrect).to.be.true;
                 expect(isXCHFBalanceCorrect).to.be.true;
             }
+        });
+        it("deposit XCHF to reserve pool and receive share tokens", async () => {
+            let amount = floatToDec18(25);
+            let balanceBefore = await reservePoolContract.balanceOf(owner);
+            await ZCHFContract.transferAndCall(reservePoolContract.address, amount, 0);
+            let balanceAfter = await reservePoolContract.balanceOf(owner);
+            let poolTokenShares = dec18ToFloat(balanceAfter.sub(balanceBefore));
+            let isPoolShareAmountCorrect = poolTokenShares==25;
+            if(!isPoolShareAmountCorrect) {
+                console.log("Pool token shares received = ", poolTokenShares);
+                expect(isPoolShareAmountCorrect).to.be.true;
+            }
+
         });
     });
 
