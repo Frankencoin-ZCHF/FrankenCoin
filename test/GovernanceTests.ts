@@ -39,7 +39,7 @@ describe("Basic Tests", () => {
             let limit : BigNumber = floatToDec18(100_000);
             bridge = await createContract("StablecoinBridge", [otherAddr, ZCHFContract.address, limit]);
         });
-        it("depositor of XCHF should receive ZCHF", async () => {
+        it("minter of XCHF-bridge should receive ZCHF", async () => {
             let amount = floatToDec18(100);
             let tx1 = await mockXCHF.mint(owner, amount);
             let balanceBefore = await ZCHFContract.balanceOf(owner);
@@ -60,6 +60,30 @@ describe("Basic Tests", () => {
                 expect(isSenderBalanceCorrect).to.be.true;
             }
             
+        });
+        it("burner of XCHF-bridge should receive XCHF", async () => {
+            let amount = floatToDec18(50);
+            let balanceBefore = await ZCHFContract.balanceOf(owner);
+            let balanceXCHFBefore = await mockXCHF.balanceOf(owner);
+            // set allowance
+            //await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
+            let tx2 = await bridge.connect(accounts[0])["burn(uint256)"](amount);
+            let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
+            let balanceXCHFAfter = await mockXCHF.balanceOf(owner);
+            let balanceAfter = await ZCHFContract.balanceOf(owner);
+            let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
+            let XCHFReceived = dec18ToFloat(balanceXCHFAfter.sub(balanceXCHFBefore));
+            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==50;
+            let isSenderBalanceCorrect = ZCHFReceived==-50;
+            let isXCHFBalanceCorrect = XCHFReceived==50;
+            if (!isBridgeBalanceCorrect || !isSenderBalanceCorrect || !isXCHFBalanceCorrect) {
+                console.log("Bridge balance XCHF tokens expected 50 = ", dec18ToFloat(balanceXCHFOfBridge));
+                console.log("Sender burned ZCH tokens expected 50 = ", -ZCHFReceived);
+                console.log("Sender received XCHF tokens expected 50 = ", XCHFReceived);
+                expect(isBridgeBalanceCorrect).to.be.true;
+                expect(isSenderBalanceCorrect).to.be.true;
+                expect(isXCHFBalanceCorrect).to.be.true;
+            }
         });
     });
 
