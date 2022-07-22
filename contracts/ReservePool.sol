@@ -74,7 +74,7 @@ contract ReservePool is ERC20, IReservePool {
     }
 
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
-        require(msg.sender == address(zchf));
+        require(msg.sender == address(zchf), "caller must be zchf");
         uint256 total = totalSupply();
         if (total == 0){
             // Initialization of first shares at 1:1
