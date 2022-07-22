@@ -27,7 +27,7 @@ See
 Calculation examples in [Risk folder](Risk/parameters.py)
 
 # Hardhat
-It's best to install hardhat via [nvm](https://heynode.com/tutorial/install-nodejs-locally-nvm/).
+It's best to install node via [nvm](https://heynode.com/tutorial/install-nodejs-locally-nvm/).
 Once installed, try running some of the following tasks:
 
 ```shell
