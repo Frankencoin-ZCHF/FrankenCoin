@@ -89,15 +89,42 @@ describe("Basic Tests", () => {
         it("deposit XCHF to reserve pool and receive share tokens", async () => {
             let amount = floatToDec18(25);
             let balanceBefore = await reservePoolContract.balanceOf(owner);
+            let balanceBeforeZCHF = await ZCHFContract.balanceOf(owner);
             await ZCHFContract.transferAndCall(reservePoolContract.address, amount, 0);
             let balanceAfter = await reservePoolContract.balanceOf(owner);
+            let balanceAfterZCHF = await ZCHFContract.balanceOf(owner);
             let poolTokenShares = dec18ToFloat(balanceAfter.sub(balanceBefore));
+            let ZCHFReceived = dec18ToFloat(balanceAfterZCHF.sub(balanceBeforeZCHF));
             let isPoolShareAmountCorrect = poolTokenShares==25;
-            if(!isPoolShareAmountCorrect) {
+            let isSenderBalanceCorrect = ZCHFReceived==-25;
+            if(!isPoolShareAmountCorrect || !isSenderBalanceCorrect) {
                 console.log("Pool token shares received = ", poolTokenShares);
+                console.log("ZCHF tokens deposited = ", -ZCHFReceived);
                 expect(isPoolShareAmountCorrect).to.be.true;
+                expect(isSenderBalanceCorrect).to.be.true;
             }
 
+        });
+        it("redeem shares", async () => {
+            let balance = await reservePoolContract.redeemableBalance(owner);
+            expect(balance).to.be.equal(floatToDec18(25));
+            let amountD18 = floatToDec18(25);
+            let balanceBefore = await reservePoolContract.balanceOf(owner);
+            let balanceBeforeZCHF = await ZCHFContract.balanceOf(owner); 
+            await reservePoolContract.redeem(amountD18);
+            let balanceAfter = await reservePoolContract.balanceOf(owner);
+            let balanceAfterZCHF = await ZCHFContract.balanceOf(owner);
+            
+            let poolTokenSharesRec = dec18ToFloat(balanceAfter.sub(balanceBefore));
+            let ZCHFReceived = dec18ToFloat(balanceAfterZCHF.sub(balanceBeforeZCHF));
+            let isZCHFAmountCorrect = ZCHFReceived==25;
+            let isPoolShareAmountCorrect = poolTokenSharesRec==-25;
+            if(!isZCHFAmountCorrect || !isZCHFAmountCorrect) {
+                console.log("ZCHF tokens received = ", ZCHFReceived);
+                console.log("Pool shares redeemed = ", -poolTokenSharesRec);
+                expect(isPoolShareAmountCorrect).to.be.true;
+                expect(isZCHFAmountCorrect).to.be.true;
+            }
         });
     });
 
