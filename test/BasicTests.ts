@@ -9,7 +9,7 @@ let ZCHFContract, reservePoolContract, mintingHubContract, accounts;
 let owner;
 
 describe("Basic Tests", () => {
-
+    
     before(async () => {
         accounts = await ethers.getSigners();
         owner = accounts[0].address;
@@ -40,9 +40,29 @@ describe("Basic Tests", () => {
             let limit : BigNumber = floatToDec18(100_000);
             bridge = await createContract("StablecoinBridge", [otherAddr, ZCHFContract.address, limit]);
         });
-        it("minter of XCHF-bridge should receive ZCHF", async () => {
+        it("minting fails if not approved", async () => {
             let amount = floatToDec18(100);
             let tx1 = await mockXCHF.mint(owner, amount);
+            let balanceBefore = await ZCHFContract.balanceOf(owner);
+            await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
+            // set allowance
+            await expect(bridge.connect(accounts[0])["mint(uint256)"](amount)).to.be.revertedWith("not approved minter");
+        });
+        it("bootstrap suggestMinter", async () => {
+            let applicationPeriod = BN.from(0);
+            let applicationFee = BN.from(0);
+            let msg = "XCHF Bridge"
+            await expect(ZCHFContract.suggestMinter(bridge.address, applicationPeriod, 
+                applicationFee, msg)).to.emit(ZCHFContract, "MinterApplied");
+            // increase block to be a minter
+            await hre.ethers.provider.send('evm_increaseTime', [60]); 
+            await network.provider.send("evm_mine") 
+            let isMinter = await ZCHFContract.isMinter(bridge.address);
+            expect(isMinter).to.be.true;
+        });
+
+        it("minter of XCHF-bridge should receive ZCHF", async () => {
+            let amount = floatToDec18(100);
             let balanceBefore = await ZCHFContract.balanceOf(owner);
             // set allowance
             await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
