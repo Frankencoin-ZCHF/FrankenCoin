@@ -101,7 +101,7 @@ contract Frankencoin is ERC20, IFrankencoin {
    }
 
    function isMinter(address minter) override public view returns (bool){
-      return block.timestamp > minters[minter];
+      return minters[minter]!=0 && block.timestamp > minters[minter];
    }
 
    function reserves() external view returns (uint256) {
