@@ -43,7 +43,11 @@ describe("Basic Tests", () => {
             let amount = floatToDec18(100);
             let tx1 = await mockXCHF.mint(owner, amount);
             let balanceBefore = await ZCHFContract.balanceOf(owner);
-            let tx2 = await mockXCHF.connect(accounts[0]).transfer(bridge.address, amount);
+            // set allowance
+            await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
+            // https://stackoverflow.com/questions/70364713/hardhat-test-functionname-is-not-a-function
+            // if you declared two mint functions then you have to explicitly use the fully qualified signature
+            let tx2 = await bridge.connect(accounts[0])["mint(uint256)"](amount);
             let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
             let balanceAfter = await ZCHFContract.balanceOf(owner);
             let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));

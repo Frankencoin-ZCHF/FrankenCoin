@@ -10,5 +10,13 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "declaration": true,
-  }
+  },
+  "include": [
+      "./scripts",
+      "./test",
+      "./typechain"
+  ],
+  "files": [
+      "./hardhat.config.ts"
+  ]
 }
