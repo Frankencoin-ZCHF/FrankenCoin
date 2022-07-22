@@ -1,7 +1,6 @@
 # FrankenCoin Genesis
 
 It shall support a wide range of collateralized minting methods that are governed by a democratic process.
-See 
 * Find more details under [website](website/frontpage.md)
 * [Frankencoin Research Paper](https://www.snb.ch/n/mmr/reference/sem_2022_06_03_maire/source/sem_2022_06_03_maire.n.pdf)
 ## Contracts overview
