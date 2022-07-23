@@ -40,12 +40,30 @@ contract MintingHub {
         zchf = IFrankencoin(_zchf);
     }
 
-    function openPosition(address collateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 fees, uint32 reserve) public returns (address) {
-        Position pos = new Position(msg.sender, address(zchf), collateral, initialCollateral, initialLimit, duration, fees, reserve);
+     /**
+     * @notice open a collateralized loan position
+     * @param _collateral        address of collateral token
+     * @param _initialCollateral amount of initial collateral to be deposited
+     * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner 
+     * @param _duration          maturity of the loan in unit of timestamp (seconds)
+     * @param _fees              percentage minting fee that will be added to reserve,
+     *                          basis 1000_000
+     * @param _reserve           percentage reserve amount that is added as the 
+     *                          borrower's stake into reserve, basis 1000_000
+     * @return address of resulting position
+     */
+    function openPosition(address _collateral, uint256 _initialCollateral, uint256 _initialLimit, 
+        uint256 _duration, uint32 _fees, uint32 _reserve) public returns (address) 
+    {
+        Position pos = new Position(msg.sender, address(zchf), _collateral, _initialCollateral, _initialLimit, _duration, _fees, _reserve);
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, zchf.reserve(), OPENING_FEE);
-        IERC20(collateral).transferFrom(msg.sender, address(pos), initialCollateral);
+        IERC20(_collateral).transferFrom(msg.sender, address(pos), _initialCollateral);
         return address(pos);
+    }
+
+    function reserve() external view returns (IReservePool) {
+        return IReservePool(zchf.reserve());
     }
 
     function launchChallenge(Position position, uint256 size) external returns (uint32) {

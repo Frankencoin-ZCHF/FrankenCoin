@@ -32,11 +32,11 @@ contract StablecoinBridge {
         mintInternal(target, amount);
     }
 
-    function mintInternal(addres target, uint256 amount) internal {
+    function mintInternal(address target, uint256 amount) internal {
         require(block.timestamp <= horizon, "expired");
         require(chf.balanceOf(address(this)) <= limit, "limit");
-        zchf.mint(from, amount);
-    
+        zchf.mint(target, amount);
+    }
     
     function burn(uint256 amount) external {
         burnInternal(msg.sender, msg.sender, amount);

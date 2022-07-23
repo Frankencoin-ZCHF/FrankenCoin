@@ -33,7 +33,10 @@ contract Position is Ownable, IERC677Receiver {
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 limit, uint256 minted);
 
-    constructor(address owner, address _zchf, address _collateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) Ownable(owner){
+    constructor(address owner, address _zchf, address _collateral, uint256 initialCollateral, 
+        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) 
+        Ownable(owner)
+    {
         hub = IMintingHub(msg.sender);
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
@@ -43,7 +46,8 @@ contract Position is Ownable, IERC677Receiver {
         creation = block.timestamp;
         restrictMinting(7 days);
         minChallenge = initialCollateral / 10;
-        hub.reserve().delegateVoteTo(owner);
+        limit = initialLimit;
+        IMintingHub(msg.sender).reserve().delegateVoteTo(owner);
         emit PositionOpened(msg.sender, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
     }
 
@@ -66,11 +70,11 @@ contract Position is Ownable, IERC677Receiver {
      * to buy reserve pool shares.
      */
     function getUsableMint(uint256 totalMint, bool beforeFees) public view returns (uint256){
-        uint256 usable = totalMint * (1000000 - reserveContribution) / 1000000;
+        uint256 usable = totalMint * (1000_000 - reserveContribution) / 1000_000;
         if (beforeFees){
             return usable;
         } else {
-            return totalMint * (1000000 - mintingFeePPM) / 1000000;
+            return totalMint * (1000_000 - mintingFeePPM) / 1000_000;
         }
     }
 
@@ -96,7 +100,9 @@ contract Position is Ownable, IERC677Receiver {
         }
     }
     
-    function onTokenTransfer(address, uint256 amount, bytes calldata) external returns (bool){
+    function onTokenTransfer(address, uint256 amount, bytes calldata) override
+        external returns (bool)
+    {
         if (msg.sender == address(collateral)){
             handleCollateral(amount);
         } else if (msg.sender == address(zchf)){
@@ -152,7 +158,7 @@ contract Position is Ownable, IERC677Receiver {
      * Withdraw any token that might have ended up on this address, except for collateral
      * and reserve tokens, which also serve as a collateral.
      */
-    function widthdraw(address token, address target, uint256 amount) external onlyOwner {
+    function withdraw(address token, address target, uint256 amount) external onlyOwner {
         require(token != zchf.reserve() || minted == 0); // if there are zchf, use them to repay first
         if (token == address(collateral)){
             require(pendingChallenges == 0, "challenges pending");

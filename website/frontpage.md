@@ -48,7 +48,7 @@ Your voting power: 1.7%
 Thereof from others delegating to you: 1.2%
 Delegate to:  [                                    ] [delegate]
 
-## Stablecoin Brides
+## Stablecoin Bridges
 
 Bridge contracts allow you to convert other Swiss Franc stablecoins 1:1 into ZCHF. The deposited stablecoins are kept in the bridge contract until another user wants to convert ZCHF back into the resprective stablecoin.
 
