@@ -13,8 +13,10 @@ import "./IReservePool.sol";
 contract ReservePool is ERC20, IReservePool {
 
     uint32 private constant QUORUM = 300;
+    uint64 private totalVoteAnchor;
 
     mapping (address => address) private delegates;
+    mapping (address => uint64) private voteAnchor;
 
     IFrankencoin public zchf;
 
@@ -43,8 +45,32 @@ contract ReservePool is ERC20, IReservePool {
         }
     }
 
+    function _beforeTokenTransfer(address from, address to, uint256 amount) virtual internal {
+        super._beforeTokenTransfer(from, to, amount);
+        adjustSenderVoteAnchor(from, amount);
+        adjustRecipientVoteAnchor(to, amount);
+    }
+
+    function adjustSenderVoteAnchor(address from, uint256 amount) internal {
+        uint256 lostVotes = votes(from) * amount / balanceOf(from);
+        totalVoteAnchor = block.number - (totalVotes() - lostVotes) / totalSupply();
+    }
+
+    // age is adjusted such that the vote count stays constant when receiving tokens
+    function adjustRecipientVoteAnchor(address to, uint256 amount) internal {
+        voteAnchor[to] = block.number - (votes(to) / (balanceOf(to) + amount));
+    }
+
+    function votes(address holder) public view returns (uint256) {
+        return balanceOf(holder) * (block.number - voteAnchor[holder]);
+    }
+
+    function totalVotes() public view returns (uint256) {
+        return totalSupply() * (block.number - totalVoteAnchor);
+    }
+
     function isQualified(address sender, address[] calldata helpers) external view returns (bool) {
-        uint256 votes = balanceOf(sender);
+        uint256 votes = votes(sender);
         for (uint i=0; i<helpers.length; i++){
             address current = helpers[i];
             require(current != sender);
@@ -52,7 +78,7 @@ contract ReservePool is ERC20, IReservePool {
             for (uint j=i+1; j<helpers.length; j++){
                 require(current != helpers[j]);
             }
-            votes += balanceOf(current);
+            votes += votes(current);
         }
         return votes * 10000 >= QUORUM * totalSupply();
     }
@@ -74,6 +100,7 @@ contract ReservePool is ERC20, IReservePool {
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf));
         uint256 total = totalSupply();
+        adjustRecipientVoteAnchor(from, amount);
         if (total == 0){
             // Initialization of first shares at 1:1
             _mint(from, amount);
@@ -89,6 +116,7 @@ contract ReservePool is ERC20, IReservePool {
 
     function redeem(uint256 shares) public returns (uint256) {
         uint256 proceeds = shares * zchf.balanceOf(address(this)) / totalSupply();
+        adjustSenderVoteAnchor(msg.sender, shares);
         _burn(msg.sender, shares);
         zchf.transfer(msg.sender, proceeds);
         require(zchf.reserveTargetFulfilled() || zchf.isMinter(msg.sender), "reserve requirement");
@@ -98,6 +126,5 @@ contract ReservePool is ERC20, IReservePool {
     function redeemableBalance(address holder) public view returns (uint256){
         return balanceOf(holder) * zchf.balanceOf(address(this)) / totalSupply();
     }
-
 
 }
