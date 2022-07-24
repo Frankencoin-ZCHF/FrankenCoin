@@ -86,7 +86,7 @@ When an owner receives $\delta$ more share-tokens, we adjust the anchor so that 
 current block and only increases later on. 
 
 To do so, we take the definition of $v_i$ and look for the new anchor
-$a_i'$ that for which the voting power after is the same as before:  
+$a_i'$ for which the voting power after depositing $\delta$ is the same as before:  
 
 $$
 b_i (\beta - a_i) \overset{!}{=} (b_i+\delta) (\beta - a_i')
@@ -99,8 +99,8 @@ a_i' = \beta - \frac{b_i (\beta - a_i)}{b_i + \delta}
 $$
 
 To have a correct total balance $V=B \beta - \bar{A}$, we adjust $\bar{A}$. 
-By the definition $\bar{A}$, we have $A \leftarrow A - b_i a_i + (b_i+\delta) a_i'$,
-which when inserting $a_i'$ simplifies to what we show in the summary.
+By the definition of $\bar{A}$, we have adjust $\bar{A}$ as $\bar{A} \leftarrow \bar{A} - b_i a_i + (b_i+\delta) a_i'$.
+When inserting $a_i'$ this formula simplifies to what we show in the summary.
 
 To summarize:
 * $A \leftarrow A +\delta \beta$
