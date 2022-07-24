@@ -22,7 +22,7 @@ It shall support a wide range of collateralized minting methods that are governe
 
 ## Voting
 
-`beforeTokenTransfer` is called with `mint` (from=address(0)) and `burn` (to=address(0)).
+`beforeTokenTransfer` is called with `mint` (from=address(0)) and `burn` (to=address(0)) and regular transfers (both from and to are not 0).
 
 * send from, to: 
     * from votes change
@@ -34,6 +34,27 @@ It shall support a wide range of collateralized minting methods that are governe
  * mint (from=0):
     * to votes unchanged now but changed anchor
     * total votes unchanged now but changed anchor
+
+### How to keep track of total votes
+Let  
+$b_i$ : balance of owner $i$  
+$B$ : total supply (sum of all $b_i$)  
+$\beta$ : block number  
+$a_i$ : anchor of owner $i$  
+$v_i$ : voting power of owner $i$  
+$V$ : total votes  
+
+We define the voting power of owner $i$ as $v_i := b_i (\beta - a_i)$, from which follows that the total votes are given by
+$V = \sum_i v_i = \sum_i b_i (\beta - a_i) = (\sum_i b_i) \beta - (\sum_i b_i a_i)$  
+
+The total supply $B$ is given by $B = (\sum_i b_i) $, and by defining $A:=(\sum_i b_i a_i)/B$ as the total
+votes anchor, such that the total voting power can be expressed with a similar formula than the individual voting power:
+$V := B (\beta - A)$.
+
+We see that $A$ only changes when the voting power of an individual changes, and hence we can keep track of the
+total voting power by updating $A$ with every transfer/mint/burn of tokens. 
+
+
 
 ## Fee calibration 
 See 
