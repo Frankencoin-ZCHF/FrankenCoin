@@ -45,20 +45,45 @@ contract ReservePool is ERC20, IReservePool {
         }
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) virtual internal {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
         super._beforeTokenTransfer(from, to, amount);
         adjustSenderVoteAnchor(from, amount);
         adjustRecipientVoteAnchor(to, amount);
     }
 
+     /**
+     * @notice Liquidity provision changes when tokens are sent or burnt,
+     *  hence we adjust totalVoteAnchor 
+     * @dev when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     *      will be to transferred to `to`
+     *      when `from` is zero, `amount` tokens will be minted for `to`.
+     *      when `to` is zero, `amount` of ``from``'s tokens will be burned.
+     * @param from      sender
+     * @param amount    amount to be sent
+     */
     function adjustSenderVoteAnchor(address from, uint256 amount) internal {
+        if (from==address(0)) {
+            return;
+        }
         uint256 lostVotes = votes(from) * amount / balanceOf(from);
-        totalVoteAnchor = block.number - (totalVotes() - lostVotes) / totalSupply();
+        totalVoteAnchor = uint64(block.number - (totalVotes() - lostVotes) / totalSupply());
     }
 
-    // age is adjusted such that the vote count stays constant when receiving tokens
+    
+    /**
+     * @notice age is adjusted such that the vote count stays constant when receiving tokens
+     * @dev when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     *      will be to transferred to `to`
+     *      when `from` is zero, `amount` tokens will be minted for `to`.
+     *      when `to` is zero, `amount` of ``from``'s tokens will be burned.
+     * @param to        receiver address
+     * @param amount    amount to be received
+     */
     function adjustRecipientVoteAnchor(address to, uint256 amount) internal {
-        voteAnchor[to] = block.number - (votes(to) / (balanceOf(to) + amount));
+        if (to==address(0)) {
+            return;
+        }
+        voteAnchor[to] = uint64(block.number - (votes(to) / (balanceOf(to) + amount)));
     }
 
     function votes(address holder) public view returns (uint256) {
@@ -70,7 +95,7 @@ contract ReservePool is ERC20, IReservePool {
     }
 
     function isQualified(address sender, address[] calldata helpers) external override view returns (bool) {
-        uint256 votes = votes(sender);
+        uint256 _votes = votes(sender);
         for (uint i=0; i<helpers.length; i++){
             address current = helpers[i];
             require(current != sender);
@@ -78,9 +103,9 @@ contract ReservePool is ERC20, IReservePool {
             for (uint j=i+1; j<helpers.length; j++){
                 require(current != helpers[j]);
             }
-            votes += votes(current);
+            _votes += votes(current);
         }
-        return votes * 10000 >= QUORUM * totalSupply();
+        return _votes * 10000 >= QUORUM * totalSupply();
     }
 
     function delegateVoteTo(address delegate) override external {
