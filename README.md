@@ -19,6 +19,22 @@ It shall support a wide range of collateralized minting methods that are governe
 | IERC20.sol            | Standard |
 | ERC20.sol             | Standard |
 
+
+## Voting
+
+`beforeTokenTransfer` is called with `mint` (from=address(0)) and `burn` (to=address(0)).
+
+* send from, to: 
+    * from votes change
+    * to votes (unchanged now but changed anchor)
+    * total votes change
+ * burn (to=0):
+    * from votes change
+    * total votes change
+ * mint (from=0):
+    * to votes unchanged now but changed anchor
+    * total votes unchanged now but changed anchor
+
 ## Fee calibration 
 See 
 [Frankencoin Research Paper](https://www.snb.ch/n/mmr/reference/sem_2022_06_03_maire/source/sem_2022_06_03_maire.n.pdf)
