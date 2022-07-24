@@ -40,19 +40,72 @@ Let
 $b_i$ : balance of owner $i$  
 $B$ : total supply (sum of all $b_i$)  
 $\beta$ : block number  
-$a_i$ : anchor of owner $i$  
+$a_i$ : a timestamp we term "anchor", of owner $i$
 $v_i$ : voting power of owner $i$  
 $V$ : total votes  
 
 We define the voting power of owner $i$ as $v_i := b_i (\beta - a_i)$, from which follows that the total votes are given by
-$V = \sum_i v_i = \sum_i b_i (\beta - a_i) = (\sum_i b_i) \beta - (\sum_i b_i a_i)$  
+
+$$
+V = \sum_i v_i = \sum_i b_i (\beta - a_i) = (\sum_i b_i) \beta - (\sum_i b_i a_i)
+$$
 
 The total supply $B$ is given by $B = (\sum_i b_i) $, and by defining $A:=(\sum_i b_i a_i)/B$ as the total
 votes anchor, such that the total voting power can be expressed with a similar formula than the individual voting power:
-$V := B (\beta - A)$.
+
+$$
+V = B (\beta - A).
+$$
 
 We see that $A$ only changes when the voting power of an individual changes, and hence we can keep track of the
-total voting power by updating $A$ with every transfer/mint/burn of tokens. 
+total voting power by updating $A$ with every transfer/mint/burn of tokens. To simplify the calculations,
+we abandon the similarity of the formulas for $v_i$ and $V$ and work with $\bar{A} := \sum_i b_i a_i$. It follows  
+
+$$
+V = B \beta - \bar{A}.
+$$
+
+#### Voting power change when tokens are sent/burnt
+We want the voting power to decrease in line with the change in balance, therefore
+we postulate that the anchor $a_i$ remains unchanged. The change in voting power therefore
+is a sole consequence of the owner's token balance $b_i$ shrinking by $\delta$.
+
+Hence by definition, $v_i := b_i (\beta - a_i)$,
+changes due to a changed balance $b_i \leftarrow b_i - \delta$.  
+To have a correct total balance $V$, we adjust $\bar{A}$. From the definition of $\bar{A}$, we can see that the following
+adjustment needs to be made for $\bar{A}$ to be correct if the token is transferred:  
+$A \leftarrow A - \delta a_i$, so that after adjusting $b_j$ for owner $j$, $\bar{A}=(\sum_i b_i a_i)$.
+
+To summarize:
+* $A \leftarrow A - \delta a_i$  
+* $a_i$ : no change
+* $b_i \leftarrow b_i - \delta$
+
+#### Voting power change when tokens are received/minted
+When an owner receives $\delta$ more share-tokens, we adjust the anchor so that their voting power remains the same at the
+current block and only increases later on. 
+
+To do so, we take the definition of $v_i$ and look for the new anchor
+$a_i'$ that for which the voting power after is the same as before:  
+
+$$
+b_i (\beta - a_i) \overset{!}{=} (b_i+\delta) (\beta - a_i')
+$$
+
+where the left hand side is the definition of $v_i$ and the right hand side is $v_i$ after receiving $\delta$ share-tokens. We get 
+
+$$
+a_i' = \beta - \frac{b_i (\beta - a_i)}{b_i + \delta}
+$$
+
+To have a correct total balance $V=B \beta - \bar{A}$, we adjust $\bar{A}$. 
+By the definition $\bar{A}$, we have $A \leftarrow A - b_i a_i + (b_i+\delta) a_i'$,
+which when inserting $a_i'$ simplifies to what we show in the summary.
+
+To summarize:
+* $A \leftarrow A +\delta \beta$
+* $a_i \leftarrow \beta - \frac{b_i (\beta - a_i)}{b_i + \delta}$
+* $b_i \leftarrow b_i + \delta$
 
 
 
