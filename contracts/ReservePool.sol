@@ -57,16 +57,14 @@ contract ReservePool is ERC20, IReservePool {
      * @dev when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
      *      will be to transferred to `to`
      *      when `from` is zero, `amount` tokens will be minted for `to`.
-     *      when `to` is zero, `amount` of ``from``'s tokens will be burned.
      * @param from      sender
      * @param amount    amount to be sent
      */
     function adjustSenderVoteAnchor(address from, uint256 amount) internal {
-        if (from==address(0)) {
-            return;
+        if (from != address(0x0)) {
+            uint256 lostVotes = votes(from) * amount / balanceOf(from);
+            totalVoteAnchor = uint64(block.number - (totalVotes() - lostVotes) / totalSupply());
         }
-        uint256 lostVotes = votes(from) * amount / balanceOf(from);
-        totalVoteAnchor = uint64(block.number - (totalVotes() - lostVotes) / totalSupply());
     }
 
     
@@ -74,16 +72,14 @@ contract ReservePool is ERC20, IReservePool {
      * @notice age is adjusted such that the vote count stays constant when receiving tokens
      * @dev when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
      *      will be to transferred to `to`
-     *      when `from` is zero, `amount` tokens will be minted for `to`.
      *      when `to` is zero, `amount` of ``from``'s tokens will be burned.
      * @param to        receiver address
      * @param amount    amount to be received
      */
     function adjustRecipientVoteAnchor(address to, uint256 amount) internal {
-        if (to==address(0)) {
-            return;
+        if (amount > 0 && to != address(0x0)) { // avoid division by zero
+            voteAnchor[to] = uint64(block.number - (votes(to) / (balanceOf(to) + amount)));
         }
-        voteAnchor[to] = uint64(block.number - (votes(to) / (balanceOf(to) + amount)));
     }
 
     function votes(address holder) public view returns (uint256) {
