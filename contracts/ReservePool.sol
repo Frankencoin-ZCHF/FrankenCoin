@@ -121,7 +121,6 @@ contract ReservePool is ERC20, IReservePool {
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
         uint256 total = totalSupply();
-        adjustRecipientVoteAnchor(from, amount);
         if (total == 0){
             // Initialization of first shares at 1:1
             _mint(from, amount);
@@ -137,7 +136,6 @@ contract ReservePool is ERC20, IReservePool {
 
     function redeem(uint256 shares) override public returns (uint256) {
         uint256 proceeds = shares * zchf.balanceOf(address(this)) / totalSupply();
-        adjustSenderVoteAnchor(msg.sender, shares);
         _burn(msg.sender, shares);
         zchf.transfer(msg.sender, proceeds);
         require(zchf.reserveTargetFulfilled() || zchf.isMinter(msg.sender), "reserve requirement");
