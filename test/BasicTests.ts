@@ -110,6 +110,7 @@ describe("Basic Tests", () => {
             let amount = floatToDec18(25);
             let balanceBefore = await reservePoolContract.balanceOf(owner);
             let balanceBeforeZCHF = await ZCHFContract.balanceOf(owner);
+            //console.log("owner = ", owner);
             await ZCHFContract.transferAndCall(reservePoolContract.address, amount, 0);
             let balanceAfter = await reservePoolContract.balanceOf(owner);
             let balanceAfterZCHF = await ZCHFContract.balanceOf(owner);
