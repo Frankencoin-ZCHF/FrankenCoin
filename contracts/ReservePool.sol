@@ -47,8 +47,10 @@ contract ReservePool is ERC20, IReservePool {
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
         super._beforeTokenTransfer(from, to, amount);
-        adjustSenderVoteAnchor(from, amount);
-        adjustRecipientVoteAnchor(to, amount);
+        if (amount > 0){
+            adjustTotalVotes(from, to, amount);
+            adjustRecipientVoteAnchor(to, amount);
+        }
     }
 
      /**
@@ -60,14 +62,23 @@ contract ReservePool is ERC20, IReservePool {
      * @param from      sender
      * @param amount    amount to be sent
      */
-    function adjustSenderVoteAnchor(address from, uint256 amount) internal {
-        if (from != address(0x0)) {
-            uint256 lostVotes = votes(from) * amount / balanceOf(from);
-            totalVoteAnchor = uint64(block.number - (totalVotes() - lostVotes) / totalSupply());
+    function adjustTotalVotes(address from, address to, uint256 amount) internal {
+        uint256 newSupply = predictNewSupply(from, to, amount);
+        uint256 lostVotes = from == address(0x0) ? 0 : votes(from) * amount / balanceOf(from);
+        totalVoteAnchor = uint64(block.number - (totalVotes() - lostVotes) / newSupply);
+    }
+
+    function predictNewSupply(address from, address to, uint256 amount) internal view returns (uint256){
+        if (from == address(0x0)){
+            assert(to != address(0x0));
+            return totalSupply() + amount; // mint
+        } else if (to == address(0x0)){
+            return totalSupply() - amount; // burn
+        } else {
+            return totalSupply(); // transfer
         }
     }
 
-    
     /**
      * @notice age is adjusted such that the vote count stays constant when receiving tokens
      * @dev when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
@@ -77,7 +88,7 @@ contract ReservePool is ERC20, IReservePool {
      * @param amount    amount to be received
      */
     function adjustRecipientVoteAnchor(address to, uint256 amount) internal {
-        if (amount > 0 && to != address(0x0)) { // avoid division by zero
+        if (to != address(0x0)) { // optimization for burn, vote anchor of null address does not matter
             voteAnchor[to] = uint64(block.number - (votes(to) / (balanceOf(to) + amount)));
         }
     }
