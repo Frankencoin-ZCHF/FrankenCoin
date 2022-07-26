@@ -105,7 +105,7 @@ contract ReservePool is ERC20, IReservePool {
             }
             _votes += votes(current);
         }
-        return _votes * 10000 >= QUORUM * totalSupply();
+        return _votes * 10000 >= QUORUM * totalVotes();
     }
 
     function delegateVoteTo(address delegate) override external {
