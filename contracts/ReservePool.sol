@@ -12,8 +12,11 @@ import "./IReservePool.sol";
  */
 contract ReservePool is ERC20, IReservePool {
 
+    // should hopefully be grouped into one storage slot
+    uint64 private totalVotesAnchorTime;
+    uint192 private totalVotesAtAnchor;
+
     uint32 private constant QUORUM = 300;
-    uint64 private totalVoteAnchor;
 
     mapping (address => address) private delegates;
     mapping (address => uint64) private voteAnchor;
@@ -48,48 +51,38 @@ contract ReservePool is ERC20, IReservePool {
     function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
         super._beforeTokenTransfer(from, to, amount);
         if (amount > 0){
-            adjustTotalVotes(from, to, amount);
-            adjustRecipientVoteAnchor(to, amount);
+            uint256 roundingLoss = adjustRecipientVoteAnchor(to, amount);
+            adjustTotalVotes(from, amount, roundingLoss);
         }
     }
 
      /**
-     * @notice Liquidity provision changes when tokens are sent or burnt,
-     *  hence we adjust totalVoteAnchor 
-     * @dev when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     *      will be to transferred to `to`
-     *      when `from` is zero, `amount` tokens will be minted for `to`.
+     * @notice Decrease the total votes anchor when tokens lose their voting power due to being moved
      * @param from      sender
      * @param amount    amount to be sent
      */
-    function adjustTotalVotes(address from, address to, uint256 amount) internal {
-        uint256 newSupply = predictNewSupply(from, to, amount);
-        uint256 lostVotes = from == address(0x0) ? 0 : votes(from) * amount / balanceOf(from);
-        totalVoteAnchor = uint64(block.number - (totalVotes() - lostVotes) / newSupply);
-    }
-
-    function predictNewSupply(address from, address to, uint256 amount) internal view returns (uint256){
-        if (from == address(0x0)){
-            assert(to != address(0x0));
-            return totalSupply() + amount; // mint
-        } else if (to == address(0x0)){
-            return totalSupply() - amount; // burn
-        } else {
-            return totalSupply(); // transfer
-        }
+    function adjustTotalVotes(address from, uint256 amount, uint256 roundingLoss) internal {
+        uint256 lostVotes = from == address(0x0) ? 0 : (block.number - voteAnchor[from]) * amount;
+        totalVotesAtAnchor = uint192(totalVotes() - roundingLoss - lostVotes);
+        totalVotesAnchorTime = uint64(block.number);
     }
 
     /**
-     * @notice age is adjusted such that the vote count stays constant when receiving tokens
-     * @dev when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     *      will be to transferred to `to`
-     *      when `to` is zero, `amount` of ``from``'s tokens will be burned.
+     * @notice the vote anchor of the recipient is moved forward such that the number of calculated
+     * votes does not change despite the higher balance.
      * @param to        receiver address
      * @param amount    amount to be received
+     * @return the number of votes lost due to rounding errors
      */
-    function adjustRecipientVoteAnchor(address to, uint256 amount) internal {
-        if (to != address(0x0)) { // optimization for burn, vote anchor of null address does not matter
-            voteAnchor[to] = uint64(block.number - (votes(to) / (balanceOf(to) + amount)));
+    function adjustRecipientVoteAnchor(address to, uint256 amount) internal returns (uint256){
+        if (to != address(0x0)) {
+            uint256 recipientVotes = votes(to); // for example 21 if 7 shares were held for 3 blocks
+            uint256 newbalance = balanceOf(to) + amount; // for example 11 if 4 shares are added
+            voteAnchor[to] = uint64(block.number - recipientVotes / newbalance); // new example anchor is only 21 / 11 = 1 block in the past
+            return recipientVotes % newbalance; // we have lost 21 % 11 = 10 votes
+        } else {
+            // optimization for burn, vote anchor of null address does not matter
+            return 0;
         }
     }
 
@@ -98,7 +91,7 @@ contract ReservePool is ERC20, IReservePool {
     }
 
     function totalVotes() public view returns (uint256) {
-        return totalSupply() * (block.number - totalVoteAnchor);
+        return totalVotesAtAnchor + totalSupply() * (block.number - totalVotesAnchorTime);
     }
 
     function isQualified(address sender, address[] calldata helpers) external override view returns (bool) {
