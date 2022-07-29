@@ -22,6 +22,7 @@ catch (e) {
 export default {
   defaultNetwork: "hardhat",
   networks: {
+    //https://hardhat.org/hardhat-runner/docs/config
       hardhat: {
           chainId: 31337,
           // hardfork: "istanbul",
@@ -47,12 +48,26 @@ export default {
         // https://sepolia.etherscan.io
         // currency SEP
         // https://sepolia.dev/#
-        url: "https://rpc.sepolia.dev",
+        //url: "https://rpc.sepolia.dev",
+        //url: "https://rpc.sepolia.dev",
+        //url: "https://rpc.sepolia.online",
+        //url: "https://www.sepoliarpc.space",
+        url: "https://rpc.sepolia.org",
+        //url: "https://rpc-sepolia.rockx.com",
         chainId: 11155111,
-        gas: 6800000,
-        gasPrice: 95000010,
+        gas: 6000000,
+        gasPrice: "auto",
         accounts: [pk],
-        timeout: 300000,
+        timeout: 100_000,
+        confirmations: 1,
+     },
+     goerli: {
+        url: "https://goerli.infura.io/v3/",
+        chainId: 5,
+        gas: "auto",
+        gasPrice: "auto",
+        accounts: [pk],
+        timeout: 50000,
         confirmations: 1,
      }
   },
