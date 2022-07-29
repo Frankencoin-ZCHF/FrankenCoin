@@ -33,22 +33,28 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // suggest minter
     const bridgeDeployment = await get("StablecoinBridge");
 
-    let applicationPeriod = BigNumber.from(0);
-    let applicationFee = BigNumber.from(0);
-    let msg = "XCHF Bridge";
-    console.log("Apply for the bridge ", bridgeDeployment.address, "to be minter via zchf.suggestMinter");
-    let tx = await zchfContract.suggestMinter(bridgeDeployment.address, applicationPeriod, applicationFee, msg);
-    tx.wait();
-    console.log("tx hash = ", tx.hash);
-    let isMinter = false;
-    let trial = 0;
-    while(!isMinter) {
-        console.log("Waiting 20s...");
-        await sleep(20*1000);
-        isMinter = trial>3 || await zchfContract.isMinter(bridgeDeployment.address);
-        console.log("Is minter? ", isMinter);
-        trial+=1;
+    let isAlreadyMinter = await zchfContract.isMinter(bridgeDeployment.address);
+    if (isAlreadyMinter) {
+        console.log(bridgeDeployment.address, "already is a minter");
+    } else {
+        let applicationPeriod = BigNumber.from(0);
+        let applicationFee = BigNumber.from(0);
+        let msg = "XCHF Bridge";
+        console.log("Apply for the bridge ", bridgeDeployment.address, "to be minter via zchf.suggestMinter");
+        let tx = await zchfContract.suggestMinter(bridgeDeployment.address, applicationPeriod, applicationFee, msg);
+        tx.wait();
+        console.log("tx hash = ", tx.hash);
+        let isMinter = false;
+        let trial = 0;
+        while(!isMinter) {
+            console.log("Waiting 20s...");
+            await sleep(20*1000);
+            isMinter = trial>3 || await zchfContract.isMinter(bridgeDeployment.address);
+            console.log("Is minter? ", isMinter);
+            trial+=1;
+        }
     }
+    
 
 };
 export default deploy;

@@ -1,5 +1,6 @@
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import { Contract } from "ethers";
+export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export const deployContract = async (hre: HardhatRuntimeEnvironment, contractName: string, args?: any[]): Promise<Contract> => {
     const {
