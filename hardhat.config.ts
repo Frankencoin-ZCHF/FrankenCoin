@@ -2,6 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import { ethers } from "ethers";
 import { SigningKey } from "@ethersproject/signing-key";
 import "@nomicfoundation/hardhat-toolbox";
+import "hardhat-deploy";
 
 const config: HardhatUserConfig = {
   solidity: "0.8.9",
@@ -42,108 +43,18 @@ export default {
           timeout: 30000000,
           url: "http://localhost:8545",
       },
-      ropsten: {
-          url: "https://ropsten.infura.io/v3/[Project_ID]",
-          chainId: 3,
-          gas: 6000000,
-          // gasPrice: 10000000000,
-          accounts: [pk],
-          timeout: 300000,
-          confirmations: 2,
-      },
-      // rinkeby: {
-      //     url: process.env.RINKEBY_ENDPOINT,
-      //     chainId: 4,
-      //     gas: 7000000,
-      //     // gasPrice: 10000000000,
-      //     accounts: [pk],
-      //     timeout: 300000,
-      //     confirmations: 2,
-      // },
-      matic: {
-          url: "https://polygon-mumbai.infura.io/v3/[Project_ID]",
-          chainId: 80001,
-          gas: 6000000,
-          // gasPrice: 10000000000,
-          accounts: [pk],
-          timeout: 300000,
-          confirmations: 2,
-      },
-      matic_mumbai: {
-          url: "https://matic-mumbai.chainstacklabs.com",
-          network_id: 80001,
-          accounts: [pk],
-          gasPrice: 1000000000,
-          gas: 10000000,
-          timeout: 300000,
-      },
-      kovan: {
-          url: "https://kovan.infura.io/v3/",
-          gasPrice: 1e9,
-          // accounts: [""],
-          timeout: 300000,
-          confirmations: 1,
-      },
-      bscTestnet: {
-          // url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-          // url: "https://data-seed-prebsc-2-s1.binance.org:8545/",
-          // url: "https://data-seed-prebsc-1-s2.binance.org:8545/",
-          // url: "https://data-seed-prebsc-2-s2.binance.org:8545/",
-          // url: "https://data-seed-prebsc-1-s3.binance.org:8545/",
-          // url: "https://data-seed-prebsc-2-s3.binance.org:8545/",
-          url: "https://bsc.sovryn.app/testnet",
-          chainId: 97,
-          gas: 6000000,
-          accounts: [pk],
-          timeout: 300000,
-          confirmations: 1,
-      },
-      bscTestnetCompetition: {
-          // url: "https://data-seed-prebsc-1-s1.binance.org:8545/", //
-          url: "https://data-seed-prebsc-2-s1.binance.org:8545/",
-          // url: "https://data-seed-prebsc-1-s2.binance.org:8545/",
-          // url: "https://data-seed-prebsc-2-s2.binance.org:8545/", //
-          // url: "https://data-seed-prebsc-1-s3.binance.org:8545/",
-          // url: "https://data-seed-prebsc-2-s3.binance.org:8545/", //
-          // url: "https://bsc.sovryn.app/testnet/",
-          // url: 'https://data-seed-prebsc-1-s1.binance.org:8545/',
-          // url: "https://bsctestnet.sovryn.app/",
-          chainId: 97,
-          gas: 10000000,
-          gasPrice: 12e9,
-          accounts: [pk],
-          timeout: 300000,
-          confirmations: 1,
-          funds: {
-              paymasterAmount: 0.1,
-          }
-      },
-      bscMainnet: {
-          // url: "https://bsc-dataseed.binance.org/",
-          url: "https://bsc.sovryn.app/mainnet",
-          chainId: 56,
-          gasPrice: 10e9,
-          accounts: [pk],
-          timeout: 300000,
-          confirmations: 1,
-      },
-      arb: {
-          url: "https://kovan5.arbitrum.io/rpc",
-          gasPrice: 3e8,
-          chainId: 42161,
-          // accounts: [pk],
-          timeout: 300000,
-          confirmations: 1,
-      },
-      rsk_testnet: {
-          url: "https://testnet.sovryn.app/rpc",
-          chainId: 31,
-          gas: 6800000,
-          gasPrice: 95000010,
-          accounts: [pk],
-          timeout: 300000,
-          confirmations: 1,
-      },
+      sepolia: {
+        // https://sepolia.etherscan.io
+        // currency SEP
+        // https://sepolia.dev/#
+        url: "https://rpc.sepolia.dev",
+        chainId: 11155111,
+        gas: 6800000,
+        gasPrice: 95000010,
+        accounts: [pk],
+        timeout: 300000,
+        confirmations: 1,
+     }
   },
   solidity: {
       version: "0.8.13",

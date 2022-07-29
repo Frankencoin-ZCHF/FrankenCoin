@@ -8,7 +8,10 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy:network": "npx hardhat deploy --network",
+    "deploy:testnet": "npm run-script deploy:network sepolia",
+    "deploy:mainnet": "npm run-script deploy:network mainnet"
   },
   "repository": {
     "type": "git",
@@ -24,5 +27,8 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "hardhat": "^2.10.1"
+  },
+  "dependencies": {
+    "hardhat-deploy": "^0.11.12"
   }
 }
