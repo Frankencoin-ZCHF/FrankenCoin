@@ -10,8 +10,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy:network": "npx hardhat deploy --network",
-    "deploy:testnet": "npm run-script deploy:network sepolia",
-    "deploy:mainnet": "npm run-script deploy:network mainnet"
+    "redeploy:network": "npx hardhat deploy --reset --network"
   },
   "repository": {
     "type": "git",
