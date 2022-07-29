@@ -47,6 +47,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         await sleep(20*1000);
         isMinter = trial>3 || await zchfContract.isMinter(bridgeDeployment.address);
         console.log("Is minter? ", isMinter);
+        trial+=1;
     }
 
 };
