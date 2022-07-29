@@ -27,7 +27,7 @@ contract ReservePool is ERC20, IReservePool {
     }
 
     function initialize(address frankencoin) external {
-        require(address(zchf) == address(0x0));
+        require(address(zchf) == address(0x0), "ZCHF address already set");
         zchf = IFrankencoin(frankencoin);
     }
 
