@@ -28,8 +28,8 @@
     "hardhat": "^2.10.1"
   },
   "dependencies": {
-    "hardhat-deploy": "^0.11.12",
-    "hardhat-abi-exporter": "^2.3.0",
-    "hardhat-contract-sizer": "^2.5.1"
+    "hardhat-abi-exporter": "^2.10.0",
+    "hardhat-contract-sizer": "^2.5.1",
+    "hardhat-deploy": "^0.11.12"
   }
 }

@@ -188,6 +188,8 @@ GAS_REPORT=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
+
+ABIs can be found in `/abi` and are generated upon compilation (setting in hardhat.config.ts).
 # Deployment
 Define the private key from your deployer address as an environment variable, and then run a script with
 a parameter (e.g., `sepolia` that specifies the network:

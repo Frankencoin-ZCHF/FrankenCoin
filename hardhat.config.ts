@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { SigningKey } from "@ethersproject/signing-key";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
-
+import "hardhat-abi-exporter";
 const config: HardhatUserConfig = {
   solidity: "0.8.9",
 };
@@ -108,8 +108,8 @@ export default {
     clear: true,
     runOnCompile: true,
     flat: true,
-        spacing: 4,
-        pretty: false,
+    spacing: 4,
+    pretty: false,
 },
   mocha: {
       timeout: 120000
