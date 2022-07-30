@@ -13,7 +13,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     } = hre;
     let xchfAddress;
     let applicationMsg;
-    if (hre.network.name in ["hardhat", "localhost", "sepolia"]) {
+    if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
         console.log("Deploying Mock-XCHF-Token Bridge");
         const xchfDeployment = await get("MockXCHFToken");
         xchfAddress = xchfDeployment.address;
@@ -32,8 +32,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     
     // suggest minter
     const bridgeDeployment = await get("StablecoinBridge");
-
-    let isAlreadyMinter = await zchfContract.isMinter(bridgeDeployment.address);
+    let bridgeAddr : string = bridgeDeployment.address;
+    let isAlreadyMinter = await zchfContract.isMinter(bridgeAddr, { gasLimit: 1_000_000 });
     if (isAlreadyMinter) {
         console.log(bridgeDeployment.address, "already is a minter");
     } else {
@@ -41,15 +41,15 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         let applicationFee = BigNumber.from(0);
         let msg = "XCHF Bridge";
         console.log("Apply for the bridge ", bridgeDeployment.address, "to be minter via zchf.suggestMinter");
-        let tx = await zchfContract.suggestMinter(bridgeDeployment.address, applicationPeriod, applicationFee, msg);
-        tx.wait();
+        let tx = await zchfContract.suggestMinter(bridgeDeployment.address, applicationPeriod, applicationFee, msg, { gasLimit: 3_000_000 });
+        await tx.wait();
         console.log("tx hash = ", tx.hash);
         let isMinter = false;
         let trial = 0;
-        while(!isMinter) {
+        while(!isMinter && trial<5) {
             console.log("Waiting 20s...");
             await sleep(20*1000);
-            isMinter = trial>3 || await zchfContract.isMinter(bridgeDeployment.address);
+            isMinter = await zchfContract.isMinter(bridgeAddr, { gasLimit: 1_000_000 });
             console.log("Is minter? ", isMinter);
             trial+=1;
         }

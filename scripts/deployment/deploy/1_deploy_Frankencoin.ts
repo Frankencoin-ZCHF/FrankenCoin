@@ -1,4 +1,3 @@
-
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import { ethers } from "hardhat";
@@ -15,13 +14,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await deployContract(hre, "Frankencoin", [reservePoolContract.address]);
     const zchf = await get("Frankencoin");
     let zchfContract = await ethers.getContractAt("Frankencoin", zchf.address);
-    let zchfSetAddr = await reservePoolContract.zchf();
-    if (zchfSetAddr==ZERO_ADDRESS) {
+    
+    try {
         let tx = await reservePoolContract.initialize(zchfContract.address);
         console.log("reservePoolContract initialized to Frankencoin address", zchfContract.address);
         await tx.wait();
-    } else {
-        console.log("reservePoolContract *already* initialized to Frankencoin address", zchfSetAddr);
+    } catch(e){
+        console.log("reservePoolContract init failed: likely *already* initialized to Frankencoin address");
     }
     
     

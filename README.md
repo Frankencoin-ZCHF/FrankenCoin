@@ -190,7 +190,7 @@ npx hardhat run scripts/deploy.ts
 ```
 # Deployment
 Define the private key from your deployer address as an environment variable, and then run a script with
-a parameter that specifies the network:
+a parameter (e.g., `sepolia` that specifies the network:
 
 `export PK=322...` 
 `npm run-script deploy:network sepolia`
