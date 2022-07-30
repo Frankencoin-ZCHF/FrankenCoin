@@ -104,11 +104,12 @@ export default {
       currency: 'USD',
     },
   abiExporter: {
-  path: "./abi",
-  clear: true,
-  flat: true,
-      spacing: 4,
-      pretty: false,
+    path: "./abi",
+    clear: true,
+    runOnCompile: true,
+    flat: true,
+        spacing: 4,
+        pretty: false,
 },
   mocha: {
       timeout: 120000
