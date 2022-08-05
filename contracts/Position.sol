@@ -12,40 +12,34 @@ import "./IERC677Receiver.sol";
  */
 contract Position is Ownable, IERC677Receiver {
 
-    uint256 public limit; // how much can be minted at most, including reserve
+    uint256 public price; // the zchf price per unit of the collateral below which challenges succeed
+    uint256 public immutable limit; // how many zchf can be minted at most, including reserve
     uint256 public minted; // how much has been minted so far, including reserve
 
     IMintingHub public immutable hub;
     IFrankencoin public immutable zchf; // currency
     IERC20 public immutable collateral; // collateral
 
-    uint32 public pendingChallenges;
+    uint256 public challengedAmount;
     uint32 public immutable mintingFeePPM;
-    uint32 public immutable reserveContribution;
+    uint32 public immutable reserveContribution; // in ppm
 
-    uint256 public immutable minChallenge;
-
-    uint256 public immutable creation;
     uint256 public cooldown;
     uint256 public immutable expiration;
 
     event PositionOpened(address indexed hub, address indexed owner, address collateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 fees, uint32 reserve);
     event PositionDenied(address indexed sender, string message);
-    event MintingUpdate(uint256 collateral, uint256 limit, uint256 minted);
+    event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
     constructor(address owner, address _zchf, address _collateral, uint256 initialCollateral, 
-        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) 
-        Ownable(owner)
-    {
+        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) Ownable(owner) {
         hub = IMintingHub(msg.sender);
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
         mintingFeePPM = _mintingFeePPM;
         reserveContribution = _reserve;
         expiration = block.timestamp + duration;
-        creation = block.timestamp;
         restrictMinting(7 days);
-        minChallenge = initialCollateral / 10;
         limit = initialLimit;
         IMintingHub(msg.sender).reserve().delegateVoteTo(owner);
         emit PositionOpened(msg.sender, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
@@ -57,10 +51,11 @@ contract Position is Ownable, IERC677Receiver {
     }
 
     function deny(address[] calldata helpers, string calldata message) public {
-        require(minted == 0, "minted");
-        require(block.timestamp <= creation + 3 days, "too late");
+        require(minted == 0, "minted"); // must deny before any tokens are minted
         require(IReservePool(zchf.reserve()).isQualified(msg.sender, helpers), "not qualified");
         collateral.transfer(owner, collateral.balanceOf(address(this)));
+        zchf.transfer(owner, zchf.balanceOf(address(this)));
+        IERC20(zchf.reserve()).transfer(owner, IERC20(zchf.reserve()).balanceOf(address(this)));
         emit PositionDenied(msg.sender, message);
         selfdestruct(payable(owner));
     }
@@ -78,19 +73,26 @@ contract Position is Ownable, IERC677Receiver {
         }
     }
 
-    function pushlimit(uint256 newlimit) public onlyOwner noChallenge {
-        if (newlimit > limit){
+    function adjustPrice(uint256 newPrice) public onlyOwner noChallenge {
+        if (newPrice > price) {
             restrictMinting(3 days);
+        } else {
+            require(isWellCollateralized(newPrice));
         }
-        limit = newlimit;
-        emit MintingUpdate(IERC20(collateral).balanceOf(address(this)), limit, minted);
+        price = newPrice;
+        emitUpdate();
+    }
+
+    function collateralBalance() internal view returns (uint256){
+        return IERC20(collateral).balanceOf(address(this));
     }
 
     function mint(address target, uint256 amount) public onlyOwner noChallenge noMintRestriction {
         require(minted + amount <= limit);
         zchf.mint(target, amount, reserveContribution, mintingFeePPM);
         minted += amount;
-        emit MintingUpdate(IERC20(collateral).balanceOf(address(this)), limit, minted);
+        require(isWellCollateralized(price));
+        emitUpdate();
     }
 
     function restrictMinting(uint256 period) internal {
@@ -100,13 +102,10 @@ contract Position is Ownable, IERC677Receiver {
         }
     }
     
-    function onTokenTransfer(address, uint256 amount, bytes calldata) override
-        external returns (bool)
-    {
-        if (msg.sender == address(collateral)){
-            handleCollateral(amount);
-        } else if (msg.sender == address(zchf)){
-            repay();
+    function onTokenTransfer(address sender, uint256 amount, bytes calldata) override external returns (bool) {
+        if (msg.sender == address(zchf)){
+            require(sender == owner);
+            repayInternal(amount);
         } else {
             require(false);
         }
@@ -125,33 +124,20 @@ contract Position is Ownable, IERC677Receiver {
         }
     }
 
-    function repay(uint256 amount) public {
+    function repay(uint256 amount) public onlyOwner {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
-        repay();
+        repayInternal(amount);
     }
 
-    function repay() public {
-        uint256 outstanding = getOutstandingAmount();
-        uint256 balance = IERC20(zchf).balanceOf(address(this));
-        if (balance > outstanding){
-            balance = outstanding;
-        }
-        balance += IReservePool(IFrankencoin(zchf).reserve()).redeemFraction(1000000 * balance / outstanding);
-        if (balance > minted){
-            balance = minted;
-        }
-        IFrankencoin(zchf).burn(balance, reserveContribution);
-        minted -= balance;
-        emit MintingUpdate(IERC20(collateral).balanceOf(address(this)), limit, minted);
+    function repay() public onlyOwner {
+        repayInternal(IERC20(zchf).balanceOf(address(this)));
     }
 
-    function handleCollateral(uint256 amount) internal {
-        uint256 balanceAfter = IERC20(collateral).balanceOf(address(this));
-        if (balanceAfter > amount){
-            // proportionally increase limit as collateral arrives
-            limit = limit * balanceAfter / (balanceAfter - amount);
-        }
-        emit MintingUpdate(balanceAfter, limit, minted);
+    function repayInternal(uint256 burnable) internal noChallenge {
+        require(burnable <= minted);
+        IFrankencoin(zchf).burn(burnable, reserveContribution);
+        minted -= burnable;
+        emitUpdate();
     }
 
     /**
@@ -159,27 +145,48 @@ contract Position is Ownable, IERC677Receiver {
      * and reserve tokens, which also serve as a collateral.
      */
     function withdraw(address token, address target, uint256 amount) external onlyOwner {
-        require(token != zchf.reserve() || minted == 0); // if there are zchf, use them to repay first
-        if (token == address(collateral)){
-            require(pendingChallenges == 0, "challenges pending");
-            uint256 current = IERC20(collateral).balanceOf(address(this));
-            limit = limit * (current - amount) / current;
-            require(minted <= limit);
-            emit MintingUpdate(current - amount, limit, minted);
+        if (token == zchf.reserve()){
+            uint256 requiredPoolShareValue = minted * reserveContribution / 1000000;
+            uint256 actualPoolShareValue = IReservePool(zchf.reserve()).redeemableBalance(address(this));
+            if (requiredPoolShareValue < actualPoolShareValue){
+                uint256 redeemableShares = (actualPoolShareValue - requiredPoolShareValue) * IERC20(zchf.reserve()).balanceOf(address(this)) / actualPoolShareValue;
+                require(amount <= redeemableShares, "not enough free pool shares");
+                IERC20(token).transfer(target, amount);
+            } else {
+                require(false);
+            }
+        } else if (token == address(collateral)){
+            withdrawCollateral(target, amount);
+        } else {
+            IERC20(token).transfer(target, amount);
         }
-        IERC20(token).transfer(target, amount);
     }
 
-    function notifyChallengeStarted() external onlyHub {
-        pendingChallenges++;
+    function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge {
+        IERC20(collateral).transfer(target, amount);
+        require(isWellCollateralized(price));
+        emitUpdate();
+    }
+
+    function isWellCollateralized(uint256 atPrice) internal view returns (bool) {
+        return collateralBalance() * atPrice >= minted;
+    }
+
+    function emitUpdate() internal {
+        emit MintingUpdate(collateralBalance(), price, minted, limit);
+    }
+
+    function notifyChallengeStarted(uint256 size) external onlyHub {
+        challengedAmount += price * size;
     }
 
     function tryAvertChallenge(uint256 size, uint256 bid) external onlyHub returns (bool) {
         if (block.timestamp >= expiration){
             return false; // position expired, let every challenge succeed
-        } else if (bid * IERC20(collateral).balanceOf(address(this)) >= limit * size){
+        } else if (bid >= price * size){
             // challenge averted, bid is high enough
-            pendingChallenges--;
+            challengedAmount -= price * size;
+            // don't allow minter to close the position immediately so challenge can be repeated
             restrictMinting(1 days);
             return true;
         } else {
@@ -191,20 +198,23 @@ contract Position is Ownable, IERC677Receiver {
      * Notifies the position that a challenge was successful.
      * Triggers the payout of the challenged part of the collateral.
      * Returns three important numbers:
-     *  - repay: the amount that is needed to repay for the acutally minted zchf wit the challenged collateral
+     *  - repay: the amount that is needed to repay for the actually minted zchf wit the challenged collateral
      *  - minted: the number of zchf that where actually minted and used using the challenged collateral
      *  - mintmax: the maximum number of zchf that could have been minted and used using the challenged collateral 
      */
-    function notifyChallengeSucceeded(address bidder, uint256 size) external onlyHub returns (uint256, uint256, uint256){
-        pendingChallenges--;
-        uint32 usagePPM = uint32(minted * 1000000 / limit);
-        uint32 challengedPPM = uint32(size * 1000000 / IERC20(collateral).balanceOf(address(this)));
-
+    function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external onlyHub returns (uint256, uint256, uint256){
+        uint256 volume = price * size;
+        challengedAmount -= volume;
+        if (volume > minted){
+            volume = minted;
+            size = size * minted / volume;
+            bid = bid * minted / volume;
+        }
+        // transfer collateral to the bidder
         IERC20(collateral).transfer(bidder, size);
-        uint256 limitBefore = limit;
-        limit = limit * challengedPPM / 1000000;
-        uint256 challengedRange = (limitBefore - limit) * (1000000 - reserveContribution) / 1000000;
-        return (getOutstandingAmount() * challengedPPM, challengedRange * usagePPM / 1000000, challengedRange);
+        uint32 challengedPPM = uint32((volume) * 1000000 / minted);
+        uint256 redeemed = IReservePool(zchf.reserve()).redeemFraction(address(hub), challengedPPM);
+        return (bid, volume, redeemed);
     }
 
     modifier noMintRestriction() {
@@ -213,7 +223,7 @@ contract Position is Ownable, IERC677Receiver {
     }
 
     modifier noChallenge() {
-        require(pendingChallenges == 0, "challenges pending");
+        require(challengedAmount == 0, "challenges pending");
         _;
     }
 

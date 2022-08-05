@@ -27,7 +27,7 @@ contract ReservePool is ERC20, IReservePool {
     }
 
     function initialize(address frankencoin) external {
-        require(address(zchf) == address(0x0), "ZCHF address already set");
+        require(address(zchf) == address(0x0));
         zchf = IFrankencoin(frankencoin);
     }
 
@@ -125,6 +125,7 @@ contract ReservePool is ERC20, IReservePool {
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
         uint256 total = totalSupply();
+        assert(total + amount < 2**90);
         if (total == 0){
             // Initialization of first shares at 1:1
             _mint(from, amount);
@@ -134,14 +135,14 @@ contract ReservePool is ERC20, IReservePool {
         return true;
     }
 
-    function redeemFraction(uint256 partsPerMillion) override external returns (uint256){
-        return redeem(partsPerMillion * balanceOf(msg.sender) / 1000000);
+    function redeemFraction(address target, uint256 partsPerMillion) override external returns (uint256){
+        return redeem(target, partsPerMillion * balanceOf(msg.sender) / 1000000);
     }
 
-    function redeem(uint256 shares) override public returns (uint256) {
+    function redeem(address target, uint256 shares) override public returns (uint256) {
         uint256 proceeds = shares * zchf.balanceOf(address(this)) / totalSupply();
         _burn(msg.sender, shares);
-        zchf.transfer(msg.sender, proceeds);
+        zchf.transfer(target, proceeds);
         require(zchf.reserveTargetFulfilled() || zchf.isMinter(msg.sender), "reserve requirement");
         return proceeds;
     }

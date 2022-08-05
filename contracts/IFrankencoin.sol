@@ -14,6 +14,8 @@ interface IFrankencoin is IERC20 {
     function reserve() external view returns (address);
 
     function isMinter(address minter) external view returns (bool);
+
+    function isPosition(address position) external view returns (address);
     
     function mint(address target, uint256 amount) external;
 
