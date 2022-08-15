@@ -23,6 +23,8 @@ contract ReservePool is ERC20, IReservePool {
 
     IFrankencoin public zchf;
 
+    event Delegation(address indexed from, address indexed to);
+
     constructor() ERC20(18){
     }
 
@@ -110,6 +112,7 @@ contract ReservePool is ERC20, IReservePool {
 
     function delegateVoteTo(address delegate) override external {
         delegates[msg.sender] = delegate;
+        emit Delegation(msg.sender, delegate);
     }
 
     function canVoteFor(address delegate, address owner) public view returns (bool) {
