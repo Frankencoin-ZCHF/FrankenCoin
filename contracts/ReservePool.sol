@@ -18,7 +18,7 @@ contract ReservePool is ERC20, IReservePool {
 
     uint32 private constant QUORUM = 300;
 
-    mapping (address => address) private delegates;
+    mapping (address => address) public delegates;
     mapping (address => uint64) private voteAnchor;
 
     IFrankencoin public zchf;
