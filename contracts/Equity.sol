@@ -10,7 +10,7 @@ import "./ReservePool.sol";
 /** 
  * @title Reserve pool for the Frankencoin
  */
-contract ReservePool is ReservePool {
+contract Equity is ReservePool {
 
     uint32 public constant VALUATION_FACTOR = 3;
 

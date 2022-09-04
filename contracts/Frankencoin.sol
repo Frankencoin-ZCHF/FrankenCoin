@@ -11,6 +11,7 @@ contract Frankencoin is ERC20, IFrankencoin {
    uint256 public constant MIN_APPLICATION_PERIOD = 10 days;
 
    IReservePool override public immutable reserve;
+   uint256 public minterReserve;
 
    mapping (address => uint256) public minters;
    mapping (address => address) public positions;
@@ -63,7 +64,7 @@ contract Frankencoin is ERC20, IFrankencoin {
       uint256 fees = amount * feesPPM / 1000_000;
       _mint(target, amount - mintAmount - fees);
       _mint(address(reserve), mintAmount + fees);
-      ((ReservePool)(address(reserve))).bookRequiredReserves(target, reserveAmount);
+      minterReserve += reserveAmount;
    }
 
    function mint(address target, uint256 amount) override external minterOnly {
@@ -74,9 +75,18 @@ contract Frankencoin is ERC20, IFrankencoin {
       _burn(msg.sender, amount);
    }
 
-   function burn(uint256 amount, uint32 reservePPM) override external minterOnly {
-      _burn(msg.sender, amount);
-      ((ReservePool)(address(reserve))).notifyReservesConsumed(reservePPM * amount);
+   function burnWithReserve(uint256 amountExcludingReserve, uint32 reservePPM) external minterOnly returns (uint256) {
+      _burn(msg.sender, amountExcludingReserve);
+      uint256 reserveBurn = reservePPM * amountExcludingReserve / (1000000 - reservePPM);
+      // TODO: think about how this should be done correctly.... :)
+      uint256 newMinterReserve = minterReserve - reserveBurn;
+      uint256 currentReserve = balanceOf(address(reserve));
+      if (currentReserve < minterReserve){
+         reserveAmount = reserveAmount * currentReserve / minterReserve; // reduce proportionally
+      }
+      minterReserve = newMinterReserve;
+      _burn(address(reserve), reserveAmount);
+      return amountExcludingReserve + reserveBurn;
    }
 
    function burn(address owner, uint256 amount) override external minterOnly {

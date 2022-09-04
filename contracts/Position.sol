@@ -155,8 +155,8 @@ contract Position is Ownable, IERC677Receiver, IPosition {
 
     function repayInternal(uint256 burnable) internal noChallenge {
         require(burnable <= minted);
-        IFrankencoin(zchf).burn(burnable, reserveContribution);
-        minted -= burnable;
+        uint256 actuallyBurned = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
+        minted -= actuallyBurned;
         emitUpdate();
     }
 
