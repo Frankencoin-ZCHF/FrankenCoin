@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./IERC20.sol";
+import "./IReservePool.sol";
 
 interface IFrankencoin is IERC20 {
 
@@ -11,7 +12,7 @@ interface IFrankencoin is IERC20 {
 
     function denyMinter(address minter, address[] calldata helpers, string calldata message) external;
 
-    function reserve() external view returns (address);
+    function reserve() external view returns (IReservePool);
 
     function isMinter(address minter) external view returns (bool);
 
@@ -26,7 +27,5 @@ interface IFrankencoin is IERC20 {
     function burn(address target, uint256 amount) external;
 
     function notifyLoss(uint256 amount) external;
-
-    function reserveTargetFulfilled() external view returns (bool);
 
 }

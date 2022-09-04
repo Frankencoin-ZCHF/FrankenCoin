@@ -56,20 +56,19 @@ contract MintingHub {
      */
     function openPosition(address _collateral, uint256 _initialCollateral, uint256 _initialLimit, 
         uint256 _duration, uint32 _fees, uint32 _reserve) public returns (address) {
-        IPosition pos = POSITION_FACTORY.create(msg.sender, address(zchf), _collateral, _initialCollateral, _initialLimit, _duration, _fees, _reserve);
+        IPosition pos = POSITION_FACTORY.create(msg.sender, address(zchf), h, _initialCollateral, _initialLimit, _duration, _fees, _reserve);
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, zchf.reserve(), OPENING_FEE);
         IERC20(_collateral).transferFrom(msg.sender, address(pos), _initialCollateral);
         return address(pos);
     }
 
-    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialLimit) public returns (address) {
+    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public returns (address) {
         require(zchf.isPosition(position) == address(this), "not our pos");
-        require(_initialLimit <= IPosition(position).getImpliedPriceE18() * _initialCollateral / 10**18);
-        IPosition pos = POSITION_FACTORY.clone(position, _initialCollateral, _initialLimit);
+        IPosition pos = POSITION_FACTORY.clone(position, msg.sender, _initialCollateral, _initialMint);
+        IERC20(pos.collateral()).transferFrom(msg.sender, address(pos), _initialCollateral);
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, zchf.reserve(), OPENING_FEE);
-        IERC20(pos.collateral()).transferFrom(msg.sender, address(pos), _initialCollateral);
         return address(pos);
     }
 
@@ -134,7 +133,8 @@ contract MintingHub {
         require(block.timestamp >= challenge.end);
         // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
         collateral.transfer(challenge.challenger, challenge.size); // return the challenger's collateral
-        // notify the position that will send the collateral to the bidder
+        // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
+        address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
         (uint256 relevantBid, uint256 volume, uint256 redeemed) = challenge.position.notifyChallengeSucceeded(challenge.bidder, challenge.bid, challenge.size);
 
         if (relevantBid < challenge.bid){ // overbid, return excess amount

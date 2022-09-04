@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./IERC20.sol";
+import "./IPosition.sol";
 import "./IReservePool.sol";
 import "./IFrankencoin.sol";
 import "./Ownable.sol";
@@ -10,44 +11,58 @@ import "./IERC677Receiver.sol";
 /**
  * A collateralized minting position.
  */
-contract Position is Ownable, IERC677Receiver {
+contract Position is Ownable, IERC677Receiver, IPosition {
 
     uint256 public price; // the zchf price per unit of the collateral below which challenges succeed
-    uint256 public immutable limit; // how many zchf can be minted at most, including reserve
     uint256 public minted; // how much has been minted so far, including reserve
-
-    IMintingHub public immutable hub;
-    IFrankencoin public immutable zchf; // currency
-    IERC20 public immutable collateral; // collateral
-
     uint256 public challengedAmount;
-    uint32 public immutable mintingFeePPM;
-    uint32 public immutable reserveContribution; // in ppm
 
     uint256 public cooldown;
+    uint256 public limit; // how many zchf can be minted at most, including reserve
     uint256 public immutable expiration;
+
+    IPositionFactory public immutable factory;
+    IFrankencoin public immutable zchf; // currency
+    IERC20 public immutable collateral; // collateral
+    uint256 public immutable minimumCollateral; // prevent dust amounts
+
+    uint32 public immutable mintingFeePPM;
+    uint32 public immutable reserveContribution; // in ppm
 
     event PositionOpened(address indexed hub, address indexed owner, address collateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 fees, uint32 reserve);
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
-    constructor(address owner, address _zchf, address _collateral, uint256 initialCollateral, 
+    constructor(address owner, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, 
         uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) Ownable(owner) {
-        hub = IMintingHub(msg.sender);
+        factory = IPositionFactory(msg.sender);
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
         mintingFeePPM = _mintingFeePPM;
         reserveContribution = _reserve;
+        require(initialCollateral >= minCollateral);
+        minimumCollateral = minCollateral;
         expiration = block.timestamp + duration;
         restrictMinting(7 days);
         limit = initialLimit;
-        IMintingHub(msg.sender).reserve().delegateVoteTo(owner);
-        emit PositionOpened(msg.sender, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
+        emit PositionOpened(factory.hub(), owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
     }
 
-    function transferOwnership(address newOwner) override(Ownable) public {
-        super.transferOwnership(newOwner);
-        hub.reserve().delegateVoteTo(newOwner);
+    function initializeClone(address owner, uint256 price_, uint256 limit_, uint256 coll, uint256 mint_) external {
+        require(msg.sender == factory);
+        require(coll >= minimumCollateral);
+        transferOwnership(owner);
+        price = price_;
+        limit = limit_;
+        mintInternal(owner, mint_, coll);
+    }
+
+    function reduceLimitForClone(uint256 minimum) external noMintRestriction returns (uint256) {
+        require(msg.sender == address(factory));
+        require(minted + minimum <= limit);
+        uint256 reduction = (limit - minted - minimum)/2;
+        limit -= reduction;
+        return reduction + minimum;
     }
 
     function deny(address[] calldata helpers, string calldata message) public {
@@ -73,11 +88,13 @@ contract Position is Ownable, IERC677Receiver {
         }
     }
 
+    // TODO Add function to push limit?
+
     function adjustPrice(uint256 newPrice) public onlyOwner noChallenge {
         if (newPrice > price) {
             restrictMinting(3 days);
         } else {
-            require(isWellCollateralized(newPrice));
+            require(isWellCollateralized(collateralBalance(), newPrice));
         }
         price = newPrice;
         emitUpdate();
@@ -88,10 +105,14 @@ contract Position is Ownable, IERC677Receiver {
     }
 
     function mint(address target, uint256 amount) public onlyOwner noChallenge noMintRestriction {
+        mintInternal(target, amount, collateralBalance());
+    }
+
+    function mintInternal(address target, uint256 amount, uint256 collateral_) internal {
         require(minted + amount <= limit);
         zchf.mint(target, amount, reserveContribution, mintingFeePPM);
         minted += amount;
-        require(isWellCollateralized(price));
+        require(isWellCollateralized(collateral_, price));
         emitUpdate();
     }
 
@@ -104,7 +125,6 @@ contract Position is Ownable, IERC677Receiver {
     
     function onTokenTransfer(address sender, uint256 amount, bytes calldata) override external returns (bool) {
         if (msg.sender == address(zchf)){
-            require(sender == owner);
             repayInternal(amount);
         } else {
             require(false);
@@ -145,17 +165,7 @@ contract Position is Ownable, IERC677Receiver {
      * and reserve tokens, which also serve as a collateral.
      */
     function withdraw(address token, address target, uint256 amount) external onlyOwner {
-        if (token == zchf.reserve()){
-            uint256 requiredPoolShareValue = minted * reserveContribution / 1000000;
-            uint256 actualPoolShareValue = IReservePool(zchf.reserve()).redeemableBalance(address(this));
-            if (requiredPoolShareValue < actualPoolShareValue){
-                uint256 redeemableShares = (actualPoolShareValue - requiredPoolShareValue) * IERC20(zchf.reserve()).balanceOf(address(this)) / actualPoolShareValue;
-                require(amount <= redeemableShares, "not enough free pool shares");
-                IERC20(token).transfer(target, amount);
-            } else {
-                require(false);
-            }
-        } else if (token == address(collateral)){
+        if (token == address(collateral)){
             withdrawCollateral(target, amount);
         } else {
             IERC20(token).transfer(target, amount);
@@ -164,12 +174,19 @@ contract Position is Ownable, IERC677Receiver {
 
     function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge {
         IERC20(collateral).transfer(target, amount);
-        require(isWellCollateralized(price));
+        uint256 balance = collateralBalance();
+        require(isWellCollateralized(balance, price));
+        if (balance == 0){
+            // Close
+            cooldown = expiration;
+        } else {
+            require(balance >= minimumCollateral);
+        }
         emitUpdate();
     }
 
-    function isWellCollateralized(uint256 atPrice) internal view returns (bool) {
-        return collateralBalance() * atPrice >= minted;
+    function isWellCollateralized(uint256 collateralReserve, uint256 atPrice) internal view returns (bool) {
+        return collateralReserve * atPrice >= minted;
     }
 
     function emitUpdate() internal {
@@ -218,7 +235,7 @@ contract Position is Ownable, IERC677Receiver {
     }
 
     modifier noMintRestriction() {
-        require(cooldown < block.timestamp, "cooldown");
+        require(cooldown < block.timestamp && block.timestamp <= expiration, "cooldown");
         _;
     }
 
@@ -228,13 +245,8 @@ contract Position is Ownable, IERC677Receiver {
     }
 
     modifier onlyHub() {
-        require(msg.sender == address(hub), "not hub");
+        require(msg.sender == address(factory.hub()), "not hub");
         _;
     }
 
-}
-
-interface IMintingHub {
-
-    function reserve() external returns (IReservePool);
 }

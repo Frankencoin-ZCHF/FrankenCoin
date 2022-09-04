@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./IReservePool.sol";
+import "./IFrankencoin.sol";
+
 interface IPosition {
 
     function getImpliedPriceE18() external view returns (uint256);
@@ -18,5 +21,11 @@ interface IPosition {
 }
 
 interface IPositionFactory {
+
+    function reserve() external returns (IReservePool);
+
+    function hub() external returns (address);
+
+    function zchf() external returns (IFrankencoin);
 
 }

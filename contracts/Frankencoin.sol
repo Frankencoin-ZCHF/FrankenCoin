@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./ERC20.sol";
-import "./IReservePool.sol";
+import "./ReservePool.sol";
 import "./IFrankencoin.sol";
 
 contract Frankencoin is ERC20, IFrankencoin {
@@ -10,8 +10,7 @@ contract Frankencoin is ERC20, IFrankencoin {
    uint256 public constant MIN_FEE = 1000 * (10**18);
    uint256 public constant MIN_APPLICATION_PERIOD = 10 days;
 
-   address override public immutable reserve;
-   uint256 public reserveTarget;
+   IReservePool override public immutable reserve;
 
    mapping (address => uint256) public minters;
    mapping (address => address) public positions;
@@ -19,8 +18,8 @@ contract Frankencoin is ERC20, IFrankencoin {
    event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
    event MinterDenied(address indexed minter, string message);
 
-   constructor(address _reserve) ERC20(18){
-      reserve = _reserve;
+   constructor() ERC20(18){
+      reserve = new ReservePool(this);
    }
 
    function name() override external pure returns (string memory){
@@ -37,7 +36,7 @@ contract Frankencoin is ERC20, IFrankencoin {
       require(applicationPeriod >= MIN_APPLICATION_PERIOD || totalSupply() == 0, "period too short");
       require(applicationFee >= MIN_FEE || totalSupply() == 0, "fee too low");
       require(minters[minter] == 0, "already registered");
-      _transfer(msg.sender, reserve, applicationFee);
+      _transfer(msg.sender, address(reserve), applicationFee);
       minters[minter] = block.timestamp + applicationPeriod;
       emit MinterApplied(minter, applicationPeriod, applicationFee, message);
    }
@@ -60,12 +59,11 @@ contract Frankencoin is ERC20, IFrankencoin {
       uint32 feesPPM) override external minterOnly 
    {
       uint256 reserveAmount = amount * reservePPM;
-      reserveTarget += reserveAmount;
-      reserveAmount /= 1000_000;
+      uint256 mintAmount = reserveAmount / 1000_000;
       uint256 fees = amount * feesPPM / 1000_000;
-      _mint(target, amount - reserveAmount - fees);
-      _mint(reserve, reserveAmount + fees);
-      IERC677Receiver(reserve).onTokenTransfer(msg.sender, reserveAmount, new bytes(0));
+      _mint(target, amount - mintAmount - fees);
+      _mint(address(reserve), mintAmount + fees);
+      ((ReservePool)(address(reserve))).bookRequiredReserves(target, reserveAmount);
    }
 
    function mint(address target, uint256 amount) override external minterOnly {
@@ -78,7 +76,7 @@ contract Frankencoin is ERC20, IFrankencoin {
 
    function burn(uint256 amount, uint32 reservePPM) override external minterOnly {
       _burn(msg.sender, amount);
-      reserveTarget -= reservePPM * amount;
+      ((ReservePool)(address(reserve))).notifyReservesConsumed(reservePPM * amount);
    }
 
    function burn(address owner, uint256 amount) override external minterOnly {
@@ -91,11 +89,11 @@ contract Frankencoin is ERC20, IFrankencoin {
    }
 
    function notifyLoss(uint256 amount) override external minterOnly {
-      uint256 reserveLeft = balanceOf(reserve);
+      uint256 reserveLeft = balanceOf(address(reserve));
       if (reserveLeft >= amount){
-         _transfer(reserve, msg.sender, amount);
+         _transfer(address(reserve), msg.sender, amount);
       } else {
-         _transfer(reserve, msg.sender, reserveLeft);
+         _transfer(address(reserve), msg.sender, reserveLeft);
          _mint(msg.sender, amount - reserveLeft);
       }
    }
@@ -106,18 +104,6 @@ contract Frankencoin is ERC20, IFrankencoin {
 
    function isPosition(address position) override public view returns (address){
       return positions[position];
-   }
-
-   function reserves() external view returns (uint256) {
-      return balanceOf(reserve);
-   }
-
-   function getReserveTarget() public view returns (uint256) {
-      return reserveTarget / 1000000;
-   }
-
-   function reserveTargetFulfilled() override public view returns (bool) {
-      return reserveTarget <= balanceOf(reserve) * 1000000;
    }
 
 }
