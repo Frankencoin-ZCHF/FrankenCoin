@@ -15,11 +15,15 @@ def halleyD18(a):
     x = x0
     x_old = x0+1e18
     num_it = 0
-    while np.abs(x_old - x) > 0.01*1e18:
+    THRESH_DEC18 = 0.01 * 1e18
+    cond = True
+    while cond:
         x_old = x
         p3 = pow3(x)
         x = mulD18(x, divD18(p3 + 2 * a, 2 * p3 + a) )
         num_it = num_it + 1
+        cond = x_old - x > THRESH_DEC18 \
+            if x_old > x else x - x_old > THRESH_DEC18
     print("iterations = ", num_it)
     return x
 
