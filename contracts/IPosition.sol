@@ -16,7 +16,7 @@ interface IPosition {
 
     function getMaxChallengeSize() external view returns (uint256);
 
-    function notifyChallengeSucceeded(address bidder, uint256 size) external returns (uint256, uint256, uint256);
+    function notifyChallengeSucceeded(address bidder, uint256 size) external returns (uint256, uint256, uint32);
 
 }
 

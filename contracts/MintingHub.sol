@@ -135,24 +135,15 @@ contract MintingHub {
         collateral.transfer(challenge.challenger, challenge.size); // return the challenger's collateral
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
-        (uint256 relevantBid, uint256 volume, uint256 redeemed) = challenge.position.notifyChallengeSucceeded(challenge.bidder, challenge.bid, challenge.size);
+        (uint256 effectiveBid, uint256 volume, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(challenge.bidder, challenge.bid, challenge.size);
 
-        if (relevantBid < challenge.bid){ // overbid, return excess amount
-            IERC20(zchf).transfer(challenge.bidder, challenge.bid - relevantBid);
+        if (effectiveBid < challenge.bid){ // overbid, return excess amount
+            IERC20(zchf).transfer(challenge.bidder, challenge.bid - effectiveBid);
         }
-
-        uint256 distributable = relevantBid + redeemed; // the amount of zchf available for distribution
         uint256 reward = volume * CHALLENGER_REWARD / BASE;
-        uint256 moneyNeeded = volume + reward;
-        if (moneyNeeded > distributable){
-            // we have a problem, the bid was not high enough to cover all the costs
-            zchf.notifyLoss(moneyNeeded - distributable);
-        } else if (moneyNeeded < distributable){
-            // we are lucky, there is some excess money that we can put into the reserve
-            zchf.transfer(zchf.reserve(), distributable - moneyNeeded);
-        }
+        zchf.notifyLoss(reward + volume - effectiveBid); // ensure we have enough to pay everything
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
-        zchf.transferAndCall(address(challenge.position), volume, new bytes(0)); // Repay the challenged and used part of the position and burn the tokens
+        zchf.burnWithReserve(volume, reservePPM); // Repay the challenged part
         emit ChallengeSucceeded(challengeNumber);
         delete challenges[challengeNumber];
     }

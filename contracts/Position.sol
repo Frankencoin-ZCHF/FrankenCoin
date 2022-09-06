@@ -132,18 +132,6 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         return true;
     }
 
-    /**
-     * The amount that must be paid to close the position for good.
-     */
-    function getOutstandingAmount() public view returns (uint256){
-        uint256 reserveBalance = IReservePool(zchf.reserve()).redeemableBalance(address(this));
-        if (reserveBalance > minted){
-            return 0;
-        } else {
-            return minted - reserveBalance;
-        }
-    }
-
     function repay(uint256 amount) public onlyOwner {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
         repayInternal(amount);
@@ -156,7 +144,11 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     function repayInternal(uint256 burnable) internal noChallenge {
         require(burnable <= minted);
         uint256 actuallyBurned = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
-        minted -= actuallyBurned;
+        notifyRepaidInternal(actuallyBurned);
+    }
+
+    function notifyRepaidInternal(uint256 amount) internal {
+        minted -= amount;
         emitUpdate();
     }
 
@@ -219,7 +211,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
      *  - minted: the number of zchf that where actually minted and used using the challenged collateral
      *  - mintmax: the maximum number of zchf that could have been minted and used using the challenged collateral 
      */
-    function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external onlyHub returns (uint256, uint256, uint256){
+    function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external onlyHub returns (uint256, uint256, uint32){
         uint256 volume = price * size;
         challengedAmount -= volume;
         if (volume > minted){
@@ -227,11 +219,11 @@ contract Position is Ownable, IERC677Receiver, IPosition {
             size = size * minted / volume;
             bid = bid * minted / volume;
         }
+        assert(bid <= volume);
         // transfer collateral to the bidder
         IERC20(collateral).transfer(bidder, size);
-        uint32 challengedPPM = uint32((volume) * 1000000 / minted);
-        uint256 redeemed = IReservePool(zchf.reserve()).redeemFraction(address(hub), challengedPPM);
-        return (bid, volume, redeemed);
+        notifyRepaidInternal(volume); // we assume the caller takes care of the actual repayment
+        return (bid, volume, reserveContribution);
     }
 
     modifier noMintRestriction() {
