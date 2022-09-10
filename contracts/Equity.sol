@@ -140,10 +140,15 @@ contract Equity is ERC20, MathUtil, IReserve {
         return true;
     }
 
+    function check(uint256 investment) public view returns (uint256) {
+        uint256 capital = zchf.equity();
+        return _cubicRoot(_divD18(capital + investment, capital));
+    }
+
     function calculateShares(uint256 investment) public view returns (uint256) {
         uint256 totalShares = totalSupply();
         uint256 capital = zchf.equity();
-        uint256 newTotalShares = totalShares * _cubicRoot(_divD18(capital + investment, capital));
+        uint256 newTotalShares = _mulD18(totalShares, _cubicRoot(_divD18(capital + investment, capital)));
         return newTotalShares - totalShares;
     }
 
