@@ -133,7 +133,8 @@ describe("Basic Tests", () => {
                 expect(isXCHFBalanceCorrect).to.be.true;
             }
         });
-
+    });
+    describe("exchanges shares & pricing", () => {
         it("deposit XCHF to reserve pool and receive share tokens", async () => {
             let amount = 25;// amount we will deposit
             let fAmount = floatToDec18(25);// amount we will deposit
