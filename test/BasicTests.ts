@@ -9,7 +9,33 @@ let ZCHFContract, mintingHubContract, positionFactoryContract, equityAddr, equit
 let owner;
 
 describe("Basic Tests", () => {
+
+    function capitalToShares(totalCapital, totalShares, dCapital) {
+        let delta = 0;
+        if (totalShares==0) {
+            dCapital = dCapital - 1;
+            totalShares = 1;
+            totalCapital= 1;
+            delta = 1;
+        }
+        return totalShares *( ((totalCapital +dCapital)/totalCapital)**(1/3) - 1 ) + delta;
+    }
+    function sharesToCapital(totalCapital, totalShares, dShares) {
+        
+        return -totalCapital *( ((totalShares - dShares)/totalShares)**(3) - 1 );
+    }
     
+    function BNToHexNoPrefix(n) {
+        let num0x0X = BN.from(n).toHexString();
+        return num0x0X.replace("0x0", "0x");
+    }
+    async function mineNBlocks(n) {
+        // hardhat_mine does not accept hex numbers that start with 0x0,
+        // hence convert
+        let numBlocks = BNToHexNoPrefix(n);
+        await hre.network.provider.send("hardhat_mine", [numBlocks]);
+    }
+
     before(async () => {
         accounts = await ethers.getSigners();
         owner = accounts[0].address;
@@ -107,16 +133,8 @@ describe("Basic Tests", () => {
                 expect(isXCHFBalanceCorrect).to.be.true;
             }
         });
-        function capitalToShares(totalCapital, totalShares, dCapital) {
-            let delta = 0;
-            if (totalShares==0) {
-                dCapital = dCapital - 1;
-                totalShares = 1;
-                totalCapital= 1;
-                delta = 1;
-            }
-            return totalShares *( ((totalCapital +dCapital)/totalCapital)**(1/3) - 1 ) + delta;
-        }
+    });
+    describe("exchanges shares & pricing", () => {
         it("deposit XCHF to reserve pool and receive share tokens", async () => {
             let amount = 25;// amount we will deposit
             let fAmount = floatToDec18(25);// amount we will deposit
@@ -144,23 +162,42 @@ describe("Basic Tests", () => {
             }
 
         });
-        it("redeem shares", async () => {
-            let balance = await equityContract.redeemableBalance(owner);
-            expect(balance).to.be.equal(floatToDec18(25));
-            let amountD18 = floatToDec18(25);
-            let balanceBefore = await reservePoolContract.balanceOf(owner);
-            let balanceBeforeZCHF = await ZCHFContract.balanceOf(owner); 
-            await reservePoolContract.redeem(amountD18);
-            let balanceAfter = await reservePoolContract.balanceOf(owner);
-            let balanceAfterZCHF = await ZCHFContract.balanceOf(owner);
+        it("cannot redeem shares immediately", async () => {
+            let canRedeem = await equityContract.connect(accounts[0])['canRedeem()']();
+            expect(canRedeem).to.be.false;
+        });
+        it("can redeem shares after *N* blocks", async () => {
+            // increase block number so we can redeem
+            let BLOCK_MIN_HOLDING_DURATION = 90 * 24 * 60 * 5;
+            await mineNBlocks(BLOCK_MIN_HOLDING_DURATION + 1);
+            let canRedeem = await equityContract.connect(accounts[0])['canRedeem()']();
+            expect(canRedeem).to.be.true;
+        });
+        it("redeem 1 share", async () => {
+            let amountShares = 1;
+            let fAmountShares = floatToDec18(amountShares);
+            let fTotalShares = await equityContract.totalSupply();
+            let fTotalCapital = await ZCHFContract.balanceOf(equityAddr);
+            // calculate capital we receive according to pricing function:
+            let totalShares = dec18ToFloat(fTotalShares);
+            let totalCapital = dec18ToFloat(fTotalCapital);
+            let dCapital = sharesToCapital(totalCapital, totalShares, amountShares);
+
+            let sharesBefore = await equityContract.balanceOf(owner);
+            let capitalBefore = await ZCHFContract.balanceOf(owner); 
+            await equityContract.redeem(owner, fAmountShares);
+            let sharesAfter = await equityContract.balanceOf(owner);
+            let capitalAfter = await ZCHFContract.balanceOf(owner);
             
-            let poolTokenSharesRec = dec18ToFloat(balanceAfter.sub(balanceBefore));
-            let ZCHFReceived = dec18ToFloat(balanceAfterZCHF.sub(balanceBeforeZCHF));
-            let isZCHFAmountCorrect = ZCHFReceived==25;
-            let isPoolShareAmountCorrect = poolTokenSharesRec==-25;
+            let poolTokenSharesRec = dec18ToFloat(sharesAfter.sub(sharesBefore));
+            let ZCHFReceived = dec18ToFloat(capitalAfter.sub(capitalBefore));
+            let isZCHFAmountCorrect = Math.abs(ZCHFReceived-dCapital) <= 1e-12;
+            let isPoolShareAmountCorrect = poolTokenSharesRec==-amountShares;
             if(!isZCHFAmountCorrect || !isZCHFAmountCorrect) {
                 console.log("ZCHF tokens received = ", ZCHFReceived);
+                console.log("ZCHF tokens expected = ", dCapital);
                 console.log("Pool shares redeemed = ", -poolTokenSharesRec);
+                console.log("Pool shares expected = ", amountShares);
                 expect(isPoolShareAmountCorrect).to.be.true;
                 expect(isZCHFAmountCorrect).to.be.true;
             }

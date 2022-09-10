@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.8.0 <0.9.0;
@@ -142,11 +143,12 @@ contract Equity is ERC20, MathUtil, IReserve {
         return true;
     }
 
-    function check(uint256 investment) public view returns (uint256) {
-        uint256 capital = zchf.equity();
-        return _cubicRoot(_divD18(capital + investment, capital));
-    }
-
+    /**
+     * @notice Calculate shares received when depositing ZCHF
+     * @dev this function is called after the transfer of ZCHF happens
+     * @param investment ZCHF invested, in dec18 format
+     * @return amount of shares received for the ZCHF invested
+     */
     function calculateShares(uint256 investment) public view returns (uint256) {
         return calculateSharesInternal(zchf.equity(), investment);
     }
@@ -165,12 +167,19 @@ contract Equity is ERC20, MathUtil, IReserve {
         return proceeds;
     }
 
+    /**
+     * @notice Calculate ZCHF received when depositing shares
+     * @dev this function is called before any transfer happens
+     * @param shares number of shares we want to exchange for ZCHF,
+     *               in dec18 format
+     * @return amount of ZCHF received for the shares
+     */
     function calculateProceeds(uint256 shares) public view returns (uint256) {
         uint256 totalShares = totalSupply();
         uint256 capital = zchf.equity();
-        require(shares + 1*10**18 < totalShares); // make sure there is always at least one share
+        require(shares + ONE_DEC18 < totalShares, "too many shares"); // make sure there is always at least one share
         uint256 newTotalShares = totalShares - shares;
-        uint256 newCapital = _divD18(capital, _power3(_divD18(totalShares, newTotalShares)));
+        uint256 newCapital = _mulD18(capital, _power3(_divD18(newTotalShares, totalShares)));
         return capital - newCapital;
     }
 
