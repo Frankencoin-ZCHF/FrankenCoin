@@ -7,6 +7,7 @@ import "./IERC677Receiver.sol";
 import "./ERC20.sol";
 import "./MathUtil.sol";
 import "./IReserve.sol";
+import "hardhat/console.sol";
 
 /** 
  * @title Reserve pool for the Frankencoin
@@ -131,19 +132,21 @@ contract Equity is ERC20, MathUtil, IReserve {
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
         if (totalSupply() == 0){
+            require(amount>ONE_DEC18, "deposit must >1");
             // initialize with 1 share
             _mint(from, 1 * 10**18);
-        } else {
-            _mint(from, calculateShares(amount));
-            assert(totalSupply() < 2**90);
-        }
+            amount = amount - ONE_DEC18;
+        } 
+        _mint(from, calculateShares(amount));
+        require(totalSupply() < 2**90, "total supply exceeded");
         return true;
     }
 
     function calculateShares(uint256 investment) public view returns (uint256) {
         uint256 totalShares = totalSupply();
         uint256 capital = zchf.equity();
-        uint256 newTotalShares = totalShares * _cubicRoot(_divD18(capital + investment, capital));
+        uint256 capitalBefore = capital - investment;
+        uint256 newTotalShares = _mulD18(totalShares, _cubicRoot(_divD18(capital, capitalBefore)));
         return newTotalShares - totalShares;
     }
 

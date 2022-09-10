@@ -107,17 +107,34 @@ describe("Basic Tests", () => {
                 expect(isXCHFBalanceCorrect).to.be.true;
             }
         });
+        function capitalToShares(totalCapital, totalShares, dCapital) {
+            let delta = 0;
+            if (totalShares==0) {
+                dCapital = dCapital - 1;
+                totalShares = 1;
+                totalCapital= 1;
+                delta = 1;
+            }
+            return totalShares *( ((totalCapital +dCapital)/totalCapital)**(1/3) - 1 ) + delta;
+        }
         it("deposit XCHF to reserve pool and receive share tokens", async () => {
-            let amount = floatToDec18(25);
-            let balanceBefore = await reservePoolContract.balanceOf(owner);
+            let amount = 25;// amount we will deposit
+            let fAmount = floatToDec18(25);// amount we will deposit
+            let balanceBefore = await equityContract.balanceOf(owner);
             let balanceBeforeZCHF = await ZCHFContract.balanceOf(owner);
+            let fTotalShares = await equityContract.totalSupply();
+            let fTotalCapital = await ZCHFContract.balanceOf(equityAddr);
+            // calculate shares we receive according to pricing function:
+            let totalShares = dec18ToFloat(fTotalShares);
+            let totalCapital = dec18ToFloat(fTotalCapital);
+            let dShares = capitalToShares(totalCapital, totalShares, amount);
             //console.log("owner = ", owner);
-            await ZCHFContract.transferAndCall(reservePoolContract.address, amount, 0);
-            let balanceAfter = await reservePoolContract.balanceOf(owner);
+            await ZCHFContract.transferAndCall(equityContract.address, fAmount, 0);
+            let balanceAfter = await equityContract.balanceOf(owner);
             let balanceAfterZCHF = await ZCHFContract.balanceOf(owner);
             let poolTokenShares = dec18ToFloat(balanceAfter.sub(balanceBefore));
             let ZCHFReceived = dec18ToFloat(balanceAfterZCHF.sub(balanceBeforeZCHF));
-            let isPoolShareAmountCorrect = poolTokenShares==25;
+            let isPoolShareAmountCorrect = Math.abs(poolTokenShares-dShares) < 1e-12;
             let isSenderBalanceCorrect = ZCHFReceived==-25;
             if(!isPoolShareAmountCorrect || !isSenderBalanceCorrect) {
                 console.log("Pool token shares received = ", poolTokenShares);
@@ -128,7 +145,7 @@ describe("Basic Tests", () => {
 
         });
         it("redeem shares", async () => {
-            let balance = await reservePoolContract.redeemableBalance(owner);
+            let balance = await equityContract.redeemableBalance(owner);
             expect(balance).to.be.equal(floatToDec18(25));
             let amountD18 = floatToDec18(25);
             let balanceBefore = await reservePoolContract.balanceOf(owner);
