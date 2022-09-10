@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./ERC20.sol";
 import "./Equity.sol";
+import "./IReserve.sol";
 import "./IFrankencoin.sol";
 
 contract Frankencoin is ERC20, IFrankencoin {
@@ -10,7 +11,7 @@ contract Frankencoin is ERC20, IFrankencoin {
    uint256 public constant MIN_FEE = 1000 * (10**18);
    uint256 public constant MIN_APPLICATION_PERIOD = 10 days;
 
-   Equity override public immutable reserve;
+   IReserve override public immutable reserve;
    uint256 public minterReserve;
 
    mapping (address => uint256) public minters;
@@ -80,10 +81,10 @@ contract Frankencoin is ERC20, IFrankencoin {
       _burn(msg.sender, amount);
    }
 
-   function burn(uint256 amount, uint32 reservePPM) external override minterOnly returns (uint256) {
+   /* function burn(uint256 amount, uint32 reservePPM) external override minterOnly returns (uint256) {
       _burn(msg.sender, amount);
       minterReserve -= amount * reservePPM / 1000000;
-   }
+   } */
 
    function burnWithReserve(uint256 amountExcludingReserve, uint32 reservePPM) external override minterOnly returns (uint256) {
       _burn(msg.sender, amountExcludingReserve); // 41

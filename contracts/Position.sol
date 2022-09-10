@@ -124,7 +124,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         }
     }
     
-    function onTokenTransfer(address sender, uint256 amount, bytes calldata) override external returns (bool) {
+    function onTokenTransfer(address, uint256 amount, bytes calldata) override external returns (bool) {
         if (msg.sender == address(zchf)){
             repayInternal(amount);
         } else {

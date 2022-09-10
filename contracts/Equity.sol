@@ -53,11 +53,11 @@ contract Equity is ERC20, MathUtil, IReserve {
         }
     }
 
-    function canRedeem() external returns (bool){
+    function canRedeem() external view returns (bool){
         return canRedeem(msg.sender);
     }
 
-    function canRedeem(address owner) public returns (bool) {
+    function canRedeem(address owner) public view returns (bool) {
         return block.number - voteAnchor[owner] >= MIN_HOLDING_DURATION;
     }
 
@@ -113,7 +113,7 @@ contract Equity is ERC20, MathUtil, IReserve {
         return _votes * 10000 >= QUORUM * totalVotes();
     }
 
-    function delegateVoteTo(address delegate) override external {
+    function delegateVoteTo(address delegate) external {
         delegates[msg.sender] = delegate;
         emit Delegation(msg.sender, delegate);
     }
@@ -147,7 +147,7 @@ contract Equity is ERC20, MathUtil, IReserve {
         return newTotalShares - totalShares;
     }
 
-    function redeem(address target, uint256 shares) override public returns (uint256) {
+    function redeem(address target, uint256 shares) public returns (uint256) {
         require(canRedeem(msg.sender));
         uint256 proceeds = calculateProceeds(shares);
         _burn(msg.sender, shares);
