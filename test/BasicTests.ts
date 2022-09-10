@@ -5,7 +5,7 @@ const { ethers, bytes } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
-let ZCHFContract, reservePoolContract, mintingHubContract, accounts;
+let ZCHFContract, mintingHubContract, positionFactoryContract, equityAddr, equityContract, accounts;
 let owner;
 
 describe("Basic Tests", () => {
@@ -14,10 +14,11 @@ describe("Basic Tests", () => {
         accounts = await ethers.getSigners();
         owner = accounts[0].address;
         // create contracts
-        reservePoolContract= await createContract("ReservePool");
-        ZCHFContract = await createContract("Frankencoin", [reservePoolContract.address]);
-        await reservePoolContract.initialize(ZCHFContract.address);
-        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address]);
+        ZCHFContract = await createContract("Frankencoin");
+        equityAddr = ZCHFContract.reserve();
+        equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
+        positionFactoryContract = await createContract("PositionFactory");
+        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
     });
 
     describe("basic initialization", () => {
