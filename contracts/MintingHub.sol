@@ -77,11 +77,10 @@ contract MintingHub {
     }
 
     function launchChallenge(IPosition position, uint256 size) external returns (uint32) {
-        require(size >= position.collateralBalance() / 20); // must challenge at least 5% of the position
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), size);
         uint32 pos = challenges.size;
         challenges.push(Challenge(msg.sender, position, size, block.timestamp + CHALLENGE_PERIOD, address(0x0), 0));
-        position.notifyChallengeStarted();
+        position.notifyChallengeStarted(size);
         emit ChallengeStarted(msg.sender, address(position), size, pos);
         return pos;
     }

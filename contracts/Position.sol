@@ -49,7 +49,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     }
 
     function initializeClone(address owner, uint256 price_, uint256 limit_, uint256 coll, uint256 mint_) external {
-        require(msg.sender == factory);
+        require(msg.sender == address(factory));
         require(coll >= minimumCollateral);
         transferOwnership(owner);
         price = price_;
@@ -70,9 +70,8 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         require(IReservePool(zchf.reserve()).isQualified(msg.sender, helpers), "not qualified");
         collateral.transfer(owner, collateral.balanceOf(address(this)));
         zchf.transfer(owner, zchf.balanceOf(address(this)));
-        IERC20(zchf.reserve()).transfer(owner, IERC20(zchf.reserve()).balanceOf(address(this)));
+        cooldown = expiration;
         emit PositionDenied(msg.sender, message);
-        selfdestruct(payable(owner));
     }
 
     /**
@@ -142,12 +141,12 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     }
 
     function repayInternal(uint256 burnable) internal noChallenge {
-        require(burnable <= minted);
         uint256 actuallyBurned = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
         notifyRepaidInternal(actuallyBurned);
     }
 
     function notifyRepaidInternal(uint256 amount) internal {
+        require(amount <= minted);
         minted -= amount;
         emitUpdate();
     }
@@ -186,6 +185,9 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     }
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
+        uint256 colbal = collateralBalance();
+        require(colbal > 0); // nothing to challenge
+        require(size >= colbal / 20); // must challenge at least 5% of the position
         challengedAmount += price * size;
     }
 

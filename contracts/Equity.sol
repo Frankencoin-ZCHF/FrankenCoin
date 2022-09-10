@@ -58,6 +58,14 @@ contract Equity is ReservePool {
         }
     }
 
+    function getRedeemableBalance() external returns (uint256){
+        return getRedeemableBalance(msg.sender);
+    }
+
+    function getRedeemableBalance(address owner) public returns (uint256) {
+        // TODO
+    }
+
      /**
      * @notice Decrease the total votes anchor when tokens lose their voting power due to being moved
      * @param from      sender
@@ -127,7 +135,7 @@ contract Equity is ReservePool {
 
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
-        if (total == 0){
+        if (totalSupply() == 0){
             // initialize with 1 share
             _mint(from, 1 * 10**18);
         } else {
@@ -141,7 +149,7 @@ contract Equity is ReservePool {
         uint256 totalShares = totalSupply();
         uint256 capital = equity();
         uint256 newTotalShares = totalShares * power((capital + investment)/investment, 1/VALUATION_FACTOR);
-        return newTotalshares - totalShares;
+        return newTotalShares - totalShares;
     }
 
     function redeem(address target, uint256 shares) override public returns (uint256) {
