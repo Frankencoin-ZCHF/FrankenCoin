@@ -15,7 +15,7 @@ import "hardhat/console.sol";
 contract Equity is ERC20, MathUtil, IReserve {
 
     uint32 public constant VALUATION_FACTOR = 3;
-    uint256 public constant MIN_HOLDING_DURATION = 90 * 24 * 60 * 5; // about 90 days
+    uint256 public constant MIN_HOLDING_DURATION = 5; // TEMP!!! 90 * 24 * 60 * 5; // about 90 days
     uint32 private constant QUORUM = 300;
 
     Frankencoin immutable public zchf;
@@ -170,7 +170,7 @@ contract Equity is ERC20, MathUtil, IReserve {
         uint256 capital = zchf.equity();
         require(shares + 1*10**18 < totalShares); // make sure there is always at least one share
         uint256 newTotalShares = totalShares - shares;
-        uint256 newCapital = capital / _power3(_divD18(totalShares, newTotalShares));
+        uint256 newCapital = _divD18(capital, _power3(_divD18(totalShares, newTotalShares)));
         return capital - newCapital;
     }
 

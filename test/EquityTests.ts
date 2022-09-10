@@ -1,9 +1,11 @@
 // @ts-nocheck
 import {expect} from "chai";
+import { float } from "hardhat/internal/core/params/argumentTypes";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
 const { ethers, bytes } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
+import { Equity__factory } from "../typechain";
 
 let zchf, bridge, xchf, equity;
 let accounts, owner;
@@ -52,6 +54,23 @@ describe("Equity Tests", () => {
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.approximately(floatToDec18(2), floatToDec18(0.00001));
         });
+        it("should refuse redemption before time passed", async () => {
+            await expect(equity.redeem(owner, floatToDec18(0.1))).to.be.revertedWithoutReason();
+        });
+        it("should allow redemption after time passed", async () => {
+            await hre.ethers.provider.send('evm_mine');
+            await hre.ethers.provider.send('evm_mine');
+            await hre.ethers.provider.send('evm_mine');
+            await hre.ethers.provider.send('evm_mine');
+            await hre.ethers.provider.send('evm_mine');
+            await hre.ethers.provider.send('evm_mine');
+            expect(await equity["canRedeem()"]()).to.be.true;
+            let redemptionAmount = await equity.balanceOf(owner) - floatToDec18(1.0);
+            let bnred = BN.from(redemptionAmount.toString());
+            let proceeds = await equity.calculateProceeds(bnred)
+            expect(proceeds).to.be.approximately(floatToDec18(7.0), floatToDec18(0.0001));
+        });
     });
+
 
 });
