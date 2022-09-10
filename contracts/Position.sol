@@ -21,9 +21,10 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     uint256 public limit; // how many zchf can be minted at most, including reserve
     uint256 public immutable expiration;
 
-    IPositionFactory public immutable factory;
+    address public immutable factory;
+    address public immutable hub;
     IFrankencoin public immutable zchf; // currency
-    IERC20 public immutable collateral; // collateral
+    IERC20 public override immutable collateral; // collateral
     uint256 public immutable minimumCollateral; // prevent dust amounts
 
     uint32 public immutable mintingFeePPM;
@@ -33,9 +34,10 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
-    constructor(address owner, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, 
+    constructor(address owner, address _hub, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, 
         uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) Ownable(owner) {
-        factory = IPositionFactory(msg.sender);
+        factory = msg.sender;
+        hub = _hub;
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
         mintingFeePPM = _mintingFeePPM;
@@ -45,7 +47,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         expiration = block.timestamp + duration;
         restrictMinting(7 days);
         limit = initialLimit;
-        emit PositionOpened(factory.hub(), owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
+        emit PositionOpened(_hub, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
     }
 
     function initializeClone(address owner, uint256 price_, uint256 limit_, uint256 coll, uint256 mint_) external {
@@ -239,7 +241,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     }
 
     modifier onlyHub() {
-        require(msg.sender == address(factory.hub()), "not hub");
+        require(msg.sender == address(hub), "not hub");
         _;
     }
 

@@ -33,13 +33,13 @@ contract MintingHub {
         uint256 bid;
     }
 
-    event ChallengeStarted(address indexed challenger, address position, uint256 size, uint32 number);
-    event ChallengeAverted(uint32 number);
-    event ChallengeSucceeded(uint32 number);
+    event ChallengeStarted(address indexed challenger, address position, uint256 size, uint256 number);
+    event ChallengeAverted(uint256 number);
+    event ChallengeSucceeded(uint256 number);
 
-    constructor(address _zchf, address posFactoy) {
+    constructor(address _zchf, address factory) {
         zchf = IFrankencoin(_zchf);
-        POSITION_FACTORY = IPositionFactory(posFactoy);
+        POSITION_FACTORY = IPositionFactory(factory);
     }
 
      /**
@@ -54,21 +54,21 @@ contract MintingHub {
      *                          borrower's stake into reserve, basis 1000_000
      * @return address of resulting position
      */
-    function openPosition(address _collateral, uint256 _initialCollateral, uint256 _initialLimit, 
+    function openPosition(address _collateral, uint256 minCollateral, uint256 _initialCollateral, uint256 _initialLimit, 
         uint256 _duration, uint32 _fees, uint32 _reserve) public returns (address) {
-        IPosition pos = POSITION_FACTORY.create(msg.sender, address(zchf), h, _initialCollateral, _initialLimit, _duration, _fees, _reserve);
+        IPosition pos = IPosition(POSITION_FACTORY.createNewPosition(msg.sender, address(zchf), _collateral, minCollateral, _initialCollateral, _initialLimit, _duration, _fees, _reserve));
         zchf.registerPosition(address(pos));
-        zchf.transferFrom(msg.sender, zchf.reserve(), OPENING_FEE);
+        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         IERC20(_collateral).transferFrom(msg.sender, address(pos), _initialCollateral);
         return address(pos);
     }
 
     function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public returns (address) {
         require(zchf.isPosition(position) == address(this), "not our pos");
-        IPosition pos = POSITION_FACTORY.clone(position, msg.sender, _initialCollateral, _initialMint);
-        IERC20(pos.collateral()).transferFrom(msg.sender, address(pos), _initialCollateral);
+        IPosition pos = IPosition(POSITION_FACTORY.clonePosition(position, msg.sender, _initialCollateral, _initialMint));
+        pos.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
         zchf.registerPosition(address(pos));
-        zchf.transferFrom(msg.sender, zchf.reserve(), OPENING_FEE);
+        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         return address(pos);
     }
 
@@ -76,16 +76,16 @@ contract MintingHub {
         return IReserve(zchf.reserve());
     }
 
-    function launchChallenge(IPosition position, uint256 size) external returns (uint32) {
+    function launchChallenge(IPosition position, uint256 size) external returns (uint256) {
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), size);
-        uint32 pos = challenges.size;
+        uint256 pos = challenges.length;
         challenges.push(Challenge(msg.sender, position, size, block.timestamp + CHALLENGE_PERIOD, address(0x0), 0));
         position.notifyChallengeStarted(size);
         emit ChallengeStarted(msg.sender, address(position), size, pos);
         return pos;
     }
 
-    function bid(uint32 challengeNumber, uint256 amount) external {
+    function bid(uint256 challengeNumber, uint256 amount) external {
         Challenge memory challenge = challenges[challengeNumber];
         require(block.timestamp < challenge.end);
         require(amount > challenge.bid);
@@ -134,7 +134,7 @@ contract MintingHub {
         collateral.transfer(challenge.challenger, challenge.size); // return the challenger's collateral
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
-        (uint256 effectiveBid, uint256 volume, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(challenge.bidder, challenge.bid, challenge.size);
+        (uint256 effectiveBid, uint256 volume, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
 
         if (effectiveBid < challenge.bid){ // overbid, return excess amount
             IERC20(zchf).transfer(challenge.bidder, challenge.bid - effectiveBid);
@@ -147,4 +147,11 @@ contract MintingHub {
         delete challenges[challengeNumber];
     }
 
+}
+
+interface IPositionFactory {
+
+    function createNewPosition(address owner, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) external returns (address);
+
+    function clonePosition(address existing_, address owner, uint256 initialCol, uint256 initialMint) external returns (address);
 }
