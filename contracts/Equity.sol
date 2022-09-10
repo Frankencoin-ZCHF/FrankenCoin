@@ -132,12 +132,12 @@ contract Equity is ERC20, MathUtil, IReserve {
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
         if (totalSupply() == 0){
-            require(amount>ONE_DEC18, "deposit must >1");
+            require(amount >= ONE_DEC18, "initial deposit must >= 1");
             // initialize with 1 share
             _mint(from, 1 * 10**18);
-            amount = amount - ONE_DEC18;
+            amount -= ONE_DEC18;
         } 
-        _mint(from, calculateShares(amount));
+        _mint(from, calculateSharesInternal(zchf.equity() - amount, amount));
         require(totalSupply() < 2**90, "total supply exceeded");
         return true;
     }
@@ -148,10 +148,12 @@ contract Equity is ERC20, MathUtil, IReserve {
     }
 
     function calculateShares(uint256 investment) public view returns (uint256) {
+        return calculateSharesInternal(zchf.equity(), investment);
+    }
+
+    function calculateSharesInternal(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 capital = zchf.equity();
-        uint256 capitalBefore = capital - investment;
-        uint256 newTotalShares = _mulD18(totalShares, _cubicRoot(_divD18(capital, capitalBefore)));
+        uint256 newTotalShares = _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investment, capitalBefore)));
         return newTotalShares - totalShares;
     }
 

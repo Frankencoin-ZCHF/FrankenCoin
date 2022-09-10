@@ -47,16 +47,10 @@ describe("Equity Tests", () => {
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.equal(floatToDec18(1));
         });
-        it("should create one more share when adding seven capitl", async () => {
-            let supply = await equity.totalSupply();
-            let reserve = await zchf.equity();
-            let test = await equity.check(floatToDec18(7));
-            console.log("adding " + floatToDec18(7) + " capital to " + reserve + " should lead to " + test);
-            let expected = await equity.calculateShares(floatToDec18(7));
-            console.log("adding " + expected + " shares to " + supply + " supply");
+        it("should create one more share when adding seven capital", async () => {
             await zchf.transferAndCall(equity.address, floatToDec18(7), 0);
             let balance = await equity.balanceOf(owner);
-            expect(balance).to.be.equal(floatToDec18(2));
+            expect(balance).to.be.approximately(floatToDec18(2), floatToDec18(0.00001));
         });
     });
 
