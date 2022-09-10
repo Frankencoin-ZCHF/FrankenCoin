@@ -5,8 +5,9 @@ pragma solidity >=0.8.0 <0.9.0;
 /** 
  * @title Functions for share valuation
  */
-contract SharePricer {
-    uint256 internal constant ONE_DEC18 = 0xde0b6b3a7640000;
+contract MathUtil {
+
+    uint256 internal constant ONE_DEC18 = 10**18;
     uint256 internal constant THRESH_DEC18 =  10000000000000000;//0.01
     /**
      * @notice Cubic root with Halley approximation

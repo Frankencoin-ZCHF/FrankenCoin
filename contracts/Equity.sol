@@ -5,27 +5,32 @@ pragma solidity >=0.8.0 <0.9.0;
 import "./Frankencoin.sol";
 import "./IERC677Receiver.sol";
 import "./ERC20.sol";
-import "./ReservePool.sol";
+import "./MathUtil.sol";
+import "./IReserve.sol";
 
 /** 
  * @title Reserve pool for the Frankencoin
  */
-contract Equity is ReservePool {
+contract Equity is ERC20, MathUtil, IReserve {
 
     uint32 public constant VALUATION_FACTOR = 3;
+    uint256 public constant MIN_HOLDING_DURATION = 90 * 24 * 60 * 5; // about 90 days
+    uint32 private constant QUORUM = 300;
+
+    Frankencoin immutable public zchf;
 
     // should hopefully be grouped into one storage slot
     uint64 private totalVotesAnchorTime;
     uint192 private totalVotesAtAnchor;
 
-    uint32 private constant QUORUM = 300;
 
     mapping (address => address) public delegates;
     mapping (address => uint64) private voteAnchor;
 
     event Delegation(address indexed from, address indexed to);
 
-    constructor(Frankencoin zchf_) ReservePool(zchf_){
+    constructor(Frankencoin zchf_) ERC20(18) {
+        zchf = zchf_;
     }
 
     function name() override external pure returns (string memory) {
@@ -36,18 +41,8 @@ contract Equity is ReservePool {
         return "FPS";
     }
 
-    function equity() public view returns (uint256) {
-        uint256 balance = zchf.balanceOf(address(this));
-        uint256 reqRese = requiredReserve();
-        if (balance <= reqRese){
-            return 0;
-        } else {
-            return balance - reqRese;
-        }
-    }
-
     function price() public view returns (uint256){
-        return VALUATION_FACTOR * equity() / totalSupply();
+        return VALUATION_FACTOR * zchf.equity() / totalSupply();
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
@@ -58,12 +53,12 @@ contract Equity is ReservePool {
         }
     }
 
-    function getRedeemableBalance() external returns (uint256){
-        return getRedeemableBalance(msg.sender);
+    function canRedeem() external returns (bool){
+        return canRedeem(msg.sender);
     }
 
-    function getRedeemableBalance(address owner) public returns (uint256) {
-        // TODO
+    function canRedeem(address owner) public returns (bool) {
+        return block.number - voteAnchor[owner] >= MIN_HOLDING_DURATION;
     }
 
      /**
@@ -147,12 +142,13 @@ contract Equity is ReservePool {
 
     function calculateShares(uint256 investment) public view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 capital = equity();
-        uint256 newTotalShares = totalShares * power((capital + investment)/investment, 1/VALUATION_FACTOR);
+        uint256 capital = zchf.equity();
+        uint256 newTotalShares = totalShares * _cubicRoot(_divD18(capital + investment, capital));
         return newTotalShares - totalShares;
     }
 
     function redeem(address target, uint256 shares) override public returns (uint256) {
+        require(canRedeem(msg.sender));
         uint256 proceeds = calculateProceeds(shares);
         _burn(msg.sender, shares);
         zchf.transfer(target, proceeds);
@@ -161,10 +157,10 @@ contract Equity is ReservePool {
 
     function calculateProceeds(uint256 shares) public view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 capital = equity();
+        uint256 capital = zchf.equity();
         require(shares + 1*10**18 < totalShares); // make sure there is always at least one share
         uint256 newTotalShares = totalShares - shares;
-        uint256 newCapital = capital / power(totalShares / newTotalShares, VALUATION_FACTOR);
+        uint256 newCapital = capital / _power3(_divD18(totalShares, newTotalShares));
         return capital - newCapital;
     }
 

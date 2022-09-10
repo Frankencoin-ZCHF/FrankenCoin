@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./IERC20.sol";
 import "./IPosition.sol";
-import "./IReservePool.sol";
+import "./IReserve.sol";
 import "./IFrankencoin.sol";
 import "./Ownable.sol";
 import "./IERC677Receiver.sol";
@@ -67,7 +67,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
 
     function deny(address[] calldata helpers, string calldata message) public {
         require(minted == 0, "minted"); // must deny before any tokens are minted
-        require(IReservePool(zchf.reserve()).isQualified(msg.sender, helpers), "not qualified");
+        require(IReserve(zchf.reserve()).isQualified(msg.sender, helpers), "not qualified");
         collateral.transfer(owner, collateral.balanceOf(address(this)));
         zchf.transfer(owner, zchf.balanceOf(address(this)));
         cooldown = expiration;

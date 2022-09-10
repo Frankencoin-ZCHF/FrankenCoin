@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./IERC20.sol";
-import "./IReservePool.sol";
+import "./IReserve.sol";
 import "./IFrankencoin.sol";
 import "./Ownable.sol";
 import "./IPosition.sol";
@@ -72,8 +72,8 @@ contract MintingHub {
         return address(pos);
     }
 
-    function reserve() external view returns (IReservePool) {
-        return IReservePool(zchf.reserve());
+    function reserve() external view returns (IReserve) {
+        return IReserve(zchf.reserve());
     }
 
     function launchChallenge(IPosition position, uint256 size) external returns (uint32) {

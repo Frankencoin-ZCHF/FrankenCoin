@@ -47,18 +47,23 @@ contract Frankencoin is ERC20, IFrankencoin {
       positions[position] = msg.sender;
    }
 
-   function denyMinter(address minter, address[] calldata helpers, 
-      string calldata message) override external 
-   {
+   function equity() public view returns (uint256) {
+      uint256 balance = balanceOf(address(reserve));
+      if (balance <= minterReserve){
+        return 0;
+      } else {
+        return balance - minterReserve;
+      }
+    }
+
+   function denyMinter(address minter, address[] calldata helpers, string calldata message) override external {
       require(block.timestamp <= minters[minter], "too late");
       require(reserve.isQualified(msg.sender, helpers), "not qualified");
       delete minters[minter];
       emit MinterDenied(minter, message);
    }
 
-   function mint(address target, uint256 amount, uint32 reservePPM, 
-      uint32 feesPPM) override external minterOnly 
-   {
+   function mint(address target, uint256 amount, uint32 reservePPM, uint32 feesPPM) override external minterOnly {
       uint256 reserveAmount = amount * reservePPM;
       uint256 mintAmount = reserveAmount / 1000_000;
       uint256 fees = amount * feesPPM / 1000_000;
