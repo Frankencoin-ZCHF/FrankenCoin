@@ -21,6 +21,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     uint256 public limit; // how many zchf can be minted at most, including reserve
     uint256 public immutable expiration;
 
+    address public immutable original;
     address public immutable factory;
     address public immutable hub;
     IFrankencoin public immutable zchf; // currency
@@ -37,6 +38,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     constructor(address owner, address _hub, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, 
         uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) Ownable(owner) {
         factory = msg.sender;
+        original = address(this);
         hub = _hub;
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);

@@ -14,7 +14,7 @@ contract PositionFactory is CloneFactory {
     function clonePosition(address existing_, address owner, uint256 initialCol, uint256 initialMint) external returns (address) {
         Position existing = Position(existing_);
         uint256 limit = existing.reduceLimitForClone(initialMint);
-        Position clone = Position(createClone(existing_));
+        Position clone = Position(createClone(existing.original()));
         clone.initializeClone(owner, existing.price(), limit, initialCol, initialMint);
         return address(clone);
     }
