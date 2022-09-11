@@ -45,6 +45,7 @@ contract MintingHub {
      /**
      * @notice open a collateralized loan position
      * @param _collateral        address of collateral token
+     * @param _minCollateral     minimum collateral required to prevent dust amounts
      * @param _initialCollateral amount of initial collateral to be deposited
      * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner 
      * @param _duration          maturity of the loan in unit of timestamp (seconds)
@@ -54,9 +55,14 @@ contract MintingHub {
      *                          borrower's stake into reserve, basis 1000_000
      * @return address of resulting position
      */
-    function openPosition(address _collateral, uint256 minCollateral, uint256 _initialCollateral, uint256 _initialLimit, 
-        uint256 _duration, uint32 _fees, uint32 _reserve) public returns (address) {
-        IPosition pos = IPosition(POSITION_FACTORY.createNewPosition(msg.sender, address(zchf), _collateral, minCollateral, _initialCollateral, _initialLimit, _duration, _fees, _reserve));
+    function openPosition(address _collateral, uint256 _minCollateral, 
+        uint256 _initialCollateral, uint256 _initialLimit, 
+        uint256 _duration, uint32 _fees, uint32 _reserve) 
+        public returns (address) 
+    {
+        IPosition pos = IPosition(POSITION_FACTORY.createNewPosition(msg.sender, 
+            address(zchf), _collateral, _minCollateral, _initialCollateral, 
+            _initialLimit, _duration, _fees, _reserve));
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         IERC20(_collateral).transferFrom(msg.sender, address(pos), _initialCollateral);
