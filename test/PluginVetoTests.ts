@@ -5,7 +5,8 @@ const { ethers, bytes } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
-let ZCHFContract, reservePoolContract, mintingHubContract, accounts;
+let ZCHFContract, equityContract, equityAddr, mintingHubContract, accounts;
+let positionFactoryContract;
 let mockXCHF, mockDCHF, bridge, bridgeSygnum;
 let owner, sygnum;
 
@@ -16,10 +17,11 @@ describe("Plugin Veto Tests", () => {
         owner = accounts[0].address;
         sygnum = accounts[1].address;
         // create contracts
-        reservePoolContract= await createContract("ReservePool");
-        ZCHFContract = await createContract("Frankencoin", [reservePoolContract.address]);
-        await reservePoolContract.initialize(ZCHFContract.address);
-        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address]);
+        ZCHFContract = await createContract("Frankencoin");
+        equityAddr = ZCHFContract.reserve();
+        equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
+        positionFactoryContract = await createContract("PositionFactory");
+        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
         mockXCHF = await createContract("MockXCHFToken");
         // mocktoken bridge to bootstrap
