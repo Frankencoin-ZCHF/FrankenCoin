@@ -52,7 +52,8 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         expiration = block.timestamp + duration;
         restrictMinting(7 days);
         limit = initialLimit;
-        emit PositionOpened(_hub, owner, _collateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve);
+        emit PositionOpened(_hub, owner, _collateral, initialCollateral, 
+            initialLimit, duration, _mintingFeePPM, _reserve);
     }
 
     function initializeClone(address owner, uint256 price_, uint256 limit_, uint256 coll, uint256 mint_) external {
