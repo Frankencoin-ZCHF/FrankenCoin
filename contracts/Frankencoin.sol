@@ -48,10 +48,10 @@ contract Frankencoin is ERC20, IFrankencoin {
       positions[_position] = msg.sender;
    }
 
-    /**
-     * @notice Get reserve balance (amount of ZCHF)
-     * @return ZCHF in dec18 format
-     */
+   /**
+    * @notice Get reserve balance (amount of ZCHF)
+    * @return ZCHF in dec18 format
+    */
    function equity() public view returns (uint256) {
       uint256 balance = balanceOf(address(reserve));
       if (balance <= minterReserve){
@@ -68,15 +68,30 @@ contract Frankencoin is ERC20, IFrankencoin {
       emit MinterDenied(_minter, _message);
    }
 
-   function mint(address _target, uint256 _amount, uint32 _reservePPM, uint32 _feesPPM) override external minterOnly {
+   /**
+ * @notice Mint amount of ZCHF for address _target
+ * @param _target       address that receives ZCHF if it's a minter
+ * @param _amount       amount ZCHF before fees and pool contribution requested
+ *                      number in dec18 format
+ * @param _reservePPM   reserve requirement in parts per million
+ * @param _feesPPM      fees in parts per million
+ */
+   function mint(address _target, uint256 _amount, uint32 _reservePPM, uint32 _feesPPM) 
+      override external minterOnly 
+   {
       uint256 reserveAmount = _amount * _reservePPM;
       uint256 mintAmount = reserveAmount / 1000_000;
-      uint256 fees = _amount * _feesPPM / 1000_000;
+      uint256 fees = (_amount * _feesPPM) / 1000_000;
       _mint(_target, _amount - mintAmount - fees);
       _mint(address(reserve), mintAmount + fees);
       minterReserve += reserveAmount;
    }
 
+   /**
+    * @notice Mint amount of ZCHF for address _target
+    * @param _target   address that receives ZCHF if it's a minter
+    * @param _amount   amount in dec18 format
+    */
    function mint(address _target, uint256 _amount) override external minterOnly {
       _mint(_target, _amount);
    }
