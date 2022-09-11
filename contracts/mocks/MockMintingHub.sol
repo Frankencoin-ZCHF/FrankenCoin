@@ -11,7 +11,7 @@ contract MockMintingHub is MintingHub {
     address public lastPositionAddress;
     constructor(address _zchf, address _factory) MintingHub (_zchf, _factory){}
 
-    function openPositionWithAddress(address _collateral, uint256 _minCollateral, 
+    function openPositionMock(address _collateral, uint256 _minCollateral, 
         uint256 _initialCollateral, uint256 _initialLimit, 
         uint256 _duration, uint32 _fees, uint32 _reserve) 
         public returns (address) 

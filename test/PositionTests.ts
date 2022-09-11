@@ -67,9 +67,10 @@ describe("Position Tests", () => {
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, initialCollateral);
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
             
-            let tx = await mintingHubContract.openPositionWithAddress(collateral, minCollateral, 
+            let tx = await mintingHubContract.openPositionMock(collateral, minCollateral, 
                 initialCollateral, initialLimit, duration, fees, reserve);
             await tx.wait();
+            // mock contract stores the last position address
             positionAddr = await mintingHubContract.lastPositionAddress();
             //console.log("positionAddr =", positionAddr);
             positionContract = await ethers.getContractAt('Position', positionAddr, accounts[0]);
@@ -81,14 +82,14 @@ describe("Position Tests", () => {
         it("get loan", async () => {
             // "wait" 7 days...
             await hre.ethers.provider.send('evm_increaseTime', [7 * 86_400 + 60]); 
-            await hre.ethers.provider.send("evm_mine") 
+            await hre.ethers.provider.send("evm_mine");
             // thanks for waiting so long
             let fLimit = await positionContract.limit();
             let limit = dec18ToFloat(fLimit);
             let amount = 10_000;
             expect(amount).to.be.lessThan(limit);
 
-            /* TODO: add collateral, then open pos
+            
             let fAmount = floatToDec18(amount);
             let fZCHFBefore = await ZCHFContract.balanceOf(owner);
             let tx = positionContract.connect(accounts[0]).mint(owner, fAmount);
@@ -99,7 +100,7 @@ describe("Position Tests", () => {
             let ZCHFMinted = dec18ToFloat( fZCHFAfter.sub(fZCHFBefore) );
             console.log("Amount expected = ", amount);
             console.log("Amount received = ", ZCHFMinted);
-            */
+            
            // FAIL because we need to write the tests
            expect(false).to.be.true;
 

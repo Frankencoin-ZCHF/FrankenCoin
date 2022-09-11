@@ -48,7 +48,7 @@ contract MintingHub {
      * @param _minCollateral     minimum collateral required to prevent dust amounts
      * @param _initialCollateral amount of initial collateral to be deposited
      * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner 
-     * @param _duration          maturity of the loan in unit of timestamp (seconds)
+     * @param _duration          position tenor in unit of timestamp (seconds) from 'now'
      * @param _fees              percentage minting fee that will be added to reserve,
      *                          basis 1000_000
      * @param _reserve           percentage reserve amount that is added as the 
