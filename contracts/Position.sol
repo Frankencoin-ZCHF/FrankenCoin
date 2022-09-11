@@ -36,8 +36,8 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
     constructor(address owner, address _hub, address _zchf, address _collateral, 
-        uint256 _minCollateral, uint256 initialCollateral, 
-        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, 
+        uint256 _minCollateral, uint256 _initialCollateral, 
+        uint256 _initialLimit, uint256 _duration, uint32 _mintingFeePPM, 
         uint32 _reserve) Ownable(owner) 
     {
         factory = msg.sender;
@@ -47,13 +47,13 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         collateral = IERC20(_collateral);
         mintingFeePPM = _mintingFeePPM;
         reserveContribution = _reserve;
-        require(initialCollateral >= _minCollateral);
+        require(_initialCollateral >= _minCollateral);
         minimumCollateral = _minCollateral;
-        expiration = block.timestamp + duration;
+        expiration = block.timestamp + _duration;
         restrictMinting(7 days);
-        limit = initialLimit;
-        emit PositionOpened(_hub, owner, _collateral, initialCollateral, 
-            initialLimit, duration, _mintingFeePPM, _reserve);
+        limit = _initialLimit;
+        emit PositionOpened(_hub, owner, _collateral, _initialCollateral, 
+            _initialLimit, _duration, _mintingFeePPM, _reserve);
     }
 
     function initializeClone(address owner, uint256 price_, uint256 limit_, uint256 coll, uint256 mint_) external {
