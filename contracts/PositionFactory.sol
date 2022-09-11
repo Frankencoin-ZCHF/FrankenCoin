@@ -6,9 +6,13 @@ import "./Position.sol";
 
 contract PositionFactory is CloneFactory {
 
-    function createNewPosition(address owner, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, 
-        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) external returns (address) {
-        return address(new Position(owner, msg.sender, _zchf, _collateral, minCollateral, initialCollateral, initialLimit, duration, _mintingFeePPM, _reserve));
+    function createNewPosition(address _owner, address _zchf, address _collateral, 
+        uint256 _minCollateral, uint256 _initialCollateral, 
+        uint256 _initialLimit, uint256 _duration, uint32 _mintingFeePPM, uint32 _reserve) 
+        external returns (address) 
+    {
+        return address(new Position(_owner, msg.sender, _zchf, _collateral, 
+            _minCollateral, _initialCollateral, _initialLimit, _duration, _mintingFeePPM, _reserve));
     }
 
     function clonePosition(address existing_, address owner, uint256 initialCol, uint256 initialMint) external returns (address) {
