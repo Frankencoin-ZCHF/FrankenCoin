@@ -35,8 +35,11 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
-    constructor(address owner, address _hub, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, 
-        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) Ownable(owner) {
+    constructor(address owner, address _hub, address _zchf, address _collateral, 
+        uint256 _minCollateral, uint256 initialCollateral, 
+        uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, 
+        uint32 _reserve) Ownable(owner) 
+    {
         factory = msg.sender;
         original = address(this);
         hub = _hub;
@@ -44,8 +47,8 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         collateral = IERC20(_collateral);
         mintingFeePPM = _mintingFeePPM;
         reserveContribution = _reserve;
-        require(initialCollateral >= minCollateral);
-        minimumCollateral = minCollateral;
+        require(initialCollateral >= _minCollateral);
+        minimumCollateral = _minCollateral;
         expiration = block.timestamp + duration;
         restrictMinting(7 days);
         limit = initialLimit;
