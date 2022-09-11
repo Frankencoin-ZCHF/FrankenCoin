@@ -31,7 +31,9 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     uint32 public immutable mintingFeePPM;
     uint32 public immutable reserveContribution; // in ppm
 
-    event PositionOpened(address indexed hub, address indexed owner, address collateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 fees, uint32 reserve);
+    event PositionOpened(address indexed hub, address indexed owner, 
+        address collateral, uint256 initialCollateral, uint256 initialLimit, 
+        uint256 duration, uint32 fees, uint32 reserve, address positionAddr);
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
@@ -53,7 +55,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         restrictMinting(7 days);
         limit = _initialLimit;
         emit PositionOpened(_hub, owner, _collateral, _initialCollateral, 
-            _initialLimit, _duration, _mintingFeePPM, _reserve);
+            _initialLimit, _duration, _mintingFeePPM, _reserve, address(this));
     }
 
     function initializeClone(address owner, uint256 price_, uint256 limit_, uint256 coll, uint256 mint_) external {
@@ -116,10 +118,10 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     }
 
     function mintInternal(address target, uint256 amount, uint256 collateral_) internal {
-        require(minted + amount <= limit);
+        require(minted + amount <= limit, "limit exceeded");
         zchf.mint(target, amount, reserveContribution, mintingFeePPM);
         minted += amount;
-        require(isWellCollateralized(collateral_, price));
+        require(isWellCollateralized(collateral_, price), "not well collateralized");
         emitUpdate();
     }
 
@@ -237,7 +239,8 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     }
 
     modifier noMintRestriction() {
-        require(cooldown < block.timestamp && block.timestamp <= expiration, "cooldown");
+       require(cooldown < block.timestamp, "cooldown");
+       require(block.timestamp <= expiration, "expired");
         _;
     }
 
