@@ -8,7 +8,6 @@ import "./IERC677Receiver.sol";
 import "./ERC20.sol";
 import "./MathUtil.sol";
 import "./IReserve.sol";
-import "hardhat/console.sol";
 
 /** 
  * @title Reserve pool for the Frankencoin
