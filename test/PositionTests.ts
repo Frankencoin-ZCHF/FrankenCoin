@@ -21,7 +21,7 @@ describe("Position Tests", () => {
         equityAddr = ZCHFContract.reserve();
         equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
         positionFactoryContract = await createContract("PositionFactory");
-        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
+        mintingHubContract = await createContract("MockMintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
         mockXCHF = await createContract("MockXCHFToken");
         // mocktoken bridge to bootstrap
@@ -60,22 +60,46 @@ describe("Position Tests", () => {
             let initialLimit = floatToDec18(110_000);
             let minCollateral = floatToDec18(1);
             let initialCollateral = floatToDec18(120_000);
-            let duration = BN.from(7*86_400);
+            let duration = BN.from(14*86_400);
             let fees = BN.from(0.01 * 1000_000);
             let reserve = BN.from(0.10 * 1000_000);
             let openingFeeZCHF = await mintingHubContract.OPENING_FEE();
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, initialCollateral);
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
-            // to get the return value we add callStatic to the call, otherwise we get the transaction
-            positionAddr = await mintingHubContract.callStatic.openPosition(collateral, minCollateral, 
+            
+            let tx = await mintingHubContract.openPositionWithAddress(collateral, minCollateral, 
                 initialCollateral, initialLimit, duration, fees, reserve);
-            positionContract = await hre.ethers.getContractAt("Position", positionAddr);
-            console.log("done")
+            await tx.wait();
+            positionAddr = await mintingHubContract.lastPositionAddress();
+            //console.log("positionAddr =", positionAddr);
+            positionContract = await ethers.getContractAt('Position', positionAddr, accounts[0]);
+        });
+        it("require cooldown", async () => {
+            let tx = positionContract.connect(accounts[0]).mint(owner, floatToDec18(5));
+            await expect(tx).to.be.revertedWith("cooldown");
         });
         it("get loan", async () => {
-            //todo
-            //let amount = floatToDec18(10_000);
-            //let tx = await positionContract.limit(); //mint(accounts[0].owner, amount);
+            // "wait" 7 days...
+            await hre.ethers.provider.send('evm_increaseTime', [7 * 86_400 + 60]); 
+            await hre.ethers.provider.send("evm_mine") 
+            // thanks for waiting so long
+            let fLimit = await positionContract.limit();
+            let limit = dec18ToFloat(fLimit);
+            let amount = 10_000;
+            expect(amount).to.be.lessThan(limit);
+
+            /* TODO: add collateral, then open pos
+            let fAmount = floatToDec18(amount);
+            let fZCHFBefore = await ZCHFContract.balanceOf(owner);
+            let tx = positionContract.connect(accounts[0]).mint(owner, fAmount);
+            await expect(tx).to.emit("PositionOpened");
+            await tx.wait();
+            
+            let fZCHFAfter = await ZCHFContract.balanceOf(owner);
+            let ZCHFMinted = dec18ToFloat( fZCHFAfter.sub(fZCHFBefore) );
+            console.log("Amount expected = ", amount);
+            console.log("Amount received = ", ZCHFMinted);
+            */
 
         });
 
