@@ -100,6 +100,8 @@ describe("Position Tests", () => {
             console.log("Amount expected = ", amount);
             console.log("Amount received = ", ZCHFMinted);
             */
+           // FAIL because we need to write the tests
+           expect(false).to.be.true;
 
         });
 
