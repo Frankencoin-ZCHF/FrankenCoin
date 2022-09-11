@@ -5,7 +5,8 @@ const { ethers, bytes } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
-let ZCHFContract, reservePoolContract, mintingHubContract, accounts;
+let ZCHFContract, equityContract, equityAddr, mintingHubContract, accounts;
+let positionFactoryContract;
 let mockXCHF, mockVOL, bridge;
 let owner, sygnum;
 
@@ -16,10 +17,11 @@ describe("Position Tests", () => {
         owner = accounts[0].address;
         sygnum = accounts[1].address;
         // create contracts
-        reservePoolContract= await createContract("ReservePool");
-        ZCHFContract = await createContract("Frankencoin", [reservePoolContract.address]);
-        await reservePoolContract.initialize(ZCHFContract.address);
-        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address]);
+        ZCHFContract = await createContract("Frankencoin");
+        equityAddr = ZCHFContract.reserve();
+        equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
+        positionFactoryContract = await createContract("PositionFactory");
+        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
         mockXCHF = await createContract("MockXCHFToken");
         // mocktoken bridge to bootstrap
@@ -56,6 +58,7 @@ describe("Position Tests", () => {
         it("create position", async () => {
             let collateral = mockVOL.address;
             let initialLimit = floatToDec18(110_000);
+            let minCollateral = floatToDec18(1);
             let initialCollateral = floatToDec18(120_000);
             let duration = BN.from(7*86_400);
             let fees = BN.from(0.01 * 1000_000);
@@ -64,8 +67,8 @@ describe("Position Tests", () => {
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, initialCollateral);
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
             // to get the return value we add callStatic to the call, otherwise we get the transaction
-            positionAddr = await mintingHubContract.callStatic.openPosition(collateral, initialCollateral, 
-                initialLimit, duration, fees, reserve);
+            positionAddr = await mintingHubContract.callStatic.openPosition(collateral, minCollateral, 
+                initialCollateral, initialLimit, duration, fees, reserve);
             positionContract = await hre.ethers.getContractAt("Position", positionAddr);
             console.log("done")
         });
