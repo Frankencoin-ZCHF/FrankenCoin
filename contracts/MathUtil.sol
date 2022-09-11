@@ -36,8 +36,8 @@ contract MathUtil {
         return (_a * ONE_DEC18) / _b ;
     }
 
-    function _power3(uint256 x) internal pure returns(uint256) {
-        return _mulD18(_mulD18(x, x), x);
+    function _power3(uint256 _x) internal pure returns(uint256) {
+        return _mulD18(_mulD18(_x, _x), _x);
     }
 
 }
