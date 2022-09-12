@@ -39,8 +39,21 @@ def halley(a):
     print("iterations = ", num_it)
     return x
 
+def limit(min, minted, limit):
+    reduction = (limit - minted - min)/2
+    #limit = limit - reduction # old
+    limit = limit - reduction-min
+    return [reduction+min, limit]
 
 if __name__=="__main__":
+    min = 3
+    minted = 4
+    lim = 9
+    res = limit(min, minted, lim)
+    limC = res[0]
+    lim = res[1] 
+    limNew = limC + lim
+
     v = 0.3
     a_hat = halley(v)
     print(f"{a_hat:0.14f} -> error = {a_hat**3 - v:0.14f}")
