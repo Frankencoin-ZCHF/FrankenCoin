@@ -82,12 +82,18 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         mintInternal(owner, _mint, _coll);
     }
 
-    function reduceLimitForClone(uint256 minimum) external noMintRestriction returns (uint256) {
+    /**
+     * @notice adjust this position's limit to give away some limit to the clone
+     *         invariant: global limit stays constant
+     * @param _minimum  amount that clone wants to mint initially
+     * @return limit for the clone
+     */
+    function reduceLimitForClone(uint256 _minimum) external noMintRestriction returns (uint256) {
         require(msg.sender == address(factory), "only factory");
-        require(minted + minimum <= limit, "limit exceeded");
-        uint256 reduction = (limit - minted - minimum)/2;
-        limit -= reduction;
-        return reduction + minimum;
+        require(minted + _minimum <= limit, "limit exceeded");
+        uint256 reduction = (limit - minted - _minimum)/2;
+        limit -= reduction - _minimum;
+        return reduction + _minimum;
     }
 
     function deny(address[] calldata helpers, string calldata message) public {
