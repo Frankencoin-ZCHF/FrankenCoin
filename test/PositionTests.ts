@@ -54,21 +54,23 @@ describe("Position Tests", () => {
 
     describe("use Minting Hub", () => {
         let positionAddr, positionContract;
-
+        let fee = 0.01;
+        let reserve = 0.10;
         it("create position", async () => {
             let collateral = mockVOL.address;
             let initialLimit = floatToDec18(110_000);
+            let liqPrice = floatToDec18(1400);
             let minCollateral = floatToDec18(1);
             let initialCollateral = floatToDec18(120_000);
             let duration = BN.from(14*86_400);
-            let fees = BN.from(0.01 * 1000_000);
-            let reserve = BN.from(0.10 * 1000_000);
+            let fFees = BN.from(fee * 1000_000);
+            let fReserve = BN.from(reserve * 1000_000);
             let openingFeeZCHF = await mintingHubContract.OPENING_FEE();
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, initialCollateral);
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
             
             let tx = await mintingHubContract.openPositionMock(collateral, minCollateral, 
-                initialCollateral, initialLimit, duration, fees, reserve);
+                initialCollateral, initialLimit, duration, fFees, liqPrice, fReserve);
             await tx.wait();
             // mock contract stores the last position address
             positionAddr = await mintingHubContract.lastPositionAddress();
@@ -79,7 +81,7 @@ describe("Position Tests", () => {
             let tx = positionContract.connect(accounts[0]).mint(owner, floatToDec18(5));
             await expect(tx).to.be.revertedWith("cooldown");
         });
-        it("get loan", async () => {
+        it("get loan after 7 long days", async () => {
             // "wait" 7 days...
             await hre.ethers.provider.send('evm_increaseTime', [7 * 86_400 + 60]); 
             await hre.ethers.provider.send("evm_mine");
@@ -92,17 +94,16 @@ describe("Position Tests", () => {
             
             let fAmount = floatToDec18(amount);
             let fZCHFBefore = await ZCHFContract.balanceOf(owner);
-            let tx = positionContract.connect(accounts[0]).mint(owner, fAmount);
-            await expect(tx).to.emit("PositionOpened");
-            await tx.wait();
-            
+            await positionContract.connect(accounts[0]).mint(owner, fAmount);//).to.emit("PositionOpened");
+                        
             let fZCHFAfter = await ZCHFContract.balanceOf(owner);
             let ZCHFMinted = dec18ToFloat( fZCHFAfter.sub(fZCHFBefore) );
-            console.log("Amount expected = ", amount);
-            console.log("Amount received = ", ZCHFMinted);
-            
-           // FAIL because we need to write the tests
-           expect(false).to.be.true;
+            let amountExpected = amount * (1 - fee - reserve);
+            if (amountExpected != ZCHFMinted) {
+                console.log("Amount expected = ", amountExpected);
+                console.log("Amount received = ", ZCHFMinted);
+            }
+            expect(amountExpected).to.be.equal(ZCHFMinted);
 
         });
 
