@@ -16,11 +16,25 @@ contract PositionFactory is CloneFactory {
             _minCollateral, _initialCollateral, _initialLimit, _duration, _mintingFeePPM, _liqPrice, _reserve));
     }
 
-    function clonePosition(address existing_, address owner, uint256 initialCol, uint256 initialMint) external returns (address) {
-        Position existing = Position(existing_);//TODO: don't we wanna clone the entire original? existing_.original()
-        uint256 limit = existing.reduceLimitForClone(initialMint);
+    /**
+    * @notice clone an existing position. This can be a clone of another clone,
+    * or an origin position. If it's another clone, then the liquidation price
+    * is taken from the clone and the rest from the origin. Limit is "inherited"
+    * (and adjusted) from the origin.
+    * @param _existing     address of the position we want to clone
+    * @param _owner        owner address of the new clone
+    * @param _initialCol   initial collateral to be posted by owner (dec 18)
+    * @param _initialMint  initial amount to mint before fees/reserve by owner
+    * @return address of the newly created clone position
+    */
+    function clonePosition(address _existing, address _owner, 
+        uint256 _initialCol, uint256 _initialMint) 
+        external returns (address) 
+    {
+        Position existing = Position(_existing);
+        uint256 limit = existing.reduceLimitForClone(_initialMint);
         Position clone = Position(createClone(existing.original()));
-        clone.initializeClone(owner, existing.price(), limit, initialCol, initialMint);
+        clone.initializeClone(_owner, existing.price(), limit, _initialCol, _initialMint);
         return address(clone);
     }
 
