@@ -46,9 +46,9 @@ def limit(min, minted, limit):
     return [reduction+min, limit]
 
 if __name__=="__main__":
-    min = 3
+    min = 2
     minted = 4
-    lim = 9
+    lim = 20
     res = limit(min, minted, lim)
     limC = res[0]
     lim = res[1] 
