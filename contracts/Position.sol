@@ -21,7 +21,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     uint256 public limit; // how many zchf can be minted at most, including reserve
     uint256 public immutable expiration;
 
-    address public immutable original;
+    address public immutable original; // originals point to them selves, clone to their origin
     address public immutable factory;
     address public immutable hub;
     IFrankencoin public immutable zchf; // currency
@@ -37,39 +37,54 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
-    constructor(address owner, address _hub, address _zchf, address _collateral, 
+    /**
+    * @param _owner             position owner address
+    * @param _hub               address of minting hub
+    * @param _zchf              ZCHF address
+    * @param _collateral        collateral address
+    * @param _minCollateral     minimum collateral required to prevent dust amounts
+    * @param _initialCollateral amount of initial collateral to be deposited
+    * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner 
+    * @param _duration          position tenor in unit of timestamp (seconds) from 'now'
+    * @param _mintingFeePPM     fee to enter position in parts per million of ZCHF amount
+    * @param _liqPrice          Liquidation price (dec18) that together with the reserve and
+     *                          fees determines the minimal collateralization ratio
+    * @param _reservePPM        ZCHF pool reserve requirement in parts per million of ZCHF amount
+    */
+    constructor(address _owner, address _hub, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 
         uint256 _initialLimit, uint256 _duration, uint32 _mintingFeePPM, 
-        uint32 _reserve) Ownable(owner) 
+        uint256 _liqPrice, uint32 _reservePPM) Ownable(_owner) 
     {
         factory = msg.sender;
         original = address(this);
         hub = _hub;
+        price = _liqPrice;
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
         mintingFeePPM = _mintingFeePPM;
-        reserveContribution = _reserve;
+        reserveContribution = _reservePPM;
         require(_initialCollateral >= _minCollateral);
         minimumCollateral = _minCollateral;
         expiration = block.timestamp + _duration;
         restrictMinting(7 days);
         limit = _initialLimit;
         emit PositionOpened(_hub, owner, _collateral, _initialCollateral, 
-            _initialLimit, _duration, _mintingFeePPM, _reserve, address(this));
+            _initialLimit, _duration, _mintingFeePPM, _reservePPM, address(this));
     }
 
-    function initializeClone(address owner, uint256 price_, uint256 limit_, uint256 coll, uint256 mint_) external {
-        require(msg.sender == address(factory));
-        require(coll >= minimumCollateral);
+    function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external {
+        require(msg.sender == address(factory), "factory only");
+        require(_coll >= minimumCollateral, "coll not enough");
         transferOwnership(owner);
-        price = price_;
-        limit = limit_;
-        mintInternal(owner, mint_, coll);
+        price = _price;
+        limit = _limit;
+        mintInternal(owner, _mint, _coll);
     }
 
     function reduceLimitForClone(uint256 minimum) external noMintRestriction returns (uint256) {
-        require(msg.sender == address(factory));
-        require(minted + minimum <= limit);
+        require(msg.sender == address(factory), "only factory");
+        require(minted + minimum <= limit, "limit exceeded");
         uint256 reduction = (limit - minted - minimum)/2;
         limit -= reduction;
         return reduction + minimum;
@@ -121,6 +136,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         require(minted + amount <= limit, "limit exceeded");
         zchf.mint(target, amount, reserveContribution, mintingFeePPM);
         minted += amount;
+
         require(isWellCollateralized(collateral_, price), "not well collateralized");
         emitUpdate();
     }

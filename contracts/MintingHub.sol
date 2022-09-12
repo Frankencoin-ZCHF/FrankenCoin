@@ -50,19 +50,21 @@ contract MintingHub {
      * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner 
      * @param _duration          position tenor in unit of timestamp (seconds) from 'now'
      * @param _fees              percentage minting fee that will be added to reserve,
-     *                          basis 1000_000
+     *                           basis 1000_000
+     * @param _liqPrice          Liquidation price (dec18) that together with the reserve and
+     *                           fees determines the minimal collateralization ratio
      * @param _reserve           percentage reserve amount that is added as the 
-     *                          borrower's stake into reserve, basis 1000_000
+     *                           borrower's stake into reserve, basis 1000_000
      * @return address of resulting position
      */
     function openPosition(address _collateral, uint256 _minCollateral, 
         uint256 _initialCollateral, uint256 _initialLimit, 
-        uint256 _duration, uint32 _fees, uint32 _reserve) 
+        uint256 _duration, uint32 _fees, uint256 _liqPrice, uint32 _reserve) 
         public returns (address) 
     {
         IPosition pos = IPosition(POSITION_FACTORY.createNewPosition(msg.sender, 
             address(zchf), _collateral, _minCollateral, _initialCollateral, 
-            _initialLimit, _duration, _fees, _reserve));
+            _initialLimit, _duration, _fees, _liqPrice, _reserve));
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         IERC20(_collateral).transferFrom(msg.sender, address(pos), _initialCollateral);
@@ -157,7 +159,10 @@ contract MintingHub {
 
 interface IPositionFactory {
 
-    function createNewPosition(address owner, address _zchf, address _collateral, uint256 minCollateral, uint256 initialCollateral, uint256 initialLimit, uint256 duration, uint32 _mintingFeePPM, uint32 _reserve) external returns (address);
-
+    function createNewPosition(address _owner, address _zchf, address _collateral, 
+        uint256 _minCollateral, uint256 _initialCollateral, 
+        uint256 _initialLimit, uint256 _duration, 
+        uint32 _mintingFeePPM, uint256 _liqPrice, uint32 _reserve) 
+        external returns (address);
     function clonePosition(address existing_, address owner, uint256 initialCol, uint256 initialMint) external returns (address);
 }
