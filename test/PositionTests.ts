@@ -54,15 +54,17 @@ describe("Position Tests", () => {
         
     });
 
+    let positionAddr, positionContract;
+    let clonePositionAddr, clonePositionContract;
+    let fee = 0.01;
+    let reserve = 0.10;
+    let mintAmount = 100;
+    let fMintAmount = floatToDec18(mintAmount);
+    let fLimit, limit;
+    let fGlblZCHBalanceOfCloner;
+
     describe("use Minting Hub", () => {
-        let positionAddr, positionContract;
-        let clonePositionAddr, clonePositionContract;
-        let fee = 0.01;
-        let reserve = 0.10;
-        let mintAmount = 100;
-        let fMintAmount = floatToDec18(mintAmount);
-        let fLimit, limit;
-        let fGlblZCHBalanceOfCloner;
+       
         
         it("create position", async () => {
             let collateral = mockVOL.address;
@@ -163,6 +165,21 @@ describe("Position Tests", () => {
             }
             expect(cloneFeeCharged).to.be.equal(cloneFee);
         });
+    });
+    describe("challenge clone", () => {
+        it("send challenge", async () => {
+            let challengeAmount = 5000;
+            let fchallengeAmount = floatToDec18(challengeAmount);
+            await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fchallengeAmount);
+            let tx = mintingHubContract.connect(accounts[0]).launchChallenge(clonePositionAddr, fchallengeAmount);
+            await expect(tx).to.emit(mintingHubContract, "ChallengeStarted")
+                .withArgs(owner, clonePositionAddr, fchallengeAmount, 0);
+        });
+        it("pos owner cannot withdraw during challenge", async () => {
+            let tx = clonePositionContract.withdrawCollateral(clonePositionAddr, floatToDec18(1));
+            await expect(tx).to.be.revertedWith("challenges pending");
+        });
+
     });
 
 });
