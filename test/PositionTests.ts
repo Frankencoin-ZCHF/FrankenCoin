@@ -62,6 +62,7 @@ describe("Position Tests", () => {
         let mintAmount = 100;
         let fMintAmount = floatToDec18(mintAmount);
         let fLimit, limit;
+        let fGlblZCHBalanceOfCloner;
         
         it("create position", async () => {
             let collateral = mockVOL.address;
@@ -117,13 +118,19 @@ describe("Position Tests", () => {
         it("clone position", async () => {
             
             let fInitialCollateral = floatToDec18(10_000);
-            await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
-            await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
-            let tx = await mintingHubContract.connect(accounts[0]).clonePositionMock(positionAddr, fInitialCollateral, 
+            
+            // send some collateral and ZCHF to the cloner
+            await mockVOL.transfer(accounts[1].address, fInitialCollateral);
+            await ZCHFContract.transfer(accounts[1].address, fInitialCollateral);
+            
+            await mockVOL.connect(accounts[1]).approve(mintingHubContract.address, fInitialCollateral);
+            await ZCHFContract.connect(accounts[1]).approve(mintingHubContract.address, fInitialCollateral);
+            fGlblZCHBalanceOfCloner = await ZCHFContract.balanceOf(accounts[1].address);
+            let tx = await mintingHubContract.connect(accounts[1]).clonePositionMock(positionAddr, fInitialCollateral, 
                 fMintAmount);
             await tx.wait();
             clonePositionAddr = await mintingHubContract.lastPositionAddress();
-            clonePositionContract = await ethers.getContractAt('Position', clonePositionAddr, accounts[0]);
+            clonePositionContract = await ethers.getContractAt('Position', clonePositionAddr, accounts[1]);
             
         });
         it("global mint limit retained", async () => {
@@ -137,13 +144,25 @@ describe("Position Tests", () => {
             expect(glblLimit).to.be.equal(limit);
             
         });
-        //it("no cooldown for clone", async () => {
-            /* TODO
-            let tx = positionContract.connect(accounts[0]).mint(owner, fMintAmount);
-            let fAmount = floatToDec18(amount);
-            let fZCHFBefore = await ZCHFContract.balanceOf(owner);
-            */
-        //});
+        it("correct fees charged", async () => {
+            // fees:
+            // - reserve contribution (temporary fee)
+            // - mintingFeePPM 
+            // - position fee (or clone fee)
+            let reserveContributionPPM = await clonePositionContract.reserveContribution();
+            let mintingFeePPM = await clonePositionContract.mintingFeePPM();
+            
+            let fBalanceAfter = await ZCHFContract.balanceOf(accounts[1].address);
+            let mintAfterFees = mintAmount *( 1 - mintingFeePPM/1000_000 - reserveContributionPPM/1000_000)
+            let cloneFeeCharged = dec18ToFloat(fGlblZCHBalanceOfCloner.sub(fBalanceAfter))+mintAfterFees;
+            let fCloneFee = await mintingHubContract.OPENING_FEE();
+            let cloneFee = dec18ToFloat(fCloneFee);
+            if (cloneFee!=cloneFeeCharged) {
+                console.log("Charged=", cloneFeeCharged);
+                console.log("Fee expected=", cloneFee);
+            }
+            expect(cloneFeeCharged).to.be.equal(cloneFee);
+        });
     });
 
 });
