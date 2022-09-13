@@ -85,12 +85,19 @@ contract MintingHub {
         return IReserve(zchf.reserve());
     }
 
-    function launchChallenge(IPosition position, uint256 size) external returns (uint256) {
-        IERC20(position.collateral()).transferFrom(msg.sender, address(this), size);
+    /**
+    * @notice Launch a challenge on a position
+    * @param _positionAddr      address of the position we want to challenge
+    * @param _collateralAmount  size of the collateral we want to challenge (dec 18)
+    * @return index of the challenge in challenge-array
+    */
+    function launchChallenge(address _positionAddr, uint256 _collateralAmount) external returns (uint256) {
+        IPosition position = IPosition(_positionAddr);
+        IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
         uint256 pos = challenges.length;
-        challenges.push(Challenge(msg.sender, position, size, block.timestamp + CHALLENGE_PERIOD, address(0x0), 0));
-        position.notifyChallengeStarted(size);
-        emit ChallengeStarted(msg.sender, address(position), size, pos);
+        challenges.push(Challenge(msg.sender, position, _collateralAmount, block.timestamp + CHALLENGE_PERIOD, address(0x0), 0));
+        position.notifyChallengeStarted(_collateralAmount);
+        emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);
         return pos;
     }
 
