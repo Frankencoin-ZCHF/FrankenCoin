@@ -118,6 +118,7 @@ describe("Position Tests", () => {
             
             let fInitialCollateral = floatToDec18(10_000);
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
+            await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
             let tx = await mintingHubContract.connect(accounts[0]).clonePositionMock(positionAddr, fInitialCollateral, 
                 fMintAmount);
             await tx.wait();

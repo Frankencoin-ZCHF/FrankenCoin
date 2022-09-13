@@ -76,9 +76,7 @@ contract MintingHub {
         require(zchf.isPosition(position) == address(this), "not our pos");
         IPosition pos = IPosition(POSITION_FACTORY.clonePosition(position, address(zchf), msg.sender, _initialCollateral, _initialMint));
         zchf.registerPosition(address(pos));
-        // TODO: fix this:
-        //zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
-
+        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         pos.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
         return address(pos);
     }
