@@ -21,7 +21,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
     uint256 public limit; // how many zchf can be minted at most, including reserve
     uint256 public immutable expiration;
 
-    address public immutable original; // originals point to them selves, clone to their origin
+    address public immutable original; // originals point to themselves, clone to their origin
     address public immutable factory;
     address public immutable hub;
     IFrankencoin public immutable zchf; // currency
@@ -73,10 +73,12 @@ contract Position is Ownable, IERC677Receiver, IPosition {
             _initialLimit, _duration, _mintingFeePPM, _reservePPM, address(this));
     }
 
+
     function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external {
         require(msg.sender == address(factory), "factory only");
         require(_coll >= minimumCollateral, "coll not enough");
         transferOwnership(owner);
+        
         price = _price;
         limit = _limit;
         mintInternal(owner, _mint, _coll);
@@ -92,7 +94,7 @@ contract Position is Ownable, IERC677Receiver, IPosition {
         require(msg.sender == address(factory), "only factory");
         require(minted + _minimum <= limit, "limit exceeded");
         uint256 reduction = (limit - minted - _minimum)/2;
-        limit -= reduction - _minimum;
+        limit -= reduction + _minimum;
         return reduction + _minimum;
     }
 

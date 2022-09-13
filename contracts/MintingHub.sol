@@ -6,6 +6,7 @@ import "./IReserve.sol";
 import "./IFrankencoin.sol";
 import "./Ownable.sol";
 import "./IPosition.sol";
+import "hardhat/console.sol";
 
 /**
  * A hub for creating collateralized minting positions for a given collateral.
@@ -73,10 +74,12 @@ contract MintingHub {
 
     function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public returns (address) {
         require(zchf.isPosition(position) == address(this), "not our pos");
-        IPosition pos = IPosition(POSITION_FACTORY.clonePosition(position, msg.sender, _initialCollateral, _initialMint));
-        pos.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
+        IPosition pos = IPosition(POSITION_FACTORY.clonePosition(position, address(zchf), msg.sender, _initialCollateral, _initialMint));
         zchf.registerPosition(address(pos));
-        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
+        // TODO: fix this:
+        //zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
+
+        pos.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
         return address(pos);
     }
 
@@ -164,5 +167,6 @@ interface IPositionFactory {
         uint256 _initialLimit, uint256 _duration, 
         uint32 _mintingFeePPM, uint256 _liqPrice, uint32 _reserve) 
         external returns (address);
-    function clonePosition(address existing_, address owner, uint256 initialCol, uint256 initialMint) external returns (address);
+     function clonePosition(address _existing, address _zchf, address _owner, 
+        uint256 _initialCol, uint256 _initialMint) external returns(address);
 }

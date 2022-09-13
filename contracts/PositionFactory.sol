@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import "./CloneFactory.sol";
 import "./Position.sol";
-
+import "./IFrankencoin.sol";
+import "hardhat/console.sol";
 contract PositionFactory is CloneFactory {
 
     function createNewPosition(address _owner, address _zchf, address _collateral, 
@@ -22,18 +23,22 @@ contract PositionFactory is CloneFactory {
     * is taken from the clone and the rest from the origin. Limit is "inherited"
     * (and adjusted) from the origin.
     * @param _existing     address of the position we want to clone
+    * @param _zchf         ZCHF address
     * @param _owner        owner address of the new clone
     * @param _initialCol   initial collateral to be posted by owner (dec 18)
     * @param _initialMint  initial amount to mint before fees/reserve by owner
     * @return address of the newly created clone position
     */
-    function clonePosition(address _existing, address _owner, 
+    function clonePosition(address _existing, address _zchf, address _owner, 
         uint256 _initialCol, uint256 _initialMint) 
         external returns (address) 
     {
         Position existing = Position(_existing);
         uint256 limit = existing.reduceLimitForClone(_initialMint);
         Position clone = Position(createClone(existing.original()));
+        // suggest minter
+        IFrankencoin(_zchf).suggestMinter(address(clone), 0, 0, "clone");
+        // initialize and mint
         clone.initializeClone(_owner, existing.price(), limit, _initialCol, _initialMint);
         return address(clone);
     }

@@ -28,8 +28,10 @@ describe("Position Tests", () => {
         let limit = floatToDec18(100_000);
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
         ZCHFContract.suggestMinter(bridge.address, 0, 0, "XCHF Bridge");
-        // create a minting hub too while it's still free (no ZCHF supply)
-        ZCHFContract.suggestMinter(mintingHubContract.address, 0, 0, "Minting Hub");
+        // create a minting hub too while we have no ZCHF supply
+        ZCHFContract.suggestMinter(mintingHubContract.address, 0, 0, "XCHF Bridge");
+        ZCHFContract.setPositionFactory(positionFactoryContract.address);
+        
         // wait for 1 block
         await hre.ethers.provider.send('evm_increaseTime', [60]); 
         await network.provider.send("evm_mine");
@@ -54,14 +56,19 @@ describe("Position Tests", () => {
 
     describe("use Minting Hub", () => {
         let positionAddr, positionContract;
+        let clonePositionAddr, clonePositionContract;
         let fee = 0.01;
         let reserve = 0.10;
+        let mintAmount = 100;
+        let fMintAmount = floatToDec18(mintAmount);
+        let fLimit, limit;
+        
         it("create position", async () => {
             let collateral = mockVOL.address;
             let initialLimit = floatToDec18(110_000);
             let liqPrice = floatToDec18(1400);
             let minCollateral = floatToDec18(1);
-            let initialCollateral = floatToDec18(120_000);
+            let initialCollateral = floatToDec18(110_000);
             let duration = BN.from(14*86_400);
             let fFees = BN.from(fee * 1000_000);
             let fReserve = BN.from(reserve * 1000_000);
@@ -86,8 +93,8 @@ describe("Position Tests", () => {
             await hre.ethers.provider.send('evm_increaseTime', [7 * 86_400 + 60]); 
             await hre.ethers.provider.send("evm_mine");
             // thanks for waiting so long
-            let fLimit = await positionContract.limit();
-            let limit = dec18ToFloat(fLimit);
+            fLimit = await positionContract.limit();
+            limit = dec18ToFloat(fLimit);
             let amount = 10_000;
             expect(amount).to.be.lessThan(limit);
 
@@ -106,8 +113,36 @@ describe("Position Tests", () => {
             expect(amountExpected).to.be.equal(ZCHFMinted);
 
         });
-
         
+        it("clone position", async () => {
+            
+            let fInitialCollateral = floatToDec18(10_000);
+            await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
+            let tx = await mintingHubContract.connect(accounts[0]).clonePositionMock(positionAddr, fInitialCollateral, 
+                fMintAmount);
+            await tx.wait();
+            clonePositionAddr = await mintingHubContract.lastPositionAddress();
+            clonePositionContract = await ethers.getContractAt('Position', clonePositionAddr, accounts[0]);
+            
+        });
+        it("global mint limit retained", async () => {
+            let fLimit0 = await clonePositionContract.limit();
+            let fLimit1 = await positionContract.limit();
+            let glblLimit = dec18ToFloat(fLimit0.add(fLimit1));
+            if (glblLimit != limit) {
+                console.log("new global limit =", glblLimit);
+                console.log("original global limit =", limit);
+            }
+            expect(glblLimit).to.be.equal(limit);
+            
+        });
+        //it("no cooldown for clone", async () => {
+            /* TODO
+            let tx = positionContract.connect(accounts[0]).mint(owner, fMintAmount);
+            let fAmount = floatToDec18(amount);
+            let fZCHFBefore = await ZCHFContract.balanceOf(owner);
+            */
+        //});
     });
 
 });

@@ -9,6 +9,10 @@ interface IPosition {
 
     function collateral() external returns (IERC20);
 
+    function price() external returns (uint256);
+
+    function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external;
+
     function deny(address[] calldata helpers, string calldata message) external;
 
     function notifyChallengeStarted(uint256 size) external;

@@ -21,4 +21,12 @@ contract MockMintingHub is MintingHub {
         return lastPositionAddress;
     }
 
+    function clonePositionMock(address position, uint256 _initialCollateral, 
+        uint256 _initialMint) public returns (address)
+    {
+        lastPositionAddress = clonePosition(position, _initialCollateral, 
+            _initialMint);
+        return lastPositionAddress;
+    }
+
 }
