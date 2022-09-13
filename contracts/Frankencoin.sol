@@ -16,6 +16,7 @@ contract Frankencoin is ERC20, IFrankencoin {
 
    mapping (address => uint256) public minters;
    mapping (address => address) public positions;
+   address positionFactory;
 
    event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
    event MinterDenied(address indexed minter, string message);
@@ -32,11 +33,26 @@ contract Frankencoin is ERC20, IFrankencoin {
       return "ZCHF";
    }
 
+   function setPositionFactory(address _factory) external {
+      require(totalSupply() == 0, "set at genesis only");
+      positionFactory = _factory;
+   }
+
+   
+   /**
+    * @notice Minting is suggested either by (1) person applying for a new original position,
+    * or (2) by the minting hub when cloning a position. The minting hub has the priviledge
+    * to call with zero application fee and period.
+    * @param _minter             address of the position want to add to the minters
+    * @param _applicationPeriod  application period in seconds
+    * @param _applicationFee     application fee in parts per million
+    * @param _message            message string
+    */
    function suggestMinter(address _minter, uint256 _applicationPeriod, 
       uint256 _applicationFee, string calldata _message) override external 
    {
-      require(_applicationPeriod >= MIN_APPLICATION_PERIOD || totalSupply() == 0, "period too short");
-      require(_applicationFee >= MIN_FEE || totalSupply() == 0, "fee too low");
+      require(_applicationPeriod >= MIN_APPLICATION_PERIOD || totalSupply() == 0 || msg.sender==positionFactory, "period too short");
+      require(_applicationFee >= MIN_FEE || totalSupply() == 0 || msg.sender==positionFactory, "fee too low");
       require(minters[_minter] == 0, "already registered");
       _transfer(msg.sender, address(reserve), _applicationFee);
       minters[_minter] = block.timestamp + _applicationPeriod;
@@ -137,9 +153,8 @@ contract Frankencoin is ERC20, IFrankencoin {
          _mint(msg.sender, _amount - reserveLeft);
       }
    }
-
    function isMinter(address _minter) override public view returns (bool){
-      return minters[_minter]!=0 && block.timestamp > minters[_minter];
+      return minters[_minter]!=0 && block.timestamp >= minters[_minter];
    }
 
    function isPosition(address _position) override public view returns (address){
@@ -147,3 +162,4 @@ contract Frankencoin is ERC20, IFrankencoin {
    }
 
 }
+
