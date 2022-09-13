@@ -6,7 +6,8 @@ import "./IReserve.sol";
 
 interface IFrankencoin is IERC20 {
 
-    function suggestMinter(address minter, uint256 applicationPeriod, uint256 applicationFee, string calldata message) external;
+    function suggestMinter(address _minter, uint256 _applicationPeriod, 
+      uint256 _applicationFee, string calldata _message) external;
 
     function registerPosition(address position) external;
 
