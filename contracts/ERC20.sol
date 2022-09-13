@@ -116,6 +116,7 @@ abstract contract ERC20 is IERC20 {
         if (currentAllowance < (1 << 255)){
             // Only decrease the allowance if it was not set to 'infinite'
             // Documented in /doc/infiniteallowance.md
+            require(currentAllowance >= amount, "approval not enough");
             _approve(sender, msg.sender, currentAllowance - amount);
         }
         return true;
