@@ -138,9 +138,9 @@ abstract contract ERC20 is IERC20 {
      */
     function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(recipient != address(0));
-
+        
         _beforeTokenTransfer(sender, recipient, amount);
-
+        require(_balances[sender]>=amount, "balance not enough");
         _balances[sender] -= amount;
         _balances[recipient] += amount;
         emit Transfer(sender, recipient, amount);
