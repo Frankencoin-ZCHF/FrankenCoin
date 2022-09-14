@@ -6,8 +6,6 @@ import "./IReserve.sol";
 import "./IFrankencoin.sol";
 import "./Ownable.sol";
 import "./IPosition.sol";
-import "hardhat/console.sol";
-
 /**
  * A hub for creating collateralized minting positions for a given collateral.
  */
@@ -37,7 +35,7 @@ contract MintingHub {
     event ChallengeStarted(address indexed challenger, address position, uint256 size, uint256 number);
     event ChallengeAverted(uint256 number);
     event ChallengeSucceeded(uint256 number);
-
+    event NewBid(uint256 challengedId, uint256 bidAmount, address bidder);
     constructor(address _zchf, address factory) {
         zchf = IFrankencoin(_zchf);
         POSITION_FACTORY = IPositionFactory(factory);
@@ -95,28 +93,37 @@ contract MintingHub {
         IPosition position = IPosition(_positionAddr);
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
         uint256 pos = challenges.length;
+        /*
+        struct Challenge {address challenger;IPosition position;uint256 size;uint256 end;address bidder;uint256 bid;
+        */
         challenges.push(Challenge(msg.sender, position, _collateralAmount, block.timestamp + CHALLENGE_PERIOD, address(0x0), 0));
         position.notifyChallengeStarted(_collateralAmount);
         emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);
         return pos;
     }
 
-    function bid(uint256 challengeNumber, uint256 amount) external {
-        Challenge memory challenge = challenges[challengeNumber];
+    /**
+    * @notice Post a bid (ZCHF amount) for an existing challenge (given collateral amount)
+    * @param _challengeNumber   index of the challenge in the challenges array
+    * @param _bidAmountZCHF     how much to bid for the collateral of this challenge (dec 18)
+    */
+    function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF) external {
+        Challenge memory challenge = challenges[_challengeNumber];
         require(block.timestamp < challenge.end);
-        require(amount > challenge.bid);
+        require(_bidAmountZCHF > challenge.bid);
         if (challenge.bid > 0){
             zchf.transfer(challenge.bidder, challenge.bid); // return old bid
         }
-        if (challenge.position.tryAvertChallenge(challenge.size, amount)){
+        emit NewBid(_challengeNumber, _bidAmountZCHF, msg.sender);
+        if (challenge.position.tryAvertChallenge(challenge.size, _bidAmountZCHF)){
             // bid above Z_B/C_C >= (1+h)Z_M/C_M, challenge averted, end immediately by selling challenger collateral to bidder
-            zchf.transferFrom(msg.sender, challenge.challenger, amount);
+            zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
             IERC20(challenge.position.collateral()).transfer(msg.sender, challenge.size);
-            emit ChallengeAverted(challengeNumber);
-            delete challenges[challengeNumber];
+            emit ChallengeAverted(_challengeNumber);
+            delete challenges[_challengeNumber];
         } else {
-            zchf.transferFrom(msg.sender, address(this), amount);
-            challenge.bid = amount;
+            zchf.transferFrom(msg.sender, address(this), _bidAmountZCHF);
+            challenge.bid = _bidAmountZCHF;
             challenge.bidder = msg.sender;
         }
     }
