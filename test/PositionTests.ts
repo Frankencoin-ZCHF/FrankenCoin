@@ -235,8 +235,11 @@ describe("Position Tests", () => {
         });
         it("end successful challenge", async () => {
             let challengeNumber = 0;
-            await hre.ethers.provider.send('evm_increaseTime', [60]); 
+            await hre.ethers.provider.send('evm_increaseTime', [7*86400+1]); 
             await network.provider.send("evm_mine");
+            //challenge successful if 
+            //  challenge_amount * liqPrice > bidZCHF
+            //challengeAmount * liqPrice > liqPrice * 0.95 * challengeAmount
             let tx = mintingHubContract.connect(accounts[2]).end(challengeNumber);
             await tx;
         });
