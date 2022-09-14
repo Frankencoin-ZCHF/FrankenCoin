@@ -9,12 +9,13 @@ contract PositionFactory is CloneFactory {
 
     function createNewPosition(address _owner, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 
-        uint256 _initialLimit, uint256 _duration, 
+        uint256 _initialLimit, uint256 _duration, uint256 _challengePeriod, 
         uint32 _mintingFeePPM, uint256 _liqPrice, uint32 _reserve) 
         external returns (address) 
     {
         return address(new Position(_owner, msg.sender, _zchf, _collateral, 
-            _minCollateral, _initialCollateral, _initialLimit, _duration, _mintingFeePPM, _liqPrice, _reserve));
+            _minCollateral, _initialCollateral, _initialLimit, _duration, 
+            _challengePeriod, _mintingFeePPM, _liqPrice, _reserve));
     }
 
     /**

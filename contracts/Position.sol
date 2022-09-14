@@ -17,6 +17,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     uint256 public price; // the zchf price per unit of the collateral below which challenges succeed
     uint256 public minted; // how much has been minted so far, including reserve
     uint256 public challengedAmount;
+    uint256 public immutable challengePeriod; //challenge period in timestamp units (seconds) for liquidation
 
     uint256 public cooldown;
     uint256 public limit; // how many zchf can be minted at most, including reserve
@@ -34,7 +35,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     event PositionOpened(address indexed hub, address indexed owner, 
         address collateral, uint256 initialCollateral, uint256 initialLimit, 
-        uint256 duration, uint32 fees, uint32 reserve, address positionAddr);
+        uint256 duration, uint256 challengePeriod, uint32 fees, uint32 reserve, address positionAddr);
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
@@ -47,6 +48,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     * @param _initialCollateral amount of initial collateral to be deposited
     * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner 
     * @param _duration          position tenor in unit of timestamp (seconds) from 'now'
+    * @param _challengePeriod   challenge period. Longer for less liquid collateral.
     * @param _mintingFeePPM     fee to enter position in parts per million of ZCHF amount
     * @param _liqPrice          Liquidation price (dec18) that together with the reserve and
      *                          fees determines the minimal collateralization ratio
@@ -54,7 +56,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     */
     constructor(address _owner, address _hub, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 
-        uint256 _initialLimit, uint256 _duration, uint32 _mintingFeePPM, 
+        uint256 _initialLimit, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
         uint256 _liqPrice, uint32 _reservePPM) Ownable(_owner) 
     {
         factory = msg.sender;
@@ -68,12 +70,12 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         require(_initialCollateral >= _minCollateral);
         minimumCollateral = _minCollateral;
         expiration = block.timestamp + _duration;
+        challengePeriod = _challengePeriod;
         restrictMinting(7 days);
         limit = _initialLimit;
         emit PositionOpened(_hub, owner, _collateral, _initialCollateral, 
-            _initialLimit, _duration, _mintingFeePPM, _reservePPM, address(this));
+            _initialLimit, _duration, _challengePeriod, _mintingFeePPM, _reservePPM, address(this));
     }
-
 
     function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external {
         require(msg.sender == address(factory), "factory only");

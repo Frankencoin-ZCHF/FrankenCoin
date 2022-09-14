@@ -13,11 +13,11 @@ contract MockMintingHub is MintingHub {
 
     function openPositionMock(address _collateral, uint256 _minCollateral, 
         uint256 _initialCollateral, uint256 _initialLimit, 
-        uint256 _duration, uint32 _fees, uint256 _liqPrice, uint32 _reserve) 
+        uint256 _duration, uint256 _challengePeriod, uint32 _fees, uint256 _liqPrice, uint32 _reserve) 
         public returns (address) 
     {
         lastPositionAddress = openPosition(_collateral, _minCollateral,_initialCollateral,
-            _initialLimit, _duration, _fees, _liqPrice, _reserve);
+            _initialLimit, _duration, _challengePeriod, _fees, _liqPrice, _reserve);
         return lastPositionAddress;
     }
 

@@ -79,11 +79,12 @@ describe("Position Tests", () => {
             let fFees = BN.from(fee * 1000_000);
             let fReserve = BN.from(reserve * 1000_000);
             let openingFeeZCHF = await mintingHubContract.OPENING_FEE();
+            let challengePeriod = BN.from(7 * 86400); // 7 days
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
             
             let tx = await mintingHubContract.openPositionMock(collateral, minCollateral, 
-                fInitialCollateral, initialLimit, duration, fFees, fliqPrice, fReserve);
+                fInitialCollateral, initialLimit, duration, challengePeriod, fFees, fliqPrice, fReserve);
             await tx.wait();
             // mock contract stores the last position address
             positionAddr = await mintingHubContract.lastPositionAddress();
@@ -204,6 +205,10 @@ describe("Position Tests", () => {
             let tx = mintingHubContract.connect(accounts[0]).bid(challengeNumber, fBidAmountZCHF);
             await expect(tx).to.emit(mintingHubContract, "NewBid").withArgs(challengeNumber, fBidAmountZCHF, owner);
         });
+        it("bid on not existing challenge", async () => {
+            let tx = mintingHubContract.connect(accounts[2]).bid(42, floatToDec18(42));
+            await expect(tx).to.be.reverted;
+        });
         it("new bid on top of bid", async () => {
             let challengeNumber = 0;
             // accounts[2] sends a bid
@@ -223,6 +228,17 @@ describe("Position Tests", () => {
             let bidAmountZCHFOwner = liqPrice * 0.95 * challengeAmount;
             let cashBack = dec18ToFloat(ownerZCHFbalanceAfter.sub(ownerZCHFbalanceBefore));
             expect(bidAmountZCHFOwner).to.be.equal(cashBack);
+        });
+        it("cannot end successful challenge early", async () => {
+            let tx = mintingHubContract.connect(accounts[2]).end(0);
+            await expect(tx).to.be.revertedWith("period has not ended");
+        });
+        it("end successful challenge", async () => {
+            let challengeNumber = 0;
+            await hre.ethers.provider.send('evm_increaseTime', [60]); 
+            await network.provider.send("evm_mine");
+            let tx = mintingHubContract.connect(accounts[2]).end(challengeNumber);
+            await tx;
         });
     });
 
