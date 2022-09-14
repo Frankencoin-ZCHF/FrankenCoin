@@ -108,7 +108,7 @@ contract MintingHub {
     * @param _bidAmountZCHF     how much to bid for the collateral of this challenge (dec 18)
     */
     function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF) external {
-        Challenge memory challenge = challenges[_challengeNumber];
+        Challenge storage challenge = challenges[_challengeNumber];
         require(block.timestamp < challenge.end);
         require(_bidAmountZCHF > challenge.bid);
         if (challenge.bid > 0){
