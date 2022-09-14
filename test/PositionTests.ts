@@ -198,13 +198,32 @@ describe("Position Tests", () => {
             let bidAmountZCHF = liqPrice * 0.95 * challengeAmount; //for the 5 collateral tokens bid
             let fBidAmountZCHF = floatToDec18(bidAmountZCHF);
             
-            let ZCHFbalance = await ZCHFContract.balanceOf(owner);
+            //let ZCHFbalance = await ZCHFContract.balanceOf(owner);
             
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, fBidAmountZCHF);
             let tx = mintingHubContract.connect(accounts[0]).bid(challengeNumber, fBidAmountZCHF);
             await expect(tx).to.emit(mintingHubContract, "NewBid").withArgs(challengeNumber, fBidAmountZCHF, owner);
         });
-
+        it("new bid on top of bid", async () => {
+            let challengeNumber = 0;
+            // accounts[2] sends a bid
+            let bidAmountZCHF = liqPrice * 0.97 * challengeAmount; //for the 5 collateral tokens bid
+            let fBidAmountZCHF = floatToDec18(bidAmountZCHF);
+            // owner sends some money
+            await ZCHFContract.connect(accounts[0]).transfer(accounts[2].address, fBidAmountZCHF);
+            // store balance of old bidder before new bid takes place
+            let ownerZCHFbalanceBefore = await ZCHFContract.balanceOf(owner);
+            // challenge
+            await ZCHFContract.connect(accounts[2]).approve(mintingHubContract.address, fBidAmountZCHF);
+            let tx = mintingHubContract.connect(accounts[2]).bid(challengeNumber, fBidAmountZCHF);
+            await expect(tx).to.emit(mintingHubContract, "NewBid").withArgs(challengeNumber, fBidAmountZCHF, accounts[2].address);
+            
+            // check that previous challenger got back their bid
+            let ownerZCHFbalanceAfter = await ZCHFContract.balanceOf(owner);
+            let bidAmountZCHFOwner = liqPrice * 0.95 * challengeAmount;
+            let cashBack = dec18ToFloat(ownerZCHFbalanceAfter.sub(ownerZCHFbalanceBefore));
+            expect(bidAmountZCHFOwner).to.be.equal(cashBack);
+        });
     });
 
 });
