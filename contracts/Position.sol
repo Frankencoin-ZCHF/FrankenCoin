@@ -7,11 +7,12 @@ import "./IReserve.sol";
 import "./IFrankencoin.sol";
 import "./Ownable.sol";
 import "./IERC677Receiver.sol";
+import "./MathUtil.sol";
 
 /**
  * A collateralized minting position.
  */
-contract Position is Ownable, IERC677Receiver, IPosition {
+contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     uint256 public price; // the zchf price per unit of the collateral below which challenges succeed
     uint256 public minted; // how much has been minted so far, including reserve
@@ -220,17 +221,18 @@ contract Position is Ownable, IERC677Receiver, IPosition {
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
         uint256 colbal = collateralBalance();
-        require(colbal > 0); // nothing to challenge
-        require(size >= colbal / 20); // must challenge at least 5% of the position
-        challengedAmount += price * size;
+        require(size <= colbal, "size exeeds collateral");
+        require(colbal > 0, "no collateral"); // nothing to challenge
+        require(size >= colbal / 20, "size too small"); // must challenge at least 5% of the position
+        challengedAmount += _mulD18(price, size);
     }
 
-    function tryAvertChallenge(uint256 size, uint256 bid) external onlyHub returns (bool) {
+    function tryAvertChallenge(uint256 _collateralAmount, uint256 _bidAmountZCHF) external onlyHub returns (bool) {
         if (block.timestamp >= expiration){
             return false; // position expired, let every challenge succeed
-        } else if (bid >= price * size){
+        } else if (_bidAmountZCHF >= _mulD18(price, _collateralAmount)){
             // challenge averted, bid is high enough
-            challengedAmount -= price * size;
+            challengedAmount -= _mulD18(price, _collateralAmount);
             // don't allow minter to close the position immediately so challenge can be repeated
             restrictMinting(1 days);
             return true;
