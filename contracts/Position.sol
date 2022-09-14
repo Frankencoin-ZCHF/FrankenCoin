@@ -229,6 +229,12 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         challengedAmount += _mulD18(price, size);
     }
 
+    /**
+     * @notice check whether challenge can be averted
+     * @param _collateralAmount   amount of collateral challenged (dec18)
+     * @param _bidAmountZCHF      bid amount in ZCHF (dec18)
+     * @return true if challenge can be averted
+     */
     function tryAvertChallenge(uint256 _collateralAmount, uint256 _bidAmountZCHF) external onlyHub returns (bool) {
         if (block.timestamp >= expiration){
             return false; // position expired, let every challenge succeed
@@ -244,26 +250,32 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     }
 
     /**
-     * Notifies the position that a challenge was successful.
+     * @notice Notifies the position that a challenge was successful.
      * Triggers the payout of the challenged part of the collateral.
      * Returns three important numbers:
      *  - repay: the amount that is needed to repay for the actually minted zchf wit the challenged collateral
      *  - minted: the number of zchf that where actually minted and used using the challenged collateral
      *  - mintmax: the maximum number of zchf that could have been minted and used using the challenged collateral 
+     * @param _bidder   address of the bidder that receives the collateral
+     * @param _bid      bid amount in ZCHF (dec18)
+     * @param _size     size of the collateral bid for (dec 18)
+     * @return repay, minted, mintmax
      */
-    function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external onlyHub returns (uint256, uint256, uint32){
-        uint256 volume = price * size;
-        challengedAmount -= volume;
-        if (volume > minted){
-            volume = minted;
-            size = size * minted / volume;
-            bid = bid * minted / volume;
+    function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) 
+        external onlyHub returns (uint256, uint256, uint32)
+    {
+        uint256 volumeZCHF = _mulD18(price, _size);
+        challengedAmount -= volumeZCHF;
+        if (volumeZCHF > minted){
+            _size = _divD18(_mulD18(_size, minted), volumeZCHF);
+            _bid = _divD18(_mulD18(_bid, minted), volumeZCHF);
+            volumeZCHF = minted;
         }
-        assert(bid <= volume);
+        require(_bid < volumeZCHF, "challenge not successful");
         // transfer collateral to the bidder
-        IERC20(collateral).transfer(bidder, size);
-        notifyRepaidInternal(volume); // we assume the caller takes care of the actual repayment
-        return (bid, volume, reserveContribution);
+        IERC20(collateral).transfer(_bidder, _size);
+        notifyRepaidInternal(volumeZCHF); // we assume the caller takes care of the actual repayment
+        return (_bid, volumeZCHF, reserveContribution);
     }
 
     modifier noMintRestriction() {
