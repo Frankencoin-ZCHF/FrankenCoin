@@ -14,7 +14,7 @@ contract MintingHub {
 
     uint256 public constant OPENING_FEE = 1000*10**18;
     
-    uint32 public constant BASE = 1000000;
+    uint32 public constant BASE = 1000_000;
     uint32 public constant CHALLENGER_REWARD = 20000; // 2% 
 
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
@@ -128,6 +128,7 @@ contract MintingHub {
             emit ChallengeAverted(_challengeNumber);
             delete challenges[_challengeNumber];
         } else {
+            require((challenge.size * challenge.position.price())/10**18 > _bidAmountZCHF, "whot");
             zchf.transferFrom(msg.sender, address(this), _bidAmountZCHF);
             challenge.bid = _bidAmountZCHF;
             challenge.bidder = msg.sender;
@@ -135,12 +136,13 @@ contract MintingHub {
     }
 
     /**
+     * @notice
      * Ends a challenge successfully after the auction period ended.
      *
      * Example: A challenged position had 1000 ABC tokens as collateral with a minting limit of 200,000 ZCHF, out
      * of which 60,000 have been minted and thereof 15,000 used to buy reserve tokens. The challenger auctioned off
-     * 400 ABC tokens, challengind 40% of the position. The highest bid was 75,000 ZCHF, below the
-     * 40% * 200,000 = 80,000 ZCHF needed to avert the challenge. The reserve ration of the position is 25%.
+     * 400 ABC tokens, challenging 40% of the position. The highest bid was 75,000 ZCHF, below the
+     * 40% * 200,000 = 80,000 ZCHF needed to avert the challenge. The reserve ratio of the position is 25%.
      * 
      * Now, the following happens when calling this method:
      * - 400 ABC from the position owner are transferred to the bidder
@@ -154,21 +156,26 @@ contract MintingHub {
      * If the highest bid was only 60,000 ZCHF, then we would have had a shortfall of 2,000 ZCHF that would in the
      * first priority be covered by the reserve and in the second priority by minting unbacked ZCHF, triggering a 
      * balance alert.
+     * @param _challengeNumber  number of the challenge in challenge-array
      */
-    function end(uint256 challengeNumber) external {
-        _end(challengeNumber);
+    function end(uint256 _challengeNumber) external {
+        _end(_challengeNumber);
     }
 
-    function _end(uint256 challengeNumber) internal {
-        Challenge storage challenge = challenges[challengeNumber];
+    /**
+     * @dev internal end function
+     * @param _challengeNumber  number of the challenge in challenge-array
+     */
+    function _end(uint256 _challengeNumber) internal {
+        Challenge storage challenge = challenges[_challengeNumber];
         IERC20 collateral = challenge.position.collateral();
         require(block.timestamp >= challenge.end, "period has not ended");
         // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
         collateral.transfer(challenge.challenger, challenge.size); // return the challenger's collateral
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
-        (uint256 effectiveBid, uint256 volume, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
-
+        (uint256 effectiveBid, uint256 volume, uint32 reservePPM) = 
+            challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
         if (effectiveBid < challenge.bid){ // overbid, return excess amount
             IERC20(zchf).transfer(challenge.bidder, challenge.bid - effectiveBid);
         }
@@ -176,8 +183,8 @@ contract MintingHub {
         zchf.notifyLoss(reward + volume - effectiveBid); // ensure we have enough to pay everything
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burnWithReserve(volume, reservePPM); // Repay the challenged part
-        emit ChallengeSucceeded(challengeNumber);
-        delete challenges[challengeNumber];
+        emit ChallengeSucceeded(_challengeNumber);
+        delete challenges[_challengeNumber];
     }
 
 }
