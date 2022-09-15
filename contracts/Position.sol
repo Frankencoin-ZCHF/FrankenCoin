@@ -51,7 +51,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     * @param _challengePeriod   challenge period. Longer for less liquid collateral.
     * @param _mintingFeePPM     fee to enter position in parts per million of ZCHF amount
     * @param _liqPrice          Liquidation price (dec18) that together with the reserve and
-     *                          fees determines the minimal collateralization ratio
+    *                           fees determines the minimal collateralization ratio
     * @param _reservePPM        ZCHF pool reserve requirement in parts per million of ZCHF amount
     */
     constructor(address _owner, address _hub, address _zchf, address _collateral, 
