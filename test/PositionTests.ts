@@ -239,6 +239,7 @@ describe("Position Tests", () => {
             await network.provider.send("evm_mine");
             //challenge successful if 
             //  challenge_amount * liqPrice > bidZCHF
+            // our bid = liqPrice * 0.95 * challengeAmount, hence
             //challengeAmount * liqPrice > liqPrice * 0.95 * challengeAmount
             let tx = mintingHubContract.connect(accounts[2]).end(challengeNumber);
             await tx;
