@@ -116,10 +116,10 @@ contract Frankencoin is ERC20, IFrankencoin {
       _burn(msg.sender, _amount);
    }
 
-   /* function burn(uint256 amount, uint32 reservePPM) external override minterOnly returns (uint256) {
+   function burn(uint256 amount, uint32 reservePPM) external override minterOnly {
       _burn(msg.sender, amount);
       minterReserve -= amount * reservePPM / 1000000;
-   } */
+   }
 
    function burnWithReserve(uint256 _amountExcludingReserve, uint32 _reservePPM) 
       external override minterOnly returns (uint256) 

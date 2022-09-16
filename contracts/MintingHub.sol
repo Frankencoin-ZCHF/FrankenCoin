@@ -182,7 +182,7 @@ contract MintingHub {
         uint256 reward = volume * CHALLENGER_REWARD / BASE;
         zchf.notifyLoss(reward + volume - effectiveBid); // ensure we have enough to pay everything
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
-        zchf.burnWithReserve(volume, reservePPM); // Repay the challenged part
+        zchf.burn(volume, reservePPM); // Repay the challenged part
         emit ChallengeSucceeded(_challengeNumber);
         delete challenges[_challengeNumber];
     }

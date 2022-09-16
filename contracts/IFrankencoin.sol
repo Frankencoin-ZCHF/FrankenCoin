@@ -23,6 +23,8 @@ interface IFrankencoin is IERC20 {
 
     function mint(address target, uint256 amount, uint32 reservePPM, uint32 feePPM) external;
 
+    function burn(uint256 amountIncludingReserve, uint32 reservePPM) external;
+
     function burnWithReserve(uint256 amountExcludingReserve, uint32 reservePPM) external returns (uint256);
 
     function burn(address target, uint256 amount) external;
