@@ -16,7 +16,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     uint256 public price; // the zchf price per unit of the collateral below which challenges succeed
     uint256 public minted; // how much has been minted so far, including reserve
-    uint256 public challengedAmount;
+    uint256 public challengedAmount; // amount of the collateral that is currently under a challenge
     uint256 public immutable challengePeriod; //challenge period in timestamp units (seconds) for liquidation
 
     uint256 public cooldown;
@@ -226,7 +226,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         require(size <= colbal, "size exeeds collateral");
         require(colbal > 0, "no collateral"); // nothing to challenge
         require(size >= colbal / 20, "size too small"); // must challenge at least 5% of the position
-        challengedAmount += _mulD18(price, size);
+        challengedAmount += size;
     }
 
     /**
@@ -238,9 +238,9 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     function tryAvertChallenge(uint256 _collateralAmount, uint256 _bidAmountZCHF) external onlyHub returns (bool) {
         if (block.timestamp >= expiration){
             return false; // position expired, let every challenge succeed
-        } else if (_bidAmountZCHF >= _mulD18(price, _collateralAmount)){
+        } else if (_bidAmountZCHF * ONE_DEC18 >= price * _collateralAmount){
             // challenge averted, bid is high enough
-            challengedAmount -= _mulD18(price, _collateralAmount);
+            challengedAmount -= _collateralAmount;
             // don't allow minter to close the position immediately so challenge can be repeated
             restrictMinting(1 days);
             return true;
@@ -259,13 +259,13 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * @param _bidder   address of the bidder that receives the collateral
      * @param _bid      bid amount in ZCHF (dec18)
      * @param _size     size of the collateral bid for (dec 18)
-     * @return repay, minted, mintmax
+     * @return adjusted bid size, repaied xchf, reserve contribution ppm
      */
     function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) 
         external onlyHub returns (uint256, uint256, uint32)
     {
+        challengedAmount -= _size;
         uint256 volumeZCHF = _mulD18(price, _size);
-        challengedAmount -= volumeZCHF;
         if (volumeZCHF > minted){
             _size = _divD18(_mulD18(_size, minted), volumeZCHF);
             _bid = _divD18(_mulD18(_bid, minted), volumeZCHF);
