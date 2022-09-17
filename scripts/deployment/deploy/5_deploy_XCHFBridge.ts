@@ -3,7 +3,7 @@ import {DeployFunction} from "hardhat-deploy/types";
 import { ethers } from "hardhat";
 import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
-import { floatToDec18 } from "../../../scripts/math";
+import { floatToDec18 } from "../../math";
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log(hre.network.name);
