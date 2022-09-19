@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./CloneFactory.sol";
 import "./Position.sol";
 import "./IFrankencoin.sol";
-import "hardhat/console.sol";
+
 contract PositionFactory is CloneFactory {
 
     function createNewPosition(address _owner, address _zchf, address _collateral, 
