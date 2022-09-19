@@ -14,7 +14,7 @@ export const deployContract = async (hre: HardhatRuntimeEnvironment, contractNam
     await deploy(contractName, {
         from: deployer,
         args: args,
-        log: true,
+        log: true
     });
     return await ethers.getContractAt(contractName, (await get(contractName)).address);
 };

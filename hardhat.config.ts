@@ -55,7 +55,7 @@ export default {
         url: "https://rpc.sepolia.org",
         //url: "https://rpc-sepolia.rockx.com",
         chainId: 11155111,
-        gas: 20_000,
+        gas: 50_000,
         gasPrice: "auto",
         accounts: [pk],
         timeout: 50_000,

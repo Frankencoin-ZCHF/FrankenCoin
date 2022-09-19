@@ -20,6 +20,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         zchfDeployment.address);
     console.log("ZCHF set position factory address =", positionFactoryDeployment.address.toString());
     let tx = await zchfContract.setPositionFactory(positionFactoryDeployment.address, { gasLimit: 1_000_000 });
-    console.log("done ", tx);
+    await tx.wait();
 };
 export default deploy;
