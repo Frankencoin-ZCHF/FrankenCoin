@@ -1,6 +1,5 @@
-#!/usr/bin/node
 /*
-    Script to mint moch XCHF
+    Script to mint mock XCHF
     1) set private key in terminal without 0x, via export PK="123cafefefefefeCACe..."
         minting will be done for that wallet
     2) edit script
@@ -12,8 +11,8 @@ import { floatToDec18 } from "../math";
 const NODE_URL = "https://rpc.sepolia.org";
 const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
-const mockXCHFAddr = "0x4bfc8c42362C7626D0555cA273Cc12c1580E8A2d";
-const bridgeAddr = "0xF8e20518393FF2B8Db6C00adBAc2c48956041c41";
+const mockXCHFAddr = "0x081AEb4c123DF59a31890E038A1cCCAa32F41616";
+const bridgeAddr = "0x8f8dE84f9bE411e080A77512cC50CF8A3a1051c4";
 let pk: string | SigningKey = <string>process.env.PK;
 
 export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
@@ -24,9 +23,9 @@ export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
     return signingContractManager;
 }
 
-async function mintXCHF(amount : number) {
+async function mintXCHF(amount : number, address : string) {
     const wallet = new ethers.Wallet(pk);
-    let address = wallet.address;
+    
     let tokenContract = await getSigningManagerFromPK(mockXCHFAddr, ERC20_ABI, NODE_URL, pk);
     await tokenContract.mint(address, floatToDec18(amount));
 }
@@ -41,8 +40,10 @@ async function mintZCHF(amount : number) {
 }
 
 async function start() {
-    let amount = 500;
-    //await mintXCHF(mintForAddress, amount);
+    let amount = 5_000;
+    //let address = wallet.address;
+    //let address = "0x71C696acd63979B39B8eD5b7a8030c46f34Da716"; // manu
+    //await mintXCHF(amount, address);
     await mintZCHF(amount);
 }
 
