@@ -27,7 +27,7 @@ export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
     return signingContractManager;
 }
 
-
+// Total supply of pool share tokens
 async function queryReservePoolShareSupply() {
     let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
     let reserveAddress = await ZCHFContract.reserve();
@@ -37,8 +37,43 @@ async function queryReservePoolShareSupply() {
     return supply;
 }
 
+// reserve pool size in ZCHF
+async function queryTotalReserve() {
+    //TODO
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let fReserveZCHF = await ZCHFContract.equity();
+    let res = dec18ToFloat(fReserveZCHF);
+    return res;
+}
+
+// reserve pool size in ZCHF relative to total supply
+async function queryReserveRatio() {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let fReserveZCHF = await ZCHFContract.equity();
+    let fTotalSupplyZCHF = await ZCHFContract.totalSupply();
+
+    let res = dec18ToFloat(fReserveZCHF)/dec18ToFloat(fTotalSupplyZCHF);
+    return res;
+}
+
+async function queryReserveAddress() {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let reserveAddress = await ZCHFContract.reserve();
+   
+    return reserveAddress;
+}
+
 async function start() {
     let supply = await queryReservePoolShareSupply();
     console.log("supply = ", supply, "RPS");
+
+    let totalReserve = await queryTotalReserve();
+    console.log("market cap (total outstanding ZCHF) = ", totalReserve, "ZCHF");
+    
+    let reserveRatio = await queryReserveRatio();
+    console.log("reserveRatio = ", reserveRatio * 100, "%");
+
+    let resAddr = await queryReserveAddress();
+    console.log(resAddr);
 }
 start();
