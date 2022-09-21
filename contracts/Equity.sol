@@ -43,7 +43,7 @@ contract Equity is ERC20, MathUtil, IReserve {
     }
 
     function price() public view returns (uint256){
-        return VALUATION_FACTOR * zchf.equity() / totalSupply();
+        return VALUATION_FACTOR * zchf.equity() * ONE_DEC18 / totalSupply();
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
