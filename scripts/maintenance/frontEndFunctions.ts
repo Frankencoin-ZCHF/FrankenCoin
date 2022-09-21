@@ -96,6 +96,15 @@ async function querySwapZCHFToShares(numZCHF) {
     return shares;
 }
 
+async function queryPrice() {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let reserveAddress = await ZCHFContract.reserve();
+    let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
+    let fprice = await equityContract.price();
+    let price = Number((fprice).toString());
+    return price;
+}
+
 async function start() {
     let supply = await queryReservePoolShareSupply();
     console.log("supply = ", supply, "RPS");
@@ -120,5 +129,8 @@ async function start() {
 
     let numShares = await querySwapZCHFToShares(1);
     console.log("price sell 1 ZCHF = RPS ", numShares, "(1/x =", 1/numShares, ")" );
+
+    let price0 = await queryPrice();
+    console.log("price RPS = ZCHF ", price0);
 }
 start();
