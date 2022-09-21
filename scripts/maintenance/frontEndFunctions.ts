@@ -105,6 +105,17 @@ async function queryPrice() {
     return price;
 }
 
+async function queryMarketCap() {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let reserveAddress = await ZCHFContract.reserve();
+    let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
+    let fprice = await equityContract.price();
+    let price = Number((fprice).toString());
+    let fTotalSupply = await equityContract.totalSupply();
+    let res = dec18ToFloat(fTotalSupply) * price;
+    return res;
+}
+
 async function start() {
     let supply = await queryReservePoolShareSupply();
     console.log("supply = ", supply, "RPS");
@@ -132,5 +143,9 @@ async function start() {
 
     let price0 = await queryPrice();
     console.log("price RPS = ZCHF ", price0);
+
+    let mktCap = await queryMarketCap();
+    console.log("Market Cap ZCHF ", mktCap);
+
 }
 start();
