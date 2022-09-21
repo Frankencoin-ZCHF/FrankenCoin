@@ -50,10 +50,10 @@ async function queryTotalReserve() {
 // reserve pool size in ZCHF relative to total supply
 async function queryReserveRatio() {
     let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let fReserveZCHF = await ZCHFContract.equity();
+    let reserveZCHF = await queryTotalReserve();
     let fTotalSupplyZCHF = await ZCHFContract.totalSupply();
-
-    let res = dec18ToFloat(fReserveZCHF)/dec18ToFloat(fTotalSupplyZCHF);
+    let totalSupplyZCHF = dec18ToFloat(fTotalSupplyZCHF)
+    let res = (reserveZCHF)/totalSupplyZCHF;
     return res;
 }
 
@@ -78,6 +78,24 @@ async function queryShareholderReserve() {
     return res;
 }
 
+async function querySwapShareToZCHF(numShares) {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let reserveAddress = await ZCHFContract.reserve();
+    let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
+    let fZCHF = await equityContract.calculateProceeds(floatToDec18(numShares));
+    let ZCHF = dec18ToFloat(fZCHF);
+    return ZCHF;
+}
+
+async function querySwapZCHFToShares(numZCHF) {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let reserveAddress = await ZCHFContract.reserve();
+    let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
+    let fShares = await equityContract.calculateShares(floatToDec18(numZCHF));
+    let shares = dec18ToFloat(fShares);
+    return shares;
+}
+
 async function start() {
     let supply = await queryReservePoolShareSupply();
     console.log("supply = ", supply, "RPS");
@@ -97,5 +115,10 @@ async function start() {
     let reserveRatio = await queryReserveRatio();
     console.log("reserveRatio = ", reserveRatio * 100, "%");
 
+    let price = await querySwapShareToZCHF(1);
+    console.log("price sell 1 share = ZCHF ", price , "(1/x =", 1/price, ")");
+
+    let numShares = await querySwapZCHFToShares(1);
+    console.log("price sell 1 ZCHF = RPS ", numShares, "(1/x =", 1/numShares, ")" );
 }
 start();
