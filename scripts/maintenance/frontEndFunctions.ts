@@ -41,7 +41,8 @@ async function queryReservePoolShareSupply() {
 async function queryTotalReserve() {
     //TODO
     let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let fReserveZCHF = await ZCHFContract.equity();
+    let reserveAddress = await ZCHFContract.reserve();
+    let fReserveZCHF = await ZCHFContract.balanceOf(reserveAddress);
     let res = dec18ToFloat(fReserveZCHF);
     return res;
 }
@@ -63,17 +64,38 @@ async function queryReserveAddress() {
     return reserveAddress;
 }
 
+async function queryBorrowerReserve() {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let fReserve = await ZCHFContract.minterReserve();
+    let res = dec18ToFloat(fReserve);
+    return res;
+}
+
+async function queryShareholderReserve() {
+    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
+    let fReserve = await ZCHFContract.equity();
+    let res = dec18ToFloat(fReserve);
+    return res;
+}
+
 async function start() {
     let supply = await queryReservePoolShareSupply();
     console.log("supply = ", supply, "RPS");
 
+    let resAddr = await queryReserveAddress();
+    console.log("Reserve (=Equity) address = ", resAddr);
+
     let totalReserve = await queryTotalReserve();
-    console.log("market cap (total outstanding ZCHF) = ", totalReserve, "ZCHF");
-    
+    console.log("Total outstanding ZCHF = ", totalReserve, "ZCHF");
+
+    let borrowerReserve = await queryBorrowerReserve();
+    console.log("Borrower reserve (=Equity) = ", borrowerReserve);
+
+    let shareholderReserve = await queryShareholderReserve();
+    console.log("Shareholder reserve (=Equity) = ", shareholderReserve);
+
     let reserveRatio = await queryReserveRatio();
     console.log("reserveRatio = ", reserveRatio * 100, "%");
 
-    let resAddr = await queryReserveAddress();
-    console.log(resAddr);
 }
 start();
