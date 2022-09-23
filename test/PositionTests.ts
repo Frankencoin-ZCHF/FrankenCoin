@@ -17,7 +17,7 @@ describe("Position Tests", () => {
         owner = accounts[0].address;
         sygnum = accounts[1].address;
         // create contracts
-        ZCHFContract = await createContract("Frankencoin");
+        ZCHFContract = await createContract("Frankencoin", [10 * 86_400]);
         equityAddr = ZCHFContract.reserve();
         equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
         positionFactoryContract = await createContract("PositionFactory");

@@ -9,7 +9,7 @@ import "./IFrankencoin.sol";
 contract Frankencoin is ERC20, IFrankencoin {
 
    uint256 public constant MIN_FEE = 1000 * (10**18);
-   uint256 public constant MIN_APPLICATION_PERIOD = 10 days;
+   uint256 public immutable MIN_APPLICATION_PERIOD; //10 days;
 
    IReserve override public immutable reserve;
    uint256 public minterReserve;
@@ -21,7 +21,8 @@ contract Frankencoin is ERC20, IFrankencoin {
    event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
    event MinterDenied(address indexed minter, string message);
 
-   constructor() ERC20(18){
+   constructor(uint256 _minApplicationPeriod) ERC20(18){
+      MIN_APPLICATION_PERIOD = _minApplicationPeriod;
       reserve = new Equity(this);
    }
 

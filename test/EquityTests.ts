@@ -17,7 +17,7 @@ describe("Equity Tests", () => {
         owner = accounts[0].address;
         // create contracts
         xchf = await createContract("MockXCHFToken");
-        zchf = await createContract("Frankencoin");
+        zchf = await createContract("Frankencoin", [10 * 86_400]);
         let supply = floatToDec18(1000_000);
         bridge = await createContract("StablecoinBridge", [xchf.address, zchf.address, supply]);
         await zchf.suggestMinter(bridge.address, 0, 0, "");

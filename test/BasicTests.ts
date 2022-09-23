@@ -40,7 +40,8 @@ describe("Basic Tests", () => {
         accounts = await ethers.getSigners();
         owner = accounts[0].address;
         // create contracts
-        ZCHFContract = await createContract("Frankencoin");
+        // 10 day application period
+        ZCHFContract = await createContract("Frankencoin", [10 * 86_400]);
         equityAddr = ZCHFContract.reserve();
         equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
         positionFactoryContract = await createContract("PositionFactory");
