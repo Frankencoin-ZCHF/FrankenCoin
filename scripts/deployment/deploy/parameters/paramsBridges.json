@@ -1,6 +1,6 @@
 [
     {
-        "name": "Frankencoin",
+        "name": "MockXCHF Token Bridge",
         "chainId": 11155111,
         "chainName" : "Sepolia",
         "minApplicationPeriod" : 900
