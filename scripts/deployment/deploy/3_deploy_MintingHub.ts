@@ -19,5 +19,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let zchfContract = await ethers.getContractAt("Frankencoin", zchfDeployment.address);;
     let mintingHubContract = await deployContract(hre, "MintingHub", 
         [zchfContract.address, positionFactoryContract.address]);
+    // create a minting hub too while we have no ZCHF supply
+    zchfContract.suggestMinter(mintingHubContract.address, 0, 0, "Minting Hub");
+
 };
 export default deploy;
