@@ -1,7 +1,6 @@
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import { ethers } from "hardhat";
-import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
 
@@ -15,27 +14,49 @@ let deploymode: string = <string>process.env.deploymode;
     - run via: npm run-script deployPositions:network sepolia
 */
 
-async function deployPos(params, mintingHubContract) {
+async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     /*
     let tx = await mintingHubContract.openPosition(collateral, minCollateral, 
         fInitialCollateral, initialLimit, duration, challengePeriod, fFees, 
         fliqPrice, fReserve);
     */
     //------
+    // get minting hub contract
+    const {deployments: { get },} = hre;
+    const mintingHubDeployment = await get("MintingHub");
+    const fcDeployment = await get("Frankencoin");
+    const collateralDeployment = await get(params.name);
+
+    let mintingHubContract = await ethers.getContractAt("MintingHub", 
+        mintingHubDeployment.address);
+    
     let collateralAddr = params.collateralTknAddr;
     let fMinCollateral = floatToDec18(params.minCollateral);
     let fInitialCollateral = floatToDec18(params.initialCollateral);
     let initialLimitZCHF = floatToDec18(params.initialLimitZCHF);
     let duration = BigNumber.from(params.durationDays).mul(86_400);
-    let challengePeriod = params.challengePeriodSeconds;
-    let feesPPM = params.feesPercent * 1e4;
+    let challengePeriod = BigNumber.from(params.challengePeriodSeconds);
+    let feesPPM = BigNumber.from(params.feesPercent * 1e4);
     let fliqPrice = floatToDec18(params.liqPriceCHF);
-    let fReservePPM = params.reservePercent * 1e4;
+    let fReservePPM = BigNumber.from(params.reservePercent * 1e4);
+    let fOpeningFeeZCHF = BigNumber.from(1000).mul(BigNumber.from(10).pow(18));
+
+    // approvals
+    let ZCHFContract = await ethers.getContractAt("Frankencoin", 
+        fcDeployment.address);
+    let CollateralContract = await ethers.getContractAt(params.name, 
+        collateralDeployment.address);
+    
+    await CollateralContract.approve(mintingHubContract.address, fInitialCollateral,  { gasLimit: 1_000_000 });
+    await ZCHFContract.approve(mintingHubContract.address, fOpeningFeeZCHF,  { gasLimit: 1_000_000 });
+    
     let tx = await mintingHubContract.openPosition(collateralAddr, fMinCollateral, 
         fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
-        fliqPrice, fReservePPM);
+        fliqPrice, fReservePPM,  { gasLimit: 2_000_000 });
+
     await tx.wait();
-    console.log("Deployed position, tx =", tx);
+    
+    return tx;
 }
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -47,17 +68,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let chainId = hre.network.config["chainId"];
     let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
 
-    // get minting hub contract
-    const {deployments: { get },} = hre;
-    const mintingHubDeployment = await get("MintingHub");
-    let mintingHubContract = await ethers.getContractAt("MintingHub", 
-        mintingHubDeployment.address);
-
     // find config for current chain
     for(var k=0; k<paramsArr.length; k++) {
         let params = paramsArr[k];
         if (chainId==params.chainId) {
-            await deployPos(mintingHubContract, params);
+            // deploy position according to parameters
+            let tx = await deployPos(params, hre);
+            console.log("Deployed position, tx =", tx);
         }
     }
 };
