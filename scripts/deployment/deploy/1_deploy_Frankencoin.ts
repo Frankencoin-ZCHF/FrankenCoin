@@ -24,7 +24,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
     let minApplicationPeriod=params['minApplicationPeriod'];
     console.log("Min application period =", minApplicationPeriod);
-    await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
+    let FC = await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
+    let abiCoder = new ethers.utils.AbiCoder();
+    let encodeString = abiCoder.encode(['uint256'], [minApplicationPeriod]);
+    console.log("Constructor Arguments ABI Encoded (Frankencoin at ",FC.address,"):");
+    console.log(encodeString);
     
+    encodeString = abiCoder.encode(['address'], [FC.address]);
+    console.log("Constructor Arguments ABI Encoded (Equity):");
+    console.log(encodeString);
 };
 export default deploy;
