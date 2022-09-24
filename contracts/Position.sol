@@ -46,7 +46,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     * @param _collateral        collateral address
     * @param _minCollateral     minimum collateral required to prevent dust amounts
     * @param _initialCollateral amount of initial collateral to be deposited
-    * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner 
+    * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner (includes reserve)
     * @param _duration          position tenor in unit of timestamp (seconds) from 'now'
     * @param _challengePeriod   challenge period. Longer for less liquid collateral.
     * @param _mintingFeePPM     fee to enter position in parts per million of ZCHF amount
