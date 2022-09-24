@@ -2,6 +2,7 @@ import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import { ethers } from "hardhat";
 import {deployContract, ZERO_ADDRESS} from "../deployUtils";
+let deploymode: string = <string>process.env.deploymode;
 
 /*
     see package.json
@@ -9,6 +10,9 @@ import {deployContract, ZERO_ADDRESS} from "../deployUtils";
     npx hardhat deploy --network sepolia
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+    if (deploymode!="base") {
+        return;
+    }
     const paramFile = "paramsFrankencoin.json";
     let chainId = hre.network.config["chainId"];
     let paramsArr = require(__dirname + `/parameters/${paramFile}`);

@@ -4,8 +4,12 @@ import { ethers } from "hardhat";
 import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
+let deploymode: string = <string>process.env.deploymode;
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+    if (deploymode!="base") {
+        return;
+    }
     console.log(hre.network.name);
     const limit = 1_000_000;
     const {

@@ -9,8 +9,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy:network": "npx hardhat deploy --network",
-    "redeploy:network": "npx hardhat deploy --reset --network"
+    "deploy:network": "export deploymode=base && npx hardhat deploy --network",
+    "redeploy:network": "export deploymode=base && npx hardhat deploy --reset --network",
+    "deployPositions:network": "export deploymode=pos && npx hardhat deploy --network"
   },
   "repository": {
     "type": "git",

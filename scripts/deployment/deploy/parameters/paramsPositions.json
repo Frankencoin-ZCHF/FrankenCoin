@@ -6,7 +6,7 @@
     "chainId": 11155111,
     "collateralTknAddr": "0xf18b58536ab9c71e54ED2eF4485B3f2cDaD3C172",
     "minCollateral": 0.1,
-    "fInitialCollateral": 0.5,
+    "initialCollateral": 0.5,
     "initialLimitZCHF": 20,
     "feesPercent": 2,
     "liqPriceCHF": 1000,

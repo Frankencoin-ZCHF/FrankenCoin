@@ -5,6 +5,7 @@ import { ethers } from "hardhat";
 import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
+let deploymode: string = <string>process.env.deploymode;
 
 /*
     deploy mock-tokens specified in paramsPosition.json
@@ -12,6 +13,9 @@ import { floatToDec18 } from "../../math";
     - hence, to add a new token, token address in paramsPosition.json can be ''
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+    if (deploymode!="base") {
+        return;
+    }
     const paramFile = "paramsPositions.json";
 
     let chainId = hre.network.config["chainId"];
