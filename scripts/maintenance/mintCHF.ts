@@ -10,6 +10,7 @@ import { SigningKey } from "@ethersproject/signing-key";
 import { floatToDec18 } from "../math";
 const NODE_URL = "https://rpc.sepolia.org";
 const ERC20_ABI = require('../../abi/MockXCHFToken.json');
+//const FC_ABI = require('../../abi/Frankencoin.json');
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
 const mockXCHFAddr = "0x20Ab5e22C812b51F29ADb70b467896f5338C7b97";
 const mockVOLTknAddr = "0x894E14D5a7DDA4175E2A9EFee4B3bED6Dd930a98";
@@ -52,6 +53,14 @@ async function start() {
     let address = wallet.address;
     //let address = "0x71C696acd63979B39B8eD5b7a8030c46f34Da716"; // manu
     console.log("minting for ", address);
+    
+    //let zchfContract = await getSigningManagerFromPK("0xC578aC4f81112a87FD6eec13aE6e2C4d17129D4a", FC_ABI, NODE_URL, pk);
+    // create a minting hub too while we have no ZCHF supply
+    /*let tx = await zchfContract.suggestMinter("0x240b812F8B8E42b623E00707A12150FF7cE2d72F", 
+        901, floatToDec18(1000), "Minting Hub",  { gasLimit: 2_000_000 });
+    await tx.wait();
+    console.log(tx);*/
+
     //await mintMockVOLToken(amount, address);
     //await mintXCHF(amount, address);
     //await mintZCHF(amount);
