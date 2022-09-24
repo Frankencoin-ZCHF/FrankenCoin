@@ -14,8 +14,8 @@ const ZCHF_ABI = require('../../abi/Frankencoin.json');
 const EQUITY_ABI = require('../../abi/Equity.json');
 
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
-const mockXCHFAddr = "0x081AEb4c123DF59a31890E038A1cCCAa32F41616";
-const ZCHFAddr = "0x80909ffEE7097da98d4DEb210e79B6231B26Cf5d";
+const mockXCHFAddr = "0x20Ab5e22C812b51F29ADb70b467896f5338C7b97";
+const ZCHFAddr = "0xC578aC4f81112a87FD6eec13aE6e2C4d17129D4a";
 
 let pk: string | SigningKey = <string>process.env.PK;
 
