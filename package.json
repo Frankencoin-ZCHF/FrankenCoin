@@ -14,15 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vasili-serchev/FrankenCoin.git"
+    "url": "git+https://github.com/Frankencoin-ZCHF"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/vasili-serchev/FrankenCoin/issues"
+    "url": "https://github.com/Frankencoin-ZCHF/issues"
   },
-  "homepage": "https://github.com/vasili-serchev/FrankenCoin#readme",
+  "homepage": "https://github.com/Frankencoin-ZCHF#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.3",
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
