@@ -4,7 +4,16 @@ import { ethers } from "hardhat";
 import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
+
+//'deploymode' is defined in package.json as part of command deployPositions/deploy
 let deploymode: string = <string>process.env.deploymode;
+
+/*
+    HOWTO
+    - inspect config file parameters/paramsPositions
+    - ensure minter has enough collateral and ZCHF to ask for position
+    - run via: npm run-script deployPositions:network sepolia
+*/
 
 async function deployPos(params, mintingHubContract) {
     /*
