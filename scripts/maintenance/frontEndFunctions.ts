@@ -101,7 +101,7 @@ async function queryPrice() {
     let reserveAddress = await ZCHFContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
     let fprice = await equityContract.price();
-    let price = Number((fprice).toString());
+    let price = dec18ToFloat(fprice);
     return price;
 }
 
