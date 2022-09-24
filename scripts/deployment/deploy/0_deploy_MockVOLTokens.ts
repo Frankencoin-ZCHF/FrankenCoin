@@ -21,7 +21,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let chainId = hre.network.config["chainId"];
     
     // write address to config
-    const filename = __dirname + `/parameters/${paramFile}`;
+    const filename = __dirname + `/../parameters/${paramFile}`;
     let paramsArr = require(filename);
     // find config for current chain
     for(var k=0; k<paramsArr.length; k++) {

@@ -45,7 +45,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const paramFile = "paramsPositions.json";
 
     let chainId = hre.network.config["chainId"];
-    let paramsArr = require(__dirname + `/parameters/${paramFile}`);
+    let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
 
     // get minting hub contract
     const {deployments: { get },} = hre;

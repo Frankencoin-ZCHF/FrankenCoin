@@ -15,7 +15,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
     const paramFile = "paramsFrankencoin.json";
     let chainId = hre.network.config["chainId"];
-    let paramsArr = require(__dirname + `/parameters/${paramFile}`);
+    let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
     // find config for current chain
     for(var k=0; k<paramsArr.length && paramsArr[k].chainId!=chainId; k++);
     let params = paramsArr[k];
