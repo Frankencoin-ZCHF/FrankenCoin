@@ -14,6 +14,8 @@ import "./MathUtil.sol";
  */
 contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
+    uint256 public constant WARM_UP_PERIOD = 3600; //TODO: 1h set to 7 days for production
+
     uint256 public price; // the zchf price per unit of the collateral below which challenges succeed
     uint256 public minted; // how much has been minted so far, including reserve
     uint256 public challengedAmount; // amount of the collateral that is currently under a challenge
@@ -69,7 +71,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         minimumCollateral = _minCollateral;
         expiration = block.timestamp + _duration;
         challengePeriod = _challengePeriod;
-        restrictMinting(7 days);
+        restrictMinting(WARM_UP_PERIOD);
         limit = _initialLimit;
         
     }
