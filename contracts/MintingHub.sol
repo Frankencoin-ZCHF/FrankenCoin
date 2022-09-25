@@ -22,6 +22,10 @@ contract MintingHub {
     IFrankencoin public immutable zchf; // currency
     Challenge[] public challenges;
     
+    event PositionOpened(address indexed hub, address indexed owner, 
+        address collateral, uint256 initialCollateral, uint256 initialLimit, 
+        uint256 duration, uint256 challengePeriod, uint32 fees, uint32 reserve, address positionAddr);
+
     struct Challenge {
         address challenger;
         IPosition position;
@@ -67,6 +71,10 @@ contract MintingHub {
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         IERC20(_collateral).transferFrom(msg.sender, address(pos), _initialCollateral);
+
+        emit PositionOpened(address(this), msg.sender, _collateral, _initialCollateral, 
+            _initialLimit, _duration, _challengePeriod, _fees, _reserve, address(this));
+
         return address(pos);
     }
 
