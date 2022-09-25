@@ -35,7 +35,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     event PositionOpened(address indexed hub, address indexed owner, 
         address collateral, uint256 initialCollateral, uint256 initialLimit, 
-        uint256 duration, uint256 challengePeriod, uint32 fees, uint32 reserve, address positionAddr);
+        uint256 duration, uint256 challengePeriod, uint32 fees, uint32 reserve);
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
 
@@ -74,7 +74,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         restrictMinting(7 days);
         limit = _initialLimit;
         emit PositionOpened(_hub, owner, _collateral, _initialCollateral, 
-            _initialLimit, _duration, _challengePeriod, _mintingFeePPM, _reservePPM, address(this));
+            _initialLimit, _duration, _challengePeriod, _mintingFeePPM, _reservePPM);
     }
 
     function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external {
