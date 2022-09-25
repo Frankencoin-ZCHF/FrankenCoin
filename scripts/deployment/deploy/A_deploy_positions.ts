@@ -56,7 +56,16 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
 
     await tx.wait();
     
-    return tx;
+    let abiCoder = new ethers.utils.AbiCoder();
+    
+    let encodeString = abiCoder.encode(['address', 'uint256', 'uint256', 'uint256','uint256', 
+        'uint256', 'uint32', 'uint256', 'uint32'], 
+        [collateralAddr, fMinCollateral, fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
+            fliqPrice, fReservePPM]);
+    console.log("Constructor Arguments ABI Encoded (Position):");
+    console.log(encodeString);
+
+    return tx.hash;
 }
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -73,8 +82,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         let params = paramsArr[k];
         if (chainId==params.chainId) {
             // deploy position according to parameters
-            let tx = await deployPos(params, hre);
-            console.log("Deployed position, tx =", tx);
+            let txh = await deployPos(params, hre);
+            console.log("Deployed position, tx hash =", tx);
         }
     }
 };
