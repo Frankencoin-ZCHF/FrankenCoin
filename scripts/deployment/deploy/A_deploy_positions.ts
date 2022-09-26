@@ -2,7 +2,7 @@ import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
-import { floatToDec18 } from "../../math";
+import { dec18ToFloat, floatToDec18 } from "../../math";
 
 //'deploymode' is defined in package.json as part of command deployPositions/deploy
 let deploymode: string = <string>process.env.deploymode;
@@ -39,17 +39,31 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     let feesPPM = BigNumber.from(params.feesPercent * 1e4);
     let fliqPrice = floatToDec18(params.liqPriceCHF);
     let fReservePPM = BigNumber.from(params.reservePercent * 1e4);
-    let fOpeningFeeZCHF = BigNumber.from(1000).mul(BigNumber.from(10).pow(18));
+    let fOpeningFeeZCHF = BigNumber.from(2000).mul(BigNumber.from(10).pow(18));
 
     // approvals
     let ZCHFContract = await ethers.getContractAt("Frankencoin", 
         fcDeployment.address);
     let CollateralContract = await ethers.getContractAt(params.name, 
         collateralDeployment.address);
+
+    let pk: string = <string>process.env.PK;
+    let wallet = new ethers.Wallet(pk);
+    //let balColl = await CollateralContract.balanceOf(wallet.address);
+    //let balZCHF = await ZCHFContract.balanceOf(wallet.address);
+    //console.log("Collateral balance of owner = ", dec18ToFloat(balColl));
+    //console.log("ZCHF balance of owner = ", dec18ToFloat(balZCHF));
+    console.log("ZCHF address ", fcDeployment.address);
+    console.log("coll address ", CollateralContract.address);
+    console.log("owner address ", wallet.address);
     
-    await CollateralContract.approve(mintingHubContract.address, fInitialCollateral,  { gasLimit: 1_000_000 });
-    await ZCHFContract.approve(mintingHubContract.address, fOpeningFeeZCHF,  { gasLimit: 1_000_000 });
-    
+    let tx1 = await CollateralContract.approve(mintingHubContract.address, fInitialCollateral,  { gasLimit: 1_000_000 });
+    let tx2 = await ZCHFContract.approve(mintingHubContract.address, fOpeningFeeZCHF,  { gasLimit: 1_000_000 });
+    /*
+        address _collateral, uint256 _minCollateral, 
+        uint256 _initialCollateral, uint256 _initialLimit, 
+        uint256 _duration, uint256 _challengePeriod, uint32 _fees, uint256 _liqPrice, uint32 _reserve) 
+    */
     let tx = await mintingHubContract.openPosition(collateralAddr, fMinCollateral, 
         fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
         fliqPrice, fReservePPM,  { gasLimit: 2_000_000 });
@@ -83,7 +97,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         if (chainId==params.chainId) {
             // deploy position according to parameters
             let txh = await deployPos(params, hre);
-            console.log("Deployed position, tx hash =", tx);
+            console.log("Deployed position, tx hash =", txh);
         }
     }
 };

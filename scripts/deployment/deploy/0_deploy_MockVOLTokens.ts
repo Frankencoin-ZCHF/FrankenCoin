@@ -13,6 +13,9 @@ let deploymode: string = <string>process.env.deploymode;
     - hence, to add a new token, token address in paramsPosition.json can be ''
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+    
+    return; // turned off
+    
     if (deploymode!="base") {
         return;
     }
