@@ -12,9 +12,9 @@ const NODE_URL = "https://rpc.sepolia.org";
 const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 //const FC_ABI = require('../../abi/Frankencoin.json');
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
-const mockXCHFAddr = "0x20Ab5e22C812b51F29ADb70b467896f5338C7b97";
-const mockVOLTknAddr = "0x894E14D5a7DDA4175E2A9EFee4B3bED6Dd930a98";
-const bridgeAddr = "0x85C0CCbd95530e5d591d42E5C53302dcC97B180e";
+const mockXCHFAddr = "0x76Ce9917fE9F46819bB6507ffcDa981ef0A8db6a";
+const mockVOLTknAddr = "0x37216bB20143212fdC93562B175EA5d1604F67fD";
+const bridgeAddr = "0xBc08e6Ccf8F0a559D8BB0b065efA569CeFE89E3d";
 let pk: string | SigningKey = <string>process.env.PK;
 
 export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
@@ -48,7 +48,7 @@ async function mintZCHF(amount : number) {
 }
 
 async function start() {
-    let amount = 10_000;
+    let amount = 5;
     const wallet = new ethers.Wallet(pk);
     let address = wallet.address;
     //let address = "0x71C696acd63979B39B8eD5b7a8030c46f34Da716"; // manu
