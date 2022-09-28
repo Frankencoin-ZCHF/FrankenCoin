@@ -16,7 +16,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     uint256 public constant WARM_UP_PERIOD = 3600; //TODO: 1h set to 7 days for production
 
-    uint256 public price; // the zchf price per unit of the collateral below which challenges succeed
+    uint256 public price; // the zchf price per unit of the collateral below which challenges succeed, 18 digits
     uint256 public minted; // how much has been minted so far, including reserve
     uint256 public challengedAmount; // amount of the collateral that is currently under a challenge
     uint256 public immutable challengePeriod; //challenge period in timestamp units (seconds) for liquidation
@@ -34,7 +34,6 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     uint32 public immutable mintingFeePPM;
     uint32 public immutable reserveContribution; // in ppm
-
 
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
@@ -81,7 +80,8 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         require(_coll >= minimumCollateral, "coll not enough");
         transferOwnership(owner);
         
-        price = _price;
+        price = _mint * ONE_DEC18 / _coll;
+        require(price <= _price, "can only reduce price on clone");
         limit = _limit;
         mintInternal(owner, _mint, _coll);
     }
@@ -122,7 +122,32 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         }
     }
 
-    // TODO Add function to push limit?
+    function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) public {
+        if (newPrice != price){
+            adjustPrice(newPrice);
+        }
+        uint256 colbal = collateralBalance();
+        if (newCollateral > colbal){
+            collateral.transferFrom(msg.sender, address(this), newCollateral - colbal);
+        }
+        if (newMinted < minted){
+            zchf.burnFrom(msg.sender, minted - newMinted, reserveContribution);
+            minted = newMinted;
+        }
+        if (newCollateral < colbal){
+            withdrawCollateral(msg.sender, colbal - newCollateral);
+        }
+        if (newMinted > minted){
+            mint(msg.sender, newMinted - minted);
+        }
+    }
+
+    function pushLimit(uint256 newLimit) public onlyOwner noChallenge {
+        require(newLimit >= minted);
+        limit = newLimit;
+        restrictMinting(WARM_UP_PERIOD);
+        emitUpdate();
+    }
 
     function adjustPrice(uint256 newPrice) public onlyOwner noChallenge {
         if (newPrice > price) {
@@ -213,7 +238,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     }
 
     function isWellCollateralized(uint256 collateralReserve, uint256 atPrice) internal view returns (bool) {
-        return collateralReserve * atPrice >= minted;
+        return collateralReserve * atPrice >= minted * ONE_DEC18;
     }
 
     function emitUpdate() internal {
