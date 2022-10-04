@@ -122,6 +122,29 @@ contract Frankencoin is ERC20, IFrankencoin {
       minterReserve -= amount * reservePPM / 1000000;
    }
 
+   function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) public view returns (uint256) {
+      uint256 theoreticalReserve = _reservePPM * mintedAmount / 1000000;
+      uint256 currentReserve = balanceOf(address(reserve));
+      uint256 expectedReserve = minterReserve;
+      if (currentReserve == expectedReserve){
+         // normal case, all reserves still present
+         return theoreticalReserve;
+      } else if (currentReserve < expectedReserve){
+         // not enough reserves, owner has to take a loss
+         return theoreticalReserve * currentReserve / expectedReserve;
+      } else {
+         // for some reason (e.g. rounding errors), we have too much reserves. Pay out excess reserves to lucky person.
+         return theoreticalReserve + currentReserve - expectedReserve;
+      }
+   }
+
+   function burnFrom(address payer, uint256 targetTotalBurnAmount, uint32 _reservePPM) external override minterOnly returns (uint256) {
+      uint256 assigned = calculateAssignedReserve(targetTotalBurnAmount, _reservePPM);
+      _transfer(address(reserve), payer, assigned); // collect assigned reserve
+      _burn(payer, targetTotalBurnAmount); // and burn everything
+      return assigned;
+   }
+
    function burnWithReserve(uint256 _amountExcludingReserve, uint32 _reservePPM) 
       external override minterOnly returns (uint256) 
    {
