@@ -11,7 +11,6 @@ coverage.json
 dist/
 .env
 launch.json
-abi/
 scripts/deployment/deployments/localhost
 scripts/deployment/deployments/hardhat
 .VSCodeCounter/

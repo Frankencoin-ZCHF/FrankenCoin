@@ -1,0 +1,88 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_v",
+                "type": "uint256"
+            }
+        ],
+        "name": "cubicRoot",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_a",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_b",
+                "type": "uint256"
+            }
+        ],
+        "name": "divD18",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_a",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_b",
+                "type": "uint256"
+            }
+        ],
+        "name": "mulD18",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_x",
+                "type": "uint256"
+            }
+        ],
+        "name": "power3",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+    }
+]
