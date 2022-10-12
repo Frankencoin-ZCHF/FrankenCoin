@@ -37,6 +37,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     event PositionDenied(address indexed sender, string message);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
+    event PositionOpened(address indexed owner, address original, address zchf, address collateral, uint256 price);
 
     /**
     * @param _owner             position owner address
@@ -73,6 +74,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         restrictMinting(WARM_UP_PERIOD);
         limit = _initialLimit;
         
+        emit PositionOpened(_owner, original, _zchf, address(collateral), _liqPrice);
     }
 
     function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external {
@@ -84,6 +86,8 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         require(price <= _price, "can only reduce price on clone");
         limit = _limit;
         mintInternal(owner, _mint, _coll);
+
+        emit PositionOpened(owner, original, address(zchf), address(collateral), _price);
     }
 
     /**
@@ -140,13 +144,6 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         if (newMinted > minted){
             mint(msg.sender, newMinted - minted);
         }
-    }
-
-    function pushLimit(uint256 newLimit) public onlyOwner noChallenge {
-        require(newLimit >= minted);
-        limit = newLimit;
-        restrictMinting(WARM_UP_PERIOD);
-        emitUpdate();
     }
 
     function adjustPrice(uint256 newPrice) public onlyOwner noChallenge {
