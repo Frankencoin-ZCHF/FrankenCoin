@@ -35,7 +35,7 @@ contract MintingHub {
     event ChallengeAverted(uint256 number);
     event ChallengeSucceeded(uint256 number);
     event NewBid(uint256 challengedId, uint256 bidAmount, address bidder);
-    
+
     constructor(address _zchf, address factory) {
         zchf = IFrankencoin(_zchf);
         POSITION_FACTORY = IPositionFactory(factory);
@@ -76,7 +76,6 @@ contract MintingHub {
         require(zchf.isPosition(position) == address(this), "not our pos");
         IPosition pos = IPosition(POSITION_FACTORY.clonePosition(position, address(zchf), msg.sender, _initialCollateral, _initialMint));
         zchf.registerPosition(address(pos));
-        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         pos.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
         return address(pos);
     }
