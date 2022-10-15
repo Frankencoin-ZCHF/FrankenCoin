@@ -19,6 +19,7 @@ It shall support a wide range of collateralized minting methods that are governe
 | IERC20.sol            | Standard |
 | ERC20.sol             | Standard |
 
+<img src="docs/contractdia.png">
 
 ## Voting
 
