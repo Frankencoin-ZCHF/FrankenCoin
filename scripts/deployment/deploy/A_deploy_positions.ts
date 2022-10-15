@@ -63,10 +63,11 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
         address _collateral, uint256 _minCollateral, 
         uint256 _initialCollateral, uint256 _initialLimit, 
         uint256 _duration, uint256 _challengePeriod, uint32 _fees, uint256 _liqPrice, uint32 _reserve) 
+
     */
     let tx = await mintingHubContract.openPosition(collateralAddr, fMinCollateral, 
         fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
-        fliqPrice, fReservePPM,  { gasLimit: 2_000_000 });
+        fliqPrice, fReservePPM,  { gasLimit: 4_000_000 });
 
     await tx.wait();
     

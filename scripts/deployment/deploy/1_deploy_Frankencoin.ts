@@ -11,6 +11,9 @@ let deploymode: string = <string>process.env.deploymode;
     npm run redeploynotesttoken:network sepolia
     // mint ZCHF via scripts/maintenance/mintCHF.ts (adjust StableCoinBridge address in mintCHF.ts header) 
     ts-node scripts/maintenance/mintCHF.ts
+    // verify on https://sepolia.etherscan.io/
+    // deploy positions (inspect script A_deploy_...)
+    npm run-script deployPositions:network sepolia
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (deploymode!="base") {

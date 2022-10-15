@@ -62,9 +62,9 @@ async function start() {
     await tx.wait();
     console.log(tx);*/
 
-    //await mintMockVOLToken(amount, address);
+    await mintMockVOLToken(amount, address);
     await mintXCHF(amount, address);
-    await mintZCHF(amount);
+    //await mintZCHF(amount);
 }
 
 start();
