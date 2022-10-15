@@ -49,3 +49,12 @@ export async function createContract(path: String, args = [], libraries = {}) {
 export function sleep(ms : number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+
+export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
+    const provider = new ethers.providers.JsonRpcProvider(nodeUrl);
+    const wallet = new ethers.Wallet(pk);
+    const signer = wallet.connect(provider);
+    const signingContractManager = new ethers.Contract(ctrAddr, ctrAbi, signer);
+    return signingContractManager;
+}
