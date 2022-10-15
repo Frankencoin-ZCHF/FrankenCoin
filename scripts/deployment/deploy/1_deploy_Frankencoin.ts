@@ -5,9 +5,12 @@ import {deployContract, ZERO_ADDRESS} from "../deployUtils";
 let deploymode: string = <string>process.env.deploymode;
 
 /*
-    see package.json
+    //see package.json
     export PK=12...
-    npx hardhat deploy --network sepolia
+    // deploy according to config (see package.json), e.g., 
+    npm run redeploynotesttoken:network sepolia
+    // mint ZCHF via scripts/maintenance/mintCHF.ts (adjust StableCoinBridge address in mintCHF.ts header) 
+    ts-node scripts/maintenance/mintCHF.ts
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (deploymode!="base") {

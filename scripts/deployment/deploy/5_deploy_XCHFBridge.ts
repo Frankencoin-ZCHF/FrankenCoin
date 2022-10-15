@@ -4,7 +4,19 @@ import { ethers } from "hardhat";
 import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
+var prompt = require('prompt');
 let deploymode: string = <string>process.env.deploymode;
+
+async function getAddress() {
+    let addr = "0xB6d3b7d819cDFf7dC6838349314D8d40C284B117";
+    console.log("Is this address for MOCKCHF ok? [y,N]", addr)
+    prompt.start();
+    const {isOk} = await prompt.get(['isOk']);
+    if (isOk!="y" && isOk!="Y") {
+        return "";
+    }
+    return addr;
+}
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (deploymode!="base") {
@@ -18,9 +30,17 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let xchfAddress;
     let applicationMsg;
     if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
-        console.log("Deploying Mock-XCHF-Token Bridge");
-        const xchfDeployment = await get("MockXCHFToken");
-        xchfAddress = xchfDeployment.address;
+        console.log("Setting Mock-XCHF-Token Bridge");
+        try {
+            const xchfDeployment = await get("MockXCHFToken");
+            xchfAddress = xchfDeployment.address;
+        } catch (err : unknown) {
+            xchfAddress = await getAddress();
+            if (xchfAddress=="") {
+                throw(err);
+            }
+        }
+        
         applicationMsg = "MockXCHF Token Bridge";
     } else {
         console.log("Deploying XCHF-Token Bridge");

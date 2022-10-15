@@ -6,7 +6,7 @@ import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
 let deploymode: string = <string>process.env.deploymode;
-
+let deployoption: string = <string>process.env.deployoption;
 /*
     deploy mock-tokens specified in paramsPosition.json
     - also writes the address of the deployed token into the config file
@@ -14,8 +14,10 @@ let deploymode: string = <string>process.env.deploymode;
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     
-    return; // turned off
-    
+    if (deployoption=="notesttoken") {
+        console.log("No deployment of MOCKVOLTOKEN")
+        return;
+    }
     if (deploymode!="base") {
         return;
     }

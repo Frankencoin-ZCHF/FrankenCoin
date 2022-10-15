@@ -14,7 +14,7 @@ const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
 const mockXCHFAddr = "0xB6d3b7d819cDFf7dC6838349314D8d40C284B117";
 const mockVOLTknAddr = "0xC5Bdf340EE520965b0B8BeAA85B6bDbf90d5b277";
-const bridgeAddr = "0x879b628bbc8cCb291453F2A575AA070775e9f42a";
+const bridgeAddr = "0xfB6dB09EAb97e16a86c83fD0503637820766b193";
 let pk: string | SigningKey = <string>process.env.PK;
 
 export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
@@ -39,6 +39,7 @@ async function mintMockVOLToken(amount : number, address : string) {
 }
 
 async function mintZCHF(amount : number) {
+    // mint ZCHF via XCHF bridge
     let dAmount = floatToDec18(amount);
     let tokenContract = await getSigningManagerFromPK(mockXCHFAddr, ERC20_ABI, NODE_URL, pk);
     let bridgeContract = await getSigningManagerFromPK(bridgeAddr, BRIDGE_ABI, NODE_URL, pk);
@@ -62,7 +63,7 @@ async function start() {
     console.log(tx);*/
 
     //await mintMockVOLToken(amount, address);
-    //await mintXCHF(amount, address);
+    await mintXCHF(amount, address);
     await mintZCHF(amount);
 }
 
