@@ -165,13 +165,7 @@ describe("Position Tests", () => {
             let fBalanceAfter = await ZCHFContract.balanceOf(accounts[1].address);
             let mintAfterFees = mintAmount *( 1 - mintingFeePPM/1000_000 - reserveContributionPPM/1000_000)
             let cloneFeeCharged = dec18ToFloat(fGlblZCHBalanceOfCloner.sub(fBalanceAfter))+mintAfterFees;
-            let fCloneFee = await mintingHubContract.OPENING_FEE();
-            let cloneFee = dec18ToFloat(fCloneFee);
-            if (cloneFee!=cloneFeeCharged) {
-                console.log("Charged=", cloneFeeCharged);
-                console.log("Fee expected=", cloneFee);
-            }
-            expect(cloneFeeCharged).to.be.equal(cloneFee);
+            expect(cloneFeeCharged).to.be.equal(0); // no extra fees when cloning
         });
     });
     describe("challenge clone", () => {
@@ -241,9 +235,8 @@ describe("Position Tests", () => {
             //  challenge_amount * liqPrice > bidZCHF
             // our bid = liqPrice * 0.95 * challengeAmount, hence
             //challengeAmount * liqPrice > liqPrice * 0.95 * challengeAmount
-            let tx = mintingHubContract.connect(accounts[2]).end(challengeNumber);
-            await tx;
-        });
+            await mintingHubContract.connect(accounts[2]).end(challengeNumber);
+        });n
     });
 
 });

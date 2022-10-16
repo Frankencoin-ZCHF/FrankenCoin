@@ -255,6 +255,35 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "payer",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "targetTotalBurnAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint32",
+                "name": "_reservePPM",
+                "type": "uint32"
+            }
+        ],
+        "name": "burnFrom",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "uint256",
                 "name": "_amountExcludingReserve",
                 "type": "uint256"
@@ -274,6 +303,30 @@
             }
         ],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "mintedAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint32",
+                "name": "_reservePPM",
+                "type": "uint32"
+            }
+        ],
+        "name": "calculateAssignedReserve",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
