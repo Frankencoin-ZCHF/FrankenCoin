@@ -45,12 +45,10 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     let ZCHFContract = await ethers.getContractAt("Frankencoin", 
         fcDeployment.address);
     let CollateralContract = await ethers.getContractAt(params.name, 
-        collateralDeployment.address);
+        params.collateralTknAddr);
 
     let pk: string = <string>process.env.PK;
-    let wallet = new ethers.Wallet(pk);
-    //let balColl = await CollateralContract.balanceOf(wallet.address);
-    //let balZCHF = await ZCHFContract.balanceOf(wallet.address);
+    let wallet = new ethers.Wallet(pk);   
     //console.log("Collateral balance of owner = ", dec18ToFloat(balColl));
     //console.log("ZCHF balance of owner = ", dec18ToFloat(balZCHF));
     console.log("ZCHF address ", fcDeployment.address);
@@ -67,7 +65,7 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     */
     let tx = await mintingHubContract.openPosition(collateralAddr, fMinCollateral, 
         fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
-        fliqPrice, fReservePPM,  { gasLimit: 4_000_000 });
+        fliqPrice, fReservePPM,  { gasLimit: 3_000_000 });
 
     await tx.wait();
     

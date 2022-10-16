@@ -18,7 +18,7 @@ const MH_ABI = require('../../abi/MintingHub.json');
 
 let pk: string | SigningKey = <string>process.env.PK;
 
-let mintingHubAddr = "0x4faFcA8CB68a889aDB9e0bA723343A822d5dc331";
+let mintingHubAddr = "0x01242C959729774aA2cF6B54FeE10BD51db8c705";
 
 async function run() {
     //const wallet = new ethers.Wallet(pk);
