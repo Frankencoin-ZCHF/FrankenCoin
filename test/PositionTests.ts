@@ -81,10 +81,21 @@ describe("Position Tests", () => {
             let challengePeriod = BN.from(7 * 86400); // 7 days
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
-            
+            let balBefore = await ZCHFContract.balanceOf(owner);
+            let balBeforeVOL = await mockVOL.balanceOf(owner);
             let tx = await mintingHubContract.openPositionMock(collateral, minCollateral, 
                 fInitialCollateral, initialLimit, duration, challengePeriod, fFees, fliqPrice, fReserve);
             await tx.wait();
+            let balAfter = await ZCHFContract.balanceOf(owner);
+            let balAfterVOL = await mockVOL.balanceOf(owner);
+            let dZCHF = dec18ToFloat(balAfter.sub(balBefore));
+            let dVOL = dec18ToFloat(balAfterVOL.sub(balBeforeVOL));
+            expect(dVOL).to.be.equal(-initialCollateral);
+            expect(dZCHF).to.be.equal(-dec18ToFloat(openingFeeZCHF));
+            
+            //console.log("balDiff ZCHF= ", dec18ToFloat(balAfter.sub(balBefore)));
+            //console.log("balDiff VOL = ", dec18ToFloat(balAfterVOL.sub(balBeforeVOL)));
+            
             // mock contract stores the last position address
             positionAddr = await mintingHubContract.lastPositionAddress();
             //console.log("positionAddr =", positionAddr);
