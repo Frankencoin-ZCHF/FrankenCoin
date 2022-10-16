@@ -62,7 +62,6 @@ describe("Position Tests", () => {
     let fMintAmount = floatToDec18(mintAmount);
     let fLimit, limit;
     let fGlblZCHBalanceOfCloner;
-    let liqPrice = 1000;
     let initialCollateral = 10;//orig position
     let initialCollateralClone = 4;
     let challengeAmount;
@@ -72,7 +71,7 @@ describe("Position Tests", () => {
         it("create position", async () => {
             let collateral = mockVOL.address;
             let initialLimit = floatToDec18(110_000);
-            let fliqPrice = floatToDec18(liqPrice);
+            let fliqPrice = floatToDec18(1000);
             let minCollateral = floatToDec18(1);
             let fInitialCollateral = floatToDec18(initialCollateral);
             let duration = BN.from(14*86_400);
@@ -165,29 +164,16 @@ describe("Position Tests", () => {
             let fBalanceAfter = await ZCHFContract.balanceOf(accounts[1].address);
             let mintAfterFees = mintAmount *( 1 - mintingFeePPM/1000_000 - reserveContributionPPM/1000_000)
             let cloneFeeCharged = dec18ToFloat(fGlblZCHBalanceOfCloner.sub(fBalanceAfter))+mintAfterFees;
-            let fCloneFee = await mintingHubContract.OPENING_FEE();
-            let cloneFee = dec18ToFloat(fCloneFee);
-            if (cloneFee!=cloneFeeCharged) {
-                console.log("Charged=", cloneFeeCharged);
-                console.log("Fee expected=", cloneFee);
-            }
-            expect(cloneFeeCharged).to.be.equal(cloneFee);
+            expect(cloneFeeCharged).to.be.equal(0); // no extra fees when cloning
         });
     });
     describe("challenge clone", () => {
-        it("should not challenge more than collateral", async () => {
-            let fchallengeAmount = floatToDec18(2 * initialCollateralClone);
-            await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fchallengeAmount);
-            let tx = mintingHubContract.connect(accounts[0]).launchChallenge(clonePositionAddr, fchallengeAmount);
-            await expect(tx).to.be.revertedWith('size exeeds collateral');
-        });
         it("send challenge", async () => {
             challengeAmount = initialCollateralClone/2;
             let fchallengeAmount = floatToDec18(challengeAmount);
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fchallengeAmount);
-            let tx = mintingHubContract.connect(accounts[0]).launchChallenge(clonePositionAddr, fchallengeAmount);
-            await expect(tx).to.emit(mintingHubContract, "ChallengeStarted")
-                .withArgs(owner, clonePositionAddr, fchallengeAmount, 0);
+            let tx = await mintingHubContract.connect(accounts[0]).launchChallenge(clonePositionAddr, fchallengeAmount);
+            await expect(tx).to.emit(mintingHubContract, "ChallengeStarted");
         });
         it("pos owner cannot withdraw during challenge", async () => {
             let tx = clonePositionContract.withdrawCollateral(clonePositionAddr, floatToDec18(1));
@@ -195,14 +181,15 @@ describe("Position Tests", () => {
         });
         it("bid on challenged position", async () => {
             let challengeNumber = 0;
-            // liqprice is 1000
+            let liqPrice = dec18ToFloat(await clonePositionContract.price());
             let bidAmountZCHF = liqPrice * 0.95 * challengeAmount; //for the 5 collateral tokens bid
             let fBidAmountZCHF = floatToDec18(bidAmountZCHF);
             
-            //let ZCHFbalance = await ZCHFContract.balanceOf(owner);
-            
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, fBidAmountZCHF);
-            let tx = mintingHubContract.connect(accounts[0]).bid(challengeNumber, fBidAmountZCHF);
+            let tx = await mintingHubContract.connect(accounts[0]).bid(challengeNumber, fBidAmountZCHF);
+            
+            //const receipt = await tx.wait();
+            //console.log(JSON.stringify(receipt));
             await expect(tx).to.emit(mintingHubContract, "NewBid").withArgs(challengeNumber, fBidAmountZCHF, owner);
         });
         it("bid on not existing challenge", async () => {
@@ -212,6 +199,7 @@ describe("Position Tests", () => {
         it("new bid on top of bid", async () => {
             let challengeNumber = 0;
             // accounts[2] sends a bid
+            let liqPrice = dec18ToFloat(await clonePositionContract.price());
             let bidAmountZCHF = liqPrice * 0.97 * challengeAmount; //for the 5 collateral tokens bid
             let fBidAmountZCHF = floatToDec18(bidAmountZCHF);
             // owner sends some money
@@ -241,8 +229,7 @@ describe("Position Tests", () => {
             //  challenge_amount * liqPrice > bidZCHF
             // our bid = liqPrice * 0.95 * challengeAmount, hence
             //challengeAmount * liqPrice > liqPrice * 0.95 * challengeAmount
-            let tx = mintingHubContract.connect(accounts[2]).end(challengeNumber);
-            await tx;
+            await mintingHubContract.connect(accounts[2]).end(challengeNumber);
         });
     });
 
