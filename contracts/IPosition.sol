@@ -9,6 +9,8 @@ interface IPosition {
 
     function collateral() external returns (IERC20);
 
+    function minimumCollateral() external returns (uint256);
+
     function challengePeriod() external returns (uint256);
 
     function price() external returns (uint256);

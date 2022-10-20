@@ -105,18 +105,37 @@ contract MintingHub {
         return pos;
     }
 
+    function splitChallenge(uint256 _challengeNumber, uint256 splitOffAmount) external returns (uint256) {
+        Challenge storage challenge = challenges[_challengeNumber];
+        require(challenge.challenger != address(0x0));
+        Challenge memory copy = Challenge(challenge.challenger, challenge.position, splitOffAmount, challenge.end, 
+            challenge.bidder, challenge.bid * splitOffAmount / challenge.size);
+        challenge.bid -= copy.bid;
+        challenge.size -= copy.size;
+
+        uint256 min = IPosition(challenge.position).minimumCollateral();
+        require(challenge.size >= min);
+        require(copy.size >= min);
+
+        uint256 pos = challenges.length;
+        challenges.push(copy);
+        emit ChallengeStarted(copy.challenger, address(copy.position), copy.size, pos);
+        return pos;
+    }
+
     /**
     * @notice Post a bid (ZCHF amount) for an existing challenge (given collateral amount)
     * @param _challengeNumber   index of the challenge in the challenges array
     * @param _bidAmountZCHF     how much to bid for the collateral of this challenge (dec 18)
     */
-    function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF) external {
+    function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF, uint256 expectedSize) external {
         Challenge storage challenge = challenges[_challengeNumber];
         if(block.timestamp >= challenge.end) {
             // if bid is too late, the transaction ends the challenge
             _end(_challengeNumber);
             return;
         }
+        require(expectedSize == challenge.size, "s");
         require(_bidAmountZCHF > challenge.bid, "higher bid available");
         if (challenge.bid > 0){
             zchf.transfer(challenge.bidder, challenge.bid); // return old bid
@@ -129,7 +148,7 @@ contract MintingHub {
             emit ChallengeAverted(_challengeNumber);
             delete challenges[_challengeNumber];
         } else {
-            require((challenge.size * challenge.position.price())/10**18 > _bidAmountZCHF, "whot");
+            require(challenge.size * challenge.position.price() > _bidAmountZCHF * 10**18, "whot");
             zchf.transferFrom(msg.sender, address(this), _bidAmountZCHF);
             challenge.bid = _bidAmountZCHF;
             challenge.bidder = msg.sender;

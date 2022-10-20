@@ -147,6 +147,11 @@
                 "internalType": "uint256",
                 "name": "_bidAmountZCHF",
                 "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expectedSize",
+                "type": "uint256"
             }
         ],
         "name": "bid",
@@ -334,6 +339,30 @@
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_challengeNumber",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "splitOffAmount",
+                "type": "uint256"
+            }
+        ],
+        "name": "splitChallenge",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {

@@ -30,7 +30,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     address public immutable hub;
     IFrankencoin public immutable zchf; // currency
     IERC20 public override immutable collateral; // collateral
-    uint256 public immutable minimumCollateral; // prevent dust amounts
+    uint256 public override immutable minimumCollateral; // prevent dust amounts
 
     uint32 public immutable mintingFeePPM;
     uint32 public immutable reserveContribution; // in ppm

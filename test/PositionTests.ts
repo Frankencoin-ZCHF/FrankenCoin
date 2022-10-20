@@ -197,14 +197,14 @@ describe("Position Tests", () => {
             let fBidAmountZCHF = floatToDec18(bidAmountZCHF);
             
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, fBidAmountZCHF);
-            let tx = await mintingHubContract.connect(accounts[0]).bid(challengeNumber, fBidAmountZCHF);
+            let tx = await mintingHubContract.connect(accounts[0]).bid(challengeNumber, fBidAmountZCHF, floatToDec18(challengeAmount));
             
             //const receipt = await tx.wait();
             //console.log(JSON.stringify(receipt));
             await expect(tx).to.emit(mintingHubContract, "NewBid").withArgs(challengeNumber, fBidAmountZCHF, owner);
         });
         it("bid on not existing challenge", async () => {
-            let tx = mintingHubContract.connect(accounts[2]).bid(42, floatToDec18(42));
+            let tx = mintingHubContract.connect(accounts[2]).bid(42, floatToDec18(42), floatToDec18(challengeAmount));
             await expect(tx).to.be.reverted;
         });
         it("new bid on top of bid", async () => {
@@ -219,7 +219,7 @@ describe("Position Tests", () => {
             let ownerZCHFbalanceBefore = await ZCHFContract.balanceOf(owner);
             // challenge
             await ZCHFContract.connect(accounts[2]).approve(mintingHubContract.address, fBidAmountZCHF);
-            let tx = mintingHubContract.connect(accounts[2]).bid(challengeNumber, fBidAmountZCHF);
+            let tx = mintingHubContract.connect(accounts[2]).bid(challengeNumber, fBidAmountZCHF, floatToDec18(challengeAmount));
             await expect(tx).to.emit(mintingHubContract, "NewBid").withArgs(challengeNumber, fBidAmountZCHF, accounts[2].address);
             
             // check that previous challenger got back their bid
