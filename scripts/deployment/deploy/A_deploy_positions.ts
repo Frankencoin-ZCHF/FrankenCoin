@@ -63,6 +63,7 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
         uint256 _duration, uint256 _challengePeriod, uint32 _fees, uint256 _liqPrice, uint32 _reserve) 
 
     */
+      
     let tx = await mintingHubContract.openPosition(collateralAddr, fMinCollateral, 
         fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
         fliqPrice, fReservePPM,  { gasLimit: 3_000_000 });
@@ -71,10 +72,22 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     
     let abiCoder = new ethers.utils.AbiCoder();
     
-    let encodeString = abiCoder.encode(['address', 'uint256', 'uint256', 'uint256','uint256', 
-        'uint256', 'uint32', 'uint256', 'uint32'], 
-        [collateralAddr, fMinCollateral, fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
-            fliqPrice, fReservePPM]);
+    /*
+    constructor(address _owner, address _hub, address _zchf, address _collateral, 
+        uint256 _minCollateral, uint256 _initialCollateral, 
+        uint256 _initialLimit, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
+        uint256 _liqPrice, uint32 _reservePPM) Ownable(_owner) 
+
+     new Position(_owner, msg.sender, _zchf, _collateral, 
+            _minCollateral, _initialCollateral, _initialLimit, 
+            _duration, _challengePeriod, _mintingFeePPM, _liqPrice, _reserve))
+
+    */
+    let encodeString = abiCoder.encode(['address', 'address', 'address', 'address',
+        'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint32','uint256', 'uint32'], 
+        [wallet.address, mintingHubDeployment.address, fcDeployment.address, collateralAddr,
+            fMinCollateral, fInitialCollateral, initialLimitZCHF, 
+            duration, challengePeriod, feesPPM, fliqPrice, fReservePPM]);
     console.log("Constructor Arguments ABI Encoded (Position):");
     console.log(encodeString);
 
