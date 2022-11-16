@@ -12,7 +12,7 @@ contract Frankencoin is ERC20, IFrankencoin {
    uint256 public immutable MIN_APPLICATION_PERIOD; //10 days;
 
    IReserve override public immutable reserve;
-   uint256 public minterReserve;
+   uint256 private minterReserveE6;
 
    mapping (address => uint256) public minters;
    mapping (address => address) public positions;
@@ -60,6 +60,10 @@ contract Frankencoin is ERC20, IFrankencoin {
       emit MinterApplied(_minter, _applicationPeriod, _applicationFee, _message);
    }
 
+   function minterReserve() public view returns (uint256) {
+      return minterReserveE6 / 1000000;
+   }
+
    function registerPosition(address _position) override external {
       require(isMinter(msg.sender), "not minter");
       positions[_position] = msg.sender;
@@ -71,10 +75,11 @@ contract Frankencoin is ERC20, IFrankencoin {
     */
    function equity() public view returns (uint256) {
       uint256 balance = balanceOf(address(reserve));
-      if (balance <= minterReserve){
+      uint256 minReserve = minterReserve();
+      if (balance <= minReserve){
         return 0;
       } else {
-        return balance - minterReserve;
+        return balance - minReserve;
       }
     }
 
@@ -96,12 +101,12 @@ contract Frankencoin is ERC20, IFrankencoin {
    function mint(address _target, uint256 _amount, uint32 _reservePPM, uint32 _feesPPM) 
       override external minterOnly 
    {
-      uint256 reserveAmount = _amount * _reservePPM;
-      uint256 mintAmount = reserveAmount / 1000_000;
-      uint256 fees = (_amount * _feesPPM) / 1000_000;
-      _mint(_target, _amount - mintAmount - fees);
-      _mint(address(reserve), mintAmount + fees);
-      minterReserve += reserveAmount;
+      uint256 _minterReserveE6 = _amount * _reservePPM;
+      uint256 reserveMint = (_minterReserveE6 + 999_999) / 1000_000; // make sure rounded up
+      uint256 fees = (_amount * _feesPPM + 999_999) / 1000_000; // make sure rounded up
+      _mint(_target, _amount - reserveMint - fees);
+      _mint(address(reserve), reserveMint + fees);
+      minterReserveE6 += reserveMint * 1000_000;
    }
 
    /**
@@ -119,43 +124,37 @@ contract Frankencoin is ERC20, IFrankencoin {
 
    function burn(uint256 amount, uint32 reservePPM) external override minterOnly {
       _burn(msg.sender, amount);
-      minterReserve -= amount * reservePPM / 1000000;
+      minterReserveE6 -= amount * reservePPM;
    }
 
    function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) public view returns (uint256) {
       uint256 theoreticalReserve = _reservePPM * mintedAmount / 1000000;
       uint256 currentReserve = balanceOf(address(reserve));
-      uint256 expectedReserve = minterReserve;
-      if (currentReserve == expectedReserve){
-         // normal case, all reserves still present
-         return theoreticalReserve;
-      } else if (currentReserve < expectedReserve){
+      if (currentReserve < minterReserve()){
          // not enough reserves, owner has to take a loss
-         return theoreticalReserve * currentReserve / expectedReserve;
+         return theoreticalReserve * currentReserve / minterReserve();
       } else {
-         // for some reason (e.g. rounding errors), we have too much reserves. Pay out excess reserves to lucky person.
-         return theoreticalReserve + currentReserve - expectedReserve;
+         return theoreticalReserve;
       }
    }
 
    function burnFrom(address payer, uint256 targetTotalBurnAmount, uint32 _reservePPM) external override minterOnly returns (uint256) {
       uint256 assigned = calculateAssignedReserve(targetTotalBurnAmount, _reservePPM);
-      _transfer(address(reserve), payer, assigned); // collect assigned reserve
+      _transfer(address(reserve), payer, assigned); 
       _burn(payer, targetTotalBurnAmount); // and burn everything
       return assigned;
    }
 
-   function burnWithReserve(uint256 _amountExcludingReserve, uint32 _reservePPM) 
+   function burnWithReserve(uint256 _amountExcludingReserve /* 41 */, uint32 _reservePPM /* 20% */) 
       external override minterOnly returns (uint256) 
    {
-      _burn(msg.sender, _amountExcludingReserve); // 41
-      uint256 currentReserve = balanceOf(address(reserve)); // 18
-      uint256 adjustedReservePPM = currentReserve < minterReserve ? _reservePPM * currentReserve / minterReserve : _reservePPM; // 18%
-      uint256 freedAmount = adjustedReservePPM * _amountExcludingReserve / (1000000 - adjustedReservePPM); // 41/0.82 = 50
-      uint256 freedReserve = _reservePPM * freedAmount / 1000000; // 10
-      minterReserve -= freedReserve; // reduce reserve requirements by original increment
-      _burn(address(reserve), adjustedReservePPM * freedAmount / 1000000); // only burn the share of the reserve that is still there
-      assert (freedAmount == _amountExcludingReserve + adjustedReservePPM * freedAmount / 1000000); // TODO: probably subject to rounding errors
+      uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
+      uint256 minterReserve_ = minterReserve(); // 20
+      uint256 adjustedReservePPM = currentReserve < minterReserve_ ? _reservePPM * currentReserve / minterReserve_ : _reservePPM; // 18%
+      uint256 freedAmount = _amountExcludingReserve / (1000000 - adjustedReservePPM); // 0.18 * 41 /0.82 = 50
+      minterReserveE6 -= freedAmount * _reservePPM; // reduce reserve requirements by original ratio, here 10
+      _transfer(address(reserve), msg.sender, freedAmount - _amountExcludingReserve); // collect 9 assigned reserve, maybe less than original reserve
+      _burn(msg.sender, freedAmount); // 41
       return freedAmount;
    }
 

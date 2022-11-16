@@ -194,10 +194,6 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         repayInternal(amount);
     }
 
-    function repay() public onlyOwner {
-        repayInternal(IERC20(zchf).balanceOf(address(this)));
-    }
-
     function repayInternal(uint256 burnable) internal noChallenge {
         uint256 actuallyBurned = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
         notifyRepaidInternal(actuallyBurned);
