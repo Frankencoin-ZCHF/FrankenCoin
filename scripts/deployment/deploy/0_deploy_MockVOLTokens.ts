@@ -5,22 +5,14 @@ import { ethers } from "hardhat";
 import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
-let deploymode: string = <string>process.env.deploymode;
-let deployoption: string = <string>process.env.deployoption;
+
 /*
     deploy mock-tokens specified in paramsPosition.json
     - also writes the address of the deployed token into the config file
     - hence, to add a new token, token address in paramsPosition.json can be ''
 */
-const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployMockTokens: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     
-    if (deployoption=="notesttoken") {
-        console.log("No deployment of MOCKVOLTOKEN")
-        return;
-    }
-    if (deploymode!="base") {
-        return;
-    }
     const paramFile = "paramsPositions.json";
 
     let chainId = hre.network.config["chainId"];
@@ -42,4 +34,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // write param-file
     writeFileSync(filename, JSON.stringify(paramsArr, null, 2), { flag: 'w' });
 };
-export default deploy;
+deployMockTokens.tags = ["MockTokens"];
+export default deployMockTokens;

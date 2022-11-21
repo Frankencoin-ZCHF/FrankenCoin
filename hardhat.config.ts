@@ -1,9 +1,11 @@
 import { HardhatUserConfig } from "hardhat/config";
 import { ethers } from "ethers";
 import { SigningKey } from "@ethersproject/signing-key";
+import "@nomiclabs/hardhat-etherscan";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
 import "hardhat-abi-exporter";
+import { error } from "console";
 const config: HardhatUserConfig = {
   solidity: "0.8.13",
 };
@@ -11,14 +13,18 @@ const config: HardhatUserConfig = {
 //export default config;
 const ZERO_PK = "0x0000000000000000000000000000000000000000000000000000000000000000";
 let pk: string | SigningKey = <string>process.env.PK;
+let etherscanapikey: string = <string>process.env.APIKEY;
 let wallet;
 try {
     wallet = new ethers.Wallet(pk);
-
 }
 catch (e) {
     pk = ZERO_PK;
 }
+if (pk!=ZERO_PK && etherscanapikey=="") {
+    error("define api key for polygonscan: export APIKEY=...")
+}
+
 export default {
   defaultNetwork: "hardhat",
   networks: {
@@ -70,6 +76,9 @@ export default {
         timeout: 50000,
         confirmations: 1,
      }
+  },
+  etherscan: {
+    apiKey: etherscanapikey,
   },
   solidity: {
       version: "0.8.13",

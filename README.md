@@ -195,8 +195,12 @@ ABIs can be found in `/abi` and are generated upon compilation (setting in hardh
 Define the private key from your deployer address as an environment variable, and then run a script with
 a parameter (e.g., `sepolia` that specifies the network:
 
-`export PK=322...` 
-`npm run-script deploy:network sepolia`
+`$ export PK=322...` 
+'$ export APIKEY=A231...`
+`$ npx hardhat deploy --network sepolia --tags MockTokens`
+or
+`$ npx hardhat deploy --network sepolia --tags main` (potentially add  `--reset` undo deletion of MockTokens)
 
 The networks are configured in `package.json`, the command is specified in `hardhat.config.ts`.
 
+`npx hardhat verify "0x..." --network sepolia`

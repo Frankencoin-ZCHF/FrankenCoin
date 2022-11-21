@@ -5,7 +5,6 @@ import {deployContract, sleep} from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
 var prompt = require('prompt');
-let deploymode: string = <string>process.env.deploymode;
 
 async function getAddress() {
     let addr = "0xB6d3b7d819cDFf7dC6838349314D8d40C284B117";
@@ -19,9 +18,7 @@ async function getAddress() {
 }
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    if (deploymode!="base") {
-        return;
-    }
+
     console.log(hre.network.name);
     const limit = 1_000_000;
     const {
@@ -82,3 +79,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 };
 export default deploy;
+deploy.tags = ["main", "XCHFBridge"];

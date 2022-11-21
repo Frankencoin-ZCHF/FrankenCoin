@@ -4,9 +4,6 @@ import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { dec18ToFloat, floatToDec18 } from "../../math";
 
-//'deploymode' is defined in package.json as part of command deployPositions/deploy
-let deploymode: string = <string>process.env.deploymode;
-
 /*
     HOWTO
     - inspect config file parameters/paramsPositions
@@ -95,9 +92,7 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
 }
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    if (deploymode!="pos") {
-        return;
-    }
+    
     const paramFile = "paramsPositions.json";
 
     let chainId = hre.network.config["chainId"];
@@ -114,3 +109,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
 };
 export default deploy;
+deploy.tags = ["main", "positions"];
