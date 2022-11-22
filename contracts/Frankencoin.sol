@@ -142,6 +142,7 @@ contract Frankencoin is ERC20, IFrankencoin {
       uint256 assigned = calculateAssignedReserve(targetTotalBurnAmount, _reservePPM);
       _transfer(address(reserve), payer, assigned); 
       _burn(payer, targetTotalBurnAmount); // and burn everything
+      minterReserveE6 -= targetTotalBurnAmount * _reservePPM; // reduce reserve requirements by original ratio
       return assigned;
    }
 
