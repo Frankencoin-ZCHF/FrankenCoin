@@ -15,6 +15,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const positionFactoryDeployment = await get("PositionFactory");
     let positionFactoryContract = await ethers.getContractAt("PositionFactory", 
         positionFactoryDeployment.address);
+    console.log(`Verify positionFactory:\nnpx hardhat verify --network sepolia ${positionFactoryDeployment.address}`)
 
     const zchfDeployment = await get("Frankencoin");
     let zchfContract = await ethers.getContractAt("Frankencoin", 
@@ -22,6 +23,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log("ZCHF set position factory address =", positionFactoryDeployment.address.toString());
     let tx = await zchfContract.setPositionFactory(positionFactoryDeployment.address, { gasLimit: 1_000_000 });
     await tx.wait();
+
+    
 };
 export default deploy;
 deploy.tags = ["main", "PositionFactory"];

@@ -31,10 +31,12 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let encodeString = abiCoder.encode(['uint256'], [minApplicationPeriod]);
     console.log("Constructor Arguments ABI Encoded (Frankencoin at ",FC.address,"):");
     console.log(encodeString);
+    console.log(`Verify Frankencoin:\nnpx hardhat verify --network sepolia ${FC.address} ${minApplicationPeriod}`)
     
     encodeString = abiCoder.encode(['address'], [FC.address]);
     console.log("Constructor Arguments ABI Encoded (Equity):");
     console.log(encodeString);
+
 };
 export default deploy;
 deploy.tags = ["main", "Frankencoin"];

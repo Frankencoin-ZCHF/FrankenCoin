@@ -18,7 +18,7 @@ const MH_ABI = require('../../abi/MintingHub.json');
 
 let pk: string | SigningKey = <string>process.env.PK;
 
-let mintingHubAddr = "0xa40eD2dcD37761AD613c53F0a4c4BAe9e17296e3";
+let mintingHubAddr = "0x82E105E10045E875429fD77C76Ac54bF029Ac14d";
 
 async function run() {
     //const wallet = new ethers.Wallet(pk);
@@ -29,7 +29,8 @@ async function run() {
     console.log("Frankencoin ZCHF: \t", zchfAddr);
     let reserve = await zchfContract.reserve();
     console.log("Reserve (=Equity): \t", reserve);
-
+    
+    //console.log(`Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${zchfContract.address}`)
 }
 
 run();

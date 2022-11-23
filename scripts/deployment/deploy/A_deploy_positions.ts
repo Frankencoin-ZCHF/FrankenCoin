@@ -87,7 +87,8 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
             duration, challengePeriod, feesPPM, fliqPrice, fReservePPM]);
     console.log("Constructor Arguments ABI Encoded (Position):");
     console.log(encodeString);
-
+    console.log("Arguments for verification of position:");
+    console.log(`npx hardhat verify --network sepolia <POSITIONADDRESS> ${wallet.address} ${mintingHubDeployment.address} ${fcDeployment.address} ${collateralAddr} ${fMinCollateral} ${fInitialCollateral} ${initialLimitZCHF} ${duration} ${challengePeriod} ${feesPPM} ${fliqPrice} ${fReservePPM}`);
     return tx.hash;
 }
 
@@ -109,4 +110,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
 };
 export default deploy;
-deploy.tags = ["main", "positions"];
+deploy.tags = ["positions"];

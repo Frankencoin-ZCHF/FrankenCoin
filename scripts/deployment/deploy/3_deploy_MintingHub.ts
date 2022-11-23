@@ -25,6 +25,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log(encodeString1);
     console.log(encodeString2);
     
+    console.log(`Verify mintingHubContract:\nnpx hardhat verify --network sepolia ${mintingHubContract.address} ${zchfContract.address} ${positionFactoryContract.address}`);
+
     // create a minting hub too while we have no ZCHF supply
     try {
         let tx = await zchfContract.suggestMinter(mintingHubContract.address, 0, 0, "Minting Hub", { gasLimit: 2_000_000 });

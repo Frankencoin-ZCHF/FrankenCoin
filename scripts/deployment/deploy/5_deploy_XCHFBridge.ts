@@ -54,6 +54,10 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // suggest minter
     const bridgeDeployment = await get("StablecoinBridge");
     let bridgeAddr : string = bridgeDeployment.address;
+
+    console.log(`Verify StablecoinBridge:\nnpx hardhat verify --network sepolia ${bridgeAddr} ${xchfAddress} ${ZCHFDeployment.address} ${dLimit}`);
+
+
     let isAlreadyMinter = await zchfContract.isMinter(bridgeAddr, { gasLimit: 1_000_000 });
     if (isAlreadyMinter) {
         console.log(bridgeDeployment.address, "already is a minter");
