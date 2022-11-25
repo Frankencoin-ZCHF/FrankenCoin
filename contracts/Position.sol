@@ -14,7 +14,8 @@ import "./MathUtil.sol";
  */
 contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
-    uint256 public constant WARM_UP_PERIOD = 3600; //TODO: 1h set to 7 days for production
+    uint256 public constant INITIALIZATION_PERIOD = 3600; //TODO: 1h set to 7 days for production
+    uint256 public constant PRICE_ADJUSTMENT_COOLDOWN = 3 days; //TODO: 1h set to 7 days for production
 
     uint256 public price; // the zchf price per unit of the collateral below which challenges succeed, 18 digits
     uint256 public minted; // how much has been minted so far, including reserve
@@ -71,7 +72,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         minimumCollateral = _minCollateral;
         expiration = block.timestamp + _duration;
         challengePeriod = _challengePeriod;
-        restrictMinting(WARM_UP_PERIOD);
+        restrictMinting(INITIALIZATION_PERIOD);
         limit = _initialLimit;
         
         emit PositionOpened(_owner, original, _zchf, address(collateral), _liqPrice);
@@ -148,7 +149,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
     function adjustPrice(uint256 newPrice) public onlyOwner noChallenge {
         if (newPrice > price) {
-            restrictMinting(3 days);
+            restrictMinting(PRICE_ADJUSTMENT_COOLDOWN);
         } else {
             require(isWellCollateralized(collateralBalance(), newPrice));
         }

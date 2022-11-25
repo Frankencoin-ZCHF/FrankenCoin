@@ -30,9 +30,9 @@ contract MintingHub {
         uint256 bid;
     }
 
-    event ChallengeStarted(address indexed challenger, address position, uint256 size, uint256 number);
-    event ChallengeAverted(uint256 number);
-    event ChallengeSucceeded(uint256 number);
+    event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);
+    event ChallengeAverted(address indexed position, uint256 number);
+    event ChallengeSucceeded(address indexed position, uint256 bid, uint256 number);
     event NewBid(uint256 challengedId, uint256 bidAmount, address bidder);
 
     constructor(address _zchf, address factory) {
@@ -144,6 +144,7 @@ contract MintingHub {
 
         uint256 pos = challenges.length;
         challenges.push(copy);
+        emit ChallengeStarted(challenge.challenger, address(challenge.position), challenge.size, _challengeNumber);
         emit ChallengeStarted(copy.challenger, address(copy.position), copy.size, pos);
         return pos;
     }
@@ -180,7 +181,7 @@ contract MintingHub {
                 // bid above Z_B/C_C >= (1+h)Z_M/C_M, challenge averted, end immediately by selling challenger collateral to bidder
                 zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
                 IERC20(challenge.position.collateral()).transfer(msg.sender, challenge.size);
-                emit ChallengeAverted(_challengeNumber);
+                emit ChallengeAverted(address(challenge.position), _challengeNumber);
                 delete challenges[_challengeNumber];
             } else {
                 require(_bidAmountZCHF >= minBid(challenge), "below min bid");
@@ -224,6 +225,10 @@ contract MintingHub {
         _end(_challengeNumber);
     }
 
+    function isChallengeOpen(uint256 _challengeNumber) external view returns (bool) {
+        return challenges[_challengeNumber].end > block.timestamp;
+    }
+
     /**
      * @dev internal end function
      * @param _challengeNumber  number of the challenge in challenge-array
@@ -245,7 +250,7 @@ contract MintingHub {
         zchf.notifyLoss(reward + volume - effectiveBid); // ensure we have enough to pay everything
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burn(volume, reservePPM); // Repay the challenged part
-        emit ChallengeSucceeded(_challengeNumber);
+        emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
         delete challenges[_challengeNumber];
     }
 }

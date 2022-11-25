@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ERC20.sol";
+import "./ERC20PermitLight.sol";
 import "./Equity.sol";
 import "./IReserve.sol";
 import "./IFrankencoin.sol";
 
-contract Frankencoin is ERC20, IFrankencoin {
+contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
    uint256 public constant MIN_FEE = 1000 * (10**18);
    uint256 public immutable MIN_APPLICATION_PERIOD; //10 days;

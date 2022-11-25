@@ -5,14 +5,14 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "./Frankencoin.sol";
 import "./IERC677Receiver.sol";
-import "./ERC20.sol";
+import "./ERC20PermitLight.sol";
 import "./MathUtil.sol";
 import "./IReserve.sol";
 
 /** 
  * @title Reserve pool for the Frankencoin
  */
-contract Equity is ERC20, MathUtil, IReserve {
+contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     uint32 public constant VALUATION_FACTOR = 3;
     uint256 public constant MIN_HOLDING_DURATION = 5; // TEMP!!! 90 * 24 * 60 * 5; // about 90 days
