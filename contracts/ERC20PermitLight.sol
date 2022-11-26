@@ -12,7 +12,7 @@ abstract contract ERC20PermitLight is ERC20 {
                             EIP-2612 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    mapping(address => uint256) public override nonces;
+    mapping(address => uint256) public nonces;
 
   /*//////////////////////////////////////////////////////////////
                              EIP-2612 LOGIC
@@ -26,7 +26,7 @@ abstract contract ERC20PermitLight is ERC20 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public override {
+    ) public {
         require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
         unchecked {
@@ -62,7 +62,7 @@ abstract contract ERC20PermitLight is ERC20 {
         // emit Approval(owner, spender, value);
     }
 
-    function DOMAIN_SEPARATOR() public view override returns (bytes32) {
+    function DOMAIN_SEPARATOR() public view returns (bytes32) {
         return
             keccak256(
                 abi.encode(
