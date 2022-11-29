@@ -27,7 +27,6 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     uint256 public immutable expiration;
 
     address public immutable original; // originals point to themselves, clone to their origin
-    address public immutable factory;
     address public immutable hub;
     IFrankencoin public immutable zchf; // currency
     IERC20 public override immutable collateral; // collateral
@@ -58,9 +57,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     constructor(address _owner, address _hub, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 
         uint256 _initialLimit, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
-        uint256 _liqPrice, uint32 _reservePPM) Ownable(_owner) 
-    {
-        factory = msg.sender;
+        uint256 _liqPrice, uint32 _reservePPM) Ownable(_owner) {
         original = address(this);
         hub = _hub;
         price = _liqPrice;
@@ -78,8 +75,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         emit PositionOpened(_owner, original, _zchf, address(collateral), _liqPrice);
     }
 
-    function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external {
-        require(msg.sender == address(factory), "factory only");
+    function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external onlyHub {
         require(_coll >= minimumCollateral, "coll not enough");
         transferOwnership(owner);
         
@@ -97,8 +93,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * @param _minimum  amount that clone wants to mint initially
      * @return limit for the clone
      */
-    function reduceLimitForClone(uint256 _minimum) external noMintRestriction returns (uint256) {
-        require(msg.sender == address(factory), "only factory");
+    function reduceLimitForClone(uint256 _minimum) external noMintRestriction onlyHub returns (uint256) {
         require(minted + _minimum <= limit, "limit exceeded");
         uint256 reduction = (limit - minted - _minimum)/2;
         limit -= reduction + _minimum;

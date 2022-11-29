@@ -89,15 +89,14 @@ contract MintingHub {
         return address(pos);
     }
 
-    function clonePosition(
-        address position,
-        uint256 _initialCollateral,
-        uint256 _initialMint
-    ) public returns (address) {
+    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public returns (address) {
         require(zchf.isPosition(position) == address(this), "not our pos");
-        IPosition pos = IPosition(POSITION_FACTORY.clonePosition(position, address(zchf), msg.sender, _initialCollateral, _initialMint));
-        zchf.registerPosition(address(pos));
-        pos.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
+        IPosition existing = IPosition(position);
+        uint256 limit = existing.reduceLimitForClone(_initialMint);
+        address pos = POSITION_FACTORY.clonePosition(position);
+        zchf.registerPosition(pos);
+        existing.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
+        IPosition(pos).initializeClone(msg.sender, existing.price(), limit, _initialCollateral, _initialMint);
         return address(pos);
     }
 
@@ -270,11 +269,5 @@ interface IPositionFactory {
         uint32 _reserve
     ) external returns (address);
 
-    function clonePosition(
-        address _existing,
-        address _zchf,
-        address _owner,
-        uint256 _initialCol,
-        uint256 _initialMint
-    ) external returns (address);
+    function clonePosition(address _existing) external returns (address);
 }

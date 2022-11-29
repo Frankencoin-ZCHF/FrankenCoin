@@ -5,26 +5,6 @@
                 "internalType": "address",
                 "name": "_existing",
                 "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "_zchf",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "_owner",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_initialCol",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_initialMint",
-                "type": "uint256"
             }
         ],
         "name": "clonePosition",
