@@ -48,11 +48,11 @@ contract MintingHub {
      * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner
      * @param _duration          position tenor in unit of timestamp (seconds) from 'now'
      * @param _challengePeriod   challenge period. Longer for less liquid collateral.
-     * @param _fees              percentage minting fee that will be added to reserve,
+     * @param _mintingFeePPM     percentage minting fee that will be added to reserve,
      *                           basis 1000_000
      * @param _liqPrice          Liquidation price (dec18) that together with the reserve and
      *                           fees determines the minimal collateralization ratio
-     * @param _reserve           percentage reserve amount that is added as the
+     * @param _reservePPM        percentage reserve amount that is added as the
      *                           borrower's stake into reserve, basis 1000_000
      * @return address of resulting position
      */

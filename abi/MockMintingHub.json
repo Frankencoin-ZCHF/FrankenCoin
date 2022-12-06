@@ -401,7 +401,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_fees",
+                "name": "_mintingFeePPM",
                 "type": "uint32"
             },
             {
@@ -411,7 +411,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_reserve",
+                "name": "_reservePPM",
                 "type": "uint32"
             }
         ],
