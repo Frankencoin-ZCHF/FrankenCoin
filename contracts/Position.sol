@@ -273,16 +273,16 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * @return adjusted bid size, repaied xchf, reserve contribution ppm
      */
     function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) 
-        external onlyHub returns (uint256, uint256, uint32)
-    {
+        external onlyHub returns (uint256, uint256, uint32) {
         challengedAmount -= _size;
+        uint256 colBal = collateralBalance();
         uint256 volumeZCHF = _mulD18(price, _size);
-        if (volumeZCHF > minted){
-            _size = _divD18(_mulD18(_size, minted), volumeZCHF);
-            _bid = _divD18(_mulD18(_bid, minted), volumeZCHF);
-            volumeZCHF = minted;
+        uint256 mintable = _mulD18(price, colBal);
+        if (volumeZCHF > mintable){
+            _bid = _divD18(_mulD18(_bid, mintable), volumeZCHF);
+            volumeZCHF = mintable;
+            _size = colBal;
         }
-        require(_bid < volumeZCHF, "challenge not successful");
         // transfer collateral to the bidder
         IERC20(collateral).transfer(_bidder, _size);
         notifyRepaidInternal(volumeZCHF); // we assume the caller takes care of the actual repayment

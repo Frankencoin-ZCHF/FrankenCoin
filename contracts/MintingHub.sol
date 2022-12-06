@@ -63,9 +63,9 @@ contract MintingHub {
         uint256 _initialLimit,
         uint256 _duration,
         uint256 _challengePeriod,
-        uint32 _fees,
+        uint32 _mintingFeePPM,
         uint256 _liqPrice,
-        uint32 _reserve
+        uint32 _reservePPM
     ) public returns (address) {
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
@@ -77,9 +77,9 @@ contract MintingHub {
                 _initialLimit,
                 _duration,
                 _challengePeriod,
-                _fees,
+                _mintingFeePPM,
                 _liqPrice,
-                _reserve
+                _reservePPM
             )
         );
         zchf.registerPosition(address(pos));
@@ -161,11 +161,7 @@ contract MintingHub {
      * @param _challengeNumber   index of the challenge in the challenges array
      * @param _bidAmountZCHF     how much to bid for the collateral of this challenge (dec 18)
      */
-    function bid(
-        uint256 _challengeNumber,
-        uint256 _bidAmountZCHF,
-        uint256 expectedSize
-    ) external {
+    function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF, uint256 expectedSize) external {
         Challenge storage challenge = challenges[_challengeNumber];
         if (block.timestamp >= challenge.end) {
             // if bid is too late, the transaction ends the challenge
