@@ -72,5 +72,37 @@ describe("Equity Tests", () => {
         });
     });
 
-
+    describe("transfer shares", () => {
+        
+        it("total votes=votes of owners", async () => {
+            let other = accounts[5].address;
+            let totVotesBefore = await equity.totalVotes();
+            let votesBefore = [await equity.votes(owner), await equity.votes(other)];
+            let isEqual = totVotesBefore-votesBefore[0]==0;
+            if(!isEqual) {
+                console.log(`total votes before = ${totVotesBefore}`);
+                console.log(`sum votes before = ${votesBefore}`);
+            }
+            expect(isEqual).to.be.true;
+        });
+        it("total votes correct after transfer", async () => {
+            let amount = 100;
+            let other = accounts[5].address;
+            let totVotesBefore = await equity.totalVotes();
+            let votesBefore = [await equity.votes(owner), await equity.votes(other)];
+            let balancesBefore = [await equity.balanceOf(owner), await equity.balanceOf(other)];
+            await zchf.transfer(other, floatToDec18(100));
+            let totVotesAfter = await equity.totalVotes();
+            let votesAfter = [await equity.votes(owner), await equity.votes(other)];
+            let isEqual1 = totVotesBefore-votesBefore[0] ==0;
+            let isEqual2 = totVotesBefore-votesBefore[0]-votesBefore[1]==0;
+            if(!isEqual1 || !isEqual2) {
+                console.log(`total votes before = ${totVotesBefore}`);
+                console.log(`votes before = ${votesBefore}`);
+                console.log(`total votes after = ${totVotesAfter}`);
+                console.log(`votes after = ${votesAfter}`);
+            }
+            expect(isEqual1 && isEqual2).to.be.true;
+        });
+    });
 });
