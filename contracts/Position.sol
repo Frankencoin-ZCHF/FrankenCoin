@@ -235,8 +235,10 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     }
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
+        uint256 colbal = collateralBalance();
         // require minimum size, note that collateral balance can be below minimum if it was partially challenged before
-        require(size >= minimumCollateral || size >= collateralBalance(), "size too small");
+        require(size >= minimumCollateral || size == colbal, "challenge too small");
+        require(size <= colbal, "challenge too large");
         challengedAmount += size;
     }
 
