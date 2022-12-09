@@ -51,7 +51,7 @@ export default {
           url: "http://localhost:8545",
       },
       sepolia: {
-        // https://sepolia.etherscan.io
+        //url: "https://sepolia.etherscan.io",
         // currency SEP
         // https://sepolia.dev/#
         //url: "https://rpc.sepolia.dev",

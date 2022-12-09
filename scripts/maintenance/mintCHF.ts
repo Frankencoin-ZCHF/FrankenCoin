@@ -8,13 +8,13 @@
 const ethers = require("ethers");
 import { SigningKey } from "@ethersproject/signing-key";
 import { floatToDec18 } from "../math";
-const NODE_URL = "https://rpc.sepolia.org";
+const NODE_URL = "https://rpc-sepolia.rockx.com";//https://rpc.sepolia.org";
 const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 //const FC_ABI = require('../../abi/Frankencoin.json');
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
 const mockXCHFAddr = "0xB6d3b7d819cDFf7dC6838349314D8d40C284B117";
 const mockVOLTknAddr = "0xC5Bdf340EE520965b0B8BeAA85B6bDbf90d5b277";
-const bridgeAddr = "0x03D414957FC19D95e68F1A7D1a349dEef4759c3D";
+const bridgeAddr = "0x59FA6474D94345D6615f5a5a040184385A1d091B";
 let pk: string | SigningKey = <string>process.env.PK;
 
 export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
