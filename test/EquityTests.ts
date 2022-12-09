@@ -80,13 +80,13 @@ describe("Equity Tests", () => {
             let votesBefore = [await equity.votes(owner), await equity.votes(other)];
             let isEqual = totVotesBefore-votesBefore[0]==0;
             if(!isEqual) {
-                console.log(`total votes before = ${totVotesBefore}`);
-                console.log(`sum votes before = ${votesBefore}`);
+                console.log(`1) total votes before = ${totVotesBefore}`);
+                console.log(`1) sum votes before = ${votesBefore}`);
             }
             expect(isEqual).to.be.true;
         });
         it("total votes correct after transfer", async () => {
-            let amount = 23.45;
+            let amount = 0.1;
             let other = accounts[5].address;
             let totVotesBefore = await equity.totalVotes();
             let votesBefore = [await equity.votes(owner), await equity.votes(other)];
@@ -99,10 +99,10 @@ describe("Equity Tests", () => {
             let isEqual1 = totVotesBefore-votesBefore[0] ==0;
             let isEqual2 = totVotesAfter-votesAfter[0]-votesAfter[1]==0;
             if(!isEqual1 || !isEqual2) {
-                console.log(`total votes before = ${totVotesBefore}`);
-                console.log(`votes before = ${votesBefore}`);
-                console.log(`total votes after = ${totVotesAfter}`);
-                console.log(`votes after = ${votesAfter}`);
+                console.log(`2) total votes before = ${totVotesBefore}`);
+                console.log(`2) votes before = ${votesBefore}`);
+                console.log(`2) total votes after = ${totVotesAfter}`);
+                console.log(`2) votes after = ${votesAfter}`);
             }
             expect(isEqual1 && isEqual2).to.be.true;
         });
@@ -113,11 +113,11 @@ describe("Equity Tests", () => {
             let other = accounts[5].address;
             let totVotesAfter = await equity.totalVotes();
             let votesAfter = [await equity.votes(owner), await equity.votes(other)];
-            let isEqual = totVotesAfter-votesAfter[0]-votesAfter[1]==0;
+            let isEqual = (totVotesAfter - votesAfter[0] - votesAfter[1]) == 0;
             let isZero = votesAfter[1]==0
             if(!isEqual || isZero) {
-                console.log(`total votes after = ${totVotesAfter}`);
-                console.log(`votes after = ${votesAfter}`);
+                console.log(`3) total votes after = ${totVotesAfter}`);
+                console.log(`3) votes after = ${votesAfter}`);
             }
             expect(isEqual&&!isZero).to.be.true;
         }); 
