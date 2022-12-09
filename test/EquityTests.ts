@@ -74,7 +74,7 @@ describe("Equity Tests", () => {
 
     describe("transfer shares", () => {
         
-        it("total votes=votes of owners", async () => {
+        it("total votes==sum of owner votes", async () => {
             let other = accounts[5].address;
             let totVotesBefore = await equity.totalVotes();
             let votesBefore = [await equity.votes(owner), await equity.votes(other)];
@@ -86,16 +86,18 @@ describe("Equity Tests", () => {
             expect(isEqual).to.be.true;
         });
         it("total votes correct after transfer", async () => {
-            let amount = 100;
+            let amount = 23.45;
             let other = accounts[5].address;
             let totVotesBefore = await equity.totalVotes();
             let votesBefore = [await equity.votes(owner), await equity.votes(other)];
             let balancesBefore = [await equity.balanceOf(owner), await equity.balanceOf(other)];
-            await zchf.transfer(other, floatToDec18(100));
+            await equity.transfer(other, floatToDec18(amount));
+            let balancesAfter = [await equity.balanceOf(owner), await equity.balanceOf(other)];
+            expect(balancesAfter[1]>balancesBefore[1]).to.be.true;
             let totVotesAfter = await equity.totalVotes();
             let votesAfter = [await equity.votes(owner), await equity.votes(other)];
             let isEqual1 = totVotesBefore-votesBefore[0] ==0;
-            let isEqual2 = totVotesBefore-votesBefore[0]-votesBefore[1]==0;
+            let isEqual2 = totVotesAfter-votesAfter[0]-votesAfter[1]==0;
             if(!isEqual1 || !isEqual2) {
                 console.log(`total votes before = ${totVotesBefore}`);
                 console.log(`votes before = ${votesBefore}`);
@@ -104,5 +106,19 @@ describe("Equity Tests", () => {
             }
             expect(isEqual1 && isEqual2).to.be.true;
         });
+
+        it("total votes correct after mine", async () => {
+            await hre.ethers.provider.send('evm_mine');
+            await hre.ethers.provider.send('evm_mine');
+            let other = accounts[5].address;
+            let totVotesAfter = await equity.totalVotes();
+            let votesAfter = [await equity.votes(owner), await equity.votes(other)];
+            let isEqual = totVotesAfter-votesAfter[0]-votesAfter[1]==0;
+            if(!isEqual) {
+                console.log(`total votes after = ${totVotesAfter}`);
+                console.log(`votes after = ${votesAfter}`);
+            }
+            expect(isEqual).to.be.true;
+        }); 
     });
 });
