@@ -114,11 +114,12 @@ describe("Equity Tests", () => {
             let totVotesAfter = await equity.totalVotes();
             let votesAfter = [await equity.votes(owner), await equity.votes(other)];
             let isEqual = totVotesAfter-votesAfter[0]-votesAfter[1]==0;
-            if(!isEqual) {
+            let isZero = votesAfter[1]==0
+            if(!isEqual || isZero) {
                 console.log(`total votes after = ${totVotesAfter}`);
                 console.log(`votes after = ${votesAfter}`);
             }
-            expect(isEqual).to.be.true;
+            expect(isEqual&&!isZero).to.be.true;
         }); 
     });
 });
