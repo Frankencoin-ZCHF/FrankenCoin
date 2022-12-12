@@ -644,19 +644,6 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_factory",
-                "type": "address"
-            }
-        ],
-        "name": "setPositionFactory",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
                 "name": "_minter",
                 "type": "address"
             },

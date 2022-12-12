@@ -30,7 +30,6 @@ describe("Position Tests", () => {
         ZCHFContract.suggestMinter(bridge.address, 0, 0, "XCHF Bridge");
         // create a minting hub too while we have no ZCHF supply
         ZCHFContract.suggestMinter(mintingHubContract.address, 0, 0, "Minting Hub");
-        ZCHFContract.setPositionFactory(positionFactoryContract.address);
         
         // wait for 1 block
         await hre.ethers.provider.send('evm_increaseTime', [60]); 
