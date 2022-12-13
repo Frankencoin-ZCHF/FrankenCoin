@@ -14,7 +14,7 @@ const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
 const mockXCHFAddr = "0xB6d3b7d819cDFf7dC6838349314D8d40C284B117";
 const mockVOLTknAddr = "0xC5Bdf340EE520965b0B8BeAA85B6bDbf90d5b277";
-const bridgeAddr = "0x59FA6474D94345D6615f5a5a040184385A1d091B";
+const bridgeAddr = "0x85DbAfAc987B1e8D58058680976E1c6D609b3C37";
 let pk: string | SigningKey = <string>process.env.PK;
 
 export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
