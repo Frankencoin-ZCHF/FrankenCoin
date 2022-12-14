@@ -126,6 +126,8 @@ describe("Equity Tests", () => {
             await equity.connect(accounts[2]).delegateVoteTo(accounts[0].address);
             let canVote = await equity.canVoteFor(accounts[0].address, accounts[2].address);
             expect(canVote).to.be.true;
+            canVote = await equity.canVoteFor(accounts[2].address, accounts[0].address);
+            expect(canVote).to.be.false;
         }); 
     });
 });
