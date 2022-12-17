@@ -42,49 +42,49 @@ contract MintingHub {
 
     /**
      * @notice open a collateralized loan position
-     * @param _collateral        address of collateral token
+     * @param _collateralAddress        address of collateral token
      * @param _minCollateral     minimum collateral required to prevent dust amounts
      * @param _initialCollateral amount of initial collateral to be deposited
-     * @param _initialLimit      maximal amount of ZCHF that can be minted by the position owner
-     * @param _duration          position tenor in unit of timestamp (seconds) from 'now'
-     * @param _challengePeriod   challenge period. Longer for less liquid collateral.
+     * @param _mintingMaximum    maximal amount of ZCHF that can be minted by the position owner
+     * @param _expirationSeconds position tenor in unit of timestamp (seconds) from 'now'
+     * @param _challengeSeconds  challenge period. Longer for less liquid collateral.
      * @param _mintingFeePPM     percentage minting fee that will be added to reserve,
      *                           basis 1000_000
-     * @param _liqPrice          Liquidation price (dec18) that together with the reserve and
+     * @param _liqPriceE18       Liquidation price (dec18) that together with the reserve and
      *                           fees determines the minimal collateralization ratio
      * @param _reservePPM        percentage reserve amount that is added as the
      *                           borrower's stake into reserve, basis 1000_000
      * @return address of resulting position
      */
     function openPosition(
-        address _collateral,
+        address _collateralAddress,
         uint256 _minCollateral,
         uint256 _initialCollateral,
-        uint256 _initialLimit,
-        uint256 _duration,
-        uint256 _challengePeriod,
+        uint256 _mintingMaximum,
+        uint256 _expirationSeconds,
+        uint256 _challengeSeconds,
         uint32 _mintingFeePPM,
-        uint256 _liqPrice,
+        uint256 _liqPriceE18,
         uint32 _reservePPM
     ) public returns (address) {
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
                 address(zchf),
-                _collateral,
+                _collateralAddress,
                 _minCollateral,
                 _initialCollateral,
-                _initialLimit,
-                _duration,
-                _challengePeriod,
+                _mintingMaximum,
+                _expirationSeconds,
+                _challengeSeconds,
                 _mintingFeePPM,
-                _liqPrice,
+                _liqPriceE18,
                 _reservePPM
             )
         );
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
-        IERC20(_collateral).transferFrom(msg.sender, address(pos), _initialCollateral);
+        IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
         return address(pos);
     }
