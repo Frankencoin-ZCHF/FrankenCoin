@@ -103,8 +103,6 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     function deny(address[] calldata helpers, string calldata message) public {
         require(minted == 0, "minted"); // must deny before any tokens are minted
         require(IReserve(zchf.reserve()).isQualified(msg.sender, helpers), "not qualified");
-        collateral.transfer(owner, collateral.balanceOf(address(this)));
-        zchf.transfer(owner, zchf.balanceOf(address(this)));
         cooldown = expiration;
         emit PositionDenied(msg.sender, message);
     }
