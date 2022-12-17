@@ -57,16 +57,9 @@ contract MintingHub {
      * @return address of resulting position
      */
     function openPosition(
-        address _collateralAddress,
-        uint256 _minCollateral,
-        uint256 _initialCollateral,
-        uint256 _mintingMaximum,
-        uint256 _expirationSeconds,
-        uint256 _challengeSeconds,
-        uint32 _mintingFeePPM,
-        uint256 _liqPriceE18,
-        uint32 _reservePPM
-    ) public returns (address) {
+        address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
+        uint256 _mintingMaximum, uint256 _expirationSeconds, uint256 _challengeSeconds,
+        uint32 _mintingFeePPM, uint256 _liqPriceE18, uint32 _reservePPM) public returns (address) {
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
