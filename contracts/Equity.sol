@@ -15,7 +15,7 @@ import "./IReserve.sol";
 contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     uint32 public constant VALUATION_FACTOR = 3;
-    uint256 public constant MIN_HOLDING_DURATION = 5; // TEMP!!! 90 * 24 * 60 * 5; // about 90 days
+    uint256 public constant MIN_HOLDING_DURATION = 90 days;
     uint32 private constant QUORUM = 300;
 
     Frankencoin immutable public zchf;
@@ -133,8 +133,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         require(msg.sender == address(zchf), "caller must be zchf");
         if (totalSupply() == 0){
             require(amount >= ONE_DEC18, "initial deposit must >= 1");
-            // initialize with 1 share
-            _mint(from, 1 * 10**18);
+            // initialize with 1000 shares for 1 ZCHF
+            _mint(from, 1000 * 10**18);
             amount -= ONE_DEC18;
         } 
         _mint(from, calculateSharesInternal(zchf.equity() - amount, amount));

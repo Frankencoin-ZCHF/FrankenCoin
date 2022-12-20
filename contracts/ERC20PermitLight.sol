@@ -4,15 +4,16 @@
 
 pragma solidity ^0.8.0;
 
-import "./ERC20.sol";
+import "./ERC20Flaggable.sol";
+import "./IERC20Permit.sol";
 
-abstract contract ERC20PermitLight is ERC20 {
+abstract contract ERC20PermitLight is ERC20Flaggable, IERC20Permit {
    
    /*//////////////////////////////////////////////////////////////
                             EIP-2612 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    mapping(address => uint256) public nonces;
+    mapping(address => uint256) public override nonces;
 
   /*//////////////////////////////////////////////////////////////
                              EIP-2612 LOGIC
@@ -26,10 +27,10 @@ abstract contract ERC20PermitLight is ERC20 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public {
+    ) public override {
         require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
-        unchecked {
+        unchecked { // unchecked to save a little gas with the nonce increment...
             address recoveredAddress = ecrecover(
                 keccak256(
                     abi.encodePacked(
@@ -54,18 +55,16 @@ abstract contract ERC20PermitLight is ERC20 {
             );
 
             require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNER");
-
-            //allowance[recoveredAddress][spender] = value;
             _approve(recoveredAddress, spender, value);
         }
-
-        // emit Approval(owner, spender, value);
     }
 
-    function DOMAIN_SEPARATOR() public view returns (bytes32) {
+    function DOMAIN_SEPARATOR() public view override returns (bytes32) {
         return
             keccak256(
                 abi.encode(
+                    //keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
+                    bytes32(0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218),
                     block.chainid,
                     address(this)
                 )

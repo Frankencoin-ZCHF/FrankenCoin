@@ -14,8 +14,8 @@ import "./MathUtil.sol";
  */
 contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
-    uint256 public constant INITIALIZATION_PERIOD = 3600; //TODO: 1h set to 7 days for production
-    uint256 public constant PRICE_ADJUSTMENT_COOLDOWN = 3 days; //TODO: 1h set to 7 days for production
+    uint256 public constant INITIALIZATION_PERIOD = 7 days;
+    uint256 public constant PRICE_ADJUSTMENT_COOLDOWN = 3 days;
 
     uint256 public price; // the zchf price per unit of the collateral below which challenges succeed, 18 digits
     uint256 public minted; // how much has been minted so far, including reserve
