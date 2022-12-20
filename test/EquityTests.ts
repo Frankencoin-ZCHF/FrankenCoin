@@ -49,10 +49,10 @@ describe("Equity Tests", () => {
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.equal(floatToDec18(1000));
         });
-        it("should create one more share when adding seven capital", async () => {
+        it("should create 1000 more shares when adding seven capital", async () => {
             await zchf.transferAndCall(equity.address, floatToDec18(7), 0);
             let balance = await equity.balanceOf(owner);
-            expect(balance).to.be.approximately(floatToDec18(2), floatToDec18(0.00001));
+            expect(balance).to.be.approximately(floatToDec18(2000), floatToDec18(0.01));
         });
         it("should refuse redemption before time passed", async () => {
             await expect(equity.redeem(owner, floatToDec18(0.1))).to.be.revertedWithoutReason();
@@ -65,9 +65,9 @@ describe("Equity Tests", () => {
             await hre.ethers.provider.send('evm_mine');
             await hre.ethers.provider.send('evm_mine');
             expect(await equity["canRedeem()"]()).to.be.true;
-            let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1.0));
+            let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1000.0));
             let bnred = BN.from(redemptionAmount.toString());
-            let proceeds = await equity.calculateProceeds(bnred)
+            let proceeds = await equity.calculateProceeds(bnred);
             expect(proceeds).to.be.approximately(floatToDec18(7.0), floatToDec18(0.0001));
         });
     });
@@ -113,7 +113,7 @@ describe("Equity Tests", () => {
             let other = accounts[5].address;
             let totVotesAfter = await equity.totalVotes();
             let votesAfter = [await equity.votes(owner), await equity.votes(other)];
-            let isEqual = (totVotesAfter - votesAfter[0] - votesAfter[1]) == 0;
+            let isEqual = (totVotesAfter.sub(votesAfter[0]).sub(votesAfter[1])) == 0;
             let isZero = votesAfter[1]==0
             if(!isEqual || isZero) {
                 console.log(`3) total votes after = ${totVotesAfter}`);

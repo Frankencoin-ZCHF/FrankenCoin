@@ -14,9 +14,9 @@ describe("Basic Tests", () => {
         let delta = 0;
         if (totalShares==0) {
             dCapital = dCapital - 1;
-            totalShares = 1;
+            totalShares = 1000;
             totalCapital= 1;
-            delta = 1;
+            delta = 1000;
         }
         return totalShares *( ((totalCapital +dCapital)/totalCapital)**(1/3) - 1 ) + delta;
     }
@@ -147,13 +147,12 @@ describe("Basic Tests", () => {
             let totalShares = dec18ToFloat(fTotalShares);
             let totalCapital = dec18ToFloat(fTotalCapital);
             let dShares = capitalToShares(totalCapital, totalShares, amount);
-            //console.log("owner = ", owner);
             await ZCHFContract.transferAndCall(equityContract.address, fAmount, 0);
             let balanceAfter = await equityContract.balanceOf(owner);
             let balanceAfterZCHF = await ZCHFContract.balanceOf(owner);
             let poolTokenShares = dec18ToFloat(balanceAfter.sub(balanceBefore));
             let ZCHFReceived = dec18ToFloat(balanceAfterZCHF.sub(balanceBeforeZCHF));
-            let isPoolShareAmountCorrect = Math.abs(poolTokenShares-dShares) < 1e-12;
+            let isPoolShareAmountCorrect = Math.abs(poolTokenShares-dShares) < 1e-7;
             let isSenderBalanceCorrect = ZCHFReceived==-25;
             if(!isPoolShareAmountCorrect || !isSenderBalanceCorrect) {
                 console.log("Pool token shares received = ", poolTokenShares);
