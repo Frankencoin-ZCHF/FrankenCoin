@@ -47,7 +47,7 @@ describe("Equity Tests", () => {
         it("should create an initial share", async () => {
             await zchf.transferAndCall(equity.address, floatToDec18(1), 0);
             let balance = await equity.balanceOf(owner);
-            expect(balance).to.be.equal(floatToDec18(1));
+            expect(balance).to.be.equal(floatToDec18(1000));
         });
         it("should create one more share when adding seven capital", async () => {
             await zchf.transferAndCall(equity.address, floatToDec18(7), 0);
@@ -65,7 +65,7 @@ describe("Equity Tests", () => {
             await hre.ethers.provider.send('evm_mine');
             await hre.ethers.provider.send('evm_mine');
             expect(await equity["canRedeem()"]()).to.be.true;
-            let redemptionAmount = await equity.balanceOf(owner) - floatToDec18(1.0);
+            let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1.0));
             let bnred = BN.from(redemptionAmount.toString());
             let proceeds = await equity.calculateProceeds(bnred)
             expect(proceeds).to.be.approximately(floatToDec18(7.0), floatToDec18(0.0001));
