@@ -24,7 +24,6 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     uint64 private totalVotesAnchorTime;
     uint192 private totalVotesAtAnchor;
 
-
     mapping (address => address) public delegates;
     mapping (address => uint64) private voteAnchor;
 
@@ -107,7 +106,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
             require(current != sender);
             require(canVoteFor(sender, current));
             for (uint j=i+1; j<helpers.length; j++){
-                require(current != helpers[j]);
+                require(current != helpers[j]); // ensure helper unique
             }
             _votes += votes(current);
         }
@@ -138,7 +137,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
             amount -= ONE_DEC18;
         } 
         _mint(from, calculateSharesInternal(zchf.equity() - amount, amount));
-        require(totalSupply() < 2**90, "total supply exceeded");
+        require(totalSupply() < 2**90, "total supply exceeded"); // to guard against overflows with price and vote calculations
         return true;
     }
 

@@ -9,7 +9,7 @@ import "./IFrankencoin.sol";
 contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
    uint256 public constant MIN_FEE = 1000 * (10**18);
-   uint256 public immutable MIN_APPLICATION_PERIOD; //10 days;
+   uint256 public immutable MIN_APPLICATION_PERIOD; // for example 10 days
 
    IReserve override public immutable reserve;
    uint256 private minterReserveE6;
@@ -91,9 +91,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
  * @param _reservePPM   reserve requirement in parts per million
  * @param _feesPPM      fees in parts per million
  */
-   function mint(address _target, uint256 _amount, uint32 _reservePPM, uint32 _feesPPM) 
-      override external minterOnly 
-   {
+   function mint(address _target, uint256 _amount, uint32 _reservePPM, uint32 _feesPPM) override external minterOnly {
       uint256 _minterReserveE6 = _amount * _reservePPM;
       uint256 reserveMint = (_minterReserveE6 + 999_999) / 1000_000; // make sure rounded up
       uint256 fees = (_amount * _feesPPM + 999_999) / 1000_000; // make sure rounded up
@@ -140,8 +138,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
    }
 
    function burnWithReserve(uint256 _amountExcludingReserve /* 41 */, uint32 _reservePPM /* 20% */) 
-      external override minterOnly returns (uint256) 
-   {
+      external override minterOnly returns (uint256) {
       uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
       uint256 minterReserve_ = minterReserve(); // 20
       uint256 adjustedReservePPM = currentReserve < minterReserve_ ? _reservePPM * currentReserve / minterReserve_ : _reservePPM; // 18%
@@ -171,7 +168,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
       }
    }
    function isMinter(address _minter) override public view returns (bool){
-      return minters[_minter]!=0 && block.timestamp >= minters[_minter];
+      return minters[_minter] != 0 && block.timestamp >= minters[_minter];
    }
 
    function isPosition(address _position) override public view returns (address){
