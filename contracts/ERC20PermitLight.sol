@@ -4,16 +4,15 @@
 
 pragma solidity ^0.8.0;
 
-import "./ERC20Flaggable.sol";
-import "./IERC20Permit.sol";
+import "./ERC20.sol";
 
-abstract contract ERC20PermitLight is ERC20Flaggable, IERC20Permit {
+abstract contract ERC20PermitLight is ERC20 {
    
    /*//////////////////////////////////////////////////////////////
                             EIP-2612 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    mapping(address => uint256) public override nonces;
+    mapping(address => uint256) public nonces;
 
   /*//////////////////////////////////////////////////////////////
                              EIP-2612 LOGIC
@@ -27,7 +26,7 @@ abstract contract ERC20PermitLight is ERC20Flaggable, IERC20Permit {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public override {
+    ) public {
         require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
         unchecked { // unchecked to save a little gas with the nonce increment...
@@ -59,7 +58,7 @@ abstract contract ERC20PermitLight is ERC20Flaggable, IERC20Permit {
         }
     }
 
-    function DOMAIN_SEPARATOR() public view override returns (bytes32) {
+    function DOMAIN_SEPARATOR() public view returns (bytes32) {
         return
             keccak256(
                 abi.encode(

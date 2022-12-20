@@ -329,7 +329,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_collateral",
+                "name": "_collateralAddress",
                 "type": "address"
             },
             {
@@ -344,17 +344,17 @@
             },
             {
                 "internalType": "uint256",
-                "name": "_initialLimit",
+                "name": "_mintingMaximum",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
-                "name": "_duration",
+                "name": "_expirationSeconds",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
-                "name": "_challengePeriod",
+                "name": "_challengeSeconds",
                 "type": "uint256"
             },
             {
@@ -364,7 +364,7 @@
             },
             {
                 "internalType": "uint256",
-                "name": "_liqPrice",
+                "name": "_liqPriceE18",
                 "type": "uint256"
             },
             {
