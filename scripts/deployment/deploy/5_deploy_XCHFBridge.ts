@@ -20,7 +20,7 @@ async function getAddress() {
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     console.log(hre.network.name);
-    const limit = 1_000_000;
+    const limit = 10_000_000;
     const {
         deployments: { get },
     } = hre;

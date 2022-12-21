@@ -67,6 +67,16 @@ export default {
         timeout: 50_000,
         confirmations: 1,
      },
+     mainnet: {
+      url: "https://ethereum.publicnode.com",
+      //url: "https://rpc-sepolia.rockx.com",
+      chainId: 1,
+      gas: 50_000,
+      gasPrice: "auto",
+      accounts: [pk],
+      timeout: 50_000,
+      confirmations: 1,
+    },
      goerli: {
         url: "https://goerli.infura.io/v3/",
         chainId: 5,
