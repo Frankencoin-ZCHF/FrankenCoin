@@ -10,15 +10,18 @@ import { SigningKey } from "@ethersproject/signing-key";
 import { Contract } from "hardhat/internal/hardhat-network/stack-traces/model";
 import { floatToDec18 } from "../math";
 import {getSigningManagerFromPK} from "../utils";
-const NODE_URL = "https://rpc.sepolia.org";
+
 const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 const FC_ABI = require('../../abi/Frankencoin.json');
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
 const MH_ABI = require('../../abi/MintingHub.json');
 
+//const NODE_URL = "https://rpc.sepolia.org";
+const NODE_URL = "https://ethereum.publicnode.com";
+
 let pk: string | SigningKey = <string>process.env.PK;
 
-let mintingHubAddr = "0x82E105E10045E875429fD77C76Ac54bF029Ac14d";
+let mintingHubAddr = "0x5F8a6244ca00466a38b6d2891685bBB6400e7f5a";
 
 async function run() {
     //const wallet = new ethers.Wallet(pk);
