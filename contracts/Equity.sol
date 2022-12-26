@@ -15,7 +15,7 @@ import "./IReserve.sol";
 contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     uint32 public constant VALUATION_FACTOR = 3;
-    uint256 public constant MIN_HOLDING_DURATION = 90*10000; // about 90 days
+    uint256 public constant MIN_HOLDING_DURATION = 90*10000; // in blocks, about 90 days, set to 5 blocks for testing
     uint32 private constant QUORUM = 300;
 
     Frankencoin immutable public zchf;
