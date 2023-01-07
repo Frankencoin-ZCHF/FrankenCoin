@@ -50,8 +50,8 @@ contract MintingHub {
      * @param _challengeSeconds  challenge period. Longer for less liquid collateral.
      * @param _mintingFeePPM     percentage minting fee that will be added to reserve,
      *                           basis 1000_000
-     * @param _liqPriceE18       Liquidation price (dec18) that together with the reserve and
-     *                           fees determines the minimal collateralization ratio
+     * @param _liqPrice          Liquidation price with (36 - token decimals) decimals,
+     *                           e.g. 18 decimals for an 18 decimal token, 36 decimals for a 0 decimal token.
      * @param _reservePPM        percentage reserve amount that is added as the
      *                           borrower's stake into reserve, basis 1000_000
      * @return address of resulting position
@@ -59,7 +59,7 @@ contract MintingHub {
     function openPosition(
         address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
         uint256 _mintingMaximum, uint256 _expirationSeconds, uint256 _challengeSeconds,
-        uint32 _mintingFeePPM, uint256 _liqPriceE18, uint32 _reservePPM) public returns (address) {
+        uint32 _mintingFeePPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
@@ -71,7 +71,7 @@ contract MintingHub {
                 _expirationSeconds,
                 _challengeSeconds,
                 _mintingFeePPM,
-                _liqPriceE18,
+                _liqPrice,
                 _reservePPM
             )
         );

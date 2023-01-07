@@ -17,7 +17,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     uint256 public constant INITIALIZATION_PERIOD = 7 days;
     uint256 public constant PRICE_ADJUSTMENT_COOLDOWN = 3 days;
 
-    uint256 public price; // the zchf price per unit of the collateral below which challenges succeed, 18 digits
+    uint256 public price; // the zchf price per unit of the collateral below which challenges succeed, 18 to 36 digits
     uint256 public minted; // how much has been minted so far, including reserve
     uint256 public challengedAmount; // amount of the collateral that is currently under a challenge
     uint256 public immutable challengePeriod; //challenge period in timestamp units (seconds) for liquidation
