@@ -11,6 +11,7 @@ import "./IPosition.sol";
  * A hub for creating collateralized minting positions for a given collateral.
  */
 contract MintingHub {
+
     uint256 public constant OPENING_FEE = 1000 * 10**18;
 
     uint32 public constant BASE = 1000_000;
@@ -82,8 +83,13 @@ contract MintingHub {
         return address(pos);
     }
 
-    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public returns (address) {
+    modifier validPos(address position) {
         require(zchf.isPosition(position) == address(this), "not our pos");
+        _;
+    }
+
+
+    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public validPos(position) returns (address) {
         IPosition existing = IPosition(position);
         uint256 limit = existing.reduceLimitForClone(_initialMint);
         address pos = POSITION_FACTORY.clonePosition(position);
@@ -103,7 +109,7 @@ contract MintingHub {
      * @param _collateralAmount  size of the collateral we want to challenge (dec 18)
      * @return index of the challenge in challenge-array
      */
-    function launchChallenge(address _positionAddr, uint256 _collateralAmount) external returns (uint256) {
+    function launchChallenge(address _positionAddr, uint256 _collateralAmount) external validPos(_positionAddr) returns (uint256) {
         IPosition position = IPosition(_positionAddr);
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
         uint256 pos = challenges.length;
