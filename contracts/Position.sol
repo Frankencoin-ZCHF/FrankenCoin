@@ -112,11 +112,10 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * to buy reserve pool shares.
      */
     function getUsableMint(uint256 totalMint, bool beforeFees) public view returns (uint256){
-        uint256 usable = totalMint * (1000_000 - reserveContribution) / 1000_000;
         if (beforeFees){
-            return usable;
+            return totalMint * (1000_000 - reserveContribution) / 1000_000;
         } else {
-            return totalMint * (1000_000 - mintingFeePPM) / 1000_000;
+            return totalMint * (1000_000 - reserveContribution - mintingFeePPM) / 1000_000;
         }
     }
 
