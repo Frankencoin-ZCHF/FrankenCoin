@@ -8,7 +8,7 @@ It shall support a wide range of collateralized minting methods that are governe
 | Contract      | Description |
 | ----------- | ----------- |
 | Frankencoin.sol       | Contract for the ZCHF IERC20 token |
-| ReservePool.sol       | Contract that holds ZCHF reserve and issues pool tokens |
+| Equity.sol            | Contract that holds ZCHF reserve and issues pool shares |
 | MintingHub.sol        | Handles auctions and initiates positions (Position.sol) |
 | Position.sol          | A collateralized position |
 | StablecoinBridge.sol  | Implementation of a 'bridge-plugin' |
@@ -18,8 +18,6 @@ It shall support a wide range of collateralized minting methods that are governe
 | Ownable.sol           | Standard |
 | IERC20.sol            | Standard |
 | ERC20.sol             | Standard |
-
-<img src="docs/contractdia.png">
 
 ## Voting
 

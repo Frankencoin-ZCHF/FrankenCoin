@@ -113,6 +113,15 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
       _burn(msg.sender, _amount);
    }
 
+   /**
+    * Burn that amount without reclaiming the reserve.
+    * The caller is only allowed to use this method for tokens also minted through the caller with the same _reservePPM amount.
+    * For example, if someone minted 50 ZCHF earlier with a 20% reserve requirement (200000 ppm), they got 40 ZCHF and paid
+    * 10 ZCHF into the reserve. Now they want to repay the debt by burning 50 ZCHF. When doing so using this method, the 10 ZCHF
+    * that went into the reserve are not returned. Instead, they are donated to the reserve pool, making the pool share holders
+    * richer. This can make sense in combination with 'notifyLoss', i.e. when it is the pool share holders that bear the risk
+    * and depending on the outcome they make a profit or a loss.
+    */
    function burn(uint256 amount, uint32 reservePPM) external override minterOnly {
       _burn(msg.sender, amount);
       minterReserveE6 -= amount * reservePPM;
@@ -129,6 +138,13 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
       }
    }
 
+   /**
+    * Burns the target amount taking the tokens to be burned from the payer and the payer's reserve.
+    * The caller is only allowed to use this method for tokens also minted through the caller with the same _reservePPM amount.
+    * Example: the calling contract has previously minted 100 ZCHF with a reserve ratio of 20% (i.e. 200000 ppm). To burn half
+    * of that again, the minter calls burnFrom with a target amount of 50 ZCHF. Assuming that reserves are only 90% covered,
+    * this call will deduct 41 ZCHF from the payer's balance and 9 from the reserve, while reducing the minter reserve by 10.
+    */
    function burnFrom(address payer, uint256 targetTotalBurnAmount, uint32 _reservePPM) external override minterOnly returns (uint256) {
       uint256 assigned = calculateAssignedReserve(targetTotalBurnAmount, _reservePPM);
       _transfer(address(reserve), payer, assigned); 
@@ -137,12 +153,20 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
       return assigned;
    }
 
+   /**
+    * Burns the provided number of tokens plus whatever reserves are associated with that amount given the reserve requirement.
+    * The caller is only allowed to use this method for tokens also minted through the caller with the same _reservePPM amount.
+    * Example: the calling contract has previously minted 100 ZCHF with a reserve ratio of 20% (i.e. 200000 ppm). Now they have
+    * 41 ZCHF that they do not need so they decide to repay that amount. Assuming the reserves are only 90% covered,
+    * the call to burnWithReserve will burn the 41 plus 9 from the reserve, reducing the outstanding 'debt' of the caller by
+    * 50 ZCHF in total. This total is returned by the method so the caller knows how much less they owe.
+    */
    function burnWithReserve(uint256 _amountExcludingReserve /* 41 */, uint32 _reservePPM /* 20% */) 
       external override minterOnly returns (uint256) {
       uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
       uint256 minterReserve_ = minterReserve(); // 20
       uint256 adjustedReservePPM = currentReserve < minterReserve_ ? _reservePPM * currentReserve / minterReserve_ : _reservePPM; // 18%
-      uint256 freedAmount = _amountExcludingReserve / (1000000 - adjustedReservePPM); // 0.18 * 41 /0.82 = 50
+      uint256 freedAmount = 1000000 * _amountExcludingReserve / (1000000 - adjustedReservePPM); // 0.18 * 41 /0.82 = 50
       minterReserveE6 -= freedAmount * _reservePPM; // reduce reserve requirements by original ratio, here 10
       _transfer(address(reserve), msg.sender, freedAmount - _amountExcludingReserve); // collect 9 assigned reserve, maybe less than original reserve
       _burn(msg.sender, freedAmount); // 41
