@@ -190,12 +190,12 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     function repayInternal(uint256 burnable) internal noChallenge {
         uint256 actuallyBurned = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
         notifyRepaidInternal(actuallyBurned);
+        emitUpdate();
     }
 
     function notifyRepaidInternal(uint256 amount) internal {
         require(amount <= minted);
         minted -= amount;
-        emitUpdate();
     }
 
     /**
@@ -211,16 +211,19 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     }
 
     function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge {
+        uint256 balance = internalWithdrawCollateral(target, amount);
+        require(isWellCollateralized(balance, price));
+    }
+
+    function internalWithdrawCollateral(address target, uint256 amount) internal returns (uint256) {
         IERC20(collateral).transfer(target, amount);
         uint256 balance = collateralBalance();
-        require(isWellCollateralized(balance, price));
-        if (balance == 0){
+        if (balance < minimumCollateral){
             // Close
             cooldown = expiration;
-        } else {
-            require(balance >= minimumCollateral);
         }
         emitUpdate();
+        return balance;
     }
 
     function isWellCollateralized(uint256 collateralReserve, uint256 atPrice) internal view returns (bool) {
@@ -282,10 +285,9 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
             volumeZCHF = mintable;
             _size = colBal;
         }
-        // transfer collateral to the bidder
-        IERC20(collateral).transfer(_bidder, _size);
         uint256 repayment = minted >= volumeZCHF ? volumeZCHF : minted;
         notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
+        internalWithdrawCollateral(_bidder, _size); // transfer collateral to the bidder
         return (owner, _bid, volumeZCHF, repayment, reserveContribution);
     }
 
