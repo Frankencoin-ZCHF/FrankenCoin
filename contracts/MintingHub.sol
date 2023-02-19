@@ -21,6 +21,7 @@ contract MintingHub {
 
     IFrankencoin public immutable zchf; // currency
     Challenge[] public challenges;
+    mapping (address => mapping (address => uint256)) public pendingReturns;
 
     struct Challenge {
         address challenger;
@@ -164,7 +165,7 @@ contract MintingHub {
         Challenge storage challenge = challenges[_challengeNumber];
         if (block.timestamp >= challenge.end) {
             // if bid is too late, the transaction ends the challenge
-            _end(_challengeNumber);
+            end(_challengeNumber, false);
         } else {
             require(expectedSize == challenge.size, "s");
             if (challenge.bid > 0) {
@@ -174,7 +175,7 @@ contract MintingHub {
             if (challenge.position.tryAvertChallenge(challenge.size, _bidAmountZCHF)) {
                 // bid above Z_B/C_C >= (1+h)Z_M/C_M, challenge averted, end immediately by selling challenger collateral to bidder
                 zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
-                IERC20(challenge.position.collateral()).transfer(msg.sender, challenge.size);
+                challenge.position.collateral().transfer(msg.sender, challenge.size);
                 emit ChallengeAverted(address(challenge.position), _challengeNumber);
                 delete challenges[_challengeNumber];
             } else {
@@ -216,7 +217,7 @@ contract MintingHub {
      * @param _challengeNumber  number of the challenge in challenge-array
      */
     function end(uint256 _challengeNumber) external {
-        _end(_challengeNumber);
+        end(_challengeNumber, false);
     }
 
     function isChallengeOpen(uint256 _challengeNumber) external view returns (bool) {
@@ -227,12 +228,11 @@ contract MintingHub {
      * @dev internal end function
      * @param _challengeNumber  number of the challenge in challenge-array
      */
-    function _end(uint256 _challengeNumber) internal {
+    function end(uint256 _challengeNumber, bool postponeCollateralReturn) public {
         Challenge storage challenge = challenges[_challengeNumber];
-        IERC20 collateral = challenge.position.collateral();
         require(block.timestamp >= challenge.end, "period has not ended");
         // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
-        collateral.transfer(challenge.challenger, challenge.size); // return the challenger's collateral
+        returnCollateral(challenge, postponeCollateralReturn);
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
         (address owner, uint256 effectiveBid, uint256 volume, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
@@ -251,6 +251,21 @@ contract MintingHub {
         zchf.burn(repayment, reservePPM); // Repay the challenged part
         emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
         delete challenges[_challengeNumber];
+    }
+
+    function returnPostponedCollateral(address collateral, address target) external {
+        uint256 amount = pendingReturns[collateral][msg.sender];
+        IERC20(collateral).transfer(target, amount);
+        delete pendingReturns[collateral][msg.sender];
+    }
+
+    function returnCollateral(Challenge storage challenge, bool postpone) internal {
+        if (postpone){
+            // Postponing helps in case the challenger was blacklisted on the collateral token or otherwise cannot receive it at the moment.
+            pendingReturns[address(challenge.position.collateral())][challenge.challenger] += challenge.size;
+        } else {
+            challenge.position.collateral().transfer(challenge.challenger, challenge.size); // return the challenger's collateral
+        }
     }
 }
 
