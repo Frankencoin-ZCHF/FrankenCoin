@@ -28,6 +28,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     mapping (address => uint64) private voteAnchor;
 
     event Delegation(address indexed from, address indexed to);
+    event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
 
     constructor(Frankencoin zchf_) ERC20(18) {
         zchf = zchf_;
@@ -133,11 +134,15 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         if (totalSupply() == 0){
             require(amount >= ONE_DEC18, "initial deposit must >= 1");
             // initialize with 1000 shares for 1 ZCHF
-            _mint(from, 1000 * 10**18);
+            uint256 initialAmount = 1000 * ONE_DEC18;
+            _mint(from, initialAmount);
             amount -= ONE_DEC18;
-        } 
-        _mint(from, calculateSharesInternal(zchf.equity() - amount, amount));
+            emit Trade(msg.sender, int(initialAmount), ONE_DEC18, price());
+        }
+        uint256 shares = calculateSharesInternal(zchf.equity() - amount, amount);
+        _mint(from, shares);
         require(totalSupply() < 2**90, "total supply exceeded"); // to guard against overflows with price and vote calculations
+        emit Trade(msg.sender, int(shares), amount, price());
         return true;
     }
 
@@ -162,6 +167,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 proceeds = calculateProceeds(shares);
         _burn(msg.sender, shares);
         zchf.transfer(target, proceeds);
+        emit Trade(msg.sender, -int(shares), proceeds, price());
         return proceeds;
     }
 
