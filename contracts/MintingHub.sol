@@ -255,8 +255,8 @@ contract MintingHub {
 
     function returnPostponedCollateral(address collateral, address target) external {
         uint256 amount = pendingReturns[collateral][msg.sender];
-        IERC20(collateral).transfer(target, amount);
         delete pendingReturns[collateral][msg.sender];
+        IERC20(collateral).transfer(target, amount);
     }
 
     function returnCollateral(Challenge storage challenge, bool postpone) internal {
