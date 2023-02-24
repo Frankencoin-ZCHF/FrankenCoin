@@ -15,17 +15,19 @@ import "./IReserve.sol";
 contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     uint32 public constant VALUATION_FACTOR = 3;
-    uint256 public constant MIN_HOLDING_DURATION = 90*7200; // in blocks, about 90 days, set to 5 blocks for testing
     uint32 private constant QUORUM = 300;
+
+    uint8 private constant BLOCK_TIME_RESOLUTION_BITS = 24;
+    uint256 public constant MIN_HOLDING_DURATION = 90*7200 << BLOCK_TIME_RESOLUTION_BITS; // in blocks, about 90 days, set to 5 blocks for testing
 
     Frankencoin immutable public zchf;
 
     // should hopefully be grouped into one storage slot
-    uint64 private totalVotesAnchorTime;
+    uint64 private totalVotesAnchorTime; // 40 Bit for the block number, 24 Bit sub-block time resolution
     uint192 private totalVotesAtAnchor;
 
     mapping (address => address) public delegates;
-    mapping (address => uint64) private voteAnchor;
+    mapping (address => uint64) private voteAnchor; // 40 Bit for the block number, 24 Bit sub-block time resolution
 
     event Delegation(address indexed from, address indexed to);
     event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
@@ -59,7 +61,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     function canRedeem(address owner) public view returns (bool) {
-        return block.number - voteAnchor[owner] >= MIN_HOLDING_DURATION;
+        return anchorTime() - voteAnchor[owner] >= MIN_HOLDING_DURATION;
     }
 
      /**
@@ -68,9 +70,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * @param amount    amount to be sent
      */
     function adjustTotalVotes(address from, uint256 amount, uint256 roundingLoss) internal {
-        uint256 lostVotes = from == address(0x0) ? 0 : (block.number - voteAnchor[from]) * amount;
+        uint256 lostVotes = from == address(0x0) ? 0 : (anchorTime() - voteAnchor[from]) * amount;
         totalVotesAtAnchor = uint192(totalVotes() - roundingLoss - lostVotes);
-        totalVotesAnchorTime = uint64(block.number);
+        totalVotesAnchorTime = anchorTime();
     }
 
     /**
@@ -84,7 +86,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         if (to != address(0x0)) {
             uint256 recipientVotes = votes(to); // for example 21 if 7 shares were held for 3 blocks
             uint256 newbalance = balanceOf(to) + amount; // for example 11 if 4 shares are added
-            voteAnchor[to] = uint64(block.number - recipientVotes / newbalance); // new example anchor is only 21 / 11 = 1 block in the past
+            voteAnchor[to] = uint64(anchorTime() - recipientVotes / newbalance); // new example anchor is only 21 / 11 = 1 block in the past
             return recipientVotes % newbalance; // we have lost 21 % 11 = 10 votes
         } else {
             // optimization for burn, vote anchor of null address does not matter
@@ -92,12 +94,16 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         }
     }
 
+    function anchorTime() internal view returns (uint64){
+        return uint64(block.number << BLOCK_TIME_RESOLUTION_BITS);
+    }
+
     function votes(address holder) public view returns (uint256) {
-        return balanceOf(holder) * (block.number - voteAnchor[holder]);
+        return balanceOf(holder) * (anchorTime() - voteAnchor[holder]);
     }
 
     function totalVotes() public view returns (uint256) {
-        return totalVotesAtAnchor + totalSupply() * (block.number - totalVotesAnchorTime);
+        return totalVotesAtAnchor + totalSupply() * (anchorTime() - totalVotesAnchorTime);
     }
 
     function isQualified(address sender, address[] calldata helpers) external override view returns (bool) {
