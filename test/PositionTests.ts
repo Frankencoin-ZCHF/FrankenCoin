@@ -228,7 +228,8 @@ describe("Position Tests", () => {
             expect(bidAmountZCHFOwner).to.be.equal(cashBack);
         });
         it("cannot end successful challenge early", async () => {
-            let tx = mintingHubContract.connect(accounts[2]).end(0);
+            mintingHubContract.connect(accounts[2]);
+            let tx = mintingHubContract["end(uint256)"](0);
             await expect(tx).to.be.revertedWith("period has not ended");
         });
         it("end successful challenge", async () => {
@@ -239,7 +240,8 @@ describe("Position Tests", () => {
             //  challenge_amount * liqPrice > bidZCHF
             // our bid = liqPrice * 0.95 * challengeAmount, hence
             //challengeAmount * liqPrice > liqPrice * 0.95 * challengeAmount
-            await mintingHubContract.connect(accounts[2]).end(challengeNumber);
+            mintingHubContract.connect(accounts[2]);
+            await mintingHubContract["end(uint256)"](challengeNumber);
         });
     });
 
