@@ -11,25 +11,75 @@ import "./IReserve.sol";
 
 /** 
  * @title Reserve pool for the Frankencoin
+ *
  */
 contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
+    /**
+     * The VALUATION_FACTOR determines the market cap of the reserve pool shares relative to the equity reserves.
+     * The following always holds: Market Cap = Valuation Factor * Equity Reserve = Price * Supply
+     *
+     * The relation between price, supply, reserve and market cap is as follows:
+     * |   Reserve     |   Market Cap  |     Price     |     Supply    |
+     * |             1 |             3 |         0.003 |          1000 |
+     * |          1000 |          3000 |           0.3 |         10000 |
+     * |       1000000 |       3000000 |            30 |        100000 |
+     * |    1000000000 |    3000000000 |          3000 |       1000000 |
+     * | 1000000000000 | 3000000000000 |        300000 |      10000000 |
+     *
+     * I.e., the supply is proporational to the cubic root of the reserve and the price is proportional to the
+     * squared cubic root.
+     */
     uint32 public constant VALUATION_FACTOR = 3;
+
+    /**
+     * The quorum in basis points. 100 is 1%.
+     */
     uint32 private constant QUORUM = 300;
 
+    /**
+     * The number of digits to store the average holding time of share tokens.
+     */
     uint8 private constant BLOCK_TIME_RESOLUTION_BITS = 24;
-    uint256 public constant MIN_HOLDING_DURATION = 90*7200 << BLOCK_TIME_RESOLUTION_BITS; // in blocks, about 90 days, set to 5 blocks for testing
+
+    /**
+     * The minimum holding duration in blocks. You are not allowed to redeem your pool shares if you held them
+     * for less than the minimum holding duration at average. For example, if you have two pool shares on your
+     * address, one acquired 5 days ago and one acquired 105 days ago, you cannot redeem them as the average
+     * holding duration of your shares is only 55 days < 90 days.
+     */
+    uint256 public constant MIN_HOLDING_DURATION = 90*7200 << BLOCK_TIME_RESOLUTION_BITS; // Set to 5 for local testing
 
     Frankencoin immutable public zchf;
 
-    // should hopefully be grouped into one storage slot
+    /**
+     * To track the total number of votes we need to know the number of votes at the anchor time and when the
+     * anchor time was. This is (hopefully) stored in one 256 bit slot, with the anchor time taking 64 Bits and
+     * the total vote count 192 Bits. Given the sub-block time resolution of 24 Bits, the implicit assumption is
+     * that the block number can always be stored in 40 Bits (i.e. it does not exceed a trillion). Further,
+     * given 18 decimals (about 60 Bits), this implies that the total supply cannot exceed 
+     *   192 - 60 - 40 - 24 = 68 Bits
+     * Here, we are also save, as 68 Bits would imply more than a trillion outstanding shares. In fact, when
+     * minting, a limit of about 2**30 shares (that's 2**90 Bits when taking into account the decimals) is imposed
+     * when minting. This means that the maximum supply is about a billion shares, which is reached at a market
+     * cap of 3,000,000,000,000,000,000 CHF. This limit could in theory be reached in times of hyper inflaction. 
+     */
+    uint192 private totalVotesAtAnchor;  // Total number of votes at the anchor time, see comment on the um
     uint64 private totalVotesAnchorTime; // 40 Bit for the block number, 24 Bit sub-block time resolution
-    uint192 private totalVotesAtAnchor;
 
+    /**
+     * Keeping track on who delegated votes to whom.
+     * Note that delegation does not mean you cannot vote / veto any more, it just means that the delegate can
+     * benefit from your votes when invoking a veto. Circular delegations are valid, do not help when voting.
+     */
     mapping (address => address) public delegates;
+
+    /**
+     * A block number in the past such that: votes = balance * (time passed since anchor was set)
+     */
     mapping (address => uint64) private voteAnchor; // 40 Bit for the block number, 24 Bit sub-block time resolution
 
-    event Delegation(address indexed from, address indexed to);
+    event Delegation(address indexed from, address indexed to); // indicates a delegation
     event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
 
     constructor(Frankencoin zchf_) ERC20(18) {
@@ -44,6 +94,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return "FPS";
     }
 
+    /**
+     * Returns the price of one FPS in ZCHF with 18 decimals precision.
+     */
     function price() public view returns (uint256){
         return VALUATION_FACTOR * zchf.equity() * ONE_DEC18 / totalSupply();
     }
@@ -51,15 +104,26 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
         super._beforeTokenTransfer(from, to, amount);
         if (amount > 0){
+            // No need to adjust the sender votes. When they send out 10% of their shares, they also lose 10% of
+            // their votes so everything falls nicely into place.
+            // Recipient votes should stay the same, but grow faster in the future, requiring an adjustment of the anchor.
             uint256 roundingLoss = adjustRecipientVoteAnchor(to, amount);
+            // The total also must be adjusted and kept accurate by taking into account the rounding error.
             adjustTotalVotes(from, amount, roundingLoss);
         }
     }
 
+    /**
+     * Returns whether the sender address is allowed to redeem FPS.
+     */
     function canRedeem() external view returns (bool){
         return canRedeem(msg.sender);
     }
 
+    /**
+     * Returns whether the given address is allowed to redeem FPS, which is the
+     * case after their average holding duration is larger than the required minimum.
+     */
     function canRedeem(address owner) public view returns (bool) {
         return anchorTime() - voteAnchor[owner] >= MIN_HOLDING_DURATION;
     }
@@ -94,18 +158,32 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         }
     }
 
+    /**
+     * Block number with some additional Bits for higher resolution.
+     */
     function anchorTime() internal view returns (uint64){
         return uint64(block.number << BLOCK_TIME_RESOLUTION_BITS);
     }
 
+    /**
+     * The votes of the holder, excluding votes from delegates.
+     */
     function votes(address holder) public view returns (uint256) {
         return balanceOf(holder) * (anchorTime() - voteAnchor[holder]);
     }
 
+    /**
+     * Total number of votes in the system.
+     */
     function totalVotes() public view returns (uint256) {
         return totalVotesAtAnchor + totalSupply() * (anchorTime() - totalVotesAnchorTime);
     }
 
+    /**
+     * Checks whether the sender address is qualified given a list of helpers that delegated their votes
+     * directly or indirectly to the sender. It is the responsiblity of the caller to figure out whether
+     * helpes are necessary and to identify them by scanning the blockchain for Delegation events. 
+     */
     function isQualified(address sender, address[] calldata helpers) external override view returns (bool) {
         uint256 _votes = votes(sender);
         for (uint i=0; i<helpers.length; i++){
@@ -120,12 +198,16 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return _votes * 10000 >= QUORUM * totalVotes();
     }
 
+    /**
+     * Increases the voting power of the delegate by your number of votes without taking away any voting power
+     * from the sender.
+     */
     function delegateVoteTo(address delegate) external {
         delegates[msg.sender] = delegate;
         emit Delegation(msg.sender, delegate);
     }
 
-    function canVoteFor(address delegate, address owner) public view returns (bool) {
+    function canVoteFor(address delegate, address owner) public view returns (bool) { // TODO Maybe should be made internal?
         if (owner == delegate){
             return true;
         } else if (owner == address(0x0)){
@@ -135,6 +217,10 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         }
     }
 
+    /**
+     * In order to mint new FPS tokens, one needs to send ZCHF to this contract using the transferAndCall function
+     * in the ZCHF contract.
+     */
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
         if (totalSupply() == 0){
@@ -147,15 +233,16 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         }
         uint256 shares = calculateSharesInternal(zchf.equity() - amount, amount);
         _mint(from, shares);
-        require(totalSupply() < 2**90, "total supply exceeded"); // to guard against overflows with price and vote calculations
+        // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
+        // TODO: most likely, 2**128 would also work. But it was already deployed with 90 Bits, which is also enough.
+        require(totalSupply() < 2**90, "total supply exceeded");
         emit Trade(msg.sender, int(shares), amount, price());
         return true;
     }
 
     /**
      * @notice Calculate shares received when depositing ZCHF
-     * @dev this function is called after the transfer of ZCHF happens
-     * @param investment ZCHF invested, in dec18 format
+     * @param investment ZCHF invested
      * @return amount of shares received for the ZCHF invested
      */
     function calculateShares(uint256 investment) public view returns (uint256) {
@@ -168,6 +255,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return newTotalShares - totalShares;
     }
 
+    /**
+     * Redeem the given amount of shares owned by the sender and transfer the proceeds to the target.
+     */
     function redeem(address target, uint256 shares) public returns (uint256) {
         require(canRedeem(msg.sender));
         uint256 proceeds = calculateProceeds(shares);
@@ -179,7 +269,6 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     /**
      * @notice Calculate ZCHF received when depositing shares
-     * @dev this function is called before any transfer happens
      * @param shares number of shares we want to exchange for ZCHF,
      *               in dec18 format
      * @return amount of ZCHF received for the shares
