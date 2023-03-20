@@ -114,9 +114,6 @@ contract MintingHub {
         IPosition position = IPosition(_positionAddr);
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
         uint256 pos = challenges.length;
-        /*
-        struct Challenge {address challenger;IPosition position;uint256 size;uint256 end;address bidder;uint256 bid;
-        */
         challenges.push(Challenge(msg.sender, position, _collateralAmount, block.timestamp + position.challengePeriod(), address(0x0), 0));
         position.notifyChallengeStarted(_collateralAmount);
         emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);

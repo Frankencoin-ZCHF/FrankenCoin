@@ -10,8 +10,12 @@ import "./MathUtil.sol";
 import "./IReserve.sol";
 
 /** 
- * @title Reserve pool for the Frankencoin
- *
+ * If the Frankencoin system was a bank, this contract would represent the equity on its balance sheet.
+ * Like with a corporation, the owners of the equity capital are the shareholders, or in this case the holders
+ * of Frankencoin Pool Shares (FPS) tokens. Anyone can mint additional FPS tokens by adding Frankencoins to the
+ * reserve pool. Also, FPS tokens can be redeemed for Frankencoins again after a minimum holding period.
+ * Furthermore, the FPS shares come with some voting power. Anyone that held at least 3% of the holding-period-
+ * weighted reserve pool shares gains veto power and can veto new proposals.
  */
 contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
@@ -19,7 +23,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * The VALUATION_FACTOR determines the market cap of the reserve pool shares relative to the equity reserves.
      * The following always holds: Market Cap = Valuation Factor * Equity Reserve = Price * Supply
      *
-     * The relation between price, supply, reserve and market cap is as follows:
+     * In the absence of profits and losses, the variables grow as follows when FPS tokens are minted:
+     *
      * |   Reserve     |   Market Cap  |     Price     |     Supply    |
      * |             1 |             3 |         0.003 |          1000 |
      * |          1000 |          3000 |           0.3 |         10000 |
@@ -28,7 +33,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * | 1000000000000 | 3000000000000 |        300000 |      10000000 |
      *
      * I.e., the supply is proporational to the cubic root of the reserve and the price is proportional to the
-     * squared cubic root.
+     * squared cubic root. When profits accumulate or losses materialize, the reserve, the market cap,
+     * and the price are adjusted proportionally, with the supply staying constant. In the absence of an extreme
+     * inflation of the Swiss franc, it is unlikely that there will ever be more than ten million FPS.
      */
     uint32 public constant VALUATION_FACTOR = 3;
 

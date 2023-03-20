@@ -14,6 +14,11 @@ import "./MathUtil.sol";
  */
 contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
 
+    /**
+     * Note that this contract is intended to be cloned. All clones will share the same values for
+     * the constant and immutable fields, but have their own values for the other fields.
+     */
+
     uint256 public constant INITIALIZATION_PERIOD = 7 days;
     uint256 public constant PRICE_ADJUSTMENT_COOLDOWN = 3 days;
 
@@ -75,6 +80,10 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         emit PositionOpened(_owner, original, _zchf, address(collateral), _liqPrice);
     }
 
+    /**
+     * Method to initialize a freshly created clone. It is the responsibility of the creator to make sure this is only
+     * call once.
+     */
     function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external onlyHub {
         require(_coll >= minimumCollateral, "coll not enough");
         transferOwnership(owner);
