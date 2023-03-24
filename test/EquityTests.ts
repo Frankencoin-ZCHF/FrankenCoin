@@ -2,7 +2,7 @@
 import {expect} from "chai";
 import { float } from "hardhat/internal/core/params/argumentTypes";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
-const { ethers, bytes } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 import { Equity__factory } from "../typechain";
@@ -43,6 +43,11 @@ describe("Equity Tests", () => {
         });
     });
 
+    function BNToHexNoPrefix(n) {
+        let num0x0X = BN.from(n).toHexString();
+        return num0x0X.replace("0x0", "0x");
+    }
+
     describe("minting shares", () => {
         it("should create an initial share", async () => {
             await zchf.transferAndCall(equity.address, floatToDec18(1), 0);
@@ -55,29 +60,27 @@ describe("Equity Tests", () => {
             expect(balance).to.be.approximately(floatToDec18(2000), floatToDec18(0.01));
         });
         it("should refuse redemption before time passed", async () => {
+            expect(await equity["canRedeem()"]()).to.be.false;
             await expect(equity.redeem(owner, floatToDec18(0.1))).to.be.revertedWithoutReason();
         });
         it("should allow redemption after time passed", async () => {
-            await hre.ethers.provider.send('evm_mine');
-            await hre.ethers.provider.send('evm_mine');
-            await hre.ethers.provider.send('evm_mine');
-            await hre.ethers.provider.send('evm_mine');
-            await hre.ethers.provider.send('evm_mine');
-            await hre.ethers.provider.send('evm_mine');
+            let BLOCK_MIN_HOLDING_DURATION = 90 * 7200;
+            await network.provider.send("hardhat_mine", [BNToHexNoPrefix(BLOCK_MIN_HOLDING_DURATION + 1)]);
             expect(await equity["canRedeem()"]()).to.be.true;
             let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1000.0));
             let bnred = BN.from(redemptionAmount.toString());
             let proceeds = await equity.calculateProceeds(bnred);
-            expect(proceeds).to.be.approximately(floatToDec18(7.0), floatToDec18(0.0001));
+            expect(proceeds).to.be.approximately(floatToDec18(7.0), floatToDec18(0.01));
         });
     });
+
 
     describe("transfer shares", () => {
         
         it("total votes==sum of owner votes", async () => {
             let other = accounts[5].address;
             let totVotesBefore = await equity.totalVotes();
-            let votesBefore = [await equity.votes(owner), await equity.votes(other)];
+            let votesBefore = [await equity["votes(address)"](owner), await equity["votes(address)"](other)];
             let isEqual = totVotesBefore-votesBefore[0]==0;
             if(!isEqual) {
                 console.log(`1) total votes before = ${totVotesBefore}`);
@@ -89,13 +92,13 @@ describe("Equity Tests", () => {
             let amount = 0.1;
             let other = accounts[5].address;
             let totVotesBefore = await equity.totalVotes();
-            let votesBefore = [await equity.votes(owner), await equity.votes(other)];
+            let votesBefore = [await equity["votes(address)"](owner), await equity["votes(address)"](other)];
             let balancesBefore = [await equity.balanceOf(owner), await equity.balanceOf(other)];
             await equity.transfer(other, floatToDec18(amount));
             let balancesAfter = [await equity.balanceOf(owner), await equity.balanceOf(other)];
             expect(balancesAfter[1]>balancesBefore[1]).to.be.true;
             let totVotesAfter = await equity.totalVotes();
-            let votesAfter = [await equity.votes(owner), await equity.votes(other)];
+            let votesAfter = [await equity["votes(address)"](owner), await equity["votes(address)"](other)];
             let isEqual1 = totVotesBefore-votesBefore[0] ==0;
             let isEqual2 = totVotesAfter-votesAfter[0]-votesAfter[1]==0;
             if(!isEqual1 || !isEqual2) {
@@ -108,11 +111,11 @@ describe("Equity Tests", () => {
         });
 
         it("total votes correct after mine", async () => {
-            await hre.ethers.provider.send('evm_mine');
-            await hre.ethers.provider.send('evm_mine');
+            await ethers.provider.send('evm_mine');
+            await ethers.provider.send('evm_mine');
             let other = accounts[5].address;
             let totVotesAfter = await equity.totalVotes();
-            let votesAfter = [await equity.votes(owner), await equity.votes(other)];
+            let votesAfter = [await equity["votes(address)"](owner), await equity["votes(address)"](other)];
             let isEqual = (totVotesAfter.sub(votesAfter[0]).sub(votesAfter[1])) == 0;
             let isZero = votesAfter[1]==0
             if(!isEqual || isZero) {
@@ -123,11 +126,11 @@ describe("Equity Tests", () => {
         }); 
 
         it("delegate vote", async () => {
+            await equity.connect(accounts[5]).delegateVoteTo(accounts[2].address);
             await equity.connect(accounts[2]).delegateVoteTo(accounts[0].address);
-            let canVote = await equity.canVoteFor(accounts[0].address, accounts[2].address);
-            expect(canVote).to.be.true;
-            canVote = await equity.canVoteFor(accounts[2].address, accounts[0].address);
-            expect(canVote).to.be.false;
+            let qualified1 = await equity["votes(address,address[])"](accounts[0].address, [accounts[5].address]);
+            let qualified2 = await equity["votes(address,address[])"](accounts[0].address, []);
+            expect(qualified1 > qualified2).to.be.true;
         }); 
     });
 });

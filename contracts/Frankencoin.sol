@@ -71,13 +71,17 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * minter.
     */
    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) override external {
-      require(_applicationPeriod >= MIN_APPLICATION_PERIOD || totalSupply() == 0, "period too short");
-      require(_applicationFee >= MIN_FEE || totalSupply() == 0, "fee too low");
-      require(minters[_minter] == 0, "already registered");
+      if (_applicationPeriod < MIN_APPLICATION_PERIOD && totalSupply() > 0) revert PeriodTooShort();
+      if (_applicationFee < MIN_FEE  && totalSupply() > 0) revert FeeTooLow();
+      if (minters[_minter] != 0) revert AlreadyRegistered();
       _transfer(msg.sender, address(reserve), _applicationFee);
       minters[_minter] = block.timestamp + _applicationPeriod;
       emit MinterApplied(_minter, _applicationPeriod, _applicationFee, _message);
    }
+
+   error PeriodTooShort();
+   error FeeTooLow();
+   error AlreadyRegistered();
 
    /**
     * The reserve provided by the owners of collateralized positions.
@@ -92,9 +96,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
     */
    function registerPosition(address _position) override external {
-      require(isMinter(msg.sender), "not minter");
+      if (!isMinter(msg.sender)) revert NotMinter();
       positions[_position] = msg.sender;
    }
+
+   error NotMinter();
 
    /**
     * The amount of equity of the Frankencoin system in ZCHF, owned by the holders of Frankencoin Pool Shares.
@@ -117,11 +123,13 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * Calling this function is relatively cheap thanks to the deletion of a storage slot.
     */
    function denyMinter(address _minter, address[] calldata _helpers, string calldata _message) override external {
-      require(block.timestamp <= minters[_minter], "too late");
-      require(reserve.isQualified(msg.sender, _helpers), "not qualified");
+      if (block.timestamp > minters[_minter]) revert TooLate();
+      reserve.checkQualified(msg.sender, _helpers);
       delete minters[_minter];
       emit MinterDenied(_minter, _message);
    }
+
+   error TooLate();
 
    /**
     * Mints the provided amount of ZCHF to the target address, automatically forwarding
@@ -189,10 +197,21 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     */
    function burnFrom(address payer, uint256 targetTotalBurnAmount, uint32 _reservePPM) external override minterOnly returns (uint256) {
       uint256 assigned = calculateAssignedReserve(targetTotalBurnAmount, _reservePPM);
-      _transfer(address(reserve), payer, assigned); 
-      _burn(payer, targetTotalBurnAmount); // and burn everything
+      _transfer(address(reserve), payer, assigned); // send reserve to owner
+      _burn(payer, targetTotalBurnAmount); // and burn the full amount from the owner's address
       minterReserveE6 -= targetTotalBurnAmount * _reservePPM; // reduce reserve requirements by original ratio
       return assigned;
+   }
+
+   /**
+    * Calculate the amount that is freed when returning amountExcludingReserve given a reserve ratio of reservePPM, taking
+    * into account potential losses. Example values in the comments.
+    */
+   function calculateFreedAmount(uint256 amountExcludingReserve /* 41 */, uint32 reservePPM /* 20% */) public view returns (uint256){
+      uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
+      uint256 minterReserve_ = minterReserve(); // 20
+      uint256 adjustedReservePPM = currentReserve < minterReserve_ ? reservePPM * currentReserve / minterReserve_ : reservePPM; // 18%
+      return 1000000 * amountExcludingReserve / (1000000 - adjustedReservePPM); // 41 / (1-18%) = 50
    }
 
    /**
@@ -204,15 +223,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * the call to burnWithReserve will burn the 41 plus 9 from the reserve, reducing the outstanding 'debt' of the caller by
     * 50 ZCHF in total. This total is returned by the method so the caller knows how much less they owe.
     */
-   function burnWithReserve(uint256 _amountExcludingReserve /* 41 */, uint32 _reservePPM /* 20% */) 
-      external override minterOnly returns (uint256) {
-      uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
-      uint256 minterReserve_ = minterReserve(); // 20
-      uint256 adjustedReservePPM = currentReserve < minterReserve_ ? _reservePPM * currentReserve / minterReserve_ : _reservePPM; // 18%
-      uint256 freedAmount = 1000000 * _amountExcludingReserve / (1000000 - adjustedReservePPM); // 0.18 * 41 /0.82 = 50
-      minterReserveE6 -= freedAmount * _reservePPM; // reduce reserve requirements by original ratio, here 10
-      _transfer(address(reserve), msg.sender, freedAmount - _amountExcludingReserve); // collect 9 assigned reserve, maybe less than original reserve
-      _burn(msg.sender, freedAmount); // 41
+   function burnWithReserve(uint256 _amountExcludingReserve, uint32 _reservePPM) external override minterOnly returns (uint256) {
+      uint256 freedAmount = calculateFreedAmount(_amountExcludingReserve, _reservePPM);
+      minterReserveE6 -= freedAmount * _reservePPM; // reduce reserve requirements by original ratio
+      _transfer(address(reserve), msg.sender, freedAmount - _amountExcludingReserve); // collect assigned reserve, maybe less than original reserve
+      _burn(msg.sender, freedAmount); // burn the rest of the freed amount
       return freedAmount;
    }
 
@@ -224,7 +239,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
    }
 
    modifier minterOnly() {
-      require(isMinter(msg.sender) || isMinter(positions[msg.sender]), "not approved minter");
+      if (!isMinter(msg.sender) && !isMinter(positions[msg.sender])) revert NotMinter();
       _;
    }
 

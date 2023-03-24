@@ -1,7 +1,7 @@
 // @ts-nocheck
 import {expect} from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
-const { ethers, bytes } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
@@ -29,7 +29,7 @@ describe("Plugin Veto Tests", () => {
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
         ZCHFContract.suggestMinter(bridge.address, 0, 0, "");
         // wait for 1 block
-        await hre.ethers.provider.send('evm_increaseTime', [60]); 
+        await ethers.provider.send('evm_increaseTime', [60]); 
         await network.provider.send("evm_mine");
         // now we are ready to bootstrap ZCHF with Mock-XCHF
         await mockXCHF.mint(owner, limit.div(2));
@@ -70,14 +70,14 @@ describe("Plugin Veto Tests", () => {
             let amount = floatToDec18(1_000);
             await mockDCHF.connect(accounts[1]).approve(bridgeSygnum.address, amount);
             // set allowance
-            await expect(bridgeSygnum.connect(accounts[1])["mint(uint256)"](amount)).to.be.revertedWith("not approved minter");
+            await expect(bridgeSygnum.connect(accounts[1])["mint(uint256)"](amount)).to.be.revertedWithCustomError(ZCHFContract, "NotMinter");
         });
         it("deny minter", async () => {
             await expect(ZCHFContract.connect(accounts[0]).
                 denyMinter(bridgeSygnum.address, [], "sygnum denied")).
                 to.emit(ZCHFContract, "MinterDenied");
             await expect(bridgeSygnum.connect(accounts[1])["mint(uint256)"](floatToDec18(1_000))).
-                to.be.revertedWith("not approved minter");
+                to.be.revertedWithCustomError(ZCHFContract, "NotMinter");
         });
     });
 

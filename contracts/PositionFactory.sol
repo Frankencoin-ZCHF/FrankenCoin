@@ -9,6 +9,7 @@ contract PositionFactory is CloneFactory {
 
     /**
      * Create a completely new position in a newly deployed contract.
+     * Must be called through minting hub to be recognized as valid position.
      */
     function createNewPosition(address _owner, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 

@@ -66,6 +66,62 @@
         "type": "constructor"
     },
     {
+        "inputs": [],
+        "name": "ChallengeTooSmall",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Challenged",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Expired",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Hot",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InsufficientCollateral",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "LimitExceeded",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotHub",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotQualified",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "excess",
+                "type": "uint256"
+            }
+        ],
+        "name": "RepaidTooMuch",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "TooLate",
+        "type": "error"
+    },
+    {
         "anonymous": false,
         "inputs": [
             {
@@ -170,32 +226,6 @@
         ],
         "name": "PositionOpened",
         "type": "event"
-    },
-    {
-        "inputs": [],
-        "name": "INITIALIZATION_PERIOD",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "PRICE_ADJUSTMENT_COOLDOWN",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
     },
     {
         "inputs": [
@@ -626,6 +656,19 @@
                 "internalType": "uint32",
                 "name": "",
                 "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "start",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",

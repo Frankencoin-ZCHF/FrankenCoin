@@ -1,7 +1,7 @@
 // @ts-nocheck
 import {expect} from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
-const { ethers, bytes } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
@@ -29,11 +29,11 @@ describe("Basic Tests", () => {
         let num0x0X = BN.from(n).toHexString();
         return num0x0X.replace("0x0", "0x");
     }
+
     async function mineNBlocks(n) {
         // hardhat_mine does not accept hex numbers that start with 0x0,
         // hence convert
-        let numBlocks = BNToHexNoPrefix(n);
-        await hre.network.provider.send("hardhat_mine", [numBlocks]);
+        await network.provider.send("hardhat_mine", [BNToHexNoPrefix(n)]);
     }
 
     before(async () => {
@@ -74,7 +74,7 @@ describe("Basic Tests", () => {
             let balanceBefore = await ZCHFContract.balanceOf(owner);
             await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
             // set allowance
-            await expect(bridge.connect(accounts[0])["mint(uint256)"](amount)).to.be.revertedWith("not approved minter");
+            await expect(bridge.connect(accounts[0])["mint(uint256)"](amount)).to.be.revertedWithCustomError(ZCHFContract, "NotMinter");
         });
         it("bootstrap suggestMinter", async () => {
             let applicationPeriod = BN.from(0);
@@ -83,7 +83,7 @@ describe("Basic Tests", () => {
             await expect(ZCHFContract.suggestMinter(bridge.address, applicationPeriod, 
                 applicationFee, msg)).to.emit(ZCHFContract, "MinterApplied");
             // increase block to be a minter
-            await hre.ethers.provider.send('evm_increaseTime', [60]); 
+            await ethers.provider.send('evm_increaseTime', [60]); 
             await network.provider.send("evm_mine") 
             let isMinter = await ZCHFContract.isMinter(bridge.address);
             expect(isMinter).to.be.true;
@@ -168,8 +168,8 @@ describe("Basic Tests", () => {
         });
         it("can redeem shares after *N* blocks", async () => {
             // increase block number so we can redeem
-            let BLOCK_MIN_HOLDING_DURATION = 90 * 24 * 60 * 5;
-            await mineNBlocks(BLOCK_MIN_HOLDING_DURATION + 1);
+            let BLOCK_MIN_HOLDING_DURATION = 90 * 7200;
+            await network.provider.send("hardhat_mine", [BNToHexNoPrefix(BLOCK_MIN_HOLDING_DURATION + 1)]);
             let canRedeem = await equityContract.connect(accounts[0])['canRedeem()']();
             expect(canRedeem).to.be.true;
         });

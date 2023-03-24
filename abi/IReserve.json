@@ -12,14 +12,8 @@
                 "type": "address[]"
             }
         ],
-        "name": "isQualified",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
+        "name": "checkQualified",
+        "outputs": [],
         "stateMutability": "view",
         "type": "function"
     }

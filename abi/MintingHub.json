@@ -116,17 +116,29 @@
         "type": "event"
     },
     {
-        "inputs": [],
-        "name": "BASE",
-        "outputs": [
+        "anonymous": false,
+        "inputs": [
             {
-                "internalType": "uint32",
-                "name": "",
-                "type": "uint32"
+                "indexed": false,
+                "internalType": "address",
+                "name": "collateral",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "beneficiary",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
             }
         ],
-        "stateMutability": "view",
-        "type": "function"
+        "name": "PostPonedReturn",
+        "type": "event"
     },
     {
         "inputs": [],

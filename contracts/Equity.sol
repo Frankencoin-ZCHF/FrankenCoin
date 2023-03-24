@@ -186,12 +186,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return totalVotesAtAnchor + totalSupply() * (anchorTime() - totalVotesAnchorTime);
     }
 
-    /**
-     * Checks whether the sender address is qualified given a list of helpers that delegated their votes
-     * directly or indirectly to the sender. It is the responsiblity of the caller to figure out whether
-     * helpes are necessary and to identify them by scanning the blockchain for Delegation events. 
-     */
-    function isQualified(address sender, address[] calldata helpers) external override view returns (bool) {
+    function votes(address sender, address[] calldata helpers) public view returns (uint256) {
         uint256 _votes = votes(sender);
         for (uint i=0; i<helpers.length; i++){
             address current = helpers[i];
@@ -202,8 +197,20 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
             }
             _votes += votes(current);
         }
-        return _votes * 10000 >= QUORUM * totalVotes();
+        return _votes;
     }
+
+    /**
+     * Checks whether the sender address is qualified given a list of helpers that delegated their votes
+     * directly or indirectly to the sender. It is the responsiblity of the caller to figure out whether
+     * helpes are necessary and to identify them by scanning the blockchain for Delegation events. 
+     */
+    function checkQualified(address sender, address[] calldata helpers) external override view {
+        uint256 _votes = votes(sender, helpers);
+        if (_votes * 10000 < QUORUM * totalVotes()) revert NotQualified();
+    }
+
+    error NotQualified();
 
     /**
      * Increases the voting power of the delegate by your number of votes without taking away any voting power
@@ -214,7 +221,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         emit Delegation(msg.sender, delegate);
     }
 
-    function canVoteFor(address delegate, address owner) public view returns (bool) { // TODO Maybe should be made internal?
+    function canVoteFor(address delegate, address owner) internal view returns (bool) {
         if (owner == delegate){
             return true;
         } else if (owner == address(0x0)){
@@ -241,8 +248,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 shares = calculateSharesInternal(zchf.equity() - amount, amount);
         _mint(from, shares);
         // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
-        // TODO: most likely, 2**128 would also work. But it was already deployed with 90 Bits, which is also enough.
-        require(totalSupply() < 2**90, "total supply exceeded");
+        // the 128 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
+        require(totalSupply() < 2**128, "total supply exceeded");
         emit Trade(msg.sender, int(shares), amount, price());
         return true;
     }

@@ -11,6 +11,31 @@
         "type": "constructor"
     },
     {
+        "inputs": [],
+        "name": "AlreadyRegistered",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "FeeTooLow",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotMinter",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "PeriodTooShort",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "TooLate",
+        "type": "error"
+    },
+    {
         "anonymous": false,
         "inputs": [
             {
@@ -332,6 +357,30 @@
             }
         ],
         "name": "calculateAssignedReserve",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amountExcludingReserve",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint32",
+                "name": "reservePPM",
+                "type": "uint32"
+            }
+        ],
+        "name": "calculateFreedAmount",
         "outputs": [
             {
                 "internalType": "uint256",
