@@ -38,9 +38,9 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     uint32 public immutable mintingFeePPM;
     uint32 public immutable reserveContribution; // in ppm
 
-    event PositionDenied(address indexed sender, string message);
-    event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
     event PositionOpened(address indexed owner, address original, address zchf, address collateral, uint256 price);
+    event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
+    event PositionDenied(address indexed sender, string message); // emitted if closed by governance
 
     error InsufficientCollateral();
 
@@ -201,12 +201,9 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * See also repay(uint256).
      */
     function onTokenTransfer(address sender, uint256 amount, bytes calldata) override external returns (bool) {
-        if (msg.sender == address(zchf)){
-            requireOwner(sender);
-            repayInternal(amount);
-        } else {
-            revert();
-        }
+        if (msg.sender != address(zchf)) revert();
+        requireOwner(sender);
+        repayInternal(amount);
         return true;
     }
 
@@ -221,6 +218,12 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * amount = minted * (1000000 - reservePPM)
      *
      * For example, if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
+     *
+     * Only the owner is allowed to repay a position. This is necessary to prevent a 'limit stealing attack': if a popular position
+     * has reached its limit, an attacker could try to repay the position, clone it, and take a loan himself. This is prevented by
+     * requiring the owner to do the repayment. Other restrictions are not necessary. In particular, it must be possible to repay
+     * the position once it is expired or subject to cooldown. Also, repaying it during a challenge is no problem as the collateral
+     * remains present.
      */
     function repay(uint256 amount) public onlyOwner {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
@@ -255,6 +258,8 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     /**
      * Withdraw collateral from the position up to the extent that it is still well collateralized afterwards.
      * Not possible as long as there is an open challenge or the contract is subject to a cooldown.
+     *
+     * Withdrawing collateral below the minimum collateral amount formally closes the position.
      */
     function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge noCooldown {
         uint256 balance = internalWithdrawCollateral(target, amount);
@@ -265,7 +270,6 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         IERC20(collateral).transfer(target, amount);
         uint256 balance = collateralBalance();
         if (balance < minimumCollateral){
-            // Close, but not expire
             cooldown = expiration;
         }
         emitUpdate();
@@ -334,6 +338,14 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
         internalWithdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
         return (owner, _bid, volumeZCHF, repayment, reserveContribution);
+    }
+
+    /**
+     * A position should only be considered 'closed', once its collateral has been withdrawn.
+     * This is also a good creterion when deciding whether it should be shown in a frontend.
+     */
+    function isClosed() public view returns (bool) {
+        return collateralBalance() < minimumCollateral;
     }
 
     error Expired();

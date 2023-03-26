@@ -131,7 +131,6 @@ describe("Position Tests", () => {
         });
         
         it("clone position", async () => {
-            
             let fInitialCollateralClone = floatToDec18(initialCollateralClone);
             let fZCHFAmount = floatToDec18(1000);
             // send some collateral and ZCHF to the cloner
@@ -189,6 +188,24 @@ describe("Position Tests", () => {
             fGlblZCHBalanceOfCloner = await ZCHFContract.balanceOf(accounts[1].address);
             let tx = mintingHubContract.connect(accounts[1]).clonePositionMock(positionAddr, fInitialCollateralClone, initialLimit);
             await expect(tx).to.be.reverted; // underflow
+        });
+
+        it("repay position", async () => {
+            let cloneOwner = await clonePositionContract.connect(accounts[1]).owner();
+            expect(cloneOwner).to.be.eq(accounts[1].address);
+            let fInitialCollateralClone = floatToDec18(initialCollateralClone);
+            let withdrawTx = clonePositionContract.withdrawCollateral(cloneOwner, fInitialCollateralClone);
+            await expect(withdrawTx).to.be.revertedWithCustomError(clonePositionContract, "InsufficientCollateral");
+            await ZCHFContract.connect(accounts[1]).approve(clonePositionContract.address, initialLimit);
+            let minted = await clonePositionContract.minted();
+            let reservePPM = await clonePositionContract.reserveContribution();
+            let repayAmount = minted.sub(minted.mul(reservePPM).div(1000000));
+            let reserve = await ZCHFContract.calculateAssignedReserve(minted, reservePPM);
+            expect(reserve.add(repayAmount)).to.be.eq(minted);
+            await clonePositionContract.repay(repayAmount);
+            await clonePositionContract.withdrawCollateral(cloneOwner, fInitialCollateralClone);
+            let result = await clonePositionContract.isClosed();
+            await expect(result).to.be.true;
         });
     });
     describe("challenge clone", () => {
