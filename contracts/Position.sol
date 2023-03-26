@@ -278,6 +278,10 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         return balance;
     }
 
+    /**
+     * This invariant must always hold and must always be checked when any of the three
+     * variables change in an adverse way.
+     */
     function checkCollateral(uint256 collateralReserve, uint256 atPrice) internal view {
         if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral();
     }
@@ -325,18 +329,28 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * @param _size     size of the collateral bid for (dec 18)
      * @return (position owner, effective bid size in ZCHF, effective challenge size in ZCHF, repaid amount, reserve ppm)
      */
-    function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) 
-        external onlyHub returns (address, uint256, uint256, uint256, uint32) {
+    function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) external onlyHub returns (address, uint256, uint256, uint256, uint32) {
         challengedAmount -= _size;
         uint256 colBal = collateralBalance();
-        uint256 volumeZCHF = _mulD18(price, _size);
-        uint256 mintable = _mulD18(price, colBal);
-        if (volumeZCHF > mintable){
-            _bid = _divD18(_mulD18(_bid, mintable), volumeZCHF);
-            volumeZCHF = mintable;
+        if (_size > colBal){
+            // Challenge is larger than the position. This can for example happen if there are multiple concurrent
+            // challenges that exceed the collateral balance in size. In this case, we need to redimension the bid and
+            // tell the caller that a part of the bid needs to be returned to the bidder.
+            _bid = _divD18(_mulD18(_bid, colBal), _size);
             _size = colBal;
         }
-        uint256 repayment = minted >= volumeZCHF ? volumeZCHF : minted;
+
+        // Note that thanks to the collateral invariant, we know that
+        //    colBal * price >= minted * ONE_DEC18
+        // and that therefore
+        //    price >= minted / colbal * E18
+        // such that
+        //    volumeZCHF = price * size / E18 >= minted * size / colbal
+        // So the owner cannot maliciously decrease the price to make volume fall below the proportionate repayment.
+        uint256 volumeZCHF = _mulD18(price, _size); // How much could have minted with the challenged amount of the collateral
+        // The owner does not have to repay (and burn) more than the owner actually minted.  
+        uint256 repayment = minted < volumeZCHF ? minted : volumeZCHF; // how much must be burned to make things even
+
         notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
         internalWithdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
         return (owner, _bid, volumeZCHF, repayment, reserveContribution);
