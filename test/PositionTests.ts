@@ -202,7 +202,11 @@ describe("Position Tests", () => {
             let repayAmount = minted.sub(minted.mul(reservePPM).div(1000000));
             let reserve = await ZCHFContract.calculateAssignedReserve(minted, reservePPM);
             expect(reserve.add(repayAmount)).to.be.eq(minted);
-            await clonePositionContract.repay(repayAmount);
+            await clonePositionContract.repay(repayAmount.sub(reserve)); // repay normal
+            let minted1 = await clonePositionContract.minted();
+            let reserve1 = await ZCHFContract.calculateAssignedReserve(minted1, reservePPM);
+            let repayAmount1 = minted1.sub(reserve1);
+            await ZCHFContract.connect(accounts[1]).transferAndCall(clonePositionContract.address, repayAmount1, "0x"); // repay indirectly
             await clonePositionContract.withdrawCollateral(cloneOwner, fInitialCollateralClone);
             let result = await clonePositionContract.isClosed();
             await expect(result).to.be.true;
