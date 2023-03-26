@@ -48,6 +48,12 @@ abstract contract ERC20 is IERC20 {
 
     uint8 public immutable override decimals;
 
+    // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts/pull/4139/files#diff-fa792f7d08644eebc519dac2c29b00a54afc4c6a76b9ef3bba56c8401fe674f6
+    // Indicates an error related to the current balance of a sender. Used in transfers.
+    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
+    // Indicates a failure with the spender’s allowance. Used in transfers.
+    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+
     constructor(uint8 _decimals) {
         decimals = _decimals;
     }
@@ -116,11 +122,13 @@ abstract contract ERC20 is IERC20 {
         if (currentAllowance < (1 << 255)){
             // Only decrease the allowance if it was not set to 'infinite'
             // Documented in /doc/infiniteallowance.md
-            require(currentAllowance >= amount, "approval not enough");
+            if (currentAllowance < amount) revert ERC20InsufficientAllowance(sender, currentAllowance, amount);
             _approve(sender, msg.sender, currentAllowance - amount);
         }
         return true;
     }
+
+    error InsufficientApproval();
 
     /**
      * @dev Moves tokens `amount` from `sender` to `recipient`.
@@ -140,7 +148,7 @@ abstract contract ERC20 is IERC20 {
         require(recipient != address(0));
         
         _beforeTokenTransfer(sender, recipient, amount);
-        require(_balances[sender]>=amount, "balance not enough");
+        if (_balances[sender] < amount) revert ERC20InsufficientBalance(sender, _balances[sender], amount);
         _balances[sender] -= amount;
         _balances[recipient] += amount;
         emit Transfer(sender, recipient, amount);
