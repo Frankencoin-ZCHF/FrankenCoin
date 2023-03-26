@@ -1,14 +1,8 @@
 [
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "initialOwner",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
+        "inputs": [],
+        "name": "NotOwner",
+        "type": "error"
     },
     {
         "anonymous": false,

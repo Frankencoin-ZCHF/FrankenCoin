@@ -102,6 +102,11 @@
     },
     {
         "inputs": [],
+        "name": "NotOwner",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "NotQualified",
         "type": "error"
     },
@@ -552,7 +557,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "sender",
                 "type": "address"
             },
             {

@@ -50,7 +50,8 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     constructor(address _owner, address _hub, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 
         uint256 _initialLimit, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
-        uint256 _liqPrice, uint32 _reservePPM) Ownable(_owner) {
+        uint256 _liqPrice, uint32 _reservePPM) {
+        setOwner(_owner);
         original = address(this);
         hub = _hub;
         price = _liqPrice;
@@ -75,7 +76,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      */
     function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external onlyHub {
         if(_coll < minimumCollateral) revert InsufficientCollateral();
-        transferOwnership(owner);
+        setOwner(owner);
         
         price = _mint * ONE_DEC18 / _coll;
         if (price > _price) revert InsufficientCollateral();
@@ -88,6 +89,8 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     /**
      * Adjust this position's limit to give away half of the remaining limit to the clone.
      * Invariant: global limit stays the same.
+     *
+     * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
      *
      * @param _minimum amount that clone wants to mint initially
      * @return limit for the clone
@@ -102,12 +105,12 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
     error NotQualified();
 
     /**
-     * Qualified pool share holders can call this method to immediately expire a proposed position.
+     * Qualified pool share holders can call this method to immediately expire a freshly proposed position.
      */ 
     function deny(address[] calldata helpers, string calldata message) public {
         if (block.timestamp >= start) revert TooLate();
         IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
-        cooldown = expiration;
+        cooldown = expiration; // since expiration is immutable, we put it under cooldown until the end
         emit PositionDenied(msg.sender, message);
     }
 
@@ -197,8 +200,9 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      *
      * See also repay(uint256).
      */
-    function onTokenTransfer(address, uint256 amount, bytes calldata) override external returns (bool) {
+    function onTokenTransfer(address sender, uint256 amount, bytes calldata) override external returns (bool) {
         if (msg.sender == address(zchf)){
+            requireOwner(sender);
             repayInternal(amount);
         } else {
             revert();
@@ -217,13 +221,8 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * amount = minted * (1000000 - reservePPM)
      *
      * For example, if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
-     *
-     * Note that anyone can repay a position, creating the possibility of a 'repay attack' that enables a qualified token holder to
-     * first repay a position and then deny it immediately afterwards, thereby preventing it from being used in the future.
-     * However, since this attack is fairly expensive (the attacker has to repay the position), we believe that the added flexiblity
-     * of being able to repay the position from any address outweighs the potential harm done by this attack. 
      */
-    function repay(uint256 amount) public {
+    function repay(uint256 amount) public onlyOwner {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
         repayInternal(amount);
     }

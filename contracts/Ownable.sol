@@ -22,27 +22,32 @@ contract Ownable {
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor (address initialOwner) {
-        require(initialOwner != address(0), "0x0");
-        owner = initialOwner;
-        emit OwnershipTransferred(address(0), owner);
-    }
+    error NotOwner();
 
     /**
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferOwnership(address newOwner) virtual public onlyOwner {
-        require(newOwner != address(0), "0x0");
+    function transferOwnership(address newOwner) public onlyOwner {
+        setOwner(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function setOwner(address newOwner) internal {
+        address oldOwner = owner;
         owner = newOwner;
-        emit OwnershipTransferred(owner, newOwner);
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+
+    function requireOwner(address sender) internal view {
+        if (owner != sender) revert NotOwner();
     }
 
     modifier onlyOwner() {
-        require(owner == msg.sender || owner == address(0x0), "not owner");
+        requireOwner(msg.sender);
         _;
     }
 }
