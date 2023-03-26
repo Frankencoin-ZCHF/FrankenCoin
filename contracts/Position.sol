@@ -130,7 +130,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * "All in one" function to adjust the outstanding amount of ZCHF, the collateral amount, 
      * and the price in one transaction.
      */
-    function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) public {
+    function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) public onlyOwner {
         if (newPrice != price){
             adjustPrice(newPrice);
         }
@@ -138,6 +138,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         if (newCollateral > colbal){
             collateral.transferFrom(msg.sender, address(this), newCollateral - colbal);
         }
+        // Must be called after collateral deposit, but before withdrawal
         if (newMinted < minted){
             zchf.burnFrom(msg.sender, minted - newMinted, reserveContribution);
             minted = newMinted;
@@ -145,6 +146,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         if (newCollateral < colbal){
             withdrawCollateral(msg.sender, colbal - newCollateral);
         }
+        // Must be called after collateral withdrawal
         if (newMinted > minted){
             mint(msg.sender, newMinted - minted);
         }
