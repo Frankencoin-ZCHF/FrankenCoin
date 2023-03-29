@@ -46,6 +46,10 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
    event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
    event MinterDenied(address indexed minter, string message);
 
+   /**
+    * Initiates the Frankencoin with the provided minimum application period for new plugins
+    * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
+    */
    constructor(uint256 _minApplicationPeriod) ERC20(18){
       MIN_APPLICATION_PERIOD = _minApplicationPeriod;
       reserve = new Equity(this);
