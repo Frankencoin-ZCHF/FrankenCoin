@@ -9,7 +9,6 @@ const ethers = require("ethers");
 import { SigningKey } from "@ethersproject/signing-key";
 import { floatToDec18, dec18ToFloat } from "../math";
 const NODE_URL = "https://rpc.sepolia.org";
-const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 const ZCHF_ABI = require('../../abi/Frankencoin.json');
 const EQUITY_ABI = require('../../abi/Equity.json');
 

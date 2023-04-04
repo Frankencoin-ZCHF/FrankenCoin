@@ -1,6 +1,17 @@
 [
     {
-        "inputs": [],
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "name_",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "symbol_",
+                "type": "string"
+            }
+        ],
         "stateMutability": "nonpayable",
         "type": "constructor"
     },
@@ -209,7 +220,7 @@
                 "type": "string"
             }
         ],
-        "stateMutability": "pure",
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -222,7 +233,7 @@
                 "type": "string"
             }
         ],
-        "stateMutability": "pure",
+        "stateMutability": "view",
         "type": "function"
     },
     {

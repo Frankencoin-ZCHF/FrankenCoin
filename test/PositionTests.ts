@@ -23,7 +23,7 @@ describe("Position Tests", () => {
         positionFactoryContract = await createContract("PositionFactory");
         mintingHubContract = await createContract("MockMintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
-        mockXCHF = await createContract("MockXCHFToken");
+        mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF"]);
         // mocktoken bridge to bootstrap
         let limit = floatToDec18(100_000);
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
@@ -47,7 +47,7 @@ describe("Position Tests", () => {
         await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
         await bridge.connect(accounts[0])["mint(uint256)"](amount);
         // vol tokens
-        mockVOL = await createContract("MockVOLToken");
+        mockVOL = await createContract("TestToken", ["Volatile Token", "VOL"]);
         amount = floatToDec18(500_000);
         await mockVOL.mint(owner, amount);
         
@@ -82,9 +82,12 @@ describe("Position Tests", () => {
             await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
             let balBefore = await ZCHFContract.balanceOf(owner);
             let balBeforeVOL = await mockVOL.balanceOf(owner);
-            let tx = await mintingHubContract.openPositionMock(collateral, minCollateral, 
+            let tx = await mintingHubContract.openPosition(collateral, minCollateral, 
                 fInitialCollateral, initialLimit, duration, challengePeriod, fFees, fliqPrice, fReserve);
-            await tx.wait();
+            let rc = await tx.wait();
+            const event = rc.events.find(event => event.event === 'PositionOpened');
+            const [from, to, value] = event.args;
+            console.log(from, to, value);
             let balAfter = await ZCHFContract.balanceOf(owner);
             let balAfterVOL = await mockVOL.balanceOf(owner);
             let dZCHF = dec18ToFloat(balAfter.sub(balBefore));

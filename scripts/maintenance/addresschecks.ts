@@ -7,13 +7,9 @@
 */
 const ethers = require("ethers");
 import { SigningKey } from "@ethersproject/signing-key";
-import { Contract } from "hardhat/internal/hardhat-network/stack-traces/model";
-import { floatToDec18 } from "../math";
 import {getSigningManagerFromPK} from "../utils";
 
-const ERC20_ABI = require('../../abi/MockXCHFToken.json');
 const FC_ABI = require('../../abi/Frankencoin.json');
-const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
 const MH_ABI = require('../../abi/MintingHub.json');
 
 //const NODE_URL = "https://rpc.sepolia.org";

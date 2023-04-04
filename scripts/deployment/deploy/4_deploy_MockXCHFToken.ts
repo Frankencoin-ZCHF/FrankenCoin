@@ -7,7 +7,7 @@ import {deployContract} from "../deployUtils";
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
    
-    await deployContract(hre, "MockXCHFToken");
+    await deployContract(hre, "TestToken", ["CryptoFranc", "XCHF"]);
 };
 export default deploy;
 deploy.tags = ["MockTokens", "MockCHFToken"];

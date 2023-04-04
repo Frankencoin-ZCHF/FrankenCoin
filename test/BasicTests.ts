@@ -5,7 +5,7 @@ const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
-let ZCHFContract, mintingHubContract, positionFactoryContract, equityAddr, equityContract, accounts;
+let ZCHFContract, positionFactoryContract, equityAddr, equityContract, accounts;
 let owner;
 
 describe("Basic Tests", () => {
@@ -45,7 +45,7 @@ describe("Basic Tests", () => {
         equityAddr = ZCHFContract.reserve();
         equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
         positionFactoryContract = await createContract("PositionFactory");
-        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
+        await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
     });
 
     describe("basic initialization", () => {
@@ -59,7 +59,7 @@ describe("Basic Tests", () => {
         let mockXCHF;
         let bridge;
         it("create mock token", async () => {
-            mockXCHF = await createContract("MockXCHFToken");
+            mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF"]);
             let symbol = await mockXCHF.symbol();
             expect(symbol).to.be.equal("XCHF");
         });
