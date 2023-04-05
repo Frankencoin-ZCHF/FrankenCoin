@@ -249,6 +249,7 @@ contract MintingHub {
      */
     function end(uint256 _challengeNumber, bool postponeCollateralReturn) public {
         Challenge storage challenge = challenges[_challengeNumber];
+        require(challenge.challenger != address(0x0));
         require(block.timestamp >= challenge.end, "period has not ended");
         // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
         returnCollateral(challenge, postponeCollateralReturn);
