@@ -1,0 +1,39 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "hub_",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "swap_",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [],
+        "name": "initiatePosition",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "letAliceMint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "letBobMint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

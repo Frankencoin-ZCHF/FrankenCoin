@@ -16,7 +16,7 @@ describe("Equity Tests", () => {
         accounts = await ethers.getSigners();
         owner = accounts[0].address;
         // create contracts
-        xchf = await createContract("TestToken", ["CryptoFranc", "XCHF"]);
+        xchf = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
         zchf = await createContract("Frankencoin", [10 * 86_400]);
         let supply = floatToDec18(1000_000);
         bridge = await createContract("StablecoinBridge", [xchf.address, zchf.address, supply]);

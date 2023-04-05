@@ -42,11 +42,6 @@
         "type": "error"
     },
     {
-        "inputs": [],
-        "name": "InsufficientApproval",
-        "type": "error"
-    },
-    {
         "anonymous": false,
         "inputs": [
             {

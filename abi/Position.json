@@ -360,7 +360,7 @@
             },
             {
                 "internalType": "bool",
-                "name": "beforeFees",
+                "name": "afterFees",
                 "type": "bool"
             }
         ],

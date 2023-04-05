@@ -118,11 +118,11 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * This is how much the minter can actually use when minting ZCHF, with the rest being used
      * to buy reserve pool shares.
      */
-    function getUsableMint(uint256 totalMint, bool beforeFees) public view returns (uint256){
-        if (beforeFees){
-            return totalMint * (1000_000 - reserveContribution) / 1000_000;
-        } else {
+    function getUsableMint(uint256 totalMint, bool afterFees) public view returns (uint256){
+        if (afterFees){
             return totalMint * (1000_000 - reserveContribution - mintingFeePPM) / 1000_000;
+        } else {
+            return totalMint * (1000_000 - reserveContribution) / 1000_000;
         }
     }
 
@@ -176,7 +176,7 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
      * and there is sufficient collateral.
      */
     function mint(address target, uint256 amount) public onlyOwner noChallenge noCooldown alive {
-        mintInternal(target, amount, collateralBalance());
+       mintInternal(target, amount, collateralBalance());
     }
 
     error LimitExceeded();

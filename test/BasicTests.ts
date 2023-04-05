@@ -59,7 +59,7 @@ describe("Basic Tests", () => {
         let mockXCHF;
         let bridge;
         it("create mock token", async () => {
-            mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF"]);
+            mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
             let symbol = await mockXCHF.symbol();
             expect(symbol).to.be.equal("XCHF");
         });

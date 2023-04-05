@@ -10,6 +10,11 @@
                 "internalType": "string",
                 "name": "symbol_",
                 "type": "string"
+            },
+            {
+                "internalType": "uint8",
+                "name": "dec",
+                "type": "uint8"
             }
         ],
         "stateMutability": "nonpayable",
@@ -55,11 +60,6 @@
             }
         ],
         "name": "ERC20InsufficientBalance",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "InsufficientApproval",
         "type": "error"
     },
     {

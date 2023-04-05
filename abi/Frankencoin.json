@@ -64,11 +64,6 @@
     },
     {
         "inputs": [],
-        "name": "InsufficientApproval",
-        "type": "error"
-    },
-    {
-        "inputs": [],
         "name": "NotMinter",
         "type": "error"
     },

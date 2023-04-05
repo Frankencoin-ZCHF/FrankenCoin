@@ -23,7 +23,7 @@ describe("Plugin Veto Tests", () => {
         positionFactoryContract = await createContract("PositionFactory");
         mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
-        mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF"]);
+        mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
         // mocktoken bridge to bootstrap
         let limit = floatToDec18(100_000);
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
@@ -51,7 +51,7 @@ describe("Plugin Veto Tests", () => {
         
         it("create mock DCHF token&bridge", async () => {
             let limit : BigNumber = floatToDec18(100_000);
-            mockDCHF = await createContract("TestToken", ["Test Name", "Symbol"]);
+            mockDCHF = await createContract("TestToken", ["Test Name", "Symbol", 18]);
             await mockDCHF.mint(sygnum, floatToDec18(100_000));
             let otherAddr = mockDCHF.address;
             bridgeSygnum = await createContract("StablecoinBridge", [otherAddr, ZCHFContract.address, limit]);

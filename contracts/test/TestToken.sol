@@ -8,7 +8,7 @@ contract TestToken is ERC20 {
   string public name;
   string public symbol;
 
-  constructor(string memory name_, string memory symbol_) ERC20(18) {
+  constructor(string memory name_, string memory symbol_, uint8 dec) ERC20(dec) {
     name = name_;
     symbol = symbol_;
   }

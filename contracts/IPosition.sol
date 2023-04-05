@@ -21,6 +21,10 @@ interface IPosition {
 
     function deny(address[] calldata helpers, string calldata message) external;
 
+    function mint(address target, uint256 amount) external;
+
+    function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
+
     function notifyChallengeStarted(uint256 size) external;
 
     function tryAvertChallenge(uint256 size, uint256 bid) external returns (bool);

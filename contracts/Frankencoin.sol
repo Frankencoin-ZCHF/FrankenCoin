@@ -88,6 +88,23 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
    error AlreadyRegistered();
 
    /**
+    * Make the system more user friendly by skipping the allowance in many cases.
+    *
+    * We trust minters and the positions they have created to mint and burn as they please, so
+    * giving them arbitraty allowances does not pose an additional risk.
+    */
+   function allowanceInternal(address owner, address spender) internal view override returns (uint256) {
+      uint256 explicit = super.allowanceInternal(owner, spender);
+      if (explicit > 0){
+         return explicit;
+      } else if (isMinter(spender) || isMinter(isPosition(spender))){
+         return INFINITY;
+      } else {
+         return 0;
+      }
+   }
+
+   /**
     * The reserve provided by the owners of collateralized positions.
     * The minter reserve can be used to cover losses after all else failed and the equity holders have already been wiped out.
     */
@@ -140,12 +157,10 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * the minting fee and the reserve to the right place.
     */
    function mint(address _target, uint256 _amount, uint32 _reservePPM, uint32 _feesPPM) override external minterOnly {
-      uint256 _minterReserveE6 = _amount * _reservePPM;
-      uint256 reserveMint = (_minterReserveE6 + 999_999) / 1000_000; // make sure rounded up
-      uint256 fees = (_amount * _feesPPM + 999_999) / 1000_000; // make sure rounded up
-      _mint(_target, _amount - reserveMint - fees);
-      _mint(address(reserve), reserveMint + fees);
-      minterReserveE6 += reserveMint * 1000_000;
+      uint256 usableMint = (_amount * (1000_000 - _feesPPM - _reservePPM)) / 1000_000; // rounding down is fine
+      _mint(_target, usableMint);
+      _mint(address(reserve), _amount - usableMint); // rest goes to equity as reserves or as fees
+      minterReserveE6 += _amount * _reservePPM; // minter reserve must be kept accurately in order to ensure we can get back to exactly 0
    }
 
    function mint(address _target, uint256 _amount) override external minterOnly {

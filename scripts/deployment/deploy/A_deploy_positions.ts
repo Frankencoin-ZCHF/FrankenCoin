@@ -53,9 +53,7 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     console.log("owner address ", wallet.address);
     
     let tx1 = await CollateralContract.approve(mintingHubContract.address, fInitialCollateral,  { gasLimit: 1_000_000 });
-    let tx2 = await ZCHFContract.approve(mintingHubContract.address, fOpeningFeeZCHF,  { gasLimit: 1_000_000 });
     tx1.wait();
-    tx2.wait();
     /*
         openPosition(
         address _collateral,

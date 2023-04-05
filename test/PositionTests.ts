@@ -1,5 +1,6 @@
 // @ts-nocheck
 import {expect} from "chai";
+import { factory } from "typescript";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
 const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
@@ -23,7 +24,7 @@ describe("Position Tests", () => {
         positionFactoryContract = await createContract("PositionFactory");
         mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
-        mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF"]);
+        mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
         // mocktoken bridge to bootstrap
         let limit = floatToDec18(100_000);
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
@@ -47,7 +48,7 @@ describe("Position Tests", () => {
         await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
         await bridge.connect(accounts[0])["mint(uint256)"](amount);
         // vol tokens
-        mockVOL = await createContract("TestToken", ["Volatile Token", "VOL"]);
+        mockVOL = await createContract("TestToken", ["Volatile Token", "VOL", 18]);
         amount = floatToDec18(500_000);
         await mockVOL.mint(owner, amount);
         
@@ -79,7 +80,6 @@ describe("Position Tests", () => {
             let openingFeeZCHF = await mintingHubContract.OPENING_FEE();
             let challengePeriod = BN.from(7 * 86400); // 7 days
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
-            await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, openingFeeZCHF);
             let balBefore = await ZCHFContract.balanceOf(owner);
             let balBeforeVOL = await mockVOL.balanceOf(owner);
             let tx = await mintingHubContract.openPosition(collateral, minCollateral, 
@@ -134,7 +134,6 @@ describe("Position Tests", () => {
             await ZCHFContract.transfer(accounts[1].address, fZCHFAmount);
             
             await mockVOL.connect(accounts[1]).approve(mintingHubContract.address, fInitialCollateralClone);
-            await ZCHFContract.connect(accounts[1]).approve(mintingHubContract.address, fZCHFAmount);
             fGlblZCHBalanceOfCloner = await ZCHFContract.balanceOf(accounts[1].address);
             let tx = await mintingHubContract.connect(accounts[1]).clonePosition(positionAddr, fInitialCollateralClone, 
                 fMintAmount);
@@ -182,7 +181,6 @@ describe("Position Tests", () => {
             await ZCHFContract.transfer(accounts[1].address, fZCHFAmount);
             
             await mockVOL.connect(accounts[1]).approve(mintingHubContract.address, fInitialCollateralClone);
-            await ZCHFContract.connect(accounts[1]).approve(mintingHubContract.address, fZCHFAmount);
             fGlblZCHBalanceOfCloner = await ZCHFContract.balanceOf(accounts[1].address);
             let tx = mintingHubContract.connect(accounts[1]).clonePosition(positionAddr, fInitialCollateralClone, initialLimit);
             await expect(tx).to.be.reverted; // underflow
@@ -194,7 +192,6 @@ describe("Position Tests", () => {
             let fInitialCollateralClone = floatToDec18(initialCollateralClone);
             let withdrawTx = clonePositionContract.withdrawCollateral(cloneOwner, fInitialCollateralClone);
             await expect(withdrawTx).to.be.revertedWithCustomError(clonePositionContract, "InsufficientCollateral");
-            await ZCHFContract.connect(accounts[1]).approve(clonePositionContract.address, initialLimit);
             let minted = await clonePositionContract.minted();
             let reservePPM = await clonePositionContract.reserveContribution();
             let repayAmount = minted.sub(minted.mul(reservePPM).div(1000000));
@@ -228,7 +225,6 @@ describe("Position Tests", () => {
             let bidAmountZCHF = liqPrice * 0.95 * challengeAmount; //for the 5 collateral tokens bid
             let fBidAmountZCHF = floatToDec18(bidAmountZCHF);
             
-            await ZCHFContract.connect(accounts[0]).approve(mintingHubContract.address, fBidAmountZCHF);
             let tx = await mintingHubContract.connect(accounts[0]).bid(challengeNumber, fBidAmountZCHF, floatToDec18(challengeAmount));
             
             //const receipt = await tx.wait();
@@ -245,12 +241,11 @@ describe("Position Tests", () => {
             let liqPrice = dec18ToFloat(await clonePositionContract.price());
             let bidAmountZCHF = liqPrice * 0.97 * challengeAmount; //for the 5 collateral tokens bid
             let fBidAmountZCHF = floatToDec18(bidAmountZCHF);
-            // owner sends some money
             await ZCHFContract.connect(accounts[0]).transfer(accounts[2].address, fBidAmountZCHF);
             // store balance of old bidder before new bid takes place
             let ownerZCHFbalanceBefore = await ZCHFContract.balanceOf(owner);
+            let bidderZCHFbalanceBefore = await ZCHFContract.balanceOf(accounts[2].address);
             // challenge
-            await ZCHFContract.connect(accounts[2]).approve(mintingHubContract.address, fBidAmountZCHF);
             let tx = mintingHubContract.connect(accounts[2]).bid(challengeNumber, fBidAmountZCHF, floatToDec18(challengeAmount));
             await expect(tx).to.emit(mintingHubContract, "NewBid").withArgs(challengeNumber, fBidAmountZCHF, accounts[2].address);
             
@@ -275,6 +270,32 @@ describe("Position Tests", () => {
             //challengeAmount * liqPrice > liqPrice * 0.95 * challengeAmount
             mintingHubContract.connect(accounts[2]);
             await mintingHubContract["end(uint256)"](challengeNumber);
+        });
+    });
+
+    describe("native position test", () => {
+
+        let mintungHubTest;
+
+        it("initialize", async () => {
+            mintungHubTest = await createContract("MintingHubTest", [mintingHubContract.address, bridge.address]);
+            await mintungHubTest.initiatePosition();
+        });
+
+        it("should fail when minting too early", async () => {
+            let tx = mintungHubTest.letAliceMint();
+            await expect(tx).to.be.reverted;
+        });
+
+        it("should fail when someone else mints", async () => {
+            let tx = mintungHubTest.letBobMint();
+            await expect(tx).to.be.reverted;
+        });
+
+        it("should allow minting after 2 days", async () => {
+            await ethers.provider.send('evm_increaseTime', [7 * 86_400 + 60]); 
+            await ethers.provider.send("evm_mine");
+            await mintungHubTest.letAliceMint();
         });
     });
 

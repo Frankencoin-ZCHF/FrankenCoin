@@ -44,6 +44,8 @@ abstract contract ERC20 is IERC20 {
 
     mapping (address => mapping (address => uint256)) private _allowances;
 
+    uint256 internal constant INFINITY = (1 << 255);
+
     uint256 private _totalSupply;
 
     uint8 public immutable override decimals;
@@ -89,6 +91,10 @@ abstract contract ERC20 is IERC20 {
      * @dev See `IERC20.allowance`.
      */
     function allowance(address owner, address spender) external view override returns (uint256) {
+        return allowanceInternal(owner, spender);
+    }
+
+    function allowanceInternal(address owner, address spender) internal view virtual returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -118,8 +124,8 @@ abstract contract ERC20 is IERC20 {
      */
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
         _transfer(sender, recipient, amount);
-        uint256 currentAllowance = _allowances[sender][msg.sender];
-        if (currentAllowance < (1 << 255)){
+        uint256 currentAllowance = allowanceInternal(sender, msg.sender);
+        if (currentAllowance < INFINITY){
             // Only decrease the allowance if it was not set to 'infinite'
             // Documented in /doc/infiniteallowance.md
             if (currentAllowance < amount) revert ERC20InsufficientAllowance(sender, currentAllowance, amount);
@@ -127,8 +133,6 @@ abstract contract ERC20 is IERC20 {
         }
         return true;
     }
-
-    error InsufficientApproval();
 
     /**
      * @dev Moves tokens `amount` from `sender` to `recipient`.
