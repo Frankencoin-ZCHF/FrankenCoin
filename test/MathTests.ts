@@ -14,7 +14,7 @@ describe("Math Tests", () => {
         accounts = await ethers.getSigners();
         owner = accounts[0].address;
         // create contracts
-        MathContract = await createContract("MockMathUtil");
+        MathContract = await createContract("TestMathUtil");
     });
 
     describe("math", () => {

@@ -17,18 +17,19 @@ The source code can be found in the [contracts](contracts) folder. The following
 | StablecoinBridge.sol  | Plugin for 1:1 swaps with other CHF stablecoins |
 
 ## Compiling and Testing
-It's best to install node via [nvm](https://heynode.com/tutorial/install-nodejs-locally-nvm/).
-Once installed, try running some of the following tasks:
+The project is setup to be compiled and tested with hardhat. Assuming [node.js](https://heynode.com/tutorial/install-nodejs-locally-nvm/) is already present, try commands like these to get ready:
 
 ```shell
-npx hardhat help
-npx hardhat test
-GAS_REPORT=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
+npm install --save-dev hardhat
+npm install
 ```
 
-ABIs can be found in `/abi` and are generated upon compilation (setting in hardhat.config.ts).
+Once all is there, you can compile or compile & test using these two commands:
+
+```shell
+npx hardhat compile
+npx hardhat test
+```
 
 ## Deployment
 Define the private key from your deployer address as an environment variable, and then run a script with

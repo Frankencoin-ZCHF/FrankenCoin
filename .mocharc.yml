@@ -1,4 +1,0 @@
-require: "ts-node/hardhat/register/files"
-timeout: 40000
-timeout: false
-mochaExplorer.logpanel: true

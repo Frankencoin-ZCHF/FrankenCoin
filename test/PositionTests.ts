@@ -21,7 +21,7 @@ describe("Position Tests", () => {
         equityAddr = ZCHFContract.reserve();
         equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
         positionFactoryContract = await createContract("PositionFactory");
-        mintingHubContract = await createContract("MockMintingHub", [ZCHFContract.address, positionFactoryContract.address]);
+        mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
         mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF"]);
         // mocktoken bridge to bootstrap
@@ -85,22 +85,15 @@ describe("Position Tests", () => {
             let tx = await mintingHubContract.openPosition(collateral, minCollateral, 
                 fInitialCollateral, initialLimit, duration, challengePeriod, fFees, fliqPrice, fReserve);
             let rc = await tx.wait();
-            const event = rc.events.find(event => event.event === 'PositionOpened');
-            const [from, to, value] = event.args;
-            console.log(from, to, value);
+            const topic = '0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2'; // PositionOpened
+            const log = rc.logs.find(x => x.topics.indexOf(topic) >= 0);
+            positionAddr = log.address;
             let balAfter = await ZCHFContract.balanceOf(owner);
             let balAfterVOL = await mockVOL.balanceOf(owner);
             let dZCHF = dec18ToFloat(balAfter.sub(balBefore));
             let dVOL = dec18ToFloat(balAfterVOL.sub(balBeforeVOL));
             expect(dVOL).to.be.equal(-initialCollateral);
             expect(dZCHF).to.be.equal(-dec18ToFloat(openingFeeZCHF));
-            
-            //console.log("balDiff ZCHF= ", dec18ToFloat(balAfter.sub(balBefore)));
-            //console.log("balDiff VOL = ", dec18ToFloat(balAfterVOL.sub(balBeforeVOL)));
-            
-            // mock contract stores the last position address
-            positionAddr = await mintingHubContract.lastPositionAddress();
-            //console.log("positionAddr =", positionAddr);
             positionContract = await ethers.getContractAt('Position', positionAddr, accounts[0]);
         });
         it("require cooldown", async () => {
@@ -143,10 +136,12 @@ describe("Position Tests", () => {
             await mockVOL.connect(accounts[1]).approve(mintingHubContract.address, fInitialCollateralClone);
             await ZCHFContract.connect(accounts[1]).approve(mintingHubContract.address, fZCHFAmount);
             fGlblZCHBalanceOfCloner = await ZCHFContract.balanceOf(accounts[1].address);
-            let tx = await mintingHubContract.connect(accounts[1]).clonePositionMock(positionAddr, fInitialCollateralClone, 
+            let tx = await mintingHubContract.connect(accounts[1]).clonePosition(positionAddr, fInitialCollateralClone, 
                 fMintAmount);
-            await tx.wait();
-            clonePositionAddr = await mintingHubContract.lastPositionAddress();
+            let rc = await tx.wait();
+            const topic = '0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2'; // PositionOpened
+            const log = rc.logs.find(x => x.topics.indexOf(topic) >= 0);
+            clonePositionAddr = log.address;
             clonePositionContract = await ethers.getContractAt('Position', clonePositionAddr, accounts[1]);
             
         });
@@ -189,7 +184,7 @@ describe("Position Tests", () => {
             await mockVOL.connect(accounts[1]).approve(mintingHubContract.address, fInitialCollateralClone);
             await ZCHFContract.connect(accounts[1]).approve(mintingHubContract.address, fZCHFAmount);
             fGlblZCHBalanceOfCloner = await ZCHFContract.balanceOf(accounts[1].address);
-            let tx = mintingHubContract.connect(accounts[1]).clonePositionMock(positionAddr, fInitialCollateralClone, initialLimit);
+            let tx = mintingHubContract.connect(accounts[1]).clonePosition(positionAddr, fInitialCollateralClone, initialLimit);
             await expect(tx).to.be.reverted; // underflow
         });
 
