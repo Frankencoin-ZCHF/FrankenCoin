@@ -37,6 +37,10 @@ describe("Equity Tests", () => {
             let symbol = await equity.symbol();
             expect(symbol).to.be.equal("FPS");
         });
+        it("should have the right name", async () => {
+            let symbol = await equity.name();
+            expect(symbol).to.be.equal("Frankencoin Pool Share");
+        });
         it("should have some coins", async () => {
             let balance = await zchf.balanceOf(owner);
             expect(balance).to.be.equal(floatToDec18(1000_000));
@@ -55,6 +59,8 @@ describe("Equity Tests", () => {
             expect(balance).to.be.equal(floatToDec18(1000));
         });
         it("should create 1000 more shares when adding seven capital", async () => {
+            let expected = await equity.calculateShares(floatToDec18(7000));
+            expect(expected).to.be.approximately(floatToDec18(1000), floatToDec18(0.01));
             await zchf.transferAndCall(equity.address, floatToDec18(7000), 0);
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.approximately(floatToDec18(2000), floatToDec18(0.01));
@@ -88,6 +94,7 @@ describe("Equity Tests", () => {
             }
             expect(isEqual).to.be.true;
         });
+
         it("total votes correct after transfer", async () => {
             let amount = 0.1;
             let other = accounts[5].address;
@@ -128,9 +135,11 @@ describe("Equity Tests", () => {
         it("delegate vote", async () => {
             await equity.connect(accounts[5]).delegateVoteTo(accounts[2].address);
             await equity.connect(accounts[2]).delegateVoteTo(accounts[0].address);
-            let qualified1 = await equity["votes(address,address[])"](accounts[0].address, [accounts[5].address]);
+            let qualified1 = await equity["votes(address,address[])"](accounts[0].address, [accounts[2].address, accounts[5].address]);
             let qualified2 = await equity["votes(address,address[])"](accounts[0].address, []);
             expect(qualified1 > qualified2).to.be.true;
+            let tx = equity["votes(address,address[])"](accounts[5].address, [accounts[2].address]);
+            expect(tx).to.be.reverted;
         }); 
     });
 });

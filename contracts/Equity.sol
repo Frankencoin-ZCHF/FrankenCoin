@@ -241,7 +241,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
         uint256 equity = zchf.equity();
-        require(equity >= MINIMUM_EQUITY); // ensures that the initial deposit is at least 1000 ZCHF
+        require(equity >= MINIMUM_EQUITY, "insuf equity"); // ensures that the initial deposit is at least 1000 ZCHF
 
         // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
         uint256 shares = equity <= amount ? 1000 * ONE_DEC18 : calculateSharesInternal(equity - amount, amount);
@@ -265,7 +265,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     function calculateSharesInternal(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 newTotalShares = _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investment, capitalBefore)));
+        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18 ? 1000 * ONE_DEC18 : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investment, capitalBefore)));
         return newTotalShares - totalShares;
     }
 

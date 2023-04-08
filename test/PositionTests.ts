@@ -1,12 +1,11 @@
 // @ts-nocheck
 import {expect} from "chai";
-import { factory } from "typescript";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
 const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
 
-let ZCHFContract, equityContract, equityAddr, mintingHubContract, accounts;
+let ZCHFContract, mintingHubContract, accounts;
 let positionFactoryContract;
 let mockXCHF, mockVOL, bridge;
 let owner, sygnum;
@@ -19,8 +18,6 @@ describe("Position Tests", () => {
         sygnum = accounts[1].address;
         // create contracts
         ZCHFContract = await createContract("Frankencoin", [10 * 86_400]);
-        equityAddr = ZCHFContract.reserve();
-        equityContract = await ethers.getContractAt('Equity', equityAddr, accounts[0]);
         positionFactoryContract = await createContract("PositionFactory");
         mintingHubContract = await createContract("MintingHub", [ZCHFContract.address, positionFactoryContract.address]);
         // mocktoken
@@ -197,12 +194,11 @@ describe("Position Tests", () => {
             let repayAmount = minted.sub(minted.mul(reservePPM).div(1000000));
             let reserve = await ZCHFContract.calculateAssignedReserve(minted, reservePPM);
             expect(reserve.add(repayAmount)).to.be.eq(minted);
-            await clonePositionContract.repay(repayAmount.sub(reserve)); // repay normal
+            await clonePositionContract.repay(repayAmount.sub(reserve));
             let minted1 = await clonePositionContract.minted();
             let reserve1 = await ZCHFContract.calculateAssignedReserve(minted1, reservePPM);
             let repayAmount1 = minted1.sub(reserve1);
-            await clonePositionContract.repay(repayAmount1); // repay normal
-            //await ZCHFContract.connect(accounts[1]).transferAndCall(clonePositionContract.address, repayAmount1, "0x"); // repay indirectly
+            await clonePositionContract.repay(repayAmount1);
             await clonePositionContract.withdrawCollateral(cloneOwner, fInitialCollateralClone);
             let result = await clonePositionContract.isClosed();
             await expect(result).to.be.true;
@@ -280,7 +276,12 @@ describe("Position Tests", () => {
 
         it("initialize", async () => {
             mintingHubTest = await createContract("MintingHubTest", [mintingHubContract.address, bridge.address]);
+            await mintingHubTest.initiateEquity();
             await mintingHubTest.initiatePosition();
+        });
+
+        it("deny position", async () => {
+            await mintingHubTest.initiateAndDenyPosition();
         });
 
         it("fails when minting too early", async () => {
@@ -314,6 +315,10 @@ describe("Position Tests", () => {
 
         it("excessive challenge", async () => {
             await mintingHubTest.testExcessiveChallenge();
+        });
+
+        it("restructuring", async () => {
+            await mintingHubTest.restructure();
         });
     });
 
