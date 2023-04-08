@@ -25,12 +25,11 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      *
      * In the absence of profits and losses, the variables grow as follows when FPS tokens are minted:
      *
-     * |   Reserve     |   Market Cap  |     Price     |     Supply    |
-     * |             1 |             3 |         0.003 |          1000 |
-     * |          1000 |          3000 |           0.3 |         10000 |
-     * |       1000000 |       3000000 |            30 |        100000 |
-     * |    1000000000 |    3000000000 |          3000 |       1000000 |
-     * | 1000000000000 | 3000000000000 |        300000 |      10000000 |
+     * |   Reserve     |   Market Cap  |     Price     |     Supply   |
+     * |          1000 |          3000 |             3 |         1000 |
+     * |       1000000 |       3000000 |           300 |        10000 |
+     * |    1000000000 |    3000000000 |         30000 |       100000 |
+     * | 1000000000000 | 3000000000000 |       3000000 |      1000000 |
      *
      * I.e., the supply is proporational to the cubic root of the reserve and the price is proportional to the
      * squared cubic root. When profits accumulate or losses materialize, the reserve, the market cap,
@@ -38,6 +37,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * inflation of the Swiss franc, it is unlikely that there will ever be more than ten million FPS.
      */
     uint32 public constant VALUATION_FACTOR = 3;
+
+    uint256 private constant MINIMUM_EQUITY = 1000 * ONE_DEC18;
 
     /**
      * The quorum in basis points. 100 is 1%.
@@ -205,7 +206,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * directly or indirectly to the sender. It is the responsiblity of the caller to figure out whether
      * helpes are necessary and to identify them by scanning the blockchain for Delegation events. 
      */
-    function checkQualified(address sender, address[] calldata helpers) external override view {
+    function checkQualified(address sender, address[] calldata helpers) public override view {
         uint256 _votes = votes(sender, helpers);
         if (_votes * 10000 < QUORUM * totalVotes()) revert NotQualified();
     }
@@ -234,23 +235,22 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * In order to mint new FPS tokens, one needs to send ZCHF to this contract using the transferAndCall function
      * in the ZCHF contract.
+     *
+     * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
      */
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
-        if (totalSupply() == 0){
-            require(amount >= ONE_DEC18, "initial deposit must >= 1");
-            // initialize with 1000 shares for 1 ZCHF
-            uint256 initialAmount = 1000 * ONE_DEC18;
-            _mint(from, initialAmount);
-            amount -= ONE_DEC18;
-            emit Trade(msg.sender, int(initialAmount), ONE_DEC18, price());
-        }
-        uint256 shares = calculateSharesInternal(zchf.equity() - amount, amount);
+        uint256 equity = zchf.equity();
+        require(equity >= MINIMUM_EQUITY); // ensures that the initial deposit is at least 1000 ZCHF
+
+        // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
+        uint256 shares = equity <= amount ? 1000 * ONE_DEC18 : calculateSharesInternal(equity - amount, amount);
         _mint(from, shares);
+        emit Trade(msg.sender, int(shares), amount, price());
+
         // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
         // the 128 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
         require(totalSupply() < 2**128, "total supply exceeded");
-        emit Trade(msg.sender, int(shares), amount, price());
         return true;
     }
 
@@ -294,6 +294,25 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 newTotalShares = totalShares - shares;
         uint256 newCapital = _mulD18(capital, _power3(_divD18(newTotalShares, totalShares)));
         return capital - newCapital;
+    }
+
+    /**
+     * If there is less than 1000 ZCHF in equity left (maybe even negative), the system is at risk
+     * and we should allow qualified FPS holders to restructure the system.
+     *
+     * Example: there was a devastating loss and equity stands at -1'000'000. Most shareholders have lost hope in the
+     * Frankencoin system except for a group of small FPS holders who still believes in it and is willing to provide
+     * 2'000'000 ZCHF to save it. These brave souls are essentially donating 1'000'000 to the minter reserve and it
+     * would be wrong to force them to share the other million with the passive FPS holders. Instead, they will get
+     * the possibility to bootstrap the system again owning 100% of all FPS shares.
+     */
+    function restructureCapTable(address[] calldata helpers, address[] calldata addressesToWipe) public {
+        require(zchf.equity() < MINIMUM_EQUITY);
+        checkQualified(msg.sender, helpers);
+        for (uint256 i = 0; i<addressesToWipe.length; i++){
+            address current = addressesToWipe[0];
+            _burn(current, balanceOf(current));
+        }
     }
 
 }

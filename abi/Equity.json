@@ -538,6 +538,24 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "address[]",
+                "name": "helpers",
+                "type": "address[]"
+            },
+            {
+                "internalType": "address[]",
+                "name": "addressesToWipe",
+                "type": "address[]"
+            }
+        ],
+        "name": "restructureCapTable",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "symbol",
         "outputs": [

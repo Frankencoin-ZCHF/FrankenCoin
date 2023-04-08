@@ -50,12 +50,12 @@ describe("Equity Tests", () => {
 
     describe("minting shares", () => {
         it("should create an initial share", async () => {
-            await zchf.transferAndCall(equity.address, floatToDec18(1), 0);
+            await zchf.transferAndCall(equity.address, floatToDec18(1000), 0);
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.equal(floatToDec18(1000));
         });
         it("should create 1000 more shares when adding seven capital", async () => {
-            await zchf.transferAndCall(equity.address, floatToDec18(7), 0);
+            await zchf.transferAndCall(equity.address, floatToDec18(7000), 0);
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.approximately(floatToDec18(2000), floatToDec18(0.01));
         });
@@ -70,7 +70,7 @@ describe("Equity Tests", () => {
             let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1000.0));
             let bnred = BN.from(redemptionAmount.toString());
             let proceeds = await equity.calculateProceeds(bnred);
-            expect(proceeds).to.be.approximately(floatToDec18(7.0), floatToDec18(0.01));
+            expect(proceeds).to.be.approximately(floatToDec18(7000.0), floatToDec18(0.01));
         });
     });
 

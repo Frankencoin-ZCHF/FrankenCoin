@@ -15,6 +15,12 @@ interface IFrankencoin is IERC20 {
 
     function reserve() external view returns (IReserve);
 
+    function minterReserve() external view returns (uint256);
+
+    function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) external view returns (uint256);
+
+    function equity() external view returns (uint256);
+
     function isMinter(address minter) external view returns (bool);
 
     function isPosition(address position) external view returns (address);

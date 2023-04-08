@@ -123,13 +123,6 @@ contract MintingHub {
     }
 
     /**
-     * The contract holding the reserve. Covers losses and receives fees.
-     */
-    function reserve() external view returns (IReserve) {
-        return IReserve(zchf.reserve());
-    }
-
-    /**
      * Launch a challenge on a position
      * @param _positionAddr      address of the position we want to challenge
      * @param _collateralAmount  size of the collateral we want to challenge (dec 18)
@@ -196,39 +189,39 @@ contract MintingHub {
      */
     function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF, uint256 expectedSize) external {
         Challenge storage challenge = challenges[_challengeNumber];
-        if (block.timestamp >= challenge.end) {
-            // if bid is too late, the transaction ends the challenge
-            end(_challengeNumber, false);
+        if (block.timestamp >= challenge.end) revert TooLate();
+        if (expectedSize != challenge.size) revert UnexpectedSize();
+        if (challenge.bid > 0) {
+            zchf.transfer(challenge.bidder, challenge.bid); // return old bid
+        }
+        emit NewBid(_challengeNumber, _bidAmountZCHF, msg.sender);
+        // ask position if the bid was high enough to avert the challenge
+        if (challenge.position.tryAvertChallenge(challenge.size, _bidAmountZCHF)) {
+            // bid was high enough, let bidder buy collateral from challenger
+            zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
+            challenge.position.collateral().transfer(msg.sender, challenge.size);
+            emit ChallengeAverted(address(challenge.position), _challengeNumber);
+            delete challenges[_challengeNumber];
         } else {
-            require(expectedSize == challenge.size, "s");
-            if (challenge.bid > 0) {
-                zchf.transfer(challenge.bidder, challenge.bid); // return old bid
+            // challenge is not averted, update bid
+            if (_bidAmountZCHF < minBid(challenge)) revert BidTooLow(_bidAmountZCHF, minBid(challenge));
+            uint256 earliestEnd = block.timestamp + 30 minutes;
+            if (earliestEnd >= challenge.end) {
+                // bump remaining time like ebay does when last minute bids come in
+                // An attacker trying to postpone the challenge forever must increase the bid by 0.5%
+                // every 30 minutes, or double it every three days, making the attack hard to sustain
+                // for a prolonged period of time.
+                challenge.end = earliestEnd;
             }
-            emit NewBid(_challengeNumber, _bidAmountZCHF, msg.sender);
-            // ask position if the bid was high enough to avert the challenge
-            if (challenge.position.tryAvertChallenge(challenge.size, _bidAmountZCHF)) {
-                // bid was high enough, let bidder buy collateral from challenger
-                zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
-                challenge.position.collateral().transfer(msg.sender, challenge.size);
-                emit ChallengeAverted(address(challenge.position), _challengeNumber);
-                delete challenges[_challengeNumber];
-            } else {
-                // challenge is not averted, update bid
-                require(_bidAmountZCHF >= minBid(challenge), "below min bid");
-                uint256 earliestEnd = block.timestamp + 30 minutes;
-                if (earliestEnd >= challenge.end) {
-                    // bump remaining time like ebay does when last minute bids come in
-                    // An attacker trying to postpone the challenge forever must increase the bid by 0.5%
-                    // every 30 minutes, or double it every three days, making the attack hard to sustain
-                    // for a prolonged period of time.
-                    challenge.end = earliestEnd;
-                }
-                zchf.transferFrom(msg.sender, address(this), _bidAmountZCHF);
-                challenge.bid = _bidAmountZCHF;
-                challenge.bidder = msg.sender;
-            }
+            zchf.transferFrom(msg.sender, address(this), _bidAmountZCHF);
+            challenge.bid = _bidAmountZCHF;
+            challenge.bidder = msg.sender;
         }
     }
+
+    error TooLate();
+    error UnexpectedSize();
+    error BidTooLow(uint256 bid, uint256 min);
 
     function end(uint256 _challengeNumber) external {
         end(_challengeNumber, false);

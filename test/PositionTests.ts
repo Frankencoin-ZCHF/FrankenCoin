@@ -26,7 +26,7 @@ describe("Position Tests", () => {
         // mocktoken
         mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
         // mocktoken bridge to bootstrap
-        let limit = floatToDec18(100_000);
+        let limit = floatToDec18(1000_000);
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
         ZCHFContract.suggestMinter(bridge.address, 0, 0, "XCHF Bridge");
         // create a minting hub too while we have no ZCHF supply
@@ -201,7 +201,8 @@ describe("Position Tests", () => {
             let minted1 = await clonePositionContract.minted();
             let reserve1 = await ZCHFContract.calculateAssignedReserve(minted1, reservePPM);
             let repayAmount1 = minted1.sub(reserve1);
-            await ZCHFContract.connect(accounts[1]).transferAndCall(clonePositionContract.address, repayAmount1, "0x"); // repay indirectly
+            await clonePositionContract.repay(repayAmount1); // repay normal
+            //await ZCHFContract.connect(accounts[1]).transferAndCall(clonePositionContract.address, repayAmount1, "0x"); // repay indirectly
             await clonePositionContract.withdrawCollateral(cloneOwner, fInitialCollateralClone);
             let result = await clonePositionContract.isClosed();
             await expect(result).to.be.true;
@@ -275,27 +276,44 @@ describe("Position Tests", () => {
 
     describe("native position test", () => {
 
-        let mintungHubTest;
+        let mintingHubTest;
 
         it("initialize", async () => {
-            mintungHubTest = await createContract("MintingHubTest", [mintingHubContract.address, bridge.address]);
-            await mintungHubTest.initiatePosition();
+            mintingHubTest = await createContract("MintingHubTest", [mintingHubContract.address, bridge.address]);
+            await mintingHubTest.initiatePosition();
         });
 
-        it("should fail when minting too early", async () => {
-            let tx = mintungHubTest.letAliceMint();
+        it("fails when minting too early", async () => {
+            let tx = mintingHubTest.letAliceMint();
             await expect(tx).to.be.reverted;
         });
 
-        it("should fail when someone else mints", async () => {
-            let tx = mintungHubTest.letBobMint();
-            await expect(tx).to.be.reverted;
-        });
-
-        it("should allow minting after 2 days", async () => {
+        it("allows minting after 2 days", async () => {
             await ethers.provider.send('evm_increaseTime', [7 * 86_400 + 60]); 
             await ethers.provider.send("evm_mine");
-            await mintungHubTest.letAliceMint();
+            await mintingHubTest.letAliceMint();
+        });
+
+        it("supports withdrawals", async () => {
+            await mintingHubTest.testWithdraw();
+        });
+
+        it("fails when someone else mints", async () => {
+            let tx = mintingHubTest.letBobMint();
+            await expect(tx).to.be.reverted;
+        });
+
+        it("perform challenge", async () => {
+            await mintingHubTest.letBobChallenge();
+            let tx = mintingHubTest.endChallenges();
+            await expect(tx).to.be.revertedWith('period has not ended');
+            await ethers.provider.send('evm_increaseTime', [1 * 86_400 + 60]); 
+            await ethers.provider.send("evm_mine");
+            await mintingHubTest.endChallenges();
+        });
+
+        it("excessive challenge", async () => {
+            await mintingHubTest.testExcessiveChallenge();
         });
     });
 

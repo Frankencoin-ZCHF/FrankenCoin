@@ -11,14 +11,11 @@ let owner;
 describe("Basic Tests", () => {
 
     function capitalToShares(totalCapital, totalShares, dCapital) {
-        let delta = 0;
         if (totalShares==0) {
-            dCapital = dCapital - 1;
-            totalShares = 1000;
-            totalCapital= 1;
-            delta = 1000;
+            return 1000;
+        } else {
+            return totalShares *( ((totalCapital +dCapital)/totalCapital)**(1/3) - 1 );
         }
-        return totalShares *( ((totalCapital +dCapital)/totalCapital)**(1/3) - 1 ) + delta;
     }
     function sharesToCapital(totalCapital, totalShares, dShares) {
         
@@ -69,7 +66,7 @@ describe("Basic Tests", () => {
             bridge = await createContract("StablecoinBridge", [otherAddr, ZCHFContract.address, limit]);
         });
         it("minting fails if not approved", async () => {
-            let amount = floatToDec18(100);
+            let amount = floatToDec18(10000);
             let tx1 = await mockXCHF.mint(owner, amount);
             let balanceBefore = await ZCHFContract.balanceOf(owner);
             await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
@@ -90,7 +87,7 @@ describe("Basic Tests", () => {
         });
 
         it("minter of XCHF-bridge should receive ZCHF", async () => {
-            let amount = floatToDec18(100);
+            let amount = floatToDec18(10000);
             let balanceBefore = await ZCHFContract.balanceOf(owner);
             // set allowance
             await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
@@ -100,8 +97,8 @@ describe("Basic Tests", () => {
             let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
             let balanceAfter = await ZCHFContract.balanceOf(owner);
             let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
-            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==100;
-            let isSenderBalanceCorrect = ZCHFReceived==100;
+            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==10000;
+            let isSenderBalanceCorrect = ZCHFReceived==10000;
             if (!isBridgeBalanceCorrect || !isSenderBalanceCorrect) {
                 console.log("Bridge received XCHF tokens expected 100 = ", dec18ToFloat(balanceXCHFOfBridge));
                 console.log("Sender received ZCH tokens expected 100 = ", ZCHFReceived);
@@ -122,7 +119,7 @@ describe("Basic Tests", () => {
             let balanceAfter = await ZCHFContract.balanceOf(owner);
             let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
             let XCHFReceived = dec18ToFloat(balanceXCHFAfter.sub(balanceXCHFBefore));
-            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==50;
+            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==9950;
             let isSenderBalanceCorrect = ZCHFReceived==-50;
             let isXCHFBalanceCorrect = XCHFReceived==50;
             if (!isBridgeBalanceCorrect || !isSenderBalanceCorrect || !isXCHFBalanceCorrect) {
@@ -137,12 +134,12 @@ describe("Basic Tests", () => {
     });
     describe("exchanges shares & pricing", () => {
         it("deposit XCHF to reserve pool and receive share tokens", async () => {
-            let amount = 25;// amount we will deposit
-            let fAmount = floatToDec18(25);// amount we will deposit
+            let amount = 1000;// amount we will deposit
+            let fAmount = floatToDec18(1000);// amount we will deposit
             let balanceBefore = await equityContract.balanceOf(owner);
             let balanceBeforeZCHF = await ZCHFContract.balanceOf(owner);
             let fTotalShares = await equityContract.totalSupply();
-            let fTotalCapital = await ZCHFContract.balanceOf(equityAddr);
+            let fTotalCapital = await ZCHFContract.equity();
             // calculate shares we receive according to pricing function:
             let totalShares = dec18ToFloat(fTotalShares);
             let totalCapital = dec18ToFloat(fTotalCapital);
@@ -153,7 +150,7 @@ describe("Basic Tests", () => {
             let poolTokenShares = dec18ToFloat(balanceAfter.sub(balanceBefore));
             let ZCHFReceived = dec18ToFloat(balanceAfterZCHF.sub(balanceBeforeZCHF));
             let isPoolShareAmountCorrect = Math.abs(poolTokenShares-dShares) < 1e-7;
-            let isSenderBalanceCorrect = ZCHFReceived==-25;
+            let isSenderBalanceCorrect = ZCHFReceived==-1000;
             if(!isPoolShareAmountCorrect || !isSenderBalanceCorrect) {
                 console.log("Pool token shares received = ", poolTokenShares);
                 console.log("ZCHF tokens deposited = ", -ZCHFReceived);

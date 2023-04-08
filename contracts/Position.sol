@@ -6,13 +6,12 @@ import "./IPosition.sol";
 import "./IReserve.sol";
 import "./IFrankencoin.sol";
 import "./Ownable.sol";
-import "./IERC677Receiver.sol";
 import "./MathUtil.sol";
 
 /**
  * A collateralized minting position.
  */
-contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
+contract Position is Ownable, IPosition, MathUtil {
 
     /**
      * Note that this contract is intended to be cloned. All clones will share the same values for
@@ -197,18 +196,6 @@ contract Position is Ownable, IERC677Receiver, IPosition, MathUtil {
         }
     }
     
-    /**
-     * Use ZCHF.transferAndCall to repay some or all of this position without setting an allowance first.
-     *
-     * See also repay(uint256).
-     */
-    function onTokenTransfer(address sender, uint256 amount, bytes calldata) override external returns (bool) {
-        if (msg.sender != address(zchf)) revert();
-        requireOwner(sender);
-        repayInternal(amount);
-        return true;
-    }
-
     /**
      * Repay some ZCHF. Requires an allowance to be in place. If too much is repaid, the call fails.
      * It is possible to repay while there are challenges, but the collateral is locked until all is clear again.

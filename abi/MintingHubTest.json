@@ -16,6 +16,50 @@
         "type": "constructor"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "number",
+                "type": "uint256"
+            }
+        ],
+        "name": "endChallenge",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "endChallenges",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "number",
+                "type": "uint256"
+            }
+        ],
+        "name": "getChallenge",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "initiatePosition",
         "outputs": [],
@@ -31,7 +75,65 @@
     },
     {
         "inputs": [],
+        "name": "letBobChallenge",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "letBobMint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "msg",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "number",
+                "type": "uint256"
+            }
+        ],
+        "name": "revertWith",
+        "outputs": [],
+        "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "number",
+                "type": "uint256"
+            }
+        ],
+        "name": "splitAndEnd",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "testExcessiveChallenge",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "testWithdraw",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

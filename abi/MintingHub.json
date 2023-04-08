@@ -16,6 +16,32 @@
         "type": "constructor"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "bid",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "min",
+                "type": "uint256"
+            }
+        ],
+        "name": "BidTooLow",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "TooLate",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "UnexpectedSize",
+        "type": "error"
+    },
+    {
         "anonymous": false,
         "inputs": [
             {
@@ -433,19 +459,6 @@
                 "internalType": "uint256",
                 "name": "",
                 "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "reserve",
-        "outputs": [
-            {
-                "internalType": "contract IReserve",
-                "name": "",
-                "type": "address"
             }
         ],
         "stateMutability": "view",

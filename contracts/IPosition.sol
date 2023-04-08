@@ -23,6 +23,10 @@ interface IPosition {
 
     function mint(address target, uint256 amount) external;
 
+    function minted() external returns (uint256);
+
+    function reserveContribution() external returns (uint32);
+
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
     function notifyChallengeStarted(uint256 size) external;
