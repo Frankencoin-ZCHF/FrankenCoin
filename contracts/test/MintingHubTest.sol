@@ -69,7 +69,11 @@ contract MintingHubTest {
 
     function letAliceMint() public {
         alice.mint(latestPosition, 1); // test small amount to provoke rounding error
-        alice.mint(latestPosition, 7);
+        alice.transferOwnership(latestPosition, address(bob));
+        uint256 bobbalance = zchf.balanceOf(address(bob));
+        bob.mint(latestPosition, 7);
+        require(zchf.balanceOf(address(bob))> bobbalance);
+        bob.transferOwnership(latestPosition, address(alice));
         alice.mint(latestPosition, 0);
         alice.mint(latestPosition, 100000 * (10 ** 18) - 8);
         alice.adjustPosition(latestPosition);
@@ -199,6 +203,31 @@ contract MintingHubTest {
         revert(string(abi.encodePacked(msg, Strings.toString(number))));
     }
 
+    function challengeExpiredPosition() public {
+        Position pos = Position(latestPosition);
+        require(pos.calculateCurrentFee() == 0);
+        require(pos.expiration() < block.timestamp);
+        uint256 size = pos.collateral().balanceOf(latestPosition);
+        latestChallenge = bob.challenge(hub, latestPosition, size);
+        // revertWith("col left ", size); // 100
+        bob.obtainFrankencoins(swap, 5000 ether);
+    }
+
+    function bidNearEndOfChallenge() public {
+        (address challenger, IPosition p, uint256 size, uint256 end, address b, uint256 bid) = hub.challenges(latestChallenge);
+        require(block.timestamp < end);
+        require(end < block.timestamp + 30 minutes);
+        bob.bid(hub, latestChallenge, 5000 ether);
+        (address challenger2, IPosition p2, uint256 size2, uint256 end2, address b2, uint256 bid2) = hub.challenges(latestChallenge);
+        require(end2 > end); // time should be increased near end of auction
+    }
+
+    function endLastChallenge() public {
+        Position pos = Position(latestPosition);
+        hub.end(latestChallenge);
+        require(pos.collateral().balanceOf(latestPosition) == 0);
+    }
+
 }
 
 contract User {
@@ -234,6 +263,10 @@ contract User {
         Position(pos).adjust(0, 1001, 200 * (10 ** 36));
         Position(pos).adjustPrice(100 * (10 ** 36));
         return pos;
+    }
+
+    function transferOwnership(address pos, address newOwner) public {
+        Position(pos).transferOwnership(newOwner);
     }
 
     function deny(MintingHub hub, address pos) public {

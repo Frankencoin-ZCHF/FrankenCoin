@@ -56,7 +56,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
    }
 
    function name() override external pure returns (string memory){
-      return "Frankencoin V1";
+      return "Frankencoin";
    }
 
    function symbol() override external pure returns (string memory){
@@ -96,7 +96,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
    function allowanceInternal(address owner, address spender) internal view override returns (uint256) {
       uint256 explicit = super.allowanceInternal(owner, spender);
       if (explicit > 0){
-         return explicit;
+         return explicit; // don't waste gas checking minter
       } else if (isMinter(spender) || isMinter(isPosition(spender))){
          return INFINITY;
       } else {

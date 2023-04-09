@@ -25,6 +25,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
     uint256 public cooldown; // timestamp of the end of the latest cooldown
     uint256 public limit; // the minted amount must never exceed the limit
+
     uint256 public immutable start; // timestamp when minting can start
     uint256 public immutable expiration; // timestamp at which the position expires
 
@@ -60,10 +61,10 @@ contract Position is Ownable, IPosition, MathUtil {
         reserveContribution = _reservePPM;
         if(_initialCollateral < _minCollateral) revert InsufficientCollateral();
         minimumCollateral = _minCollateral;
-        expiration = block.timestamp + _duration;
         challengePeriod = _challengePeriod;
         start = block.timestamp + 7 days; // one week time to deny the position
         cooldown = start;
+        expiration = start + _duration;
         limit = _initialLimit;
         
         emit PositionOpened(_owner, original, _zchf, address(collateral), _liqPrice);
@@ -119,7 +120,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function getUsableMint(uint256 totalMint, bool afterFees) public view returns (uint256){
         if (afterFees){
-            return totalMint * (1000_000 - reserveContribution - mintingFeePPM) / 1000_000;
+            return totalMint * (1000_000 - reserveContribution - calculateCurrentFee()) / 1000_000;
         } else {
             return totalMint * (1000_000 - reserveContribution) / 1000_000;
         }
@@ -178,11 +179,21 @@ contract Position is Ownable, IPosition, MathUtil {
        mintInternal(target, amount, collateralBalance());
     }
 
+    function calculateCurrentFee() public view returns (uint32) {
+        uint256 exp = expiration;
+        uint256 time = block.timestamp;
+        if (time >= exp){
+            return 0;
+        } else {
+            return uint32(mintingFeePPM - mintingFeePPM * (time - start) / (exp - start));
+        }
+    }
+
     error LimitExceeded();
 
     function mintInternal(address target, uint256 amount, uint256 collateral_) internal {
         if (minted + amount > limit) revert LimitExceeded();
-        zchf.mint(target, amount, reserveContribution, mintingFeePPM);
+        zchf.mint(target, amount, reserveContribution, calculateCurrentFee());
         minted += amount;
 
         checkCollateral(collateral_, price);

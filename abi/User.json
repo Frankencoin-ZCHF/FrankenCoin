@@ -13,6 +13,19 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "pos",
+                "type": "address"
+            }
+        ],
+        "name": "adjustPosition",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "contract MintingHub",
                 "name": "hub",
                 "type": "address"
@@ -82,6 +95,24 @@
                 "type": "uint256"
             }
         ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract MintingHub",
+                "name": "hub",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "pos",
+                "type": "address"
+            }
+        ],
+        "name": "deny",
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -202,6 +233,24 @@
     {
         "inputs": [
             {
+                "internalType": "address[]",
+                "name": "helpers",
+                "type": "address[]"
+            },
+            {
+                "internalType": "address[]",
+                "name": "addressesToWipe",
+                "type": "address[]"
+            }
+        ],
+        "name": "restructure",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "contract StablecoinBridge",
                 "name": "bridge",
                 "type": "address"
@@ -236,6 +285,24 @@
             }
         ],
         "name": "transfer",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "pos",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

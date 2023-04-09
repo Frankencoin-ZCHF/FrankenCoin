@@ -270,6 +270,19 @@
     },
     {
         "inputs": [],
+        "name": "calculateCurrentFee",
+        "outputs": [
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "challengePeriod",
         "outputs": [
             {

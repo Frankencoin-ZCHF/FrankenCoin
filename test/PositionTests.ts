@@ -107,20 +107,16 @@ describe("Position Tests", () => {
             let amount = 10_000;
             expect(amount).to.be.lessThan(limit);
 
-            
             let fAmount = floatToDec18(amount);
             let fZCHFBefore = await ZCHFContract.balanceOf(owner);
+            let expectedAmount = dec18ToFloat(await positionContract.getUsableMint(fAmount, true));
+            expect(expectedAmount).to.be.eq(8900);
             await positionContract.connect(accounts[0]).mint(owner, fAmount);//).to.emit("PositionOpened");
-                        
+            let currentFees = await positionContract.calculateCurrentFee();
+            expect(currentFees).to.be.eq(10000);
             let fZCHFAfter = await ZCHFContract.balanceOf(owner);
             let ZCHFMinted = dec18ToFloat( fZCHFAfter.sub(fZCHFBefore) );
-            let amountExpected = amount * (1 - fee - reserve);
-            if (amountExpected != ZCHFMinted) {
-                console.log("Amount expected = ", amountExpected);
-                console.log("Amount received = ", ZCHFMinted);
-            }
-            expect(amountExpected).to.be.equal(ZCHFMinted);
-
+            expect(expectedAmount).to.be.equal(ZCHFMinted);
         });
         
         it("clone position", async () => {
@@ -319,6 +315,25 @@ describe("Position Tests", () => {
 
         it("restructuring", async () => {
             await mintingHubTest.restructure();
+        });
+        
+        it("challenge expired position", async () => {
+            await ethers.provider.send('evm_increaseTime', [100 * 86_400]); 
+            await ethers.provider.send("evm_mine");
+            await mintingHubTest.challengeExpiredPosition();
+
+            await ethers.provider.send('evm_increaseTime', [86_400 - 10]); // 10 seconds before end 
+            await ethers.provider.send("evm_mine");
+            await mintingHubTest.bidNearEndOfChallenge();
+            
+            await ethers.provider.send('evm_increaseTime', [20]); 
+            await ethers.provider.send("evm_mine");
+            let tx = mintingHubTest.endLastChallenge();
+            await expect(tx).to.be.revertedWith("period has not ended");
+
+            await ethers.provider.send('evm_increaseTime', [30*60]); 
+            await ethers.provider.send("evm_mine");
+            await mintingHubTest.endLastChallenge();
         });
     });
 

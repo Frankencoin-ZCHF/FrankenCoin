@@ -49,6 +49,8 @@ describe("Basic Tests", () => {
         it("symbol should be ZCHF", async () => {
             let symbol = await ZCHFContract.symbol();
             expect(symbol).to.be.equal("ZCHF");
+            let name = await ZCHFContract.name();
+            expect(name).to.be.equal("Frankencoin");
         });
     });
 
@@ -87,21 +89,20 @@ describe("Basic Tests", () => {
         });
 
         it("minter of XCHF-bridge should receive ZCHF", async () => {
-            let amount = floatToDec18(10000);
+            let amount = floatToDec18(5000);
             let balanceBefore = await ZCHFContract.balanceOf(owner);
             // set allowance
             await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
-            // https://stackoverflow.com/questions/70364713/hardhat-test-functionname-is-not-a-function
-            // if you declared two mint functions then you have to explicitly use the fully qualified signature
-            let tx2 = await bridge.connect(accounts[0])["mint(uint256)"](amount);
+            await bridge.connect(accounts[0])["mint(uint256)"](amount);
+            await mockXCHF.connect(accounts[0]).transferAndCall(bridge.address, amount, 0);
             let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
             let balanceAfter = await ZCHFContract.balanceOf(owner);
             let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
             let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==10000;
             let isSenderBalanceCorrect = ZCHFReceived==10000;
             if (!isBridgeBalanceCorrect || !isSenderBalanceCorrect) {
-                console.log("Bridge received XCHF tokens expected 100 = ", dec18ToFloat(balanceXCHFOfBridge));
-                console.log("Sender received ZCH tokens expected 100 = ", ZCHFReceived);
+                console.log("Bridge received XCHF tokens ", dec18ToFloat(balanceXCHFOfBridge));
+                console.log("Sender received ZCH tokens ", ZCHFReceived);
                 expect(isBridgeBalanceCorrect).to.be.true;
                 expect(isSenderBalanceCorrect).to.be.true;
             }
@@ -111,21 +112,27 @@ describe("Basic Tests", () => {
             let amount = floatToDec18(50);
             let balanceBefore = await ZCHFContract.balanceOf(owner);
             let balanceXCHFBefore = await mockXCHF.balanceOf(owner);
-            // set allowance
-            //await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
-            let tx2 = await bridge.connect(accounts[0])["burn(uint256)"](amount);
+            await ZCHFContract.connect(accounts[0]).approve(bridge.address, amount);
+            let allowance1 = await ZCHFContract.allowance(accounts[0].address, bridge.address);
+            expect(allowance1).to.be.eq(amount);
+            let allowance2 = await ZCHFContract.allowance(accounts[0].address, accounts[1].address);
+            expect(allowance2).to.be.eq(floatToDec18(0));
+            await ZCHFContract.connect(accounts[0])["burn(uint256)"](amount);
+            await bridge.connect(accounts[0])["burn(uint256)"](amount);
+            await bridge.connect(accounts[0])["burn(address,uint256)"](accounts[0].address, amount);
+            await ZCHFContract.connect(accounts[0])["transferAndCall"](bridge.address, amount, 0);
             let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
             let balanceXCHFAfter = await mockXCHF.balanceOf(owner);
             let balanceAfter = await ZCHFContract.balanceOf(owner);
             let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
             let XCHFReceived = dec18ToFloat(balanceXCHFAfter.sub(balanceXCHFBefore));
-            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==9950;
-            let isSenderBalanceCorrect = ZCHFReceived==-50;
-            let isXCHFBalanceCorrect = XCHFReceived==50;
+            let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge)==9850;
+            let isSenderBalanceCorrect = ZCHFReceived==-200;
+            let isXCHFBalanceCorrect = XCHFReceived==150;
             if (!isBridgeBalanceCorrect || !isSenderBalanceCorrect || !isXCHFBalanceCorrect) {
-                console.log("Bridge balance XCHF tokens expected 50 = ", dec18ToFloat(balanceXCHFOfBridge));
-                console.log("Sender burned ZCH tokens expected 50 = ", -ZCHFReceived);
-                console.log("Sender received XCHF tokens expected 50 = ", XCHFReceived);
+                console.log("Bridge balance XCHF tokens ", dec18ToFloat(balanceXCHFOfBridge));
+                console.log("Sender burned ZCH tokens ", -ZCHFReceived);
+                console.log("Sender received XCHF tokens ", XCHFReceived);
                 expect(isBridgeBalanceCorrect).to.be.true;
                 expect(isSenderBalanceCorrect).to.be.true;
                 expect(isXCHFBalanceCorrect).to.be.true;
