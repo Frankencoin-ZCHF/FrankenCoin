@@ -49,8 +49,9 @@ contract Position is Ownable, IPosition, MathUtil {
     */
     constructor(address _owner, address _hub, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 
-        uint256 _initialLimit, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
+        uint256 _initialLimit, uint256 initPeriod, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
         uint256 _liqPrice, uint32 _reservePPM) {
+        require(initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         setOwner(_owner);
         original = address(this);
         hub = _hub;
@@ -62,7 +63,7 @@ contract Position is Ownable, IPosition, MathUtil {
         if(_initialCollateral < _minCollateral) revert InsufficientCollateral();
         minimumCollateral = _minCollateral;
         challengePeriod = _challengePeriod;
-        start = block.timestamp + 7 days; // one week time to deny the position
+        start = block.timestamp + initPeriod; // one week time to deny the position
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;

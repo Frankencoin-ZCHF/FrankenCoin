@@ -17,6 +17,13 @@
     },
     {
         "inputs": [],
+        "name": "bidNearEndOfChallenge",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "challengeExpiredPosition",
         "outputs": [],
         "stateMutability": "nonpayable",
