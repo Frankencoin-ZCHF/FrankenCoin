@@ -95,7 +95,6 @@ contract MintingHub {
                 address(zchf),
                 _collateralAddress,
                 _minCollateral,
-                _initialCollateral,
                 _mintingMaximum,
                 _initPeriodSeconds,
                 _expirationSeconds,
@@ -107,6 +106,8 @@ contract MintingHub {
         );
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
+        require(_initialCollateral >= _minCollateral, "must start with min col");
+        require(_minCollateral * _liqPrice >= 5000 ether); // must start with at least 5000 ZCHF worth of collateral
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
         return address(pos);
@@ -302,7 +303,6 @@ interface IPositionFactory {
         address _zchf,
         address _collateral,
         uint256 _minCollateral,
-        uint256 _initialCollateral,
         uint256 _initialLimit,
         uint256 _initPeriodSeconds,
         uint256 _duration,

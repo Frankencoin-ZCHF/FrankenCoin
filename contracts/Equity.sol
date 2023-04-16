@@ -233,6 +233,29 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
+     * Since quorum is rather low, it is important to have a way to prevent malicious minority holders
+     * from blocking the whole system. This method provides a way for the good guys to team up and destroy
+     * the bad guy's votes (at the cost of also reducing their own votes). This mechanism potentially
+     * gives full control over the system to whoever has 51% of the votes.
+     *
+     * Since this is a rather aggressive measure, delegation is not supported. Every holder must call this
+     * method on their own.
+     */
+    function kamikaze(address target, uint256 votesToDestroy) public {
+        uint256 destroyedVotes = reduceVotes(msg.sender, votesToDestroy);
+        destroyedVotes += reduceVotes(target, votesToDestroy);
+        totalVotesAtAnchor = uint192(totalVotes() - destroyedVotes);
+        totalVotesAnchorTime = anchorTime();
+    }
+
+    function reduceVotes(address target, uint256 amount) internal returns (uint256) {
+        uint256 votesBefore = votes(target);
+        require(votesBefore >= amount, "not enough votes");
+        voteAnchor[target] = uint64(anchorTime() - (votesBefore - amount) / balanceOf(target));
+        return votes(target) - votesBefore;
+    }
+
+    /**
      * In order to mint new FPS tokens, one needs to send ZCHF to this contract using the transferAndCall function
      * in the ZCHF contract.
      *
@@ -310,7 +333,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         require(zchf.equity() < MINIMUM_EQUITY);
         checkQualified(msg.sender, helpers);
         for (uint256 i = 0; i<addressesToWipe.length; i++){
-            address current = addressesToWipe[0];
+            address current = addressesToWipe[i];
             _burn(current, balanceOf(current));
         }
     }

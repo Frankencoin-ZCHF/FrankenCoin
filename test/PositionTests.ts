@@ -79,8 +79,8 @@ describe("Position Tests", () => {
             await mockVOL.connect(accounts[0]).approve(mintingHubContract.address, fInitialCollateral);
             let balBefore = await ZCHFContract.balanceOf(owner);
             let balBeforeVOL = await mockVOL.balanceOf(owner);
-            let tx = await mintingHubContract.openPosition(collateral, minCollateral, 
-                fInitialCollateral, initialLimit, duration, challengePeriod, fFees, fliqPrice, fReserve);
+            let tx = await mintingHubContract["openPosition(address,uint256,uint256,uint256,uint256,uint256,uint32,uint256,uint32)"]
+                (collateral, minCollateral, fInitialCollateral, initialLimit, duration, challengePeriod, fFees, fliqPrice, fReserve);
             let rc = await tx.wait();
             const topic = '0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2'; // PositionOpened
             const log = rc.logs.find(x => x.topics.indexOf(topic) >= 0);

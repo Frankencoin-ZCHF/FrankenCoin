@@ -47,8 +47,7 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
     * See MintingHub.openPosition
     */
-    constructor(address _owner, address _hub, address _zchf, address _collateral, 
-        uint256 _minCollateral, uint256 _initialCollateral, 
+    constructor(address _owner, address _hub, address _zchf, address _collateral, uint256 _minCollateral, 
         uint256 _initialLimit, uint256 initPeriod, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
         uint256 _liqPrice, uint32 _reservePPM) {
         require(initPeriod >= 3 days); // must be at least three days, recommended to use higher values
@@ -60,10 +59,9 @@ contract Position is Ownable, IPosition, MathUtil {
         collateral = IERC20(_collateral);
         mintingFeePPM = _mintingFeePPM;
         reserveContribution = _reservePPM;
-        if(_initialCollateral < _minCollateral) revert InsufficientCollateral();
         minimumCollateral = _minCollateral;
         challengePeriod = _challengePeriod;
-        start = block.timestamp + initPeriod; // one week time to deny the position
+        start = block.timestamp + initPeriod; // at least three days time to deny the position
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;
@@ -185,6 +183,8 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 time = block.timestamp;
         if (time >= exp){
             return 0;
+        } else if (time <= start){
+            return mintingFeePPM;
         } else {
             return uint32(mintingFeePPM - mintingFeePPM * (time - start) / (exp - start));
         }
@@ -219,14 +219,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * amount = minted * (1000000 - reservePPM)
      *
      * For example, if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
-     *
-     * Only the owner is allowed to repay a position. This is necessary to prevent a 'limit stealing attack': if a popular position
-     * has reached its limit, an attacker could try to repay the position, clone it, and take a loan himself. This is prevented by
-     * requiring the owner to do the repayment. Other restrictions are not necessary. In particular, it must be possible to repay
-     * the position once it is expired or subject to cooldown. Also, repaying it during a challenge is no problem as the collateral
-     * remains present.
      */
-    function repay(uint256 amount) public onlyOwner {
+    function repay(uint256 amount) public {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
         repayInternal(amount);
     }

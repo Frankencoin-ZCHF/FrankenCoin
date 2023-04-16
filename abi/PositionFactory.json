@@ -42,12 +42,12 @@
             },
             {
                 "internalType": "uint256",
-                "name": "_initialCollateral",
+                "name": "_initialLimit",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
-                "name": "_initialLimit",
+                "name": "initPeriod",
                 "type": "uint256"
             },
             {

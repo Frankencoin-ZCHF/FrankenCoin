@@ -444,6 +444,70 @@
         "inputs": [
             {
                 "internalType": "address",
+                "name": "_collateralAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_minCollateral",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_initialCollateral",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_mintingMaximum",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_initPeriodSeconds",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_expirationSeconds",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_challengeSeconds",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint32",
+                "name": "_mintingFeePPM",
+                "type": "uint32"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_liqPrice",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint32",
+                "name": "_reservePPM",
+                "type": "uint32"
+            }
+        ],
+        "name": "openPosition",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
                 "name": "",
                 "type": "address"
             },
