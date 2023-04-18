@@ -138,8 +138,9 @@ contract MintingHub {
      * @param _collateralAmount  size of the collateral we want to challenge (dec 18)
      * @return index of the challenge in challenge-array
      */
-    function launchChallenge(address _positionAddr, uint256 _collateralAmount) external validPos(_positionAddr) returns (uint256) {
+    function launchChallenge(address _positionAddr, uint256 _collateralAmount, uint256 expectedPrice) external validPos(_positionAddr) returns (uint256) {
         IPosition position = IPosition(_positionAddr);
+        if (position.price() != expectedPrice) revert UnexpectedPrice();
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
         uint256 pos = challenges.length;
         challenges.push(Challenge(msg.sender, position, _collateralAmount, block.timestamp + position.challengePeriod(), address(0x0), 0));
@@ -147,6 +148,8 @@ contract MintingHub {
         emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);
         return pos;
     }
+
+    error UnexpectedPrice();
 
     /**
      * Splits a challenge into two smaller challenges.
@@ -264,6 +267,7 @@ contract MintingHub {
             IERC20(zchf).transfer(challenge.bidder, challenge.bid - effectiveBid);
         }
         uint256 reward = (volume * CHALLENGER_REWARD) / 1000_000;
+        if (reward > effectiveBid) reward = effectiveBid;
         uint256 fundsNeeded = reward + repayment;
         if (effectiveBid > fundsNeeded){
             zchf.transfer(owner, effectiveBid - fundsNeeded);
