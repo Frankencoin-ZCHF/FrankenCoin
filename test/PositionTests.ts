@@ -90,6 +90,8 @@ describe("Position Tests", () => {
             expect(dVOL).to.be.equal(-initialCollateral);
             expect(dZCHF).to.be.equal(-dec18ToFloat(openingFeeZCHF));
             positionContract = await ethers.getContractAt('Position', positionAddr, accounts[0]);
+            let currentFees = await positionContract.calculateCurrentFee();
+            expect(currentFees).to.be.eq(383);
         });
         it("require cooldown", async () => {
             let tx = positionContract.connect(accounts[0]).mint(owner, floatToDec18(5));

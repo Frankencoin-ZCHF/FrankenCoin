@@ -264,7 +264,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 votesBefore = votes(target);
         require(votesBefore >= amount, "not enough votes");
         voteAnchor[target] = uint64(anchorTime() - (votesBefore - amount) / balanceOf(target));
-        return votes(target) - votesBefore;
+        return votesBefore - votes(target);
     }
 
     /**

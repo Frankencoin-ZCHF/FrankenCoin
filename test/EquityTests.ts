@@ -41,6 +41,10 @@ describe("Equity Tests", () => {
             let symbol = await equity.name();
             expect(symbol).to.be.equal("Frankencoin Pool Share");
         });
+        it("should have inital price 1 ZCHF / FPS", async () => {
+            let price = await equity.price();
+            expect(price).to.be.equal(BN.from(10).pow(18));
+        });
         it("should have some coins", async () => {
             let balance = await zchf.balanceOf(owner);
             expect(balance).to.be.equal(floatToDec18(1000_000));
@@ -93,6 +97,8 @@ describe("Equity Tests", () => {
                 console.log(`1) sum votes before = ${votesBefore}`);
             }
             expect(isEqual).to.be.true;
+            let relVotes = await equity.relativeVotes(owner);
+            expect(relVotes).to.be.eq(mul(BN.from(10).pow(18)));
         });
 
         it("total votes correct after transfer", async () => {
@@ -140,6 +146,34 @@ describe("Equity Tests", () => {
             expect(qualified1 > qualified2).to.be.true;
             let tx = equity["votes(address,address[])"](accounts[5].address, [accounts[2].address]);
             expect(tx).to.be.reverted;
+        }); 
+
+        it("kamikaze", async () => {
+            let tx = equity.connect(accounts[2]).kamikaze(accounts[5].address, BN.from(1000000));
+            await expect(tx).to.be.reverted; // account 2 has no votes
+            await ethers.provider.send('evm_mine');
+            await ethers.provider.send('evm_mine');
+            await ethers.provider.send('evm_mine');
+            await ethers.provider.send('evm_mine');
+            let balance0 = await equity.balanceOf(accounts[0].address);
+            let balance5 = await equity.balanceOf(accounts[5].address);
+            let totalSupply = await equity.totalSupply();
+            expect(balance0.add(balance5)).to.be.eq(totalSupply);
+            let votesBefore0 = await equity["votes(address)"](accounts[0].address);
+            let votesBefore5 = await equity["votes(address)"](accounts[5].address);
+            let totalVotesBefore = await equity.totalVotes();
+            await equity.connect(accounts[0]).kamikaze(accounts[5].address, votesBefore5);
+            let votesAfter0 = await equity["votes(address)"](accounts[0].address);
+            let votesAfter5 = await equity["votes(address)"](accounts[5].address);
+            let adjustement0 = balance0.mul(BN.from(2).pow(24));
+            let adjustement5 = balance5.mul(BN.from(2).pow(24));
+            let expectedTotalVotes = totalVotesBefore.add(totalSupply.mul(BN.from(2).pow(24)));
+            let loss0 = votesBefore0.sub(votesAfter0.sub(adjustement0));
+            let loss5 = votesBefore5.sub(votesAfter5.sub(adjustement5));
+            expect(loss5).to.be.eq(votesBefore5);
+            expect(loss0).to.be.approximately(votesBefore5, BN.from(2000).mul(BN.from(10).pow(18)));
+            let totalVotesA = await equity.totalVotes();
+            expect(expectedTotalVotes.sub(totalVotesA)).to.be.eq(loss0.add(loss5));
         }); 
     });
 });
