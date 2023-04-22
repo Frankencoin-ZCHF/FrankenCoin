@@ -261,13 +261,12 @@ contract MintingHub {
         returnCollateral(challenge, postponeCollateralReturn);
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
-        (address owner, uint256 effectiveBid, uint256 volume, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
+        (address owner, uint256 effectiveBid, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
         if (effectiveBid < challenge.bid) {
             // overbid, return excess amount
             IERC20(zchf).transfer(challenge.bidder, challenge.bid - effectiveBid);
         }
-        uint256 reward = (volume * CHALLENGER_REWARD) / 1000_000;
-        if (reward > effectiveBid) reward = effectiveBid;
+        uint256 reward = (effectiveBid * CHALLENGER_REWARD) / 1000_000;
         uint256 fundsNeeded = reward + repayment;
         if (effectiveBid > fundsNeeded){
             zchf.transfer(owner, effectiveBid - fundsNeeded);

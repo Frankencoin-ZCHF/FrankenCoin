@@ -397,6 +397,24 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "votesToDestroy",
+                "type": "uint256"
+            }
+        ],
+        "name": "kamikaze",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "name",
         "outputs": [

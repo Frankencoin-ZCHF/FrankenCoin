@@ -243,7 +243,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * 50 ZCHF in total. This total is returned by the method so the caller knows how much less they owe.
     */
    function burnWithReserve(uint256 _amountExcludingReserve, uint32 _reservePPM) external override minterOnly returns (uint256) {
-      uint256 freedAmount = calculateFreedAmount(_amountExcludingReserve, _reservePPM);
+      uint256 freedAmount = calculateFreedAmount(_amountExcludingReserve, _reservePPM); // this would be the 50 in the example
       minterReserveE6 -= freedAmount * _reservePPM; // reduce reserve requirements by original ratio
       _transfer(address(reserve), msg.sender, freedAmount - _amountExcludingReserve); // collect assigned reserve, maybe less than original reserve
       _burn(msg.sender, freedAmount); // burn the rest of the freed amount

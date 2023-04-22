@@ -106,7 +106,12 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * Returns the price of one FPS in ZCHF with 18 decimals precision.
      */
     function price() public view returns (uint256){
-        return VALUATION_FACTOR * zchf.equity() * ONE_DEC18 / totalSupply();
+        uint256 equity = zchf.equity();
+        if (equity == 0){
+            return ONE_DEC18; // initial price is 1000 ZCHF for the first 1000 FPS
+        } else {
+            return VALUATION_FACTOR * zchf.equity() * ONE_DEC18 / totalSupply();
+        }
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
@@ -171,6 +176,13 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      */
     function anchorTime() internal view returns (uint64){
         return uint64(block.number << BLOCK_TIME_RESOLUTION_BITS);
+    }
+
+    /**
+     * The relative voting power of the address. 1e18 is 100%.
+     */
+    function relativeVotes(address holder) external view returns (uint256) {
+        return ONE_DEC18 * votes(holder) / totalVotes();
     }
 
     /**

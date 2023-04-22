@@ -38,6 +38,11 @@
     },
     {
         "inputs": [],
+        "name": "UnexpectedPrice",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "UnexpectedSize",
         "type": "error"
     },
@@ -348,6 +353,11 @@
             {
                 "internalType": "uint256",
                 "name": "_collateralAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expectedPrice",
                 "type": "uint256"
             }
         ],

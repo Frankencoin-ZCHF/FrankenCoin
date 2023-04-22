@@ -566,11 +566,6 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            },
-            {
                 "internalType": "uint32",
                 "name": "",
                 "type": "uint32"

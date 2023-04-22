@@ -318,7 +318,7 @@ contract User {
     function challenge(MintingHub hub, address pos, uint256 size) public returns (uint256) {
         IERC20 col = IPosition(pos).collateral();
         col.approve(address(hub), size);
-        return hub.launchChallenge(pos, size);
+        return hub.launchChallenge(pos, size, IPosition(pos).price());
     }
 
     function avertChallenge(MintingHub hub, StablecoinBridge swap, uint256 first) public {

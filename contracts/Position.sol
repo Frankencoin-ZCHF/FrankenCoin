@@ -18,25 +18,82 @@ contract Position is Ownable, IPosition, MathUtil {
      * the constant and immutable fields, but have their own values for the other fields.
      */
 
-    uint256 public price; // the zchf price per unit of the collateral below which challenges succeed, (36 - collateral.decimals) decimals
-    uint256 public minted; // net minted amount, including reserve
-    uint256 public challengedAmount; // amount of the collateral that is currently under a challenge
-    uint256 public immutable challengePeriod; // challenge period in seconds
+    /**
+     * The zchf price per unit of the collateral below which challenges succeed, (36 - collateral.decimals) decimals
+     */
+    uint256 public price;
 
-    uint256 public cooldown; // timestamp of the end of the latest cooldown
-    uint256 public limit; // the minted amount must never exceed the limit
+    /**
+     * Net minted amount, including reserve.
+     */
+    uint256 public minted; 
 
-    uint256 public immutable start; // timestamp when minting can start
-    uint256 public immutable expiration; // timestamp at which the position expires
+    /**
+     * Amount of the collateral that is currently under a challenge.
+     * Used to figure out whether there are pending challenges.
+     */
+    uint256 public challengedAmount;
 
-    address public immutable original; // originals point to themselves, clone to their origin
-    address public immutable hub; // the hub this position was created by
-    IFrankencoin public immutable zchf; // currency
-    IERC20 public override immutable collateral; // collateral
-    uint256 public override immutable minimumCollateral; // prevent dust amounts
+    /**
+     * Challenge period in seconds.
+     */ 
+    uint256 public immutable challengePeriod;
 
+    /**
+     * End of the latest cooldown. If this is in the future, minting is suspended.
+     */
+    uint256 public cooldown;
+
+    /**
+     * How much can be minted at most.
+     */
+    uint256 public limit;
+
+    /**
+     * Timestamp when minting can start and the position no longer denied.
+     */
+    uint256 public immutable start;
+
+    /**
+     * Timestamp of the expiration of the position. After expiration, challenges cannot be averted
+     * any more. This is also the basis for fee calculations.
+     */
+    uint256 public immutable expiration;
+
+    /**
+     * The original position to help identifying clones.
+     */
+    address public immutable original;
+
+    /**
+     * Pointer to the minting hub.
+     */
+    address public immutable hub;
+
+    /**
+     * The Frankencoin contract.
+     */
+    IFrankencoin public immutable zchf;
+
+    /**
+     * The collateral token.
+     */
+    IERC20 public override immutable collateral;
+
+    /**
+     * Minimum acceptable collateral amount to prevent dust.
+     */
+    uint256 public override immutable minimumCollateral;
+
+    /**
+     * The minting fee in parts per million.
+     */
     uint32 public immutable mintingFeePPM;
-    uint32 public immutable reserveContribution; // in ppm
+
+    /**
+     * The reserve contribution in parts per million of the minted amount.
+     */
+    uint32 public immutable reserveContribution;
 
     event PositionOpened(address indexed owner, address original, address zchf, address collateral, uint256 price);
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
@@ -226,8 +283,8 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function repayInternal(uint256 burnable) internal {
-        uint256 actuallyBurned = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
-        notifyRepaidInternal(actuallyBurned);
+        uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
+        notifyRepaidInternal(actuallyRepaid);
         emitUpdate();
     }
 
@@ -322,7 +379,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * @param _size     size of the collateral bid for (dec 18)
      * @return (position owner, effective bid size in ZCHF, effective challenge size in ZCHF, repaid amount, reserve ppm)
      */
-    function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) external onlyHub returns (address, uint256, uint256, uint256, uint32) {
+    function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
         uint256 colBal = collateralBalance();
         if (_size > colBal){
@@ -346,7 +403,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
         notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
         internalWithdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
-        return (owner, _bid, volumeZCHF, repayment, reserveContribution);
+        return (owner, _bid, repayment, reserveContribution);
     }
 
     /**

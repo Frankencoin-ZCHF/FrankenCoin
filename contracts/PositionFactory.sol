@@ -21,9 +21,7 @@ contract PositionFactory {
 
     /**
     * @notice clone an existing position. This can be a clone of another clone,
-    * or an original position. If it's another clone, then the liquidation price
-    * is taken from the clone and the rest from the original. Limit is "inherited"
-    * (and adjusted) from the original.
+    * or an original position. 
     * @param _existing address of the position we want to clone
     * @return address of the newly created clone position
     */
