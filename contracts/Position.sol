@@ -58,7 +58,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * Timestamp of the expiration of the position. After expiration, challenges cannot be averted
      * any more. This is also the basis for fee calculations.
      */
-    uint256 public immutable expiration;
+    uint256 public expiration;
 
     /**
      * The original position to help identifying clones.
@@ -86,9 +86,10 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 public override immutable minimumCollateral;
 
     /**
-     * The minting fee in parts per million.
+     * The interest in parts per million per year that is deducted when minting Frankencoins.
+     * To be paid upfront.
      */
-    uint32 public immutable mintingFeePPM;
+    uint32 public immutable yearlyInterestPPM;
 
     /**
      * The reserve contribution in parts per million of the minted amount.
@@ -105,7 +106,7 @@ contract Position is Ownable, IPosition, MathUtil {
     * See MintingHub.openPosition
     */
     constructor(address _owner, address _hub, address _zchf, address _collateral, uint256 _minCollateral, 
-        uint256 _initialLimit, uint256 initPeriod, uint256 _duration, uint256 _challengePeriod, uint32 _mintingFeePPM, 
+        uint256 _initialLimit, uint256 initPeriod, uint256 _duration, uint256 _challengePeriod, uint32 _yearlyInterestPPM, 
         uint256 _liqPrice, uint32 _reservePPM) {
         require(initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         setOwner(_owner);
@@ -114,7 +115,7 @@ contract Position is Ownable, IPosition, MathUtil {
         price = _liqPrice;
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
-        mintingFeePPM = _mintingFeePPM;
+        yearlyInterestPPM = _yearlyInterestPPM;
         reserveContribution = _reservePPM;
         minimumCollateral = _minCollateral;
         challengePeriod = _challengePeriod;
@@ -130,36 +131,33 @@ contract Position is Ownable, IPosition, MathUtil {
      * Method to initialize a freshly created clone. It is the responsibility of the creator to make sure this is only
      * called once and to call reduceLimitForClone on the original position before initializing the clone.
      */
-    function initializeClone(address owner, uint256 _price, uint256 _limit, uint256 _coll, uint256 _mint) external onlyHub {
+    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expirationTime) external onlyHub {
         if(_coll < minimumCollateral) revert InsufficientCollateral();
         setOwner(owner);
         
         price = _mint * ONE_DEC18 / _coll;
         if (price > _price) revert InsufficientCollateral();
-        limit = _limit;
+        limit = _mint;
+        expiration = expirationTime;
         mintInternal(owner, _mint, _coll);
 
         emit PositionOpened(owner, original, address(zchf), address(collateral), _price);
     }
 
     /**
-     * Adjust this position's limit to give away half of the remaining limit to the clone.
+     * Adjust this position's limit to allow a clone to mint its own Frankencoins.
      * Invariant: global limit stays the same.
      *
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
-     *
-     * @param _minimum amount that clone wants to mint initially
-     * @return limit for the clone
      */
-    function reduceLimitForClone(uint256 _minimum) external noChallenge noCooldown alive onlyHub returns (uint256) {
-        uint256 reduction = (limit - minted - _minimum)/2; // this will fail with an underflow if minimum is too high
-        limit -= reduction + _minimum;
-        return reduction + _minimum;
+    function reduceLimitForClone(uint256 mint, uint256 exp) external noChallenge noCooldown alive onlyHub {
+        if (exp > expiration || exp < start) revert TooLate();
+        uint256 newLimit = limit - mint;
+        if (minted > newLimit) revert LimitExceeded();
+        limit = newLimit;
     }
 
     error TooLate();
-    error NotQualified();
-
     /**
      * Qualified pool share holders can call this method to immediately expire a freshly proposed position.
      */ 
@@ -240,10 +238,12 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 time = block.timestamp;
         if (time >= exp){
             return 0;
-        } else if (time <= start){
-            return mintingFeePPM;
         } else {
-            return uint32(mintingFeePPM - mintingFeePPM * (time - start) / (exp - start));
+            if (time < start){
+                time = start;
+            }
+            // Time resolution is in the range of minutes for typical interest rates.
+            return uint32((exp - time) * yearlyInterestPPM / 365 days);
         }
     }
 

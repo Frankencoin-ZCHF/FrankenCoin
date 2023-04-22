@@ -36,11 +36,12 @@ contract MintingHubTest {
         zchf = swap.zchf();
         alice = new User(zchf);
         bob = new User(zchf);
+        require(zchf.reserve().totalSupply() == 0, Strings.toString(zchf.reserve().totalSupply()));
     }
 
     function initiateEquity() public {
+        require(zchf.equity() == 1003849100000000000001, Strings.toString(zchf.equity()));
         require(zchf.reserve().totalSupply() == 0, Strings.toString(zchf.reserve().totalSupply()));
-        require(zchf.equity() == 1101000000000000000001, Strings.toString(zchf.equity()));
          // ensure there is at least 25'000 ZCHF in equity
         bob.obtainFrankencoins(swap, 10000 ether);
         bob.invest(1000 ether);
@@ -146,7 +147,7 @@ contract MintingHubTest {
 
         uint256 borrowedAmount = 50000 * (10 ** 18);
         uint256 reserve = borrowedAmount * p.reserveContribution() / 1000000;
-        uint256 reward = borrowedAmount * 20000 / 1000000;
+        uint256 reward = bid * 20000 / 1000000;
         uint256 missing = borrowedAmount + reward - bid - reserve;
         uint256 equityAfter = zchf.equity();
         uint256 assigned = zchf.calculateAssignedReserve(1000000, uint32(200000));

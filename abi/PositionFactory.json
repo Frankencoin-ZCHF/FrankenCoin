@@ -62,7 +62,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_mintingFeePPM",
+                "name": "_yearlyInterestPPM",
                 "type": "uint32"
             },
             {

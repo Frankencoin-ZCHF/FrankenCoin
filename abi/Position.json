@@ -48,7 +48,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_mintingFeePPM",
+                "name": "_yearlyInterestPPM",
                 "type": "uint32"
             },
             {
@@ -103,11 +103,6 @@
     {
         "inputs": [],
         "name": "NotOwner",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "NotQualified",
         "type": "error"
     },
     {
@@ -415,17 +410,17 @@
             },
             {
                 "internalType": "uint256",
-                "name": "_limit",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
                 "name": "_coll",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
                 "name": "_mint",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expirationTime",
                 "type": "uint256"
             }
         ],
@@ -499,19 +494,6 @@
                 "internalType": "uint256",
                 "name": "",
                 "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "mintingFeePPM",
-        "outputs": [
-            {
-                "internalType": "uint32",
-                "name": "",
-                "type": "uint32"
             }
         ],
         "stateMutability": "view",
@@ -617,18 +599,17 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "_minimum",
+                "name": "mint",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "exp",
                 "type": "uint256"
             }
         ],
         "name": "reduceLimitForClone",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -747,6 +728,19 @@
         "name": "withdrawCollateral",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "yearlyInterestPPM",
+        "outputs": [
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {

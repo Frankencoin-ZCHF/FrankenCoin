@@ -59,9 +59,9 @@ contract MintingHub {
     function openPosition(
         address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
         uint256 _mintingMaximum, uint256 _expirationSeconds, uint256 _challengeSeconds,
-        uint32 _mintingFeePPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
+        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
             return openPosition(_collateralAddress, _minCollateral, _initialCollateral, _mintingMaximum,
-            7 days, _expirationSeconds, _challengeSeconds, _mintingFeePPM, _liqPrice, _reservePPM);
+            7 days, _expirationSeconds, _challengeSeconds, _yearlyInterestPPM, _liqPrice, _reservePPM);
     }
 
     /**
@@ -79,7 +79,7 @@ contract MintingHub {
      * @param _mintingMaximum    maximal amount of ZCHF that can be minted by the position owner
      * @param _expirationSeconds position tenor in unit of timestamp (seconds) from 'now'
      * @param _challengeSeconds  challenge period. Longer for less liquid collateral.
-     * @param _mintingFeePPM     ppm of minted amount that is paid as fee to the equity contract
+     * @param _yearlyInterestPPM ppm of minted amount that is paid as fee to the equity contract for each year of duration
      * @param _liqPrice          Liquidation price with (36 - token decimals) decimals,
      *                           e.g. 18 decimals for an 18 decimal collateral, 36 decimals for a 0 decimal collateral.
      * @param _reservePPM        ppm of minted amount that is locked as borrower's reserve, e.g. 20%
@@ -88,7 +88,7 @@ contract MintingHub {
     function openPosition(
         address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
         uint256 _mintingMaximum, uint256 _initPeriodSeconds, uint256 _expirationSeconds, uint256 _challengeSeconds,
-        uint32 _mintingFeePPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
+        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
@@ -99,7 +99,7 @@ contract MintingHub {
                 _initPeriodSeconds,
                 _expirationSeconds,
                 _challengeSeconds,
-                _mintingFeePPM,
+                _yearlyInterestPPM,
                 _liqPrice,
                 _reservePPM
             )
@@ -123,12 +123,17 @@ contract MintingHub {
      * This requires an allowance to be set on the collateral contract such that the minting hub can withdraw the collateral.
      */
     function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public validPos(position) returns (address) {
+        uint256 expiration = IPosition(position).expiration();
+        return clonePosition(position, _initialCollateral, _initialMint, expiration);
+    }
+
+    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint, uint256 expiration) public validPos(position) returns (address) {
         IPosition existing = IPosition(position);
-        uint256 limit = existing.reduceLimitForClone(_initialMint);
+        existing.reduceLimitForClone(_initialMint, expiration);
         address pos = POSITION_FACTORY.clonePosition(position);
         zchf.registerPosition(pos);
         existing.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
-        IPosition(pos).initializeClone(msg.sender, existing.price(), limit, _initialCollateral, _initialMint);
+        IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
         return address(pos);
     }
 
@@ -310,7 +315,7 @@ interface IPositionFactory {
         uint256 _initPeriodSeconds,
         uint256 _duration,
         uint256 _challengePeriod,
-        uint32 _mintingFeePPM,
+        uint32 _yearlyInterestPPM,
         uint256 _liqPrice,
         uint32 _reserve
     ) external returns (address);

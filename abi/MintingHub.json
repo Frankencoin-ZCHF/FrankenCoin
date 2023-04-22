@@ -296,6 +296,40 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "position",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_initialCollateral",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_initialMint",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expiration",
+                "type": "uint256"
+            }
+        ],
+        "name": "clonePosition",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "uint256",
                 "name": "_challengeNumber",
                 "type": "uint256"
@@ -425,7 +459,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_mintingFeePPM",
+                "name": "_yearlyInterestPPM",
                 "type": "uint32"
             },
             {
@@ -489,7 +523,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_mintingFeePPM",
+                "name": "_yearlyInterestPPM",
                 "type": "uint32"
             },
             {
