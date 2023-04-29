@@ -150,9 +150,9 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
      */
-    function reduceLimitForClone(uint256 mint, uint256 exp) external noChallenge noCooldown alive onlyHub {
+    function reduceLimitForClone(uint256 mint_, uint256 exp) external noChallenge noCooldown alive onlyHub {
         if (exp > expiration || exp < start) revert TooLate();
-        uint256 newLimit = limit - mint;
+        uint256 newLimit = limit - mint_;
         if (minted > newLimit) revert LimitExceeded();
         limit = newLimit;
     }
@@ -164,8 +164,12 @@ contract Position is Ownable, IPosition, MathUtil {
     function deny(address[] calldata helpers, string calldata message) public {
         if (block.timestamp >= start) revert TooLate();
         IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
-        cooldown = expiration; // since expiration is immutable, we put it under cooldown until the end
+        cooldown = type(uint256).max; // since expiration is immutable, we put it under eternal cooldown
         emit PositionDenied(msg.sender, message);
+    }
+
+    function isDenied() public view returns (bool){
+        return cooldown == type(uint256).max;
     }
 
     /**
@@ -315,7 +319,8 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * Withdrawing collateral below the minimum collateral amount formally closes the position.
      */
-    function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge noCooldown {
+    function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge {
+        if (block.timestamp <= cooldown && !isDenied()) revert Hot();
         uint256 balance = internalWithdrawCollateral(target, amount);
         checkCollateral(balance, price);
     }
