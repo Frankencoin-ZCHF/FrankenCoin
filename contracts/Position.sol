@@ -133,10 +133,10 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expirationTime) external onlyHub {
         if(_coll < minimumCollateral) revert InsufficientCollateral();
-        setOwner(owner);
-        
         price = _mint * ONE_DEC18 / _coll;
         if (price > _price) revert InsufficientCollateral();
+        
+        setOwner(owner);
         limit = _mint;
         expiration = expirationTime;
         mintInternal(owner, _mint, _coll);

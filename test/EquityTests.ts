@@ -98,7 +98,7 @@ describe("Equity Tests", () => {
             }
             expect(isEqual).to.be.true;
             let relVotes = await equity.relativeVotes(owner);
-            expect(relVotes).to.be.eq(mul(BN.from(10).pow(18)));
+            expect(relVotes).to.be.eq(BN.from(10).pow(18));
         });
 
         it("total votes correct after transfer", async () => {

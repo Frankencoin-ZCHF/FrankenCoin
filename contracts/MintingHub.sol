@@ -104,10 +104,10 @@ contract MintingHub {
                 _reservePPM
             )
         );
-        zchf.registerPosition(address(pos));
-        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         require(_initialCollateral >= _minCollateral, "must start with min col");
         require(_minCollateral * _liqPrice >= 5000 ether); // must start with at least 5000 ZCHF worth of collateral
+        zchf.registerPosition(address(pos));
+        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
         return address(pos);
@@ -132,7 +132,7 @@ contract MintingHub {
         existing.reduceLimitForClone(_initialMint, expiration);
         address pos = POSITION_FACTORY.clonePosition(position);
         zchf.registerPosition(pos);
-        existing.collateral().transferFrom(msg.sender, address(pos), _initialCollateral);
+        existing.collateral().transferFrom(msg.sender, pos, _initialCollateral);
         IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
         return address(pos);
     }

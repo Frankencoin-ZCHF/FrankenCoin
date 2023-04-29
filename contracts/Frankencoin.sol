@@ -76,7 +76,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     */
    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) override external {
       if (_applicationPeriod < MIN_APPLICATION_PERIOD && totalSupply() > 0) revert PeriodTooShort();
-      if (_applicationFee < MIN_FEE  && totalSupply() > 0) revert FeeTooLow();
+      if (_applicationFee < MIN_FEE && totalSupply() > 0) revert FeeTooLow();
       if (minters[_minter] != 0) revert AlreadyRegistered();
       _transfer(msg.sender, address(reserve), _applicationFee);
       minters[_minter] = block.timestamp + _applicationPeriod;
@@ -198,9 +198,10 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
    function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) public view returns (uint256) {
       uint256 theoreticalReserve = _reservePPM * mintedAmount / 1000000;
       uint256 currentReserve = balanceOf(address(reserve));
-      if (currentReserve < minterReserve()){
+      uint256 minterReserve_ = minterReserve();
+      if (currentReserve < minterReserve_){
          // not enough reserves, owner has to take a loss
-         return theoreticalReserve * currentReserve / minterReserve();
+         return theoreticalReserve * currentReserve / minterReserve_;
       } else {
          return theoreticalReserve;
       }

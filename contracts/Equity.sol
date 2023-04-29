@@ -147,9 +147,10 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * @param amount    amount to be sent
      */
     function adjustTotalVotes(address from, uint256 amount, uint256 roundingLoss) internal {
-        uint256 lostVotes = from == address(0x0) ? 0 : (anchorTime() - voteAnchor[from]) * amount;
+        uint64 time = anchorTime();
+        uint256 lostVotes = from == address(0x0) ? 0 : (time - voteAnchor[from]) * amount;
         totalVotesAtAnchor = uint192(totalVotes() - roundingLoss - lostVotes);
-        totalVotesAnchorTime = anchorTime();
+        totalVotesAnchorTime = time;
     }
 
     /**
@@ -285,7 +286,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
         // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
         // the 128 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
-        require(totalSupply() < 2**128, "total supply exceeded");
+        require(totalSupply() <= type(uint128).max, "total supply exceeded");
         return true;
     }
 
@@ -324,8 +325,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      */
     function calculateProceeds(uint256 shares) public view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 capital = zchf.equity();
         require(shares + ONE_DEC18 < totalShares, "too many shares"); // make sure there is always at least one share
+        uint256 capital = zchf.equity();
         uint256 newTotalShares = totalShares - shares;
         uint256 newCapital = _mulD18(capital, _power3(_divD18(newTotalShares, totalShares)));
         return capital - newCapital;
