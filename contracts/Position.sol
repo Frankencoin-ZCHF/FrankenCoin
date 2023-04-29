@@ -135,7 +135,7 @@ contract Position is Ownable, IPosition, MathUtil {
         if(_coll < minimumCollateral) revert InsufficientCollateral();
         price = _mint * ONE_DEC18 / _coll;
         if (price > _price) revert InsufficientCollateral();
-        
+
         setOwner(owner);
         limit = _mint;
         expiration = expirationTime;
@@ -303,7 +303,9 @@ contract Position is Ownable, IPosition, MathUtil {
         if (token == address(collateral)){
             withdrawCollateral(target, amount);
         } else {
+            uint256 balance = collateralBalance();
             IERC20(token).transfer(target, amount);
+            require(balance == collateralBalance()); // guard against double-entry-point tokens
         }
     }
 
