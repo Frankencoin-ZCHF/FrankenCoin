@@ -361,10 +361,14 @@ contract Position is Ownable, IPosition, MathUtil {
      * @param _bidAmountZCHF      bid amount in ZCHF (dec18)
      * @return true if challenge can be averted
      */
-    function tryAvertChallenge(uint256 _collateralAmount, uint256 _bidAmountZCHF) external onlyHub returns (bool) {
+    function tryAvertChallenge(uint256 _collateralAmount, uint256 _bidAmountZCHF, uint256 challengeEnd) external onlyHub returns (bool) {
         if (block.timestamp >= expiration){
             return false; // position expired, let every challenge succeed
         } else if (_bidAmountZCHF * ONE_DEC18 >= price * _collateralAmount){
+            // Challenge cannot be started and averted in same block
+            // This prevents a malicious challenger + bidder to postpone minting forver without risking anything
+            require(block.timestamp != challengeEnd - challengePeriod); 
+
             // challenge averted, bid is high enough
             challengedAmount -= _collateralAmount;
             // Don't allow minter to close the position immediately so challenge can be repeated before

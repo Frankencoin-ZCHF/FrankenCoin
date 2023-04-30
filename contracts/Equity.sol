@@ -202,16 +202,29 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     function votes(address sender, address[] calldata helpers) public view returns (uint256) {
         uint256 _votes = votes(sender);
+        require(checkDuplicatesAndSorted(helpers));
         for (uint i=0; i<helpers.length; i++){
             address current = helpers[i];
             require(current != sender);
             require(canVoteFor(sender, current));
-            for (uint j=i+1; j<helpers.length; j++){
-                require(current != helpers[j]); // ensure helper unique
-            }
             _votes += votes(current);
         }
         return _votes;
+    }
+
+    function checkDuplicatesAndSorted(address[] calldata helpers) internal pure returns (bool ok) {
+        if (helpers.length <= 1) {
+            return true;
+        } else {
+            address prevAddress = helpers[0];
+            for (uint i = 1; i < helpers.length; i++) {
+                if (helpers[i] <= prevAddress) {
+                    return false;
+                }
+                prevAddress = helpers[i];
+            }
+            return true;
+        }
     }
 
     /**

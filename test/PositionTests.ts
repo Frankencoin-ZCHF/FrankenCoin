@@ -311,7 +311,9 @@ describe("Position Tests", () => {
         });
 
         it("perform challenge", async () => {
-            await mintingHubTest.letBobChallenge();
+            await mintingHubTest.letBobChallengePart1();
+            await ethers.provider.send("evm_mine");
+            await mintingHubTest.letBobChallengePart2();
             let tx = mintingHubTest.endChallenges();
             await expect(tx).to.be.revertedWith('period has not ended');
             await ethers.provider.send('evm_increaseTime', [1 * 86_400 + 60]); 
@@ -320,7 +322,9 @@ describe("Position Tests", () => {
         });
 
         it("excessive challenge", async () => {
-            await mintingHubTest.testExcessiveChallenge();
+            await mintingHubTest.testExcessiveChallengePart1();
+            await ethers.provider.send("evm_mine");
+            await mintingHubTest.testExcessiveChallengePart2();
         });
 
         it("restructuring", async () => {

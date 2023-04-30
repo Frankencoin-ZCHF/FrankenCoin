@@ -110,7 +110,14 @@
     },
     {
         "inputs": [],
-        "name": "letBobChallenge",
+        "name": "letBobChallengePart1",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "letBobChallengePart2",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -168,7 +175,14 @@
     },
     {
         "inputs": [],
-        "name": "testExcessiveChallenge",
+        "name": "testExcessiveChallengePart1",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "testExcessiveChallengePart2",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

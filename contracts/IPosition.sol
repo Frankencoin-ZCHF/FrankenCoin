@@ -33,7 +33,7 @@ interface IPosition {
 
     function notifyChallengeStarted(uint256 size) external;
 
-    function tryAvertChallenge(uint256 size, uint256 bid) external returns (bool);
+    function tryAvertChallenge(uint256 size, uint256 bid, uint256 challengeEnd) external returns (bool);
 
     function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external returns (address, uint256, uint256, uint32);
 

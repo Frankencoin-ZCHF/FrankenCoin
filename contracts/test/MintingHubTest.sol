@@ -85,15 +85,20 @@ contract MintingHubTest {
         bob.mint(latestPosition, 1);
     }
 
-    function letBobChallenge() public returns (uint256) {
+    uint256 first;
+    uint256 second;
+
+    function letBobChallengePart1() public {
         col.mint(address(bob), 1300);
 
         // three challenges in parallel :)
-        uint256 first = bob.challenge(hub, latestPosition, 300);
+        first = bob.challenge(hub, latestPosition, 300);
         require(hub.isChallengeOpen(first));
-        uint256 second = bob.challenge(hub, latestPosition, 400);
+        second = bob.challenge(hub, latestPosition, 400);
         latestChallenge = bob.challenge(hub, latestPosition, 500);
+    }
 
+    function letBobChallengePart2() public returns (uint256) {
         alice.avertChallenge(hub, swap, first);
         bob.obtainFrankencoins(swap, 30_000 ether);
         bob.bid(hub, second, 10_000 ether);
@@ -163,17 +168,22 @@ contract MintingHubTest {
         }
     }
 
-    function testExcessiveChallenge() public {
+    uint256 number;
+
+    function testExcessiveChallengePart1() public {
         // revertWith("reserve ", zchf.balanceOf(address(zchf.reserve()))); // 50601000000000000000003
         Position pos = Position(latestPosition);
         //uint256 minted = pos.minted();
 //        require(minted == 10000 ether, Strings.toString(minted)); // assumes the other tests have been run before
         uint256 collateralLeft = pos.collateral().balanceOf(latestPosition);
         require(collateralLeft == 100, Strings.toString(collateralLeft)); // test assumption
-        uint256 number = bob.challenge(hub, latestPosition, 101); // challenge more than is left
+        number = bob.challenge(hub, latestPosition, 101); // challenge more than is left
      //   alice.repay(pos, 5000 ether);
        // require(pos.minted() + 5000 ether == minted);
         // minted is now 9999.999999999999995000
+    }
+
+    function testExcessiveChallengePart2() public {
         bob.avertChallenge(hub, swap, number);
     }
 

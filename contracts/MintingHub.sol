@@ -214,7 +214,7 @@ contract MintingHub {
         }
         emit NewBid(_challengeNumber, _bidAmountZCHF, msg.sender);
         // ask position if the bid was high enough to avert the challenge
-        if (challenge.position.tryAvertChallenge(challenge.size, _bidAmountZCHF)) {
+        if (challenge.position.tryAvertChallenge(challenge.size, _bidAmountZCHF, challenge.end)) {
             // bid was high enough, let bidder buy collateral from challenger
             zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
             challenge.position.collateral().transfer(msg.sender, challenge.size);
