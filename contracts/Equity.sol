@@ -1,7 +1,7 @@
 
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.0;
 
 import "./Frankencoin.sol";
 import "./IERC677Receiver.sol";
@@ -295,7 +295,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
         uint256 shares = equity <= amount ? 1000 * ONE_DEC18 : calculateSharesInternal(equity - amount, amount);
         _mint(from, shares);
-        emit Trade(msg.sender, int(shares), amount, price());
+        emit Trade(from, int(shares), amount, price());
 
         // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
         // the 128 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
