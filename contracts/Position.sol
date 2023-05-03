@@ -371,6 +371,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
             // challenge averted, bid is high enough
             challengedAmount -= _collateralAmount;
+
             // Don't allow minter to close the position immediately so challenge can be repeated before
             // the owner has a chance to mint more on an undercollateralized position
             restrictMinting(1 days);
@@ -414,6 +415,11 @@ contract Position is Ownable, IPosition, MathUtil {
 
         notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
         internalWithdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
+
+        // Give time for additional challenges before the owner can mint again
+        // In particular, the owner might have added collateral only seconds before the challenge ended, preventing a close
+        restrictMinting(3 days); 
+        
         return (owner, _bid, repayment, reserveContribution);
     }
 
