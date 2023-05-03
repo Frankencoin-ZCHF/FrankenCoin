@@ -36,12 +36,12 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * Map of minters to approval time stamps. If the time stamp is in the past, the minter contract is allowed
     * to mint Frankencoins.
     */
-   mapping(address => uint256) public minters;
+   mapping(address minter => uint256 validityStart) public minters;
 
    /**
     * List of positions that are allowed to mint and the minter that registered them.
     */
-   mapping(address => address) public positions;
+   mapping(address position => address registeringMinter) public positions;
 
    event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
    event MinterDenied(address indexed minter, string message);

@@ -34,7 +34,7 @@ contract MintingHub {
      * Map to remember pending postponed collateral returns.
      * It maps collateral => beneficiary => amount.
      */
-    mapping(address /** col */ => mapping(address => uint256)) public pendingReturns;
+    mapping(address collateral => mapping(address owner => uint256 amount)) public pendingReturns;
 
     struct Challenge {
         address challenger; // the address from which the challenge was initiated

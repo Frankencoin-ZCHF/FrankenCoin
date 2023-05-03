@@ -12,7 +12,7 @@ abstract contract ERC20PermitLight is ERC20 {
                             EIP-2612 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    mapping(address => uint256) public nonces;
+    mapping(address account => uint256 nonce) public nonces;
 
   /*//////////////////////////////////////////////////////////////
                              EIP-2612 LOGIC
