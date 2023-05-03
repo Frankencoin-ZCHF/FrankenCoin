@@ -213,13 +213,15 @@ contract MintingHub {
             zchf.transfer(challenge.bidder, challenge.bid); // return old bid
         }
         emit NewBid(_challengeNumber, _bidAmountZCHF, msg.sender);
+        IPosition pos = challenge.position;
+        uint256 size_ = challenge.size;
         // ask position if the bid was high enough to avert the challenge
-        if (challenge.position.tryAvertChallenge(challenge.size, _bidAmountZCHF, challenge.end)) {
+        if (pos.tryAvertChallenge(size_, _bidAmountZCHF, challenge.end)) {
             // bid was high enough, let bidder buy collateral from challenger
+            emit ChallengeAverted(address(pos), _challengeNumber);
             zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
-            challenge.position.collateral().transfer(msg.sender, challenge.size);
-            emit ChallengeAverted(address(challenge.position), _challengeNumber);
-            delete challenges[_challengeNumber];
+            delete challenges[_challengeNumber]; // delete challenge before transferring collateral to avoid ERC777 re-entrency
+            pos.collateral().transfer(msg.sender, size_);
         } else {
             // challenge is not averted, update bid
             if (_bidAmountZCHF < minBid(challenge)) revert BidTooLow(_bidAmountZCHF, minBid(challenge));
