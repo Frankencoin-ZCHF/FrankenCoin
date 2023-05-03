@@ -41,6 +41,7 @@ contract PositionFactory {
             mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
             result := create(0, clone, 0x37)
         }
+        require(result != address(0), "ERC1167: create failed");
     }
 
 }
