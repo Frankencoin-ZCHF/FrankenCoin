@@ -40,9 +40,9 @@ import "./IERC677Receiver.sol";
 
 abstract contract ERC20 is IERC20 {
 
-    mapping (address => uint256) private _balances;
+    mapping(address => uint256) private _balances;
 
-    mapping (address => mapping (address => uint256)) private _allowances;
+    mapping(address => mapping(address => uint256)) private _allowances;
 
     uint256 internal constant INFINITY = (1 << 255);
 

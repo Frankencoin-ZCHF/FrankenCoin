@@ -80,12 +80,12 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * Note that delegation does not mean you cannot vote / veto any more, it just means that the delegate can
      * benefit from your votes when invoking a veto. Circular delegations are valid, do not help when voting.
      */
-    mapping (address => address) public delegates;
+    mapping(address => address) public delegates;
 
     /**
      * A block number in the past such that: votes = balance * (time passed since anchor was set)
      */
-    mapping (address => uint64) private voteAnchor; // 40 Bit for the block number, 24 Bit sub-block time resolution
+    mapping(address => uint64) private voteAnchor; // 40 Bit for the block number, 24 Bit sub-block time resolution
 
     event Delegation(address indexed from, address indexed to); // indicates a delegation
     event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
