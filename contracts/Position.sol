@@ -189,9 +189,6 @@ contract Position is Ownable, IPosition, MathUtil {
      * and the price in one transaction.
      */
     function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) public onlyOwner {
-        if (newPrice != price){
-            adjustPrice(newPrice);
-        }
         uint256 colbal = collateralBalance();
         if (newCollateral > colbal){
             collateral.transferFrom(msg.sender, address(this), newCollateral - colbal);
@@ -207,6 +204,9 @@ contract Position is Ownable, IPosition, MathUtil {
         // Must be called after collateral withdrawal
         if (newMinted > minted){
             mint(msg.sender, newMinted - minted);
+        }
+        if (newPrice != price){
+            adjustPrice(newPrice);
         }
     }
 
