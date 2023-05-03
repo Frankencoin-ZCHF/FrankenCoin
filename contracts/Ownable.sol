@@ -37,6 +37,7 @@ contract Ownable {
      * Internal function without access restriction.
      */
     function setOwner(address newOwner) internal {
+        require(newOwner != address(0x0));
         address oldOwner = owner;
         owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
