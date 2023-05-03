@@ -45,6 +45,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
    event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
    event MinterDenied(address indexed minter, string message);
+   event Loss(address indexed reportingMinter, uint256 amount, uint256 reserve);
 
    /**
     * Initiates the Frankencoin with the provided minimum application period for new plugins
@@ -286,6 +287,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
          _transfer(address(reserve), msg.sender, reserveLeft);
          _mint(msg.sender, _amount - reserveLeft);
       }
+      emit Loss(msg.sender, _amount, reserveLeft);
    }
 
    /**
