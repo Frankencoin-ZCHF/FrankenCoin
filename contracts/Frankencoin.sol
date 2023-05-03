@@ -63,6 +63,12 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
       return "ZCHF";
    }
 
+   function initialize(address _minter, string calldata _message) external {
+      require(totalSupply() == 0 && reserve.totalSupply() == 0);
+      minters[_minter] = block.timestamp;
+      emit MinterApplied(_minter, 0, 0, _message);
+   }
+
    /**
     * Publicly accessible method to suggest a new way of minting Frankencoin.
     *
@@ -75,8 +81,8 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     * minter.
     */
    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) override external {
-      if (_applicationPeriod < MIN_APPLICATION_PERIOD && totalSupply() > 0) revert PeriodTooShort();
-      if (_applicationFee < MIN_FEE && totalSupply() > 0) revert FeeTooLow();
+      if (_applicationPeriod < MIN_APPLICATION_PERIOD) revert PeriodTooShort();
+      if (_applicationFee < MIN_FEE) revert FeeTooLow();
       if (minters[_minter] != 0) revert AlreadyRegistered();
       _transfer(msg.sender, address(reserve), _applicationFee);
       minters[_minter] = block.timestamp + _applicationPeriod;
