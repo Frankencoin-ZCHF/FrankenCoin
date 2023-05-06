@@ -364,20 +364,25 @@ contract Position is Ownable, IPosition, MathUtil {
     function tryAvertChallenge(uint256 _collateralAmount, uint256 _bidAmountZCHF, uint256 challengeEnd) external onlyHub returns (bool) {
         if (block.timestamp >= expiration){
             return false; // position expired, let every challenge succeed
-        } else if (_bidAmountZCHF * ONE_DEC18 >= price * _collateralAmount){
-            // Challenge cannot be started and averted in same block
-            // This prevents a malicious challenger + bidder to postpone minting forver without risking anything
-            require(block.timestamp != challengeEnd - challengePeriod); 
-
-            // challenge averted, bid is high enough
-            challengedAmount -= _collateralAmount;
-
-            // Don't allow minter to close the position immediately so challenge can be repeated before
-            // the owner has a chance to mint more on an undercollateralized position
-            restrictMinting(1 days);
-            return true;
         } else {
-            return false;
+            uint256 p_ = price;
+            if (_collateralAmount > 0 && type(uint256).max / _collateralAmount < p_) {
+                return false; // price was set absurdly high, let challenge succeed
+            } else if (_bidAmountZCHF * ONE_DEC18 >= p_ * _collateralAmount){
+                // Challenge cannot be started and averted in same block
+                // This prevents a malicious challenger + bidder to postpone minting forver without risking anything
+                require(block.timestamp != challengeEnd - challengePeriod); 
+
+                // challenge averted, bid is high enough
+                challengedAmount -= _collateralAmount;
+
+                // Don't allow minter to close the position immediately so challenge can be repeated before
+                // the owner has a chance to mint more on an undercollateralized position
+                restrictMinting(1 days);
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
@@ -408,10 +413,14 @@ contract Position is Ownable, IPosition, MathUtil {
         //    price >= minted / colbal * E18
         // such that
         //    volumeZCHF = price * size / E18 >= minted * size / colbal
-        // So the owner cannot maliciously decrease the price to make volume fall below the proportionate repayment.
-        uint256 volumeZCHF = _mulD18(price, _size); // How much could have minted with the challenged amount of the collateral
-        // The owner does not have to repay (and burn) more than the owner actually minted.  
-        uint256 repayment = minted < volumeZCHF ? minted : volumeZCHF; // how much must be burned to make things even
+        // So the owner cannot maliciously decrease the price to make price * size fall below the proportionate repayment.
+
+        uint256 repayment = minted; // Default repayment is the amount to owner has minted
+        uint256 p_ = price;
+        if (_size > 0 && type(uint256).max / _size > p_ && repayment * ONE_DEC18 > p_ * _size){
+            // However, if the price is not set overflowly high, we can reduce the repayment to what was challenged
+            repayment = price * _size / ONE_DEC18;
+        }
 
         notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
         internalWithdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update

@@ -7,7 +7,7 @@ import "hardhat-deploy";
 import "hardhat-abi-exporter";
 import { error } from "console";
 const config: HardhatUserConfig = {
-  solidity: "0.8.13",
+  solidity: "0.8.18",
 };
 
 //export default config;
@@ -91,7 +91,7 @@ export default {
     apiKey: etherscanapikey,
   },
   solidity: {
-      version: "0.8.13",
+      version: "0.8.18",
       settings: {
           optimizer: {
               enabled: true,
