@@ -29,7 +29,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     // create a minting hub too while we have no ZCHF supply
     try {
-        let tx = await zchfContract.suggestMinter(mintingHubContract.address, 0, 0, "Minting Hub", { gasLimit: 2_000_000 });
+        let tx = await zchfContract.initialize(mintingHubContract.address, "Minting Hub");
         await tx.wait();
     } catch (err) {
         console.log("Suggest minter failed, probably already registered:")

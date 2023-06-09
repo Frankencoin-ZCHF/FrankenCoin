@@ -48,32 +48,32 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * The number of digits to store the average holding time of share tokens.
      */
-    uint8 private constant BLOCK_TIME_RESOLUTION_BITS = 24;
+    uint8 private constant TIME_RESOLUTION_BITS = 20;
 
     /**
-     * The minimum holding duration in blocks. You are not allowed to redeem your pool shares if you held them
+     * The minimum holding duration. You are not allowed to redeem your pool shares if you held them
      * for less than the minimum holding duration at average. For example, if you have two pool shares on your
      * address, one acquired 5 days ago and one acquired 105 days ago, you cannot redeem them as the average
      * holding duration of your shares is only 55 days < 90 days.
      */
-    uint256 public constant MIN_HOLDING_DURATION = 90*7200 << BLOCK_TIME_RESOLUTION_BITS; // Set to 5 for local testing
+    uint256 public constant MIN_HOLDING_DURATION = 90 days << TIME_RESOLUTION_BITS; // Set to 5 for local testing
 
     Frankencoin immutable public zchf;
 
     /**
      * To track the total number of votes we need to know the number of votes at the anchor time and when the
      * anchor time was. This is (hopefully) stored in one 256 bit slot, with the anchor time taking 64 Bits and
-     * the total vote count 192 Bits. Given the sub-block time resolution of 24 Bits, the implicit assumption is
-     * that the block number can always be stored in 40 Bits (i.e. it does not exceed a trillion). Further,
+     * the total vote count 192 Bits. Given the sub-second resolution of 20 Bits, the implicit assumption is
+     * that the timestamp can always be stored in 44 Bits (i.e. it does not exceed half a million years). Further,
      * given 18 decimals (about 60 Bits), this implies that the total supply cannot exceed 
-     *   192 - 60 - 40 - 24 = 68 Bits
-     * Here, we are also save, as 68 Bits would imply more than a trillion outstanding shares. In fact, when
-     * minting, a limit of about 2**30 shares (that's 2**90 Bits when taking into account the decimals) is imposed
+     *   192 - 60 - 44 - 20 = 68 Bits
+     * Here, we are also save, as 68 Bits would imply more than a trillion outstanding shares. In fact,
+     * a limit of about 2**30 shares (that's 2**90 Bits when taking into account the decimals) is imposed
      * when minting. This means that the maximum supply is about a billion shares, which is reached at a market
      * cap of 3,000,000,000,000,000,000 CHF. This limit could in theory be reached in times of hyper inflaction. 
      */
     uint192 private totalVotesAtAnchor;  // Total number of votes at the anchor time, see comment on the um
-    uint64 private totalVotesAnchorTime; // 40 Bit for the block number, 24 Bit sub-block time resolution
+    uint64 private totalVotesAnchorTime; // 44 Bit for the time stamp, 20 Bit sub-second time resolution
 
     /**
      * Keeping track on who delegated votes to whom.
@@ -83,9 +83,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     mapping(address owner => address delegate) public delegates;
 
     /**
-     * A block number in the past such that: votes = balance * (time passed since anchor was set)
+     * A time stamp in the past such that: votes = balance * (time passed since anchor was set)
      */
-    mapping(address owner => uint64 timestamp) private voteAnchor; // 40 Bit for the block number, 24 Bit sub-block time resolution
+    mapping(address owner => uint64 timestamp) private voteAnchor; // 44 Bit for the time stamp, 20 Bit sub-second time resolution
 
     event Delegation(address indexed from, address indexed to); // indicates a delegation
     event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
@@ -162,9 +162,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      */
     function adjustRecipientVoteAnchor(address to, uint256 amount) internal returns (uint256){
         if (to != address(0x0)) {
-            uint256 recipientVotes = votes(to); // for example 21 if 7 shares were held for 3 blocks
+            uint256 recipientVotes = votes(to); // for example 21 if 7 shares were held for 3 seconds
             uint256 newbalance = balanceOf(to) + amount; // for example 11 if 4 shares are added
-            voteAnchor[to] = uint64(anchorTime() - recipientVotes / newbalance); // new example anchor is only 21 / 11 = 1 block in the past
+            voteAnchor[to] = uint64(anchorTime() - recipientVotes / newbalance); // new example anchor is only 21 / 11 = 1 second in the past
             return recipientVotes % newbalance; // we have lost 21 % 11 = 10 votes
         } else {
             // optimization for burn, vote anchor of null address does not matter
@@ -173,10 +173,10 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Block number with some additional Bits for higher resolution.
+     * Time stamp with some additional bits for higher resolution.
      */
     function anchorTime() internal view returns (uint64){
-        return uint64(block.number << BLOCK_TIME_RESOLUTION_BITS);
+        return uint64(block.timestamp << TIME_RESOLUTION_BITS);
     }
 
     /**

@@ -381,7 +381,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "owner",
                 "type": "address"
             }
         ],
@@ -389,7 +389,7 @@
         "outputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "delegate",
                 "type": "address"
             }
         ],
@@ -431,7 +431,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "account",
                 "type": "address"
             }
         ],
@@ -439,7 +439,7 @@
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "",
+                "name": "nonce",
                 "type": "uint256"
             }
         ],

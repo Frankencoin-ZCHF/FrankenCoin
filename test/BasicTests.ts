@@ -76,14 +76,8 @@ describe("Basic Tests", () => {
             await expect(bridge.connect(accounts[0])["mint(uint256)"](amount)).to.be.revertedWithCustomError(ZCHFContract, "NotMinter");
         });
         it("bootstrap suggestMinter", async () => {
-            let applicationPeriod = BN.from(0);
-            let applicationFee = BN.from(0);
             let msg = "XCHF Bridge"
-            await expect(ZCHFContract.suggestMinter(bridge.address, applicationPeriod, 
-                applicationFee, msg)).to.emit(ZCHFContract, "MinterApplied");
-            // increase block to be a minter
-            await ethers.provider.send('evm_increaseTime', [60]); 
-            await network.provider.send("evm_mine") 
+            await ZCHFContract.initialize(bridge.address, msg);
             let isMinter = await ZCHFContract.isMinter(bridge.address);
             expect(isMinter).to.be.true;
         });
@@ -170,10 +164,10 @@ describe("Basic Tests", () => {
             let canRedeem = await equityContract.connect(accounts[0])['canRedeem()']();
             expect(canRedeem).to.be.false;
         });
-        it("can redeem shares after *N* blocks", async () => {
+        it("can redeem shares after 90 days", async () => {
             // increase block number so we can redeem
-            let BLOCK_MIN_HOLDING_DURATION = 90 * 7200;
-            await network.provider.send("hardhat_mine", [BNToHexNoPrefix(BLOCK_MIN_HOLDING_DURATION + 1)]);
+            await ethers.provider.send('evm_increaseTime', [90 * 86_400 + 60]); 
+            await ethers.provider.send("evm_mine");
             let canRedeem = await equityContract.connect(accounts[0])['canRedeem()']();
             expect(canRedeem).to.be.true;
         });

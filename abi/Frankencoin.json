@@ -108,6 +108,31 @@
             {
                 "indexed": true,
                 "internalType": "address",
+                "name": "reportingMinter",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "reserve",
+                "type": "uint256"
+            }
+        ],
+        "name": "Loss",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
                 "name": "minter",
                 "type": "address"
             },
@@ -488,6 +513,24 @@
                 "internalType": "address",
                 "name": "_minter",
                 "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "_message",
+                "type": "string"
+            }
+        ],
+        "name": "initialize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_minter",
+                "type": "address"
             }
         ],
         "name": "isMinter",
@@ -583,7 +626,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "minter",
                 "type": "address"
             }
         ],
@@ -591,7 +634,7 @@
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "",
+                "name": "validityStart",
                 "type": "uint256"
             }
         ],
@@ -615,7 +658,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "account",
                 "type": "address"
             }
         ],
@@ -623,7 +666,7 @@
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "",
+                "name": "nonce",
                 "type": "uint256"
             }
         ],
@@ -690,7 +733,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "position",
                 "type": "address"
             }
         ],
@@ -698,7 +741,7 @@
         "outputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "registeringMinter",
                 "type": "address"
             }
         ],

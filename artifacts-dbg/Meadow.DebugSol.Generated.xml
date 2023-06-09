@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Meadow.DebugSol.Generated</name>
+    </assembly>
+    <members>
+        <member name="T:Meadow.DebugSol.Generated.DbgEntry">
+            <summary>From file FrankencoinTest.t.sol<para/></summary>
+        </member>
+        <member name="M:Meadow.DebugSol.Generated.DbgEntry.Deploy(Meadow.JsonRpc.Client.IJsonRpcClient,Meadow.JsonRpc.Types.TransactionParams,System.Nullable{Meadow.Core.EthTypes.Address})">
+            <summary>
+            Deploys the contract.  <para/>
+            </summary>
+            <param name="rpcClient">The RPC client to be used for this contract instance.</param>
+            <param name="defaultFromAccount">If null then the first account returned by eth_accounts will be used.</param>
+            <returns>An contract instance pointed at the deployed contract address.</returns>
+        </member>
+        <member name="M:Meadow.DebugSol.Generated.DbgEntry.New(Meadow.JsonRpc.Client.IJsonRpcClient,Meadow.JsonRpc.Types.TransactionParams,System.Nullable{Meadow.Core.EthTypes.Address})">
+            <summary>
+            Deploys the contract.  <para/>
+            </summary>
+            <param name="rpcClient">The RPC client to be used for this contract instance.</param>
+            <param name="defaultFromAccount">If null then the first account returned by eth_accounts will be used.</param>
+            <returns>An contract instance pointed at the deployed contract address.</returns>
+        </member>
+        <member name="M:Meadow.DebugSol.Generated.DbgEntry.testTest">
+            <summary> <para/>Returns <c>uint256</c></summary>
+        </member>
+        <member name="P:Meadow.DebugSol.Generated.DbgEntry.FallbackFunction">
+            <summary>The contract fallback function. <para/></summary>
+        </member>
+    </members>
+</doc>

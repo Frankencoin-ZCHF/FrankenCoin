@@ -552,12 +552,12 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
+                "name": "collateral",
                 "type": "address"
             },
             {
                 "internalType": "address",
-                "name": "",
+                "name": "owner",
                 "type": "address"
             }
         ],
@@ -565,7 +565,7 @@
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "",
+                "name": "amount",
                 "type": "uint256"
             }
         ],

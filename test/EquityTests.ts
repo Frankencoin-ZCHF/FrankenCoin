@@ -20,7 +20,7 @@ describe("Equity Tests", () => {
         zchf = await createContract("Frankencoin", [10 * 86_400]);
         let supply = floatToDec18(1000_000);
         bridge = await createContract("StablecoinBridge", [xchf.address, zchf.address, supply]);
-        await zchf.suggestMinter(bridge.address, 0, 0, "");
+        await zchf.initialize(bridge.address, "");
 
         await xchf.mint(owner, supply);
         await xchf.connect(accounts[0]).approve(bridge.address, supply);
@@ -74,8 +74,8 @@ describe("Equity Tests", () => {
             await expect(equity.redeem(owner, floatToDec18(0.1))).to.be.revertedWithoutReason();
         });
         it("should allow redemption after time passed", async () => {
-            let BLOCK_MIN_HOLDING_DURATION = 90 * 7200;
-            await network.provider.send("hardhat_mine", [BNToHexNoPrefix(BLOCK_MIN_HOLDING_DURATION + 1)]);
+            await ethers.provider.send('evm_increaseTime', [90 * 86_400 + 60]); 
+            await ethers.provider.send("evm_mine");
             expect(await equity["canRedeem()"]()).to.be.true;
             let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1000.0));
             let bnred = BN.from(redemptionAmount.toString());
@@ -151,10 +151,9 @@ describe("Equity Tests", () => {
         it("kamikaze", async () => {
             let tx = equity.connect(accounts[2]).kamikaze(accounts[5].address, BN.from(1000000));
             await expect(tx).to.be.reverted; // account 2 has no votes
-            await ethers.provider.send('evm_mine');
-            await ethers.provider.send('evm_mine');
-            await ethers.provider.send('evm_mine');
-            await ethers.provider.send('evm_mine');
+
+            await ethers.provider.send('evm_increaseTime', [80]); 
+            await ethers.provider.send("evm_mine");
             let balance0 = await equity.balanceOf(accounts[0].address);
             let balance5 = await equity.balanceOf(accounts[5].address);
             let totalSupply = await equity.totalSupply();
@@ -165,9 +164,9 @@ describe("Equity Tests", () => {
             await equity.connect(accounts[0]).kamikaze(accounts[5].address, votesBefore5);
             let votesAfter0 = await equity["votes(address)"](accounts[0].address);
             let votesAfter5 = await equity["votes(address)"](accounts[5].address);
-            let adjustement0 = balance0.mul(BN.from(2).pow(24));
-            let adjustement5 = balance5.mul(BN.from(2).pow(24));
-            let expectedTotalVotes = totalVotesBefore.add(totalSupply.mul(BN.from(2).pow(24)));
+            let adjustement0 = balance0.mul(BN.from(2).pow(20));
+            let adjustement5 = balance5.mul(BN.from(2).pow(20));
+            let expectedTotalVotes = totalVotesBefore.add(totalSupply.mul(BN.from(2).pow(20)));
             let loss0 = votesBefore0.sub(votesAfter0.sub(adjustement0));
             let loss5 = votesBefore5.sub(votesAfter5.sub(adjustement5));
             expect(loss5).to.be.eq(votesBefore5);

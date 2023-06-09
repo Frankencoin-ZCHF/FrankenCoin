@@ -62,11 +62,9 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (isAlreadyMinter) {
         console.log(bridgeDeployment.address, "already is a minter");
     } else {
-        let applicationPeriod = BigNumber.from(0);
-        let applicationFee = BigNumber.from(0);
         let msg = "XCHF Bridge";
         console.log("Apply for the bridge ", bridgeDeployment.address, "to be minter via zchf.suggestMinter");
-        let tx = await zchfContract.suggestMinter(bridgeDeployment.address, applicationPeriod, applicationFee, msg, { gasLimit: 6_000_000 });
+        let tx = await zchfContract.initialize(bridgeDeployment.address, msg);
         console.log("tx hash = ", tx.hash);
         await tx.wait();
         let isMinter = false;

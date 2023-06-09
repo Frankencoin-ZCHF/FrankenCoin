@@ -25,9 +25,9 @@ describe("Position Tests", () => {
         // mocktoken bridge to bootstrap
         let limit = floatToDec18(1000_000);
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
-        ZCHFContract.suggestMinter(bridge.address, 0, 0, "XCHF Bridge");
+        ZCHFContract.initialize(bridge.address, "XCHF Bridge");
         // create a minting hub too while we have no ZCHF supply
-        ZCHFContract.suggestMinter(mintingHubContract.address, 0, 0, "Minting Hub");
+        ZCHFContract.initialize(mintingHubContract.address, "Minting Hub");
         
         // wait for 1 block
         await ethers.provider.send('evm_increaseTime', [60]); 

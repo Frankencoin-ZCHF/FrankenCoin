@@ -134,8 +134,8 @@ contract Position is Ownable, IPosition, MathUtil {
     function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expirationTime) external onlyHub {
         if(_coll < minimumCollateral) revert InsufficientCollateral();
         price = _mint * ONE_DEC18 / _coll;
+        _mint = price * _coll / ONE_DEC18; // to cancel potential rounding errors
         if (price > _price) revert InsufficientCollateral();
-
         setOwner(owner);
         limit = _mint;
         expiration = expirationTime;
@@ -283,11 +283,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function repay(uint256 amount) public {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
-        repayInternal(amount);
-    }
-
-    function repayInternal(uint256 burnable) internal {
-        uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(burnable, reserveContribution);
+        uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(amount, reserveContribution);
         notifyRepaidInternal(actuallyRepaid);
         emitUpdate();
     }
@@ -326,7 +322,9 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function internalWithdrawCollateral(address target, uint256 amount) internal returns (uint256) {
-        IERC20(collateral).transfer(target, amount);
+        if (amount > 0) { // Some weird tokens fail when trying to transfer 0 amounts
+            IERC20(collateral).transfer(target, amount);
+        }
         uint256 balance = collateralBalance();
         if (balance < minimumCollateral){
             cooldown = expiration;
