@@ -207,7 +207,10 @@ contract MintingHub {
      */
     function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF, uint256 expectedSize) external {
         Challenge storage challenge = challenges[_challengeNumber];
-        if (block.timestamp >= challenge.end) revert TooLate();
+                
+        // Deactivated: if (block.timestamp >= challenge.end) revert TooLate();
+        // Reason: in case the bidder got blacklisted by the collateral issuer, it should be possible to bid even higher
+
         if (expectedSize != challenge.size) revert UnexpectedSize();
         if (challenge.bid > 0) {
             zchf.transfer(challenge.bidder, challenge.bid); // return old bid
@@ -215,8 +218,9 @@ contract MintingHub {
         emit NewBid(_challengeNumber, _bidAmountZCHF, msg.sender);
         IPosition pos = challenge.position;
         uint256 size_ = challenge.size;
+        uint256 endTime = challenge.end;
         // ask position if the bid was high enough to avert the challenge
-        if (pos.tryAvertChallenge(size_, _bidAmountZCHF, challenge.end)) {
+        if (pos.tryAvertChallenge(size_, _bidAmountZCHF, endTime)) {
             // bid was high enough, let bidder buy collateral from challenger
             emit ChallengeAverted(address(pos), _challengeNumber);
             zchf.transferFrom(msg.sender, challenge.challenger, _bidAmountZCHF);
@@ -226,7 +230,7 @@ contract MintingHub {
             // challenge is not averted, update bid
             if (_bidAmountZCHF < minBid(challenge)) revert BidTooLow(_bidAmountZCHF, minBid(challenge));
             uint256 earliestEnd = block.timestamp + 30 minutes;
-            if (earliestEnd >= challenge.end) {
+            if (earliestEnd >= endTime && block.timestamp < endTime) {
                 // bump remaining time like ebay does when last minute bids come in
                 // An attacker trying to postpone the challenge forever must increase the bid by 0.5%
                 // every 30 minutes, or double it every three days, making the attack hard to sustain
