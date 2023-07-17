@@ -337,7 +337,7 @@ contract MintingHub {
             pos.collateral().transfer(msg.sender, size_);
         } else {
             // challenge is not averted, update bid
-            if (_bidAmountZCHF < minBid(challenge))
+            if (_bidAmountZCHF <= minBid(challenge))
                 revert BidTooLow(_bidAmountZCHF, minBid(challenge));
             uint256 earliestEnd = block.timestamp + 30 minutes;
             if (earliestEnd >= endTime && block.timestamp < endTime) {
