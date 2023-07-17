@@ -6,14 +6,13 @@ import "./IReserve.sol";
 import "./IFrankencoin.sol";
 import "./IPosition.sol";
 import "./Ownable.sol";
-import "./ReentrancyGuard.sol";
 
 /**
  * The central hub for creating, cloning and challenging collateralized Frankencoin positions.
  * Only one instance of this contract is required, whereas every new position comes with a new position
  * contract. Pending challenges are stored as structs in an array.
  */
-contract MintingHub is ReentrancyGuard {
+contract MintingHub {
     /**
      * Irrevocable fee in ZCHF when proposing a new position (but not when cloning an existing one).
      */
@@ -380,7 +379,7 @@ contract MintingHub is ReentrancyGuard {
     function end(
         uint256 _challengeNumber,
         bool postponeCollateralReturn
-    ) public nonReentrant {
+    ) public {
         Challenge storage challenge = challenges[_challengeNumber];
         require(challenge.challenger != address(0x0));
         require(block.timestamp >= challenge.end, "period has not ended");
@@ -416,6 +415,10 @@ contract MintingHub is ReentrancyGuard {
         }
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burn(repayment, reservePPM); // Repay the challenged part
+
+        // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
+        returnCollateral(challenge, postponeCollateralReturn);
+
         emit ChallengeSucceeded(
             address(challenge.position),
             challenge.bid,
