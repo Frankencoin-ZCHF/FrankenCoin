@@ -17,10 +17,12 @@ pragma solidity ^0.8.0;
  * can later be changed with {transferOwnership}.
  */
 contract Ownable {
-
     address public owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     error NotOwner();
 

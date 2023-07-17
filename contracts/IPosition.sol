@@ -6,7 +6,6 @@ import "./IReserve.sol";
 import "./IFrankencoin.sol";
 
 interface IPosition {
-
     function collateral() external returns (IERC20);
 
     function minimumCollateral() external returns (uint256);
@@ -19,7 +18,13 @@ interface IPosition {
 
     function reduceLimitForClone(uint256 amount, uint256 expiration) external;
 
-    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expiration) external;
+    function initializeClone(
+        address owner,
+        uint256 _price,
+        uint256 _coll,
+        uint256 _mint,
+        uint256 expiration
+    ) external;
 
     function deny(address[] calldata helpers, string calldata message) external;
 
@@ -29,12 +34,22 @@ interface IPosition {
 
     function reserveContribution() external returns (uint32);
 
-    function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
+    function getUsableMint(
+        uint256 totalMint,
+        bool beforeFees
+    ) external view returns (uint256);
 
     function notifyChallengeStarted(uint256 size) external;
 
-    function tryAvertChallenge(uint256 size, uint256 bid, uint256 challengeEnd) external returns (bool);
+    function tryAvertChallenge(
+        uint256 size,
+        uint256 bid,
+        uint256 challengeEnd
+    ) external returns (bool);
 
-    function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external returns (address, uint256, uint256, uint32);
-
+    function notifyChallengeSucceeded(
+        address bidder,
+        uint256 bid,
+        uint256 size
+    ) external returns (address, uint256, uint256, uint32);
 }

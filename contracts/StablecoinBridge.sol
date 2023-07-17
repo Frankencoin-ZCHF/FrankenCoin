@@ -9,7 +9,6 @@ import "./IFrankencoin.sol";
  * A minting contract for another Swiss franc stablecoin ('source stablecoin') that we trust.
  */
 contract StablecoinBridge {
-
     IERC20 public immutable chf; // the source stablecoin
     IFrankencoin public immutable zchf; // the Frankencoin
 
@@ -23,7 +22,7 @@ contract StablecoinBridge {
      */
     uint256 public immutable limit;
 
-    constructor(address other, address zchfAddress, uint256 limit_){
+    constructor(address other, address zchfAddress, uint256 limit_) {
         chf = IERC20(other);
         zchf = IFrankencoin(zchfAddress);
         horizon = block.timestamp + 52 weeks;
@@ -51,7 +50,7 @@ contract StablecoinBridge {
         require(chf.balanceOf(address(this)) <= limit, "limit");
         zchf.mint(target, amount);
     }
-    
+
     function burn(uint256 amount) external {
         burnInternal(msg.sender, msg.sender, amount);
     }
@@ -64,7 +63,11 @@ contract StablecoinBridge {
         burnInternal(msg.sender, target, amount);
     }
 
-    function burnInternal(address zchfHolder, address target, uint256 amount) internal {
+    function burnInternal(
+        address zchfHolder,
+        address target,
+        uint256 amount
+    ) internal {
         zchf.burn(zchfHolder, amount);
         chf.transfer(target, amount);
     }
@@ -72,15 +75,18 @@ contract StablecoinBridge {
     /**
      * Supporting the direct minting and burning through ERC-677, if supported by the sent coin.
      */
-    function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool){
-        if (msg.sender == address(chf)){
+    function onTokenTransfer(
+        address from,
+        uint256 amount,
+        bytes calldata
+    ) external returns (bool) {
+        if (msg.sender == address(chf)) {
             mintInternal(from, amount);
-        } else if (msg.sender == address(zchf)){
+        } else if (msg.sender == address(zchf)) {
             burnInternal(address(this), from, amount);
         } else {
             require(false, "unsupported token");
         }
         return true;
     }
-    
 }

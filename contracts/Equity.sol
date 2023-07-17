@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
@@ -9,7 +8,7 @@ import "./ERC20PermitLight.sol";
 import "./MathUtil.sol";
 import "./IReserve.sol";
 
-/** 
+/**
  * If the Frankencoin system was a bank, this contract would represent the equity on its balance sheet.
  * Like with a corporation, the owners of the equity capital are the shareholders, or in this case the holders
  * of Frankencoin Pool Shares (FPS) tokens. Anyone can mint additional FPS tokens by adding Frankencoins to the
@@ -18,7 +17,6 @@ import "./IReserve.sol";
  * weighted reserve pool shares gains veto power and can veto new proposals.
  */
 contract Equity is ERC20PermitLight, MathUtil, IReserve {
-
     /**
      * The VALUATION_FACTOR determines the market cap of the reserve pool shares relative to the equity reserves.
      * The following always holds: Market Cap = Valuation Factor * Equity Reserve = Price * Supply
@@ -56,23 +54,24 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * address, one acquired 5 days ago and one acquired 105 days ago, you cannot redeem them as the average
      * holding duration of your shares is only 55 days < 90 days.
      */
-    uint256 public constant MIN_HOLDING_DURATION = 90 days << TIME_RESOLUTION_BITS; // Set to 5 for local testing
+    uint256 public constant MIN_HOLDING_DURATION =
+        90 days << TIME_RESOLUTION_BITS; // Set to 5 for local testing
 
-    Frankencoin immutable public zchf;
+    Frankencoin public immutable zchf;
 
     /**
      * To track the total number of votes we need to know the number of votes at the anchor time and when the
      * anchor time was. This is (hopefully) stored in one 256 bit slot, with the anchor time taking 64 Bits and
      * the total vote count 192 Bits. Given the sub-second resolution of 20 Bits, the implicit assumption is
      * that the timestamp can always be stored in 44 Bits (i.e. it does not exceed half a million years). Further,
-     * given 18 decimals (about 60 Bits), this implies that the total supply cannot exceed 
+     * given 18 decimals (about 60 Bits), this implies that the total supply cannot exceed
      *   192 - 60 - 44 - 20 = 68 Bits
      * Here, we are also save, as 68 Bits would imply more than a trillion outstanding shares. In fact,
      * a limit of about 2**30 shares (that's 2**90 Bits when taking into account the decimals) is imposed
      * when minting. This means that the maximum supply is about a billion shares, which is reached at a market
-     * cap of 3,000,000,000,000,000,000 CHF. This limit could in theory be reached in times of hyper inflaction. 
+     * cap of 3,000,000,000,000,000,000 CHF. This limit could in theory be reached in times of hyper inflaction.
      */
-    uint192 private totalVotesAtAnchor;  // Total number of votes at the anchor time, see comment on the um
+    uint192 private totalVotesAtAnchor; // Total number of votes at the anchor time, see comment on the um
     uint64 private totalVotesAnchorTime; // 44 Bit for the time stamp, 20 Bit sub-second time resolution
 
     /**
@@ -94,29 +93,34 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         zchf = zchf_;
     }
 
-    function name() override external pure returns (string memory) {
+    function name() external pure override returns (string memory) {
         return "Frankencoin Pool Share";
     }
 
-    function symbol() override external pure returns (string memory) {
+    function symbol() external pure override returns (string memory) {
         return "FPS";
     }
 
     /**
      * Returns the price of one FPS in ZCHF with 18 decimals precision.
      */
-    function price() public view returns (uint256){
+    function price() public view returns (uint256) {
         uint256 equity = zchf.equity();
-        if (equity == 0){
+        if (equity == 0) {
             return ONE_DEC18; // initial price is 1000 ZCHF for the first 1000 FPS
         } else {
-            return VALUATION_FACTOR * zchf.equity() * ONE_DEC18 / totalSupply();
+            return
+                (VALUATION_FACTOR * zchf.equity() * ONE_DEC18) / totalSupply();
         }
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) override internal {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
         super._beforeTokenTransfer(from, to, amount);
-        if (amount > 0){
+        if (amount > 0) {
             // No need to adjust the sender votes. When they send out 10% of their shares, they also lose 10% of
             // their votes so everything falls nicely into place.
             // Recipient votes should stay the same, but grow faster in the future, requiring an adjustment of the anchor.
@@ -129,7 +133,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * Returns whether the sender address is allowed to redeem FPS.
      */
-    function canRedeem() external view returns (bool){
+    function canRedeem() external view returns (bool) {
         return canRedeem(msg.sender);
     }
 
@@ -141,14 +145,20 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return anchorTime() - voteAnchor[owner] >= MIN_HOLDING_DURATION;
     }
 
-     /**
+    /**
      * @notice Decrease the total votes anchor when tokens lose their voting power due to being moved
      * @param from      sender
      * @param amount    amount to be sent
      */
-    function adjustTotalVotes(address from, uint256 amount, uint256 roundingLoss) internal {
+    function adjustTotalVotes(
+        address from,
+        uint256 amount,
+        uint256 roundingLoss
+    ) internal {
         uint64 time = anchorTime();
-        uint256 lostVotes = from == address(0x0) ? 0 : (time - voteAnchor[from]) * amount;
+        uint256 lostVotes = from == address(0x0)
+            ? 0
+            : (time - voteAnchor[from]) * amount;
         totalVotesAtAnchor = uint192(totalVotes() - roundingLoss - lostVotes);
         totalVotesAnchorTime = time;
     }
@@ -160,7 +170,10 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * @param amount    amount to be received
      * @return the number of votes lost due to rounding errors
      */
-    function adjustRecipientVoteAnchor(address to, uint256 amount) internal returns (uint256){
+    function adjustRecipientVoteAnchor(
+        address to,
+        uint256 amount
+    ) internal returns (uint256) {
         if (to != address(0x0)) {
             uint256 recipientVotes = votes(to); // for example 21 if 7 shares were held for 3 seconds
             uint256 newbalance = balanceOf(to) + amount; // for example 11 if 4 shares are added
@@ -175,7 +188,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * Time stamp with some additional bits for higher resolution.
      */
-    function anchorTime() internal view returns (uint64){
+    function anchorTime() internal view returns (uint64) {
         return uint64(block.timestamp << TIME_RESOLUTION_BITS);
     }
 
@@ -183,7 +196,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * The relative voting power of the address. 1e18 is 100%.
      */
     function relativeVotes(address holder) external view returns (uint256) {
-        return ONE_DEC18 * votes(holder) / totalVotes();
+        return (ONE_DEC18 * votes(holder)) / totalVotes();
     }
 
     /**
@@ -197,13 +210,19 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * Total number of votes in the system.
      */
     function totalVotes() public view returns (uint256) {
-        return totalVotesAtAnchor + totalSupply() * (anchorTime() - totalVotesAnchorTime);
+        return
+            totalVotesAtAnchor +
+            totalSupply() *
+            (anchorTime() - totalVotesAnchorTime);
     }
 
-    function votes(address sender, address[] calldata helpers) public view returns (uint256) {
+    function votes(
+        address sender,
+        address[] calldata helpers
+    ) public view returns (uint256) {
         uint256 _votes = votes(sender);
         require(checkDuplicatesAndSorted(helpers));
-        for (uint i=0; i<helpers.length; i++){
+        for (uint i = 0; i < helpers.length; i++) {
             address current = helpers[i];
             require(current != sender);
             require(canVoteFor(sender, current));
@@ -212,7 +231,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return _votes;
     }
 
-    function checkDuplicatesAndSorted(address[] calldata helpers) internal pure returns (bool ok) {
+    function checkDuplicatesAndSorted(
+        address[] calldata helpers
+    ) internal pure returns (bool ok) {
         if (helpers.length <= 1) {
             return true;
         } else {
@@ -230,9 +251,12 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * Checks whether the sender address is qualified given a list of helpers that delegated their votes
      * directly or indirectly to the sender. It is the responsiblity of the caller to figure out whether
-     * helpes are necessary and to identify them by scanning the blockchain for Delegation events. 
+     * helpes are necessary and to identify them by scanning the blockchain for Delegation events.
      */
-    function checkQualified(address sender, address[] calldata helpers) public override view {
+    function checkQualified(
+        address sender,
+        address[] calldata helpers
+    ) public view override {
         uint256 _votes = votes(sender, helpers);
         if (_votes * 10000 < QUORUM * totalVotes()) revert NotQualified();
     }
@@ -248,10 +272,13 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         emit Delegation(msg.sender, delegate);
     }
 
-    function canVoteFor(address delegate, address owner) internal view returns (bool) {
-        if (owner == delegate){
+    function canVoteFor(
+        address delegate,
+        address owner
+    ) internal view returns (bool) {
+        if (owner == delegate) {
             return true;
-        } else if (owner == address(0x0)){
+        } else if (owner == address(0x0)) {
             return false;
         } else {
             return canVoteFor(delegate, delegates[owner]);
@@ -274,10 +301,15 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         totalVotesAnchorTime = anchorTime();
     }
 
-    function reduceVotes(address target, uint256 amount) internal returns (uint256) {
+    function reduceVotes(
+        address target,
+        uint256 amount
+    ) internal returns (uint256) {
         uint256 votesBefore = votes(target);
         require(votesBefore >= amount, "not enough votes");
-        voteAnchor[target] = uint64(anchorTime() - (votesBefore - amount) / balanceOf(target));
+        voteAnchor[target] = uint64(
+            anchorTime() - (votesBefore - amount) / balanceOf(target)
+        );
         return votesBefore - votes(target);
     }
 
@@ -287,13 +319,19 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      *
      * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
      */
-    function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
+    function onTokenTransfer(
+        address from,
+        uint256 amount,
+        bytes calldata
+    ) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
         uint256 equity = zchf.equity();
         require(equity >= MINIMUM_EQUITY, "insuf equity"); // ensures that the initial deposit is at least 1000 ZCHF
 
         // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
-        uint256 shares = equity <= amount ? 1000 * ONE_DEC18 : calculateSharesInternal(equity - amount, amount);
+        uint256 shares = equity <= amount
+            ? 1000 * ONE_DEC18
+            : calculateSharesInternal(equity - amount, amount);
         _mint(from, shares);
         emit Trade(from, int(shares), amount, price());
 
@@ -312,9 +350,17 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return calculateSharesInternal(zchf.equity(), investment);
     }
 
-    function calculateSharesInternal(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
+    function calculateSharesInternal(
+        uint256 capitalBefore,
+        uint256 investment
+    ) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18 ? 1000 * ONE_DEC18 : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investment, capitalBefore)));
+        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18
+            ? 1000 * ONE_DEC18
+            : _mulD18(
+                totalShares,
+                _cubicRoot(_divD18(capitalBefore + investment, capitalBefore))
+            );
         return newTotalShares - totalShares;
     }
 
@@ -341,7 +387,10 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         require(shares + ONE_DEC18 < totalShares, "too many shares"); // make sure there is always at least one share
         uint256 capital = zchf.equity();
         uint256 newTotalShares = totalShares - shares;
-        uint256 newCapital = _mulD18(capital, _power3(_divD18(newTotalShares, totalShares)));
+        uint256 newCapital = _mulD18(
+            capital,
+            _power3(_divD18(newTotalShares, totalShares))
+        );
         return capital - newCapital;
     }
 
@@ -355,13 +404,15 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * would be wrong to force them to share the other million with the passive FPS holders. Instead, they will get
      * the possibility to bootstrap the system again owning 100% of all FPS shares.
      */
-    function restructureCapTable(address[] calldata helpers, address[] calldata addressesToWipe) public {
+    function restructureCapTable(
+        address[] calldata helpers,
+        address[] calldata addressesToWipe
+    ) public {
         require(zchf.equity() < MINIMUM_EQUITY);
         checkQualified(msg.sender, helpers);
-        for (uint256 i = 0; i<addressesToWipe.length; i++){
+        for (uint256 i = 0; i < addressesToWipe.length; i++) {
             address current = addressesToWipe[i];
             _burn(current, balanceOf(current));
         }
     }
-
 }

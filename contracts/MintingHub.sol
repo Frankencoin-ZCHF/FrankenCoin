@@ -13,11 +13,10 @@ import "./IPosition.sol";
  * contract. Pending challenges are stored as structs in an array.
  */
 contract MintingHub {
-
     /**
      * Irrevocable fee in ZCHF when proposing a new position (but not when cloning an existing one).
      */
-    uint256 public constant OPENING_FEE = 1000 * 10**18;
+    uint256 public constant OPENING_FEE = 1000 * 10 ** 18;
 
     /**
      * The challenger reward in parts per million (ppm) relative to the challenged amount, whereas
@@ -34,22 +33,36 @@ contract MintingHub {
      * Map to remember pending postponed collateral returns.
      * It maps collateral => beneficiary => amount.
      */
-    mapping(address collateral => mapping(address owner => uint256 amount)) public pendingReturns;
+    mapping(address collateral => mapping(address owner => uint256 amount))
+        public pendingReturns;
 
     struct Challenge {
         address challenger; // the address from which the challenge was initiated
         IPosition position; // the position that was challenged
-        uint256 size;       // how much collateral the challenger provided
-        uint256 end;        // the deadline of the challenge (block.timestamp)
-        address bidder;     // the address from which the highest bid was made, if any
-        uint256 bid;        // the highest bid in ZCHF (total amount, not price per unit)
+        uint256 size; // how much collateral the challenger provided
+        uint256 end; // the deadline of the challenge (block.timestamp)
+        address bidder; // the address from which the highest bid was made, if any
+        uint256 bid; // the highest bid in ZCHF (total amount, not price per unit)
     }
 
-    event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);
+    event ChallengeStarted(
+        address indexed challenger,
+        address indexed position,
+        uint256 size,
+        uint256 number
+    );
     event ChallengeAverted(address indexed position, uint256 number);
-    event ChallengeSucceeded(address indexed position, uint256 bid, uint256 number);
+    event ChallengeSucceeded(
+        address indexed position,
+        uint256 bid,
+        uint256 number
+    );
     event NewBid(uint256 challengedId, uint256 bidAmount, address bidder);
-    event PostPonedReturn(address collateral, address indexed beneficiary, uint256 amount);
+    event PostPonedReturn(
+        address collateral,
+        address indexed beneficiary,
+        uint256 amount
+    );
 
     constructor(address _zchf, address factory) {
         zchf = IFrankencoin(_zchf);
@@ -57,11 +70,29 @@ contract MintingHub {
     }
 
     function openPosition(
-        address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
-        uint256 _mintingMaximum, uint256 _expirationSeconds, uint256 _challengeSeconds,
-        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
-            return openPosition(_collateralAddress, _minCollateral, _initialCollateral, _mintingMaximum,
-            7 days, _expirationSeconds, _challengeSeconds, _yearlyInterestPPM, _liqPrice, _reservePPM);
+        address _collateralAddress,
+        uint256 _minCollateral,
+        uint256 _initialCollateral,
+        uint256 _mintingMaximum,
+        uint256 _expirationSeconds,
+        uint256 _challengeSeconds,
+        uint32 _yearlyInterestPPM,
+        uint256 _liqPrice,
+        uint32 _reservePPM
+    ) public returns (address) {
+        return
+            openPosition(
+                _collateralAddress,
+                _minCollateral,
+                _initialCollateral,
+                _mintingMaximum,
+                7 days,
+                _expirationSeconds,
+                _challengeSeconds,
+                _yearlyInterestPPM,
+                _liqPrice,
+                _reservePPM
+            );
     }
 
     /**
@@ -86,9 +117,17 @@ contract MintingHub {
      * @return address           address of created position
      */
     function openPosition(
-        address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
-        uint256 _mintingMaximum, uint256 _initPeriodSeconds, uint256 _expirationSeconds, uint256 _challengeSeconds,
-        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
+        address _collateralAddress,
+        uint256 _minCollateral,
+        uint256 _initialCollateral,
+        uint256 _mintingMaximum,
+        uint256 _initPeriodSeconds,
+        uint256 _expirationSeconds,
+        uint256 _challengeSeconds,
+        uint32 _yearlyInterestPPM,
+        uint256 _liqPrice,
+        uint32 _reservePPM
+    ) public returns (address) {
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
@@ -104,11 +143,18 @@ contract MintingHub {
                 _reservePPM
             )
         );
-        require(_initialCollateral >= _minCollateral, "must start with min col");
+        require(
+            _initialCollateral >= _minCollateral,
+            "must start with min col"
+        );
         require(_minCollateral * _liqPrice >= 5000 ether); // must start with at least 5000 ZCHF worth of collateral
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
-        IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
+        IERC20(_collateralAddress).transferFrom(
+            msg.sender,
+            address(pos),
+            _initialCollateral
+        );
 
         return address(pos);
     }
@@ -122,18 +168,39 @@ contract MintingHub {
      * Clones an existing position and immediately tries to mint the specified amount using the given amount of collateral.
      * This requires an allowance to be set on the collateral contract such that the minting hub can withdraw the collateral.
      */
-    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint) public validPos(position) returns (address) {
+    function clonePosition(
+        address position,
+        uint256 _initialCollateral,
+        uint256 _initialMint
+    ) public validPos(position) returns (address) {
         uint256 expiration = IPosition(position).expiration();
-        return clonePosition(position, _initialCollateral, _initialMint, expiration);
+        return
+            clonePosition(
+                position,
+                _initialCollateral,
+                _initialMint,
+                expiration
+            );
     }
 
-    function clonePosition(address position, uint256 _initialCollateral, uint256 _initialMint, uint256 expiration) public validPos(position) returns (address) {
+    function clonePosition(
+        address position,
+        uint256 _initialCollateral,
+        uint256 _initialMint,
+        uint256 expiration
+    ) public validPos(position) returns (address) {
         IPosition existing = IPosition(position);
         existing.reduceLimitForClone(_initialMint, expiration);
         address pos = POSITION_FACTORY.clonePosition(position);
         zchf.registerPosition(pos);
         existing.collateral().transferFrom(msg.sender, pos, _initialCollateral);
-        IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
+        IPosition(pos).initializeClone(
+            msg.sender,
+            existing.price(),
+            _initialCollateral,
+            _initialMint,
+            expiration
+        );
         return address(pos);
     }
 
@@ -143,14 +210,36 @@ contract MintingHub {
      * @param _collateralAmount  size of the collateral we want to challenge (dec 18)
      * @return index of the challenge in challenge-array
      */
-    function launchChallenge(address _positionAddr, uint256 _collateralAmount, uint256 expectedPrice) external validPos(_positionAddr) returns (uint256) {
+    function launchChallenge(
+        address _positionAddr,
+        uint256 _collateralAmount,
+        uint256 expectedPrice
+    ) external validPos(_positionAddr) returns (uint256) {
         IPosition position = IPosition(_positionAddr);
         if (position.price() != expectedPrice) revert UnexpectedPrice();
-        IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
+        IERC20(position.collateral()).transferFrom(
+            msg.sender,
+            address(this),
+            _collateralAmount
+        );
         uint256 pos = challenges.length;
-        challenges.push(Challenge(msg.sender, position, _collateralAmount, block.timestamp + position.challengePeriod(), address(0x0), 0));
+        challenges.push(
+            Challenge(
+                msg.sender,
+                position,
+                _collateralAmount,
+                block.timestamp + position.challengePeriod(),
+                address(0x0),
+                0
+            )
+        );
         position.notifyChallengeStarted(_collateralAmount);
-        emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);
+        emit ChallengeStarted(
+            msg.sender,
+            address(position),
+            _collateralAmount,
+            pos
+        );
         return pos;
     }
 
@@ -162,7 +251,10 @@ contract MintingHub {
      * have the liquidity available to bid a sufficient amount. With this function, the can split of smaller slices of
      * the challenge and avert it piece by piece.
      */
-    function splitChallenge(uint256 _challengeNumber, uint256 splitOffAmount) external returns (uint256) {
+    function splitChallenge(
+        uint256 _challengeNumber,
+        uint256 splitOffAmount
+    ) external returns (uint256) {
         Challenge storage challenge = challenges[_challengeNumber];
         require(challenge.challenger != address(0x0));
         Challenge memory copy = Challenge(
@@ -182,8 +274,18 @@ contract MintingHub {
 
         uint256 pos = challenges.length;
         challenges.push(copy);
-        emit ChallengeStarted(challenge.challenger, address(challenge.position), challenge.size, _challengeNumber);
-        emit ChallengeStarted(copy.challenger, address(copy.position), copy.size, pos);
+        emit ChallengeStarted(
+            challenge.challenger,
+            address(challenge.position),
+            challenge.size,
+            _challengeNumber
+        );
+        emit ChallengeStarted(
+            copy.challenger,
+            address(copy.position),
+            copy.size,
+            pos
+        );
         return pos;
     }
 
@@ -194,7 +296,9 @@ contract MintingHub {
     /**
      * The minimum bid size for the next bid. It must be 0.5% higher than the previous bid.
      */
-    function minBid(Challenge storage challenge) internal view returns (uint256) {
+    function minBid(
+        Challenge storage challenge
+    ) internal view returns (uint256) {
         return (challenge.bid * 1005) / 1000;
     }
 
@@ -205,9 +309,13 @@ contract MintingHub {
      * @param _bidAmountZCHF     how much to bid for the collateral of this challenge (dec 18)
      * @param expectedSize       size verification to guard against frontrunners doing a split-challenge-attack
      */
-    function bid(uint256 _challengeNumber, uint256 _bidAmountZCHF, uint256 expectedSize) external {
+    function bid(
+        uint256 _challengeNumber,
+        uint256 _bidAmountZCHF,
+        uint256 expectedSize
+    ) external {
         Challenge storage challenge = challenges[_challengeNumber];
-                
+
         // Deactivated: if (block.timestamp >= challenge.end) revert TooLate();
         // Reason: in case the bidder got blacklisted by the collateral issuer, it should be possible to bid even higher
 
@@ -228,7 +336,8 @@ contract MintingHub {
             pos.collateral().transfer(msg.sender, size_);
         } else {
             // challenge is not averted, update bid
-            if (_bidAmountZCHF < minBid(challenge)) revert BidTooLow(_bidAmountZCHF, minBid(challenge));
+            if (_bidAmountZCHF < minBid(challenge))
+                revert BidTooLow(_bidAmountZCHF, minBid(challenge));
             uint256 earliestEnd = block.timestamp + 30 minutes;
             if (earliestEnd >= endTime && block.timestamp < endTime) {
                 // bump remaining time like ebay does when last minute bids come in
@@ -251,7 +360,9 @@ contract MintingHub {
         end(_challengeNumber, false);
     }
 
-    function isChallengeOpen(uint256 _challengeNumber) external view returns (bool) {
+    function isChallengeOpen(
+        uint256 _challengeNumber
+    ) external view returns (bool) {
         return challenges[_challengeNumber].end > block.timestamp;
     }
 
@@ -262,51 +373,85 @@ contract MintingHub {
      * In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token has a blacklist and the
      * challenger is on it), it is possible to postpone the return of the collateral.
      *
-     * @param postponeCollateralReturn Can be used to postpone the return of the collateral to the challenger. Usually false. 
+     * @param postponeCollateralReturn Can be used to postpone the return of the collateral to the challenger. Usually false.
      */
-    function end(uint256 _challengeNumber, bool postponeCollateralReturn) public {
+    function end(
+        uint256 _challengeNumber,
+        bool postponeCollateralReturn
+    ) public {
         Challenge storage challenge = challenges[_challengeNumber];
         require(challenge.challenger != address(0x0));
         require(block.timestamp >= challenge.end, "period has not ended");
         // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
         returnCollateral(challenge, postponeCollateralReturn);
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
-        address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
-        (address owner, uint256 effectiveBid, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
+        address recipient = challenge.bidder == address(0x0)
+            ? msg.sender
+            : challenge.bidder;
+        (
+            address owner,
+            uint256 effectiveBid,
+            uint256 repayment,
+            uint32 reservePPM
+        ) = challenge.position.notifyChallengeSucceeded(
+                recipient,
+                challenge.bid,
+                challenge.size
+            );
         if (effectiveBid < challenge.bid) {
             // overbid, return excess amount
-            IERC20(zchf).transfer(challenge.bidder, challenge.bid - effectiveBid);
+            IERC20(zchf).transfer(
+                challenge.bidder,
+                challenge.bid - effectiveBid
+            );
         }
         uint256 reward = (effectiveBid * CHALLENGER_REWARD) / 1000_000;
         uint256 fundsNeeded = reward + repayment;
-        if (effectiveBid > fundsNeeded){
+        if (effectiveBid > fundsNeeded) {
             zchf.transfer(owner, effectiveBid - fundsNeeded);
-        } else if (effectiveBid < fundsNeeded){
+        } else if (effectiveBid < fundsNeeded) {
             zchf.notifyLoss(fundsNeeded - effectiveBid); // ensure we have enough to pay everything
         }
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burn(repayment, reservePPM); // Repay the challenged part
-        emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
+        emit ChallengeSucceeded(
+            address(challenge.position),
+            challenge.bid,
+            _challengeNumber
+        );
         delete challenges[_challengeNumber];
     }
 
     /**
      * Challengers can call this method to withdraw collateral whose return was postponed.
      */
-    function returnPostponedCollateral(address collateral, address target) external {
+    function returnPostponedCollateral(
+        address collateral,
+        address target
+    ) external {
         uint256 amount = pendingReturns[collateral][msg.sender];
         delete pendingReturns[collateral][msg.sender];
         IERC20(collateral).transfer(target, amount);
     }
 
-    function returnCollateral(Challenge storage challenge, bool postpone) internal {
-        if (postpone){
+    function returnCollateral(
+        Challenge storage challenge,
+        bool postpone
+    ) internal {
+        if (postpone) {
             // Postponing helps in case the challenger was blacklisted on the collateral token or otherwise cannot receive it at the moment.
             address collateral = address(challenge.position.collateral());
             pendingReturns[collateral][challenge.challenger] += challenge.size;
-            emit PostPonedReturn(collateral, challenge.challenger, challenge.size);
+            emit PostPonedReturn(
+                collateral,
+                challenge.challenger,
+                challenge.size
+            );
         } else {
-            challenge.position.collateral().transfer(challenge.challenger, challenge.size); // return the challenger's collateral
+            challenge.position.collateral().transfer(
+                challenge.challenger,
+                challenge.size
+            ); // return the challenger's collateral
         }
     }
 }
