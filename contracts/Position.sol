@@ -539,7 +539,7 @@ contract Position is Ownable, IPosition, MathUtil {
     error Expired();
 
     modifier alive() {
-        if (block.timestamp > expiration) revert Expired();
+        if (block.timestamp >= expiration) revert Expired();
         _;
     }
 
