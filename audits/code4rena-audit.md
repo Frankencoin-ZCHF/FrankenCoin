@@ -32,3 +32,40 @@ Related to this issue: what happens if a challenge cannot be ended because the t
 ### H-05
 
 Fixed in 856c7a9d92069aee2549d58da7a7ce81a1de42b8
+
+### L-01
+
+WONT: If someone frontruns the initial deployment process, we will just deploy again.
+
+### L-02
+
+WONT: We control the initial deployment parameters. No need for sanity check.
+
+### L-03
+
+Fixed, we are now using seconds instead of blocks to measure time.
+
+### L-04
+
+Fixed.
+
+### L-05
+
+We should think about smarter bridges in the future.
+
+### L-06
+
+Added limit of 24 digits for collateral tokens.
+
+### L-07
+
+WONT: Work-around is easy. Just make a bid of more than 0.00000000000000199 ZCHF to break the cycle.
+
+### L-08
+
+Reentrancy: mostly addressed. TODO: make MintingHub.end resistant.
+
+### L-09
+
+WONT: Attack is more expensive than the damage done.
+

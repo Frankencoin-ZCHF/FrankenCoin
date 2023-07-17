@@ -104,6 +104,7 @@ contract MintingHub {
                 _reservePPM
             )
         );
+        require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
         require(_initialCollateral >= _minCollateral, "must start with min col");
         require(_minCollateral * _liqPrice >= 5000 ether); // must start with at least 5000 ZCHF worth of collateral
         zchf.registerPosition(address(pos));
@@ -132,8 +133,8 @@ contract MintingHub {
         existing.reduceLimitForClone(_initialMint, expiration);
         address pos = POSITION_FACTORY.clonePosition(position);
         zchf.registerPosition(pos);
-        existing.collateral().transferFrom(msg.sender, pos, _initialCollateral);
         IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
+        existing.collateral().transferFrom(msg.sender, pos, _initialCollateral); // At the end to guard against ERC-777 reentrancy
         return address(pos);
     }
 
@@ -146,7 +147,7 @@ contract MintingHub {
     function launchChallenge(address _positionAddr, uint256 _collateralAmount, uint256 expectedPrice) external validPos(_positionAddr) returns (uint256) {
         IPosition position = IPosition(_positionAddr);
         if (position.price() != expectedPrice) revert UnexpectedPrice();
-        IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
+        IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount); // At the beginning to guard against ERC-777 reentrancy
         uint256 pos = challenges.length;
         challenges.push(Challenge(msg.sender, position, _collateralAmount, block.timestamp + position.challengePeriod(), address(0x0), 0));
         position.notifyChallengeStarted(_collateralAmount);
