@@ -128,6 +128,7 @@ contract MintingHub {
         uint256 _liqPrice,
         uint32 _reservePPM
     ) public returns (address) {
+        require(IERC20(_collateralAddress).decimals() <= 18);
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
