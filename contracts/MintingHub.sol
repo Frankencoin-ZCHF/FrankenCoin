@@ -4,15 +4,16 @@ pragma solidity ^0.8.0;
 import "./IERC20.sol";
 import "./IReserve.sol";
 import "./IFrankencoin.sol";
-import "./Ownable.sol";
 import "./IPosition.sol";
+import "./Ownable.sol";
+import "./ReentrancyGuard.sol";
 
 /**
  * The central hub for creating, cloning and challenging collateralized Frankencoin positions.
  * Only one instance of this contract is required, whereas every new position comes with a new position
  * contract. Pending challenges are stored as structs in an array.
  */
-contract MintingHub {
+contract MintingHub is ReentrancyGuard {
     /**
      * Irrevocable fee in ZCHF when proposing a new position (but not when cloning an existing one).
      */
@@ -379,7 +380,7 @@ contract MintingHub {
     function end(
         uint256 _challengeNumber,
         bool postponeCollateralReturn
-    ) public {
+    ) public nonReentrant {
         Challenge storage challenge = challenges[_challengeNumber];
         require(challenge.challenger != address(0x0));
         require(block.timestamp >= challenge.end, "period has not ended");
