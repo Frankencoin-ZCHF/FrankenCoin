@@ -60,6 +60,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
     constructor(uint256 _minApplicationPeriod) ERC20(18) {
+        require(_minApplicationPeriod > 0);
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = new Equity(this);
     }
