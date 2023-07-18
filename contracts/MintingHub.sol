@@ -269,8 +269,7 @@ contract MintingHub {
         Challenge storage challenge = challenges[_challengeNumber];
         require(challenge.challenger != address(0x0));
         require(block.timestamp >= challenge.end, "period has not ended");
-        // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
-        returnCollateral(challenge, postponeCollateralReturn);
+
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
         (address owner, uint256 effectiveBid, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
@@ -287,6 +286,10 @@ contract MintingHub {
         }
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burn(repayment, reservePPM); // Repay the challenged part
+
+        // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
+        returnCollateral(challenge, postponeCollateralReturn);
+
         emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
         delete challenges[_challengeNumber];
     }
