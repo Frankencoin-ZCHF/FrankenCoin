@@ -266,7 +266,7 @@ contract MintingHub {
      * @param postponeCollateralReturn Can be used to postpone the return of the collateral to the challenger. Usually false. 
      */
     function end(uint256 _challengeNumber, bool postponeCollateralReturn) public {
-        Challenge storage challenge = challenges[_challengeNumber];
+        Challenge memory challenge = challenges[_challengeNumber];
         require(challenge.challenger != address(0x0));
         require(block.timestamp >= challenge.end, "period has not ended");
 
@@ -287,11 +287,11 @@ contract MintingHub {
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burn(repayment, reservePPM); // Repay the challenged part
 
-        // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
-        returnCollateral(challenge, postponeCollateralReturn);
-
         emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
         delete challenges[_challengeNumber];
+
+        // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
+        returnCollateral(challenge, postponeCollateralReturn);
     }
 
     /**
@@ -303,7 +303,7 @@ contract MintingHub {
         IERC20(collateral).transfer(target, amount);
     }
 
-    function returnCollateral(Challenge storage challenge, bool postpone) internal {
+    function returnCollateral(Challenge memory challenge, bool postpone) internal {
         if (postpone){
             // Postponing helps in case the challenger was blacklisted on the collateral token or otherwise cannot receive it at the moment.
             address collateral = address(challenge.position.collateral());
