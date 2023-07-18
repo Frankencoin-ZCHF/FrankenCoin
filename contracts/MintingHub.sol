@@ -266,17 +266,19 @@ contract MintingHub {
      * @param postponeCollateralReturn Can be used to postpone the return of the collateral to the challenger. Usually false. 
      */
     function end(uint256 _challengeNumber, bool postponeCollateralReturn) public {
-        Challenge storage challenge = challenges[_challengeNumber];
+        Challenge memory challenge = challenges[_challengeNumber];
         require(challenge.challenger != address(0x0));
         require(block.timestamp >= challenge.end, "period has not ended");
+        delete challenges[_challengeNumber]; // delete first to avoid reentrancy with ERC-777 tokens
+
         // challenge must have been successful, because otherwise it would have immediately ended on placing the winning bid
-        returnCollateral(challenge, postponeCollateralReturn);
+
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
         (address owner, uint256 effectiveBid, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.bid, challenge.size);
         if (effectiveBid < challenge.bid) {
             // overbid, return excess amount
-            IERC20(zchf).transfer(challenge.bidder, challenge.bid - effectiveBid);
+            IERC20(zchf).transfer(recipient, challenge.bid - effectiveBid);
         }
         uint256 reward = (effectiveBid * CHALLENGER_REWARD) / 1000_000;
         uint256 fundsNeeded = reward + repayment;
@@ -287,8 +289,8 @@ contract MintingHub {
         }
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burn(repayment, reservePPM); // Repay the challenged part
+        returnCollateral(challenge.position.collateral(), challenge.challenger, challenge.size, postponeCollateralReturn);
         emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
-        delete challenges[_challengeNumber];
     }
 
     /**
@@ -300,14 +302,13 @@ contract MintingHub {
         IERC20(collateral).transfer(target, amount);
     }
 
-    function returnCollateral(Challenge storage challenge, bool postpone) internal {
+    function returnCollateral(IERC20 collateral, address recipient, uint256 amount, bool postpone) internal {
         if (postpone){
             // Postponing helps in case the challenger was blacklisted on the collateral token or otherwise cannot receive it at the moment.
-            address collateral = address(challenge.position.collateral());
-            pendingReturns[collateral][challenge.challenger] += challenge.size;
-            emit PostPonedReturn(collateral, challenge.challenger, challenge.size);
+            pendingReturns[address(collateral)][recipient] += amount;
+            emit PostPonedReturn(address(collateral), recipient, amount);
         } else {
-            challenge.position.collateral().transfer(challenge.challenger, challenge.size); // return the challenger's collateral
+            collateral.transfer(recipient, amount); // return the challenger's collateral
         }
     }
 }

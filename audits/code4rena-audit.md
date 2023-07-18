@@ -63,7 +63,7 @@ WONT: Work-around is easy. Just make a bid of more than 0.00000000000000199 ZCHF
 
 ### L-08
 
-Reentrancy: mostly addressed. TODO: make MintingHub.end resistant.
+Reentrancy: addressed by rearranging state changes within relevant methods.
 
 ### L-09
 
