@@ -106,9 +106,9 @@ contract Position is Ownable, IPosition, MathUtil {
     * See MintingHub.openPosition
     */
     constructor(address _owner, address _hub, address _zchf, address _collateral, uint256 _minCollateral, 
-        uint256 _initialLimit, uint256 initPeriod, uint256 _duration, uint256 _challengePeriod, uint32 _yearlyInterestPPM, 
+        uint256 _initialLimit, uint256 _initPeriod, uint256 _duration, uint256 _challengePeriod, uint32 _yearlyInterestPPM, 
         uint256 _liqPrice, uint32 _reservePPM) {
-        require(initPeriod >= 3 days); // must be at least three days, recommended to use higher values
+        require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         setOwner(_owner);
         original = address(this);
         hub = _hub;
@@ -119,7 +119,7 @@ contract Position is Ownable, IPosition, MathUtil {
         reserveContribution = _reservePPM;
         minimumCollateral = _minCollateral;
         challengePeriod = _challengePeriod;
-        start = block.timestamp + initPeriod; // at least three days time to deny the position
+        start = block.timestamp + _initPeriod; // at least three days time to deny the position
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;

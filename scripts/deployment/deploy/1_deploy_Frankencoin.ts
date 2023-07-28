@@ -1,7 +1,7 @@
-import {HardhatRuntimeEnvironment} from "hardhat/types";
-import {DeployFunction} from "hardhat-deploy/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
 import { ethers } from "hardhat";
-import {deployContract, ZERO_ADDRESS} from "../deployUtils";
+import { deployContract, ZERO_ADDRESS } from "../deployUtils";
 
 /*
     //see package.json
@@ -19,24 +19,25 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let chainId = hre.network.config["chainId"];
     let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
     // find config for current chain
-    for(var k=0; k<paramsArr.length && paramsArr[k].chainId!=chainId; k++);
+    for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
     let params = paramsArr[k];
-    if (chainId!=params.chainId) {
+    if (chainId != params.chainId) {
         throw new Error("ChainId doesn't match");
     }
-    let minApplicationPeriod=params['minApplicationPeriod'];
+    let minApplicationPeriod = params['minApplicationPeriod'];
     console.log("Min application period =", minApplicationPeriod);
     let FC = await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
     let abiCoder = new ethers.utils.AbiCoder();
     let encodeString = abiCoder.encode(['uint256'], [minApplicationPeriod]);
-    console.log("Constructor Arguments ABI Encoded (Frankencoin at ",FC.address,"):");
+    console.log("Constructor Arguments ABI Encoded (Frankencoin at ", FC.address, "):");
     console.log(encodeString);
     console.log(`Verify Frankencoin:\nnpx hardhat verify --network sepolia ${FC.address} ${minApplicationPeriod}`)
-    
+
+    let reserve = await FC.reserve();
     encodeString = abiCoder.encode(['address'], [FC.address]);
     console.log("Constructor Arguments ABI Encoded (Equity):");
     console.log(encodeString);
-
+    console.log(`Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${FC.address}`)
 };
 export default deploy;
 deploy.tags = ["main", "Frankencoin"];

@@ -107,7 +107,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      */
     function price() public view returns (uint256){
         uint256 equity = zchf.equity();
-        if (equity == 0){
+        if (equity == 0 || totalSupply() == 0){
             return ONE_DEC18; // initial price is 1000 ZCHF for the first 1000 FPS
         } else {
             return VALUATION_FACTOR * zchf.equity() * ONE_DEC18 / totalSupply();

@@ -11,11 +11,11 @@ contract PositionFactory {
      * Must be called through minting hub to be recognized as valid position.
      */
     function createNewPosition(address _owner, address _zchf, address _collateral, uint256 _minCollateral, 
-        uint256 _initialLimit, uint256 initPeriod, uint256 _duration, uint256 _challengePeriod, 
+        uint256 _initialLimit, uint256 _initPeriod, uint256 _duration, uint256 _challengePeriod, 
         uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reserve) 
         external returns (address) {
         return address(new Position(_owner, msg.sender, _zchf, _collateral, 
-            _minCollateral, _initialLimit, initPeriod, _duration, 
+            _minCollateral, _initialLimit, _initPeriod, _duration, 
             _challengePeriod, _yearlyInterestPPM, _liqPrice, _reserve));
     }
 

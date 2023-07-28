@@ -269,7 +269,7 @@ contract User {
         col.mint(address(this), 1001);
         col.approve(address(hub), 1001);
         uint256 balanceBefore = zchf.balanceOf(address(this));
-        address pos = hub.openPosition(address(col), 100, 1001, 1000000 ether, 100 days, 1 days, 25000, 100 * (10 ** 36), 200000);
+        address pos = hub.openPositionOneWeek(address(col), 100, 1001, 1000000 ether, 100 days, 1 days, 25000, 100 * (10 ** 36), 200000);
         require((balanceBefore - hub.OPENING_FEE()) == zchf.balanceOf(address(this)));
         Position(pos).adjust(0, 1001, 200 * (10 ** 36));
         Position(pos).adjustPrice(100 * (10 ** 36));

@@ -56,7 +56,7 @@ contract MintingHub {
         POSITION_FACTORY = IPositionFactory(factory);
     }
 
-    function openPosition(
+    function openPositionOneWeek(
         address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
         uint256 _mintingMaximum, uint256 _expirationSeconds, uint256 _challengeSeconds,
         uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
