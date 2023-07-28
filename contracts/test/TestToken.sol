@@ -11,6 +11,8 @@ contract TestToken is ERC20 {
   constructor(string memory name_, string memory symbol_, uint8 dec) ERC20(dec) {
     name = name_;
     symbol = symbol_;
+
+    _mint(msg.sender, 1_000_000 * 1e18);
   }
 
   function mint(address _account, uint256 _amount) external {

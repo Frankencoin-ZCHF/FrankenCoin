@@ -1,8 +1,8 @@
-import {HardhatRuntimeEnvironment} from "hardhat/types";
-import {DeployFunction} from "hardhat-deploy/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
 import { writeFileSync } from "fs";
 import { ethers } from "hardhat";
-import {deployContract, sleep} from "../deployUtils";
+import { deployContract, sleep } from "../deployUtils";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
 
@@ -12,17 +12,17 @@ import { floatToDec18 } from "../../math";
     - hence, to add a new token, token address in paramsPosition.json can be ''
 */
 const deployMockTokens: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    
+
     const paramFile = "paramsPositions.json";
 
     let chainId = hre.network.config["chainId"];
-    
+
     // write address to config
     const filename = __dirname + `/../parameters/${paramFile}`;
     let paramsArr = require(filename);
     // find config for current chain
-    for(var k=0; k<paramsArr.length; k++) {
-        if(paramsArr[k].chainId==chainId && paramsArr[k].type=="mock") {
+    for (var k = 0; k < paramsArr.length; k++) {
+        if (paramsArr[k].chainId == chainId && paramsArr[k].type == "mock") {
             // deploy
             const contractName = paramsArr[k].name;
             let mockVOLTokenContract = await deployContract(hre, contractName);

@@ -1,5 +1,5 @@
-import {HardhatRuntimeEnvironment} from "hardhat/types";
-import {DeployFunction} from "hardhat-deploy/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { dec18ToFloat, floatToDec18 } from "../../math";
@@ -19,14 +19,14 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     */
     //------
     // get minting hub contract
-    const {deployments: { get },} = hre;
+    const { deployments: { get }, } = hre;
     const mintingHubDeployment = await get("MintingHub");
     const fcDeployment = await get("Frankencoin");
     const collateralDeployment = await get(params.name);
 
-    let mintingHubContract = await ethers.getContractAt("MintingHub", 
+    let mintingHubContract = await ethers.getContractAt("MintingHub",
         mintingHubDeployment.address);
-    
+
     let collateralAddr = params.collateralTknAddr;
     let fMinCollateral = floatToDec18(params.minCollateral);
     let fInitialCollateral = floatToDec18(params.initialCollateral);
@@ -39,23 +39,23 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
     let fOpeningFeeZCHF = BigNumber.from(2000).mul(BigNumber.from(10).pow(18));
 
     // approvals
-    let ZCHFContract = await ethers.getContractAt("Frankencoin", 
+    let ZCHFContract = await ethers.getContractAt("Frankencoin",
         fcDeployment.address);
-    let CollateralContract = await ethers.getContractAt(params.name, 
+    let CollateralContract = await ethers.getContractAt(params.name,
         params.collateralTknAddr);
 
     let pk: string = <string>process.env.PK;
-    let wallet = new ethers.Wallet(pk);   
+    let wallet = new ethers.Wallet(pk);
     //console.log("Collateral balance of owner = ", dec18ToFloat(balColl));
     //console.log("ZCHF balance of owner = ", dec18ToFloat(balZCHF));
     console.log("ZCHF address ", fcDeployment.address);
     console.log("coll address ", CollateralContract.address);
     console.log("owner address ", wallet.address);
-    
-    let tx1 = await CollateralContract.approve(mintingHubContract.address, fInitialCollateral,  { gasLimit: 1_000_000 });
+
+    let tx1 = await CollateralContract.approve(mintingHubContract.address, fInitialCollateral, { gasLimit: 1_000_000 });
     tx1.wait();
     /*
-        openPosition(
+    openPosition(
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialCollateral,
@@ -65,17 +65,21 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
         uint32 _fees,
         uint256 _liqPrice,
         uint32 _reserve
-
+    )
     */
-      
-    let tx = await mintingHubContract.openPosition(collateralAddr, fMinCollateral, 
-        fInitialCollateral, initialLimitZCHF, duration, challengePeriod, feesPPM, 
-        fliqPrice, fReservePPM,  { gasLimit: 3_000_000 });
+
+
+
+    let tx = await mintingHubContract.openPositionOneWeek(
+        collateralAddr, fMinCollateral, fInitialCollateral,
+        initialLimitZCHF, duration, challengePeriod,
+        feesPPM, fliqPrice, fReservePPM
+    );
 
     await tx.wait();
-    
+
     let abiCoder = new ethers.utils.AbiCoder();
-    
+
     /*
     constructor(address _owner, address _hub, address _zchf, address _collateral, 
         uint256 _minCollateral, uint256 _initialCollateral, 
@@ -88,9 +92,9 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
 
     */
     let encodeString = abiCoder.encode(['address', 'address', 'address', 'address',
-        'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint32','uint256', 'uint32'], 
+        'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint32', 'uint256', 'uint32'],
         [wallet.address, mintingHubDeployment.address, fcDeployment.address, collateralAddr,
-            fMinCollateral, fInitialCollateral, initialLimitZCHF, 
+            fMinCollateral, fInitialCollateral, initialLimitZCHF,
             duration, challengePeriod, feesPPM, fliqPrice, fReservePPM]);
     console.log("Constructor Arguments ABI Encoded (Position):");
     console.log(encodeString);
@@ -100,16 +104,16 @@ async function deployPos(params, hre: HardhatRuntimeEnvironment) {
 }
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    
+
     const paramFile = "paramsPositions.json";
 
     let chainId = hre.network.config["chainId"];
     let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
 
     // find config for current chain
-    for(var k=0; k<paramsArr.length; k++) {
+    for (var k = 0; k < paramsArr.length; k++) {
         let params = paramsArr[k];
-        if (chainId==params.chainId) {
+        if (chainId == params.chainId) {
             // deploy position according to parameters
             let txh = await deployPos(params, hre);
             console.log("Deployed position, tx hash =", txh);

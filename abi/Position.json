@@ -33,7 +33,7 @@
             },
             {
                 "internalType": "uint256",
-                "name": "initPeriod",
+                "name": "_initPeriod",
                 "type": "uint256"
             },
             {

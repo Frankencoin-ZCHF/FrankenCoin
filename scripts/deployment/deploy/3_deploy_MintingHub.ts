@@ -1,20 +1,20 @@
-import {HardhatRuntimeEnvironment} from "hardhat/types";
-import {DeployFunction} from "hardhat-deploy/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
 import { ethers } from "hardhat";
-import {deployContract} from "../deployUtils";
+import { deployContract } from "../deployUtils";
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const {
         deployments: { get },
     } = hre;
-    
+
     const positionFactoryDeployment = await get("PositionFactory");
     const zchfDeployment = await get("Frankencoin");
-    let positionFactoryContract = await ethers.getContractAt("PositionFactory", 
+    let positionFactoryContract = await ethers.getContractAt("PositionFactory",
         positionFactoryDeployment.address);
     let zchfContract = await ethers.getContractAt("Frankencoin", zchfDeployment.address);;
-    let mintingHubContract = await deployContract(hre, "MintingHub", 
+    let mintingHubContract = await deployContract(hre, "MintingHub",
         [zchfContract.address, positionFactoryContract.address]);
     //let mintingHubContract = await get("MintingHub");
 
@@ -24,7 +24,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log("Constructor Arguments ABI Encoded (Minting Hub):");
     console.log(encodeString1);
     console.log(encodeString2);
-    
+
     console.log(`Verify mintingHubContract:\nnpx hardhat verify --network sepolia ${mintingHubContract.address} ${zchfContract.address} ${positionFactoryContract.address}`);
 
     // create a minting hub too while we have no ZCHF supply
