@@ -204,8 +204,8 @@ contract MintingHubTest {
         uint256 supplyAfter = equity.totalSupply();
         require(supplyAfter == supplyBefore - bobBefore);
         // revertWith("Shortfall: ", zchf.minterReserve() - zchf.balanceOf(address(zchf.reserve()))); // 1000000000000000000000
-        alice.obtainFrankencoins(swap, 2000 ether);
-        alice.invest(2000 ether);
+        alice.obtainFrankencoins(swap, 4000 ether);
+        alice.invest(4000 ether);
         require(supplyAfter + 1000 ether == equity.totalSupply());
     }
 

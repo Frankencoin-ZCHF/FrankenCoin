@@ -28,6 +28,20 @@ contract MathUtil {
         return x;
     }
 
+    /**
+     * Divides and multiplies, with divisor > 0.
+     */
+    function _mulDiv(uint256 x, uint256 factor, uint256 divisor) internal pure returns(uint256) {
+        if (factor == 0){
+            return 0;
+        } else if (type(uint256).max / factor > x){
+            // divide first to avoid overflow
+            return x > factor ? x / divisor * factor : factor / divisor * x;
+        } else {
+            return x * factor / divisor;
+        }
+    }
+
     function _mulD18(uint256 _a, uint256 _b) internal pure returns(uint256) {
         return _a * _b / ONE_DEC18;
     }

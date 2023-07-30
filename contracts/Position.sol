@@ -158,17 +158,22 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     error TooLate();
+
     /**
      * Qualified pool share holders can call this method to immediately expire a freshly proposed position.
      */ 
     function deny(address[] calldata helpers, string calldata message) public {
         if (block.timestamp >= start) revert TooLate();
         IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
-        cooldown = type(uint256).max; // since expiration is immutable, we put it under eternal cooldown
+        close(); // since expiration is immutable, we put it under eternal cooldown
         emit PositionDenied(msg.sender, message);
     }
 
-    function isDenied() public view returns (bool){
+    function close() internal {
+        cooldown = type(uint256).max;
+    }
+
+    function isClosed() public view returns (bool){
         return cooldown == type(uint256).max;
     }
 
@@ -316,7 +321,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * Withdrawing collateral below the minimum collateral amount formally closes the position.
      */
     function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge {
-        if (block.timestamp <= cooldown && !isDenied()) revert Hot();
+        if (block.timestamp <= cooldown && !isClosed()) revert Hot();
         uint256 balance = internalWithdrawCollateral(target, amount);
         checkCollateral(balance, price);
     }
@@ -326,8 +331,11 @@ contract Position is Ownable, IPosition, MathUtil {
             IERC20(collateral).transfer(target, amount);
         }
         uint256 balance = collateralBalance();
-        if (balance < minimumCollateral){
-            cooldown = expiration;
+        if (balance < minimumCollateral && challengedAmount == 0){
+            // This leaves a slightly unsatisfying possibility open: if the withdrawal happens due to a successful challenge,
+            // there might be a small amount of collateral left that is not withheld in case there are no other pending challenges.
+            // The only way to cleanly solve this would be to have two distinct cooldowns, one for minting and one for withdrawals.
+            close();
         }
         emitUpdate();
         return balance;
@@ -350,6 +358,7 @@ contract Position is Ownable, IPosition, MathUtil {
     function notifyChallengeStarted(uint256 size) external onlyHub {
         // require minimum size, note that collateral balance can be below minimum if it was partially challenged before
         if (size < minimumCollateral && size < collateralBalance()) revert ChallengeTooSmall();
+        if (size == 0) revert ChallengeTooSmall();
         challengedAmount += size;
     }
 
@@ -364,9 +373,10 @@ contract Position is Ownable, IPosition, MathUtil {
             return false; // position expired, let every challenge succeed
         } else {
             uint256 p_ = price;
-            if (_collateralAmount > 0 && type(uint256).max / _collateralAmount < p_) {
+            if (type(uint256).max / _collateralAmount < p_) { // note that _collateralAmount > 0 is assumed
                 return false; // price was set absurdly high, let challenge succeed
             } else if (_bidAmountZCHF * ONE_DEC18 >= p_ * _collateralAmount){
+
                 // Challenge cannot be started and averted in same block
                 // This prevents a malicious challenger + bidder to postpone minting forver without risking anything
                 require(block.timestamp != challengeEnd - challengePeriod); 
@@ -396,28 +406,16 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
+        uint256 repayment = minted; // Default repayment is the amount to owner has minted
         uint256 colBal = collateralBalance();
         if (_size > colBal){
             // Challenge is larger than the position. This can for example happen if there are multiple concurrent
             // challenges that exceed the collateral balance in size. In this case, we need to redimension the bid and
             // tell the caller that a part of the bid needs to be returned to the bidder.
-            _bid = _divD18(_mulD18(_bid, colBal), _size);
+            _bid = _mulDiv(_bid, colBal, _size);
             _size = colBal;
-        }
-
-        // Note that thanks to the collateral invariant, we know that
-        //    colBal * price >= minted * ONE_DEC18
-        // and that therefore
-        //    price >= minted / colbal * E18
-        // such that
-        //    volumeZCHF = price * size / E18 >= minted * size / colbal
-        // So the owner cannot maliciously decrease the price to make price * size fall below the proportionate repayment.
-
-        uint256 repayment = minted; // Default repayment is the amount to owner has minted
-        uint256 p_ = price;
-        if (_size > 0 && type(uint256).max / _size > p_ && repayment * ONE_DEC18 > p_ * _size){
-            // However, if the price is not set overflowly high, we can reduce the repayment to what was challenged
-            repayment = price * _size / ONE_DEC18;
+        } else if (_size < colBal) {
+            repayment = _mulDiv(repayment, _size, colBal);
         }
 
         notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
@@ -428,14 +426,6 @@ contract Position is Ownable, IPosition, MathUtil {
         restrictMinting(3 days); 
         
         return (owner, _bid, repayment, reserveContribution);
-    }
-
-    /**
-     * A position should only be considered 'closed', once its collateral has been withdrawn.
-     * This is also a good creterion when deciding whether it should be shown in a frontend.
-     */
-    function isClosed() public view returns (bool) {
-        return collateralBalance() < minimumCollateral;
     }
 
     error Expired();
