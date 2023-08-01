@@ -281,6 +281,13 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return votesBefore - votes(target);
     }
 
+    function invest(uint256 amount, uint256 expectedShares) external returns (uint256) {
+        zchf.transferFrom(msg.sender, address(this), amount);
+        uint256 shares = createShares(msg.sender, amount);
+        require(shares >= expectedShares);
+        return shares;
+    }
+
     /**
      * In order to mint new FPS tokens, one needs to send ZCHF to this contract using the transferAndCall function
      * in the ZCHF contract.
@@ -289,6 +296,11 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      */
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         require(msg.sender == address(zchf), "caller must be zchf");
+        createShares(from, amount);
+        return true;
+    }
+
+    function createShares(address from, uint256 amount) internal returns (uint256) {
         uint256 equity = zchf.equity();
         require(equity >= MINIMUM_EQUITY, "insuf equity"); // ensures that the initial deposit is at least 1000 ZCHF
 
@@ -300,7 +312,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
         // the 128 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
         require(totalSupply() <= type(uint128).max, "total supply exceeded");
-        return true;
+        return shares;
     }
 
     /**
@@ -327,6 +339,12 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         _burn(msg.sender, shares);
         zchf.transfer(target, proceeds);
         emit Trade(msg.sender, -int(shares), proceeds, price());
+        return proceeds;
+    }
+
+    function redeem(address target, uint256 shares, uint256 expectedProceeds) public returns (uint256) {
+        uint256 proceeds = redeem(target, shares);
+        require(proceeds >= expectedProceeds);
         return proceeds;
     }
 
