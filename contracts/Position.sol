@@ -406,7 +406,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
-        uint256 repayment = minted; // Default repayment is the amount to owner has minted
+        uint256 repayment = minted; // Default repayment is the amount the owner has minted
         uint256 colBal = collateralBalance();
         if (_size > colBal){
             // Challenge is larger than the position. This can for example happen if there are multiple concurrent

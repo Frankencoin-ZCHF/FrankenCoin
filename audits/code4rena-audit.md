@@ -33,6 +33,70 @@ Related to this issue: what happens if a challenge cannot be ended because the t
 
 Fixed in 856c7a9d92069aee2549d58da7a7ce81a1de42b8
 
+### H-06
+
+Fixed by making the challenger reward depend on the highest bid and not the price any more.
+
+### M-01
+
+Fixed.
+
+### M-02
+
+Fixed. Adjusted method. Still possible to make limit of original go to zero, but slower. The limit is a hard limit after all.
+
+### M-03
+
+Wont. Not relevant.
+
+### M-04
+
+Fixed. Switched to timestamp.
+
+### M-05
+
+Fixed.
+
+### M-06
+
+Fixed.
+
+### M-07
+
+Partially fixed. Maybe worth checking again?
+
+### M-08
+
+Fixed.
+
+### M-09
+
+I think I did something here. Not sure any more. :)
+
+### M-10
+
+Fixed.
+
+### M-11
+
+Wont.
+
+### M-12
+
+Wont for now. Maybe in future versions.
+
+### M-13
+
+Wont.
+
+### M-14
+
+Wont. The initial transfer is done safely as part of the transaction that creates the new position or a new clone.
+
+### M-15
+
+Wont. Should be rare enough requires quite some commitment from the frontrunner (investing 90 days in advance).
+
 ### L-01
 
 WONT: If someone frontruns the initial deployment process, we will just deploy again.
