@@ -45,7 +45,7 @@ contract MintingHub {
         uint256 bid;        // the highest bid in ZCHF (total amount, not price per unit)
     }
 
-    event PositionOpened(address indexed owner, address original, address zchf, address collateral, uint256 price);
+    event PositionOpened(address indexed owner, address indexed position, address zchf, address collateral, uint256 price);
     event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);
     event ChallengeAverted(address indexed position, uint256 number);
     event ChallengeSucceeded(address indexed position, uint256 bid, uint256 number);
