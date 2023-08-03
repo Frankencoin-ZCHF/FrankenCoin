@@ -5,7 +5,6 @@ import { deployContract } from "../deployUtils";
 
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-
     const {
         deployments: { get },
     } = hre;
@@ -15,7 +14,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const positionFactoryDeployment = await get("PositionFactory");
     let positionFactoryContract = await ethers.getContractAt("PositionFactory",
         positionFactoryDeployment.address);
-    console.log(`Verify positionFactory:\nnpx hardhat verify --network sepolia ${positionFactoryDeployment.address}`)
+    console.log(`\nVerify positionFactory:\nnpx hardhat verify --network sepolia ${positionFactoryDeployment.address}`)
 };
 export default deploy;
 deploy.tags = ["main", "PositionFactory"];

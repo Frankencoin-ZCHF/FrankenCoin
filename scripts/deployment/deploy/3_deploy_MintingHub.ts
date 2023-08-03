@@ -21,7 +21,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let abiCoder = new ethers.utils.AbiCoder();
     let encodeString1 = abiCoder.encode(['address'], [zchfContract.address]);
     let encodeString2 = abiCoder.encode(['address'], [positionFactoryContract.address]);
-    console.log("Constructor Arguments ABI Encoded (Minting Hub):");
+    console.log("\nConstructor Arguments ABI Encoded (Minting Hub):");
     console.log(encodeString1);
     console.log(encodeString2);
 
