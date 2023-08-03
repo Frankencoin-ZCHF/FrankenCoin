@@ -25,19 +25,22 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         throw new Error("ChainId doesn't match");
     }
     let minApplicationPeriod = params['minApplicationPeriod'];
-    console.log("Min application period =", minApplicationPeriod);
+    console.log("\nMin application period =", minApplicationPeriod);
     let FC = await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
     let abiCoder = new ethers.utils.AbiCoder();
     let encodeString = abiCoder.encode(['uint256'], [minApplicationPeriod]);
-    console.log("Constructor Arguments ABI Encoded (Frankencoin at ", FC.address, "):");
+    console.log("\nConstructor Arguments ABI Encoded (Frankencoin at ", FC.address, "):");
     console.log(encodeString);
     console.log(`Verify Frankencoin:\nnpx hardhat verify --network sepolia ${FC.address} ${minApplicationPeriod}`)
 
     let reserve = await FC.reserve();
     encodeString = abiCoder.encode(['address'], [FC.address]);
-    console.log("Constructor Arguments ABI Encoded (Equity):");
+    console.log("\nConstructor Arguments ABI Encoded (Equity):");
     console.log(encodeString);
     console.log(`Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${FC.address}`)
+
+    let equity = await ethers.getContractAt("Equity", reserve);
+    console.log(equity.address, await equity.price());
 };
 export default deploy;
 deploy.tags = ["main", "Frankencoin"];
