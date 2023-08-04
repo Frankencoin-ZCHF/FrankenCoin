@@ -62,10 +62,10 @@ describe("Equity Tests", () => {
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.equal(floatToDec18(1000));
         });
-        it("should create 1000 more shares when adding seven capital", async () => {
-            let expected = await equity.calculateShares(floatToDec18(7000));
+        it("should create 1000 more shares when adding seven capital plus fees", async () => {
+            let expected = await equity.calculateShares(floatToDec18(7000/0.997));
             expect(expected).to.be.approximately(floatToDec18(1000), floatToDec18(0.01));
-            await zchf.transferAndCall(equity.address, floatToDec18(7000), 0);
+            await zchf.transferAndCall(equity.address, floatToDec18(7000/0.997), 0);
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.approximately(floatToDec18(2000), floatToDec18(0.01));
         });
@@ -78,9 +78,11 @@ describe("Equity Tests", () => {
             await ethers.provider.send("evm_mine");
             expect(await equity["canRedeem()"]()).to.be.true;
             let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1000.0));
+            let equityCapital = dec18ToFloat(await zchf.balanceOf(equity.address));
             let bnred = BN.from(redemptionAmount.toString());
             let proceeds = await equity.calculateProceeds(bnred);
-            expect(proceeds).to.be.approximately(floatToDec18(7000.0), floatToDec18(0.01));
+            expect(proceeds).to.be.approximately(floatToDec18(equityCapital/8*7), floatToDec18(equityCapital*0.003));
+            expect(proceeds).to.be.below(floatToDec18(equityCapital/8*7));
         });
     });
 

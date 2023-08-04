@@ -189,11 +189,13 @@ describe("Basic Tests", () => {
             
             let poolTokenSharesRec = dec18ToFloat(sharesAfter.sub(sharesBefore));
             let ZCHFReceived = dec18ToFloat(capitalAfter.sub(capitalBefore));
-            let isZCHFAmountCorrect = Math.abs(ZCHFReceived-dCapital) <= 1e-12;
+            let feeRate = ZCHFReceived/dCapital;
+            let isZCHFAmountCorrect = Math.abs(feeRate - 0.997) <= 1e-5;
             let isPoolShareAmountCorrect = poolTokenSharesRec==-amountShares;
             if(!isZCHFAmountCorrect || !isZCHFAmountCorrect) {
                 console.log("ZCHF tokens received = ", ZCHFReceived);
                 console.log("ZCHF tokens expected = ", dCapital);
+                console.log("Fee = ", feeRate);
                 console.log("Pool shares redeemed = ", -poolTokenSharesRec);
                 console.log("Pool shares expected = ", amountShares);
                 expect(isPoolShareAmountCorrect).to.be.true;

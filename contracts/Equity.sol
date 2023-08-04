@@ -326,7 +326,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     function calculateSharesInternal(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18 ? 1000 * ONE_DEC18 : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investment, capitalBefore)));
+        uint256 investmentExFees = investment * 997 / 1000;
+        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18 ? 1000 * ONE_DEC18 : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investmentExFees, capitalBefore)));
         return newTotalShares - totalShares;
     }
 
@@ -358,8 +359,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 totalShares = totalSupply();
         require(shares + ONE_DEC18 < totalShares, "too many shares"); // make sure there is always at least one share
         uint256 capital = zchf.equity();
-        uint256 newTotalShares = totalShares - shares;
-        uint256 newCapital = _mulD18(capital, _power3(_divD18(newTotalShares, totalShares)));
+        uint256 reductionAfterFees = shares * 997 / 1000;
+        uint256 newCapital = _mulD18(capital, _power3(_divD18(totalShares - reductionAfterFees, totalShares)));
         return capital - newCapital;
     }
 
