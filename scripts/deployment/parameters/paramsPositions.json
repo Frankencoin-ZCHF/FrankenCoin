@@ -11,7 +11,7 @@
     "feesPercent": 2,
     "liqPriceCHF": 1000,
     "reservePercent": 10,
-    "durationDays": 15552000,
+    "durationDays": 30,
     "challengePeriodSeconds": 901,
     "minApplicationPeriodSeconds": 900
   },
@@ -27,7 +27,7 @@
     "feesPercent": 2,
     "liqPriceCHF": 1000,
     "reservePercent": 10,
-    "durationDays": 15552000,
+    "durationDays": 30,
     "challengePeriodSeconds": 901,
     "minApplicationPeriodSeconds": 900
   }

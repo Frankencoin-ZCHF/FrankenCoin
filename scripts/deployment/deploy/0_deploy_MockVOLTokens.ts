@@ -26,7 +26,8 @@ const deployMockTokens: DeployFunction = async function (hre: HardhatRuntimeEnvi
             // deploy
             const contractName = paramsArr[k].name;
             let mockVOLTokenContract = await deployContract(hre, contractName);
-            console.log("Mocktoken ", contractName, " deployed at ", mockVOLTokenContract.address);
+            const decimals = await mockVOLTokenContract.decimals();
+            console.log(`Mocktoken ${contractName}(${decimals}) deployed at ${mockVOLTokenContract.address}\n`);
             // store address to params
             paramsArr[k].collateralTknAddr = mockVOLTokenContract.address;
         }
