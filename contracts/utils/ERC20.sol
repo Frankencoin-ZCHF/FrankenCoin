@@ -11,8 +11,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
-import "./IERC677Receiver.sol";
+import "../interface/IERC20.sol";
+import "../interface/IERC677Receiver.sol";
 
 /**
  * @dev Implementation of the `IERC20` interface.
@@ -39,10 +39,10 @@ import "./IERC677Receiver.sol";
  */
 
 abstract contract ERC20 is IERC20 {
-
     mapping(address account => uint256 balance) private _balances;
 
-    mapping(address account => mapping(address spender => uint256 allowance)) private _allowances;
+    mapping(address account => mapping(address spender => uint256 allowance))
+        private _allowances;
 
     uint256 internal constant INFINITY = (1 << 255);
 
@@ -52,9 +52,17 @@ abstract contract ERC20 is IERC20 {
 
     // Copied from https://github.com/OpenZeppelin/openzeppelin-contracts/pull/4139/files#diff-fa792f7d08644eebc519dac2c29b00a54afc4c6a76b9ef3bba56c8401fe674f6
     // Indicates an error related to the current balance of a sender. Used in transfers.
-    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
+    error ERC20InsufficientBalance(
+        address sender,
+        uint256 balance,
+        uint256 needed
+    );
     // Indicates a failure with the spender’s allowance. Used in transfers.
-    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+    error ERC20InsufficientAllowance(
+        address spender,
+        uint256 allowance,
+        uint256 needed
+    );
 
     constructor(uint8 _decimals) {
         decimals = _decimals;
@@ -82,7 +90,10 @@ abstract contract ERC20 is IERC20 {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _transfer(msg.sender, recipient, amount);
         return true;
     }
@@ -90,11 +101,17 @@ abstract contract ERC20 is IERC20 {
     /**
      * @dev See `IERC20.allowance`.
      */
-    function allowance(address owner, address spender) external view override returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) external view override returns (uint256) {
         return allowanceInternal(owner, spender);
     }
 
-    function allowanceInternal(address owner, address spender) internal view virtual returns (uint256) {
+    function allowanceInternal(
+        address owner,
+        address spender
+    ) internal view virtual returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -105,7 +122,10 @@ abstract contract ERC20 is IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 value) external override returns (bool) {
+    function approve(
+        address spender,
+        uint256 value
+    ) external override returns (bool) {
         _approve(msg.sender, spender, value);
         return true;
     }
@@ -122,13 +142,22 @@ abstract contract ERC20 is IERC20 {
      * - the caller must have allowance for `sender`'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external override returns (bool) {
         _transfer(sender, recipient, amount);
         uint256 currentAllowance = allowanceInternal(sender, msg.sender);
-        if (currentAllowance < INFINITY){
+        if (currentAllowance < INFINITY) {
             // Only decrease the allowance if it was not set to 'infinite'
             // Documented in /doc/infiniteallowance.md
-            if (currentAllowance < amount) revert ERC20InsufficientAllowance(sender, currentAllowance, amount);
+            if (currentAllowance < amount)
+                revert ERC20InsufficientAllowance(
+                    sender,
+                    currentAllowance,
+                    amount
+                );
             _approve(sender, msg.sender, currentAllowance - amount);
         }
         return true;
@@ -148,21 +177,34 @@ abstract contract ERC20 is IERC20 {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal virtual {
         require(recipient != address(0));
-        
+
         _beforeTokenTransfer(sender, recipient, amount);
-        if (_balances[sender] < amount) revert ERC20InsufficientBalance(sender, _balances[sender], amount);
+        if (_balances[sender] < amount)
+            revert ERC20InsufficientBalance(sender, _balances[sender], amount);
         _balances[sender] -= amount;
         _balances[recipient] += amount;
         emit Transfer(sender, recipient, amount);
     }
 
     // ERC-677 functionality, can be useful for swapping and wrapping tokens
-    function transferAndCall(address recipient, uint256 amount, bytes calldata data) external override returns (bool) {
+    function transferAndCall(
+        address recipient,
+        uint256 amount,
+        bytes calldata data
+    ) external override returns (bool) {
         bool success = transfer(recipient, amount);
-        if (success){
-            success = IERC677Receiver(recipient).onTokenTransfer(msg.sender, amount, data);
+        if (success) {
+            success = IERC677Receiver(recipient).onTokenTransfer(
+                msg.sender,
+                amount,
+                data
+            );
         }
         return success;
     }
@@ -186,7 +228,7 @@ abstract contract ERC20 is IERC20 {
         emit Transfer(address(0), recipient, amount);
     }
 
-     /**
+    /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
      *
@@ -237,6 +279,9 @@ abstract contract ERC20 is IERC20 {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) virtual internal {
-    }
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 }

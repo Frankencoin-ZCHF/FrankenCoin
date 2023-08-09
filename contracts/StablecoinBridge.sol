@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
-import "./IERC677Receiver.sol";
-import "./IFrankencoin.sol";
+import "./interface/IERC20.sol";
+import "./interface/IERC677Receiver.sol";
+import "./interface/IFrankencoin.sol";
 
 /**
  * A minting contract for another Swiss franc stablecoin ('source stablecoin') that we trust.
@@ -68,7 +68,7 @@ contract StablecoinBridge {
         address target,
         uint256 amount
     ) internal {
-        zchf.burn(zchfHolder, amount);
+        zchf.burnFrom(zchfHolder, amount);
         chf.transfer(target, amount);
     }
 

@@ -103,7 +103,7 @@ describe("Basic Tests", () => {
             expect(allowance1).to.be.eq(amount);
             let allowance2 = await zchf.allowance(owner.address, alice.address);
             expect(allowance2).to.be.eq(floatToDec18(0));
-            await zchf["burn(uint256)"](amount);
+            await zchf.burn(amount);
             await bridge.burn(amount);
             await bridge.burnFrom(owner.address, amount);
             await zchf.transferAndCall(bridge.address, amount, 0);

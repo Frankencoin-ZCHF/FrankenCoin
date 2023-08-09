@@ -1,5 +1,5 @@
 // @ts-nocheck
-import {expect} from "chai";
+import { expect } from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
 const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
@@ -29,7 +29,7 @@ describe("Plugin Veto Tests", () => {
         bridge = await createContract("StablecoinBridge", [mockXCHF.address, ZCHFContract.address, limit]);
         ZCHFContract.initialize(bridge.address, "");
         // wait for 1 block
-        await ethers.provider.send('evm_increaseTime', [60]); 
+        await ethers.provider.send('evm_increaseTime', [60]);
         await network.provider.send("evm_mine");
         // now we are ready to bootstrap ZCHF with Mock-XCHF
         await mockXCHF.mint(owner, limit.div(2));
@@ -41,14 +41,14 @@ describe("Plugin Veto Tests", () => {
         // owner also mints some to be able to veto
         await mockXCHF.connect(accounts[0]).approve(bridge.address, amount);
         await bridge.connect(accounts[0])["mint(uint256)"](amount);
-        
+
     });
 
     describe("create secondary bridge plugin", () => {
-       
-        
+
+
         it("create mock DCHF token&bridge", async () => {
-            let limit : BigNumber = floatToDec18(100_000);
+            let limit: BigNumber = floatToDec18(100_000);
             mockDCHF = await createContract("TestToken", ["Test Name", "Symbol", 18]);
             await mockDCHF.mint(otherUser, floatToDec18(100_000));
             let otherAddr = mockDCHF.address;
@@ -61,7 +61,7 @@ describe("Plugin Veto Tests", () => {
             await mockXCHF.connect(accounts[1]).approve(ZCHFContract.address, applicationFee);
             let balance = await ZCHFContract.balanceOf(accounts[1].address);
             expect(balance).to.be.greaterThan(applicationFee);
-            await expect(ZCHFContract.connect(accounts[1]).suggestMinter(secondBridge.address, applicationPeriod, 
+            await expect(ZCHFContract.connect(accounts[1]).suggestMinter(secondBridge.address, applicationPeriod,
                 applicationFee, msg)).to.emit(ZCHFContract, "MinterApplied");
         });
         it("can't mint before min period", async () => {

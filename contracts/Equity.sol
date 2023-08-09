@@ -3,10 +3,9 @@
 pragma solidity ^0.8.0;
 
 import "./Frankencoin.sol";
-import "./IERC677Receiver.sol";
-import "./ERC20PermitLight.sol";
-import "./MathUtil.sol";
-import "./IReserve.sol";
+import "./utils/MathUtil.sol";
+import "./interface/IReserve.sol";
+import "./interface/IERC677Receiver.sol";
 
 /**
  * If the Frankencoin system was a bank, this contract would represent the equity on its balance sheet.
