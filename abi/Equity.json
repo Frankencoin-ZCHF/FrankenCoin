@@ -757,13 +757,8 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "sender",
+                "name": "holder",
                 "type": "address"
-            },
-            {
-                "internalType": "address[]",
-                "name": "helpers",
-                "type": "address[]"
             }
         ],
         "name": "votes",
@@ -781,11 +776,16 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "holder",
+                "name": "sender",
                 "type": "address"
+            },
+            {
+                "internalType": "address[]",
+                "name": "helpers",
+                "type": "address[]"
             }
         ],
-        "name": "votes",
+        "name": "votesDelegated",
         "outputs": [
             {
                 "internalType": "uint256",
