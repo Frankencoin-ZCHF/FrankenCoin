@@ -8,7 +8,7 @@ import { StablecoinBridge } from "../../../typechain";
 var prompt = require('prompt');
 
 async function getAddress() {
-    let addr = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707";
+    let addr = "0xCf3f8985e8aA051C15ED7baBCeEAc9aaD6711a85";
     console.log("Is this address for MOCKCHF ok? [y,N]", addr)
     prompt.start();
     const { isOk } = await prompt.get(['isOk']);
@@ -42,7 +42,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         applicationMsg = "MockXCHF Token Bridge";
     } else {
         console.log("Deploying XCHF-Token Bridge");
-        xchfAddress = "0xb4272071ecadd69d933adcd19ca99fe80664fc08";
+        xchfAddress = "0xCf3f8985e8aA051C15ED7baBCeEAc9aaD6711a85";
         applicationMsg = "XCHF Token Bridge";
     }
     const ZCHFDeployment = await get("Frankencoin");

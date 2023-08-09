@@ -60,7 +60,7 @@ export default {
       //url: "https://rpc.sepolia.dev",
       //url: "https://rpc.sepolia.online",
       //url: "https://www.sepoliarpc.space",
-      url: "https://rpc.sepolia.org",
+      url: "https://ethereum-sepolia.blockpi.network/v1/rpc/public",
       //url: "https://rpc-sepolia.rockx.com",
       chainId: 11155111,
       gas: 50_000,
