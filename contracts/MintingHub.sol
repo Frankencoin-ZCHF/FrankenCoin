@@ -45,6 +45,7 @@ contract MintingHub {
         uint256 bid;        // the highest bid in ZCHF (total amount, not price per unit)
     }
 
+    event PositionOpened(address indexed owner, address indexed position, address zchf, address collateral, uint256 price);
     event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);
     event ChallengeAverted(address indexed position, uint256 number);
     event ChallengeSucceeded(address indexed position, uint256 bid, uint256 number);
@@ -111,6 +112,7 @@ contract MintingHub {
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
+        emit PositionOpened(msg.sender, address(pos), address(zchf), _collateralAddress, _liqPrice);
         return address(pos);
     }
 
@@ -135,6 +137,8 @@ contract MintingHub {
         zchf.registerPosition(pos);
         IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
         existing.collateral().transferFrom(msg.sender, pos, _initialCollateral); // At the end to guard against ERC-777 reentrancy
+
+        emit PositionOpened(msg.sender, address(pos), address(zchf), address(existing.collateral()), existing.price());
         return address(pos);
     }
 
