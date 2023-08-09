@@ -52,15 +52,16 @@ contract MintingHub {
     event NewBid(uint256 challengedId, uint256 bidAmount, address bidder);
     event PostPonedReturn(address collateral, address indexed beneficiary, uint256 amount);
 
-    constructor(address _zchf, address factory) {
+    constructor(address _zchf, address _factory) {
         zchf = IFrankencoin(_zchf);
-        POSITION_FACTORY = IPositionFactory(factory);
+        POSITION_FACTORY = IPositionFactory(_factory);
     }
 
-    function openPosition(
+    function openPositionOneWeek(
         address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
         uint256 _mintingMaximum, uint256 _expirationSeconds, uint256 _challengeSeconds,
-        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
+        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM
+    ) public returns (address) {
             return openPosition(_collateralAddress, _minCollateral, _initialCollateral, _mintingMaximum,
             7 days, _expirationSeconds, _challengeSeconds, _yearlyInterestPPM, _liqPrice, _reservePPM);
     }
@@ -89,7 +90,8 @@ contract MintingHub {
     function openPosition(
         address _collateralAddress, uint256 _minCollateral, uint256 _initialCollateral,
         uint256 _mintingMaximum, uint256 _initPeriodSeconds, uint256 _expirationSeconds, uint256 _challengeSeconds,
-        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM) public returns (address) {
+        uint32 _yearlyInterestPPM, uint256 _liqPrice, uint32 _reservePPM
+    ) public returns (address) {
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,

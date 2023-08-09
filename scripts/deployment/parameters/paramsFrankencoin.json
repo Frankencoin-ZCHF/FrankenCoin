@@ -1,6 +1,12 @@
 [
     {
         "name": "Frankencoin",
+        "chainId": 31337,
+        "chainName" : "Local",
+        "minApplicationPeriod" : 900
+    },
+    {
+        "name": "Frankencoin",
         "chainId": 11155111,
         "chainName" : "Sepolia",
         "minApplicationPeriod" : 900
