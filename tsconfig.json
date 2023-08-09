@@ -2,21 +2,19 @@
   "compilerOptions": {
     "target": "es2018",
     "module": "commonjs",
-    "allowJs": true,
     "strict": true,
-    "noImplicitAny": false,
     "esModuleInterop": true,
+    "moduleResolution": "node",
     "outDir": "dist",
-    "resolveJsonModule": true,
-    "sourceMap": true,
-    "declaration": true,
+    "resolveJsonModule": true
   },
   "include": [
-      "./scripts",
-      "./test",
-      "./typechain"
-  ],
-  "files": [
-      "./hardhat.config.ts"
+    "hardhat.config.ts",
+    "./scripts",
+    "./deploy",
+    "./test",
+    "./typechain",
+    "deploy",
+    "utils"
   ]
 }

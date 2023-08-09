@@ -127,13 +127,6 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Returns whether the sender address is allowed to redeem FPS.
-     */
-    function canRedeem() external view returns (bool){
-        return canRedeem(msg.sender);
-    }
-
-    /**
      * Returns whether the given address is allowed to redeem FPS, which is the
      * case after their average holding duration is larger than the required minimum.
      */
@@ -343,7 +336,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return proceeds;
     }
 
-    function redeem(address target, uint256 shares, uint256 expectedProceeds) public returns (uint256) {
+    function redeemExpected(address target, uint256 shares, uint256 expectedProceeds) public returns (uint256) {
         uint256 proceeds = redeem(target, shares);
         require(proceeds >= expectedProceeds);
         return proceeds;

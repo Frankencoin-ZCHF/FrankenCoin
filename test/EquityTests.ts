@@ -1,17 +1,14 @@
 // @ts-nocheck
-import {expect} from "chai";
-import { float } from "hardhat/internal/core/params/argumentTypes";
+import { expect } from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
 const { ethers, network } = require("hardhat");
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
-import { Equity__factory } from "../typechain";
 
 let zchf, bridge, xchf, equity;
 let accounts, owner;
 
 describe("Equity Tests", () => {
-    
     before(async () => {
         accounts = await ethers.getSigners();
         owner = accounts[0].address;
@@ -63,9 +60,9 @@ describe("Equity Tests", () => {
             expect(balance).to.be.equal(floatToDec18(1000));
         });
         it("should create 1000 more shares when adding seven capital plus fees", async () => {
-            let expected = await equity.calculateShares(floatToDec18(7000/0.997));
+            let expected = await equity.calculateShares(floatToDec18(7000 / 0.997));
             expect(expected).to.be.approximately(floatToDec18(1000), floatToDec18(0.01));
-            await zchf.transferAndCall(equity.address, floatToDec18(7000/0.997), 0);
+            await zchf.transferAndCall(equity.address, floatToDec18(7000 / 0.997), 0);
             let balance = await equity.balanceOf(owner);
             expect(balance).to.be.approximately(floatToDec18(2000), floatToDec18(0.01));
         });
@@ -74,27 +71,27 @@ describe("Equity Tests", () => {
             await expect(equity.redeem(owner, floatToDec18(0.1))).to.be.revertedWithoutReason();
         });
         it("should allow redemption after time passed", async () => {
-            await ethers.provider.send('evm_increaseTime', [90 * 86_400 + 60]); 
+            await ethers.provider.send('evm_increaseTime', [90 * 86_400 + 60]);
             await ethers.provider.send("evm_mine");
             expect(await equity["canRedeem()"]()).to.be.true;
             let redemptionAmount = (await equity.balanceOf(owner)).sub(floatToDec18(1000.0));
             let equityCapital = dec18ToFloat(await zchf.balanceOf(equity.address));
             let bnred = BN.from(redemptionAmount.toString());
             let proceeds = await equity.calculateProceeds(bnred);
-            expect(proceeds).to.be.approximately(floatToDec18(equityCapital/8*7), floatToDec18(equityCapital*0.003));
-            expect(proceeds).to.be.below(floatToDec18(equityCapital/8*7));
+            expect(proceeds).to.be.approximately(floatToDec18(equityCapital / 8 * 7), floatToDec18(equityCapital * 0.003));
+            expect(proceeds).to.be.below(floatToDec18(equityCapital / 8 * 7));
         });
     });
 
 
     describe("transfer shares", () => {
-        
+
         it("total votes==sum of owner votes", async () => {
             let other = accounts[5].address;
             let totVotesBefore = await equity.totalVotes();
             let votesBefore = [await equity["votes(address)"](owner), await equity["votes(address)"](other)];
-            let isEqual = totVotesBefore-votesBefore[0]==0;
-            if(!isEqual) {
+            let isEqual = totVotesBefore - votesBefore[0] == 0;
+            if (!isEqual) {
                 console.log(`1) total votes before = ${totVotesBefore}`);
                 console.log(`1) sum votes before = ${votesBefore}`);
             }
@@ -111,12 +108,12 @@ describe("Equity Tests", () => {
             let balancesBefore = [await equity.balanceOf(owner), await equity.balanceOf(other)];
             await equity.transfer(other, floatToDec18(amount));
             let balancesAfter = [await equity.balanceOf(owner), await equity.balanceOf(other)];
-            expect(balancesAfter[1]>balancesBefore[1]).to.be.true;
+            expect(balancesAfter[1] > balancesBefore[1]).to.be.true;
             let totVotesAfter = await equity.totalVotes();
             let votesAfter = [await equity["votes(address)"](owner), await equity["votes(address)"](other)];
-            let isEqual1 = totVotesBefore-votesBefore[0] ==0;
-            let isEqual2 = totVotesAfter-votesAfter[0]-votesAfter[1]==0;
-            if(!isEqual1 || !isEqual2) {
+            let isEqual1 = totVotesBefore - votesBefore[0] == 0;
+            let isEqual2 = totVotesAfter - votesAfter[0] - votesAfter[1] == 0;
+            if (!isEqual1 || !isEqual2) {
                 console.log(`2) total votes before = ${totVotesBefore}`);
                 console.log(`2) votes before = ${votesBefore}`);
                 console.log(`2) total votes after = ${totVotesAfter}`);
@@ -132,13 +129,13 @@ describe("Equity Tests", () => {
             let totVotesAfter = await equity.totalVotes();
             let votesAfter = [await equity["votes(address)"](owner), await equity["votes(address)"](other)];
             let isEqual = (totVotesAfter.sub(votesAfter[0]).sub(votesAfter[1])) == 0;
-            let isZero = votesAfter[1]==0
-            if(!isEqual || isZero) {
+            let isZero = votesAfter[1] == 0
+            if (!isEqual || isZero) {
                 console.log(`3) total votes after = ${totVotesAfter}`);
                 console.log(`3) votes after = ${votesAfter}`);
             }
-            expect(isEqual&&!isZero).to.be.true;
-        }); 
+            expect(isEqual && !isZero).to.be.true;
+        });
 
         it("delegate vote", async () => {
             await equity.connect(accounts[5]).delegateVoteTo(accounts[2].address);
@@ -148,13 +145,13 @@ describe("Equity Tests", () => {
             expect(qualified1 > qualified2).to.be.true;
             let tx = equity["votes(address,address[])"](accounts[5].address, [accounts[2].address]);
             expect(tx).to.be.reverted;
-        }); 
+        });
 
         it("kamikaze", async () => {
             let tx = equity.connect(accounts[2]).kamikaze(accounts[5].address, BN.from(1000000));
             await expect(tx).to.be.reverted; // account 2 has no votes
 
-            await ethers.provider.send('evm_increaseTime', [80]); 
+            await ethers.provider.send('evm_increaseTime', [80]);
             await ethers.provider.send("evm_mine");
             let balance0 = await equity.balanceOf(accounts[0].address);
             let balance5 = await equity.balanceOf(accounts[5].address);
@@ -175,6 +172,6 @@ describe("Equity Tests", () => {
             expect(loss0).to.be.approximately(votesBefore5, BN.from(2000).mul(BN.from(10).pow(18)));
             let totalVotesA = await equity.totalVotes();
             expect(expectedTotalVotes.sub(totalVotesA)).to.be.eq(loss0.add(loss5));
-        }); 
+        });
     });
 });
