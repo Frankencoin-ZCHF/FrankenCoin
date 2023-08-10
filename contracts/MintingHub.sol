@@ -187,21 +187,6 @@ contract MintingHub {
     function clonePosition(
         address position,
         uint256 _initialCollateral,
-        uint256 _initialMint
-    ) public validPos(position) returns (address) {
-        uint256 expiration = IPosition(position).expiration();
-        return
-            clonePosition(
-                position,
-                _initialCollateral,
-                _initialMint,
-                expiration
-            );
-    }
-
-    function clonePosition(
-        address position,
-        uint256 _initialCollateral,
         uint256 _initialMint,
         uint256 expiration
     ) public validPos(position) returns (address) {
@@ -314,13 +299,13 @@ contract MintingHub {
     }
 
     function minBid(uint256 challenge) public view returns (uint256) {
-        return minBid(challenges[challenge]);
+        return _minBid(challenges[challenge]);
     }
 
     /**
      * The minimum bid size for the next bid. It must be 0.5% higher than the previous bid.
      */
-    function minBid(
+    function _minBid(
         Challenge storage challenge
     ) internal view returns (uint256) {
         return (challenge.bid * 1005) / 1000;
@@ -360,8 +345,8 @@ contract MintingHub {
             pos.collateral().transfer(msg.sender, size_);
         } else {
             // challenge is not averted, update bid
-            if (_bidAmountZCHF < minBid(challenge))
-                revert BidTooLow(_bidAmountZCHF, minBid(challenge));
+            if (_bidAmountZCHF < _minBid(challenge))
+                revert BidTooLow(_bidAmountZCHF, _minBid(challenge));
             uint256 earliestEnd = block.timestamp + 30 minutes;
             if (earliestEnd >= endTime && block.timestamp < endTime) {
                 // bump remaining time like ebay does when last minute bids come in
@@ -433,7 +418,7 @@ contract MintingHub {
         }
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
         zchf.burnWithourReserve(repayment, reservePPM); // Repay the challenged part
-        returnCollateral(
+        _returnCollateral(
             challenge.position.collateral(),
             challenge.challenger,
             challenge.size,
@@ -458,7 +443,7 @@ contract MintingHub {
         IERC20(collateral).transfer(target, amount);
     }
 
-    function returnCollateral(
+    function _returnCollateral(
         IERC20 collateral,
         address recipient,
         uint256 amount,

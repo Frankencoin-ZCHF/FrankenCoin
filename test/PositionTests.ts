@@ -136,7 +136,7 @@ describe("Position Tests", () => {
             let expiration = await positionContract.expiration();
             let duration = expiration.sub(start).div(2);
             let newExpiration = expiration.sub(duration);
-            let tx = await mintingHub.connect(alice)["clonePosition(address,uint256,uint256,uint256)"](positionAddr, fInitialCollateralClone, fMintAmount, newExpiration);
+            let tx = await mintingHub.connect(alice).clonePosition(positionAddr, fInitialCollateralClone, fMintAmount, newExpiration);
             let rc = await tx.wait();
             const topic = '0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2'; // PositionOpened
             const log = rc.logs.find(x => x.topics.indexOf(topic) >= 0);
@@ -184,7 +184,7 @@ describe("Position Tests", () => {
 
             await mockVOL.connect(alice).approve(mintingHub.address, fInitialCollateralClone);
             fGlblZCHBalanceOfCloner = await ZCHFContract.balanceOf(alice.address);
-            let tx = mintingHub.connect(alice)["clonePosition(address,uint256,uint256)"](positionAddr, fInitialCollateralClone, initialLimit);
+            let tx = mintingHub.connect(alice).clonePosition(positionAddr, fInitialCollateralClone, initialLimit, 0);
             await expect(tx).to.be.reverted; // underflow
         });
 

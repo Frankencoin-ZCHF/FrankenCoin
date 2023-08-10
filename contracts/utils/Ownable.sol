@@ -17,10 +17,12 @@ pragma solidity ^0.8.0;
  * can later be changed with {transferOwnership}.
  */
 contract Ownable {
-
     address public owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     error NotOwner();
 
@@ -29,26 +31,26 @@ contract Ownable {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public onlyOwner {
-        setOwner(newOwner);
+        _setOwner(newOwner);
     }
 
     /**
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Internal function without access restriction.
      */
-    function setOwner(address newOwner) internal {
+    function _setOwner(address newOwner) internal {
         require(newOwner != address(0x0));
         address oldOwner = owner;
         owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
     }
 
-    function requireOwner(address sender) internal view {
+    function _requireOwner(address sender) internal view {
         if (owner != sender) revert NotOwner();
     }
 
     modifier onlyOwner() {
-        requireOwner(msg.sender);
+        _requireOwner(msg.sender);
         _;
     }
 }

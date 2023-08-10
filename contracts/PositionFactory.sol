@@ -49,12 +49,12 @@ contract PositionFactory {
      */
     function clonePosition(address _existing) external returns (address) {
         Position existing = Position(_existing);
-        Position clone = Position(createClone(existing.original()));
+        Position clone = Position(_createClone(existing.original()));
         return address(clone);
     }
 
     // copied from https://github.com/optionality/clone-factory/blob/32782f82dfc5a00d103a7e61a17a5dedbd1e8e9d/contracts/CloneFactory.sol
-    function createClone(address target) internal returns (address result) {
+    function _createClone(address target) internal returns (address result) {
         bytes20 targetBytes = bytes20(target);
         assembly {
             let clone := mload(0x40)

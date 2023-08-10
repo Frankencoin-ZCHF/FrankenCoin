@@ -131,7 +131,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint32 _reservePPM
     ) {
         require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
-        setOwner(_owner);
+        _setOwner(_owner);
         original = address(this);
         hub = _hub;
         price = _liqPrice;
@@ -163,17 +163,17 @@ contract Position is Ownable, IPosition, MathUtil {
         address owner,
         uint256 _price,
         uint256 _coll,
-        uint256 _mint,
+        uint256 _initialMint,
         uint256 expirationTime
     ) external onlyHub {
         if (_coll < minimumCollateral) revert InsufficientCollateral();
-        price = (_mint * ONE_DEC18) / _coll;
-        _mint = (price * _coll) / ONE_DEC18; // to cancel potential rounding errors
+        price = (_initialMint * ONE_DEC18) / _coll;
+        _initialMint = (price * _coll) / ONE_DEC18; // to cancel potential rounding errors
         if (price > _price) revert InsufficientCollateral();
-        setOwner(owner);
-        limit = _mint;
+        _setOwner(owner);
+        limit = _initialMint;
         expiration = expirationTime;
-        mintInternal(owner, _mint, _coll);
+        _mint(owner, _initialMint, _coll);
 
         emit PositionOpened(
             owner,
@@ -205,14 +205,17 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * Qualified pool share holders can call this method to immediately expire a freshly proposed position.
      */
-    function deny(address[] calldata helpers, string calldata message) public {
+    function deny(
+        address[] calldata helpers,
+        string calldata message
+    ) external {
         if (block.timestamp >= start) revert TooLate();
         IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
-        close(); // since expiration is immutable, we put it under eternal cooldown
+        _close(); // since expiration is immutable, we put it under eternal cooldown
         emit PositionDenied(msg.sender, message);
     }
 
-    function close() internal {
+    function _close() internal {
         cooldown = type(uint256).max;
     }
 
@@ -246,8 +249,8 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 newMinted,
         uint256 newCollateral,
         uint256 newPrice
-    ) public onlyOwner {
-        uint256 colbal = collateralBalance();
+    ) external onlyOwner {
+        uint256 colbal = _collateralBalance();
         if (newCollateral > colbal) {
             collateral.transferFrom(
                 msg.sender,
@@ -283,15 +286,15 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function adjustPrice(uint256 newPrice) public onlyOwner noChallenge {
         if (newPrice > price) {
-            restrictMinting(3 days);
+            _restrictMinting(3 days);
         } else {
-            checkCollateral(collateralBalance(), newPrice);
+            _checkCollateral(_collateralBalance(), newPrice);
         }
         price = newPrice;
-        emitUpdate();
+        emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }
 
-    function collateralBalance() internal view returns (uint256) {
+    function _collateralBalance() internal view returns (uint256) {
         return IERC20(collateral).balanceOf(address(this));
     }
 
@@ -303,7 +306,7 @@ contract Position is Ownable, IPosition, MathUtil {
         address target,
         uint256 amount
     ) public onlyOwner noChallenge noCooldown alive {
-        mintInternal(target, amount, collateralBalance());
+        _mint(target, amount, _collateralBalance());
     }
 
     function calculateCurrentFee() public view returns (uint32) {
@@ -322,20 +325,25 @@ contract Position is Ownable, IPosition, MathUtil {
 
     error LimitExceeded();
 
-    function mintInternal(
+    function _mint(
         address target,
         uint256 amount,
         uint256 collateral_
     ) internal {
         if (minted + amount > limit) revert LimitExceeded();
-        zchf.mint(target, amount, reserveContribution, calculateCurrentFee());
+        zchf.mintWithReserve(
+            target,
+            amount,
+            reserveContribution,
+            calculateCurrentFee()
+        );
         minted += amount;
 
-        checkCollateral(collateral_, price);
-        emitUpdate();
+        _checkCollateral(collateral_, price);
+        emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }
 
-    function restrictMinting(uint256 period) internal {
+    function _restrictMinting(uint256 period) internal {
         uint256 horizon = block.timestamp + period;
         if (horizon > cooldown) {
             cooldown = horizon;
@@ -360,13 +368,13 @@ contract Position is Ownable, IPosition, MathUtil {
             amount,
             reserveContribution
         );
-        notifyRepaidInternal(actuallyRepaid);
-        emitUpdate();
+        _notifyRepaidInternal(actuallyRepaid);
+        emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }
 
     error RepaidTooMuch(uint256 excess);
 
-    function notifyRepaidInternal(uint256 amount) internal {
+    function _notifyRepaidInternal(uint256 amount) internal {
         if (amount > minted) revert RepaidTooMuch(amount - minted);
         minted -= amount;
     }
@@ -383,9 +391,9 @@ contract Position is Ownable, IPosition, MathUtil {
         if (token == address(collateral)) {
             withdrawCollateral(target, amount);
         } else {
-            uint256 balance = collateralBalance();
+            uint256 balance = _collateralBalance();
             IERC20(token).transfer(target, amount);
-            require(balance == collateralBalance()); // guard against double-entry-point tokens
+            require(balance == _collateralBalance()); // guard against double-entry-point tokens
         }
     }
 
@@ -400,11 +408,11 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 amount
     ) public onlyOwner noChallenge {
         if (block.timestamp <= cooldown && !isClosed()) revert Hot();
-        uint256 balance = internalWithdrawCollateral(target, amount);
-        checkCollateral(balance, price);
+        uint256 balance = _withdrawCollateral(target, amount);
+        _checkCollateral(balance, price);
     }
 
-    function internalWithdrawCollateral(
+    function _withdrawCollateral(
         address target,
         uint256 amount
     ) internal returns (uint256) {
@@ -412,14 +420,15 @@ contract Position is Ownable, IPosition, MathUtil {
             // Some weird tokens fail when trying to transfer 0 amounts
             IERC20(collateral).transfer(target, amount);
         }
-        uint256 balance = collateralBalance();
+        uint256 balance = _collateralBalance();
         if (balance < minimumCollateral && challengedAmount == 0) {
             // This leaves a slightly unsatisfying possibility open: if the withdrawal happens due to a successful challenge,
             // there might be a small amount of collateral left that is not withheld in case there are no other pending challenges.
             // The only way to cleanly solve this would be to have two distinct cooldowns, one for minting and one for withdrawals.
-            close();
+            _close();
         }
-        emitUpdate();
+
+        emit MintingUpdate(_collateralBalance(), price, minted, limit);
         return balance;
     }
 
@@ -427,7 +436,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * This invariant must always hold and must always be checked when any of the three
      * variables change in an adverse way.
      */
-    function checkCollateral(
+    function _checkCollateral(
         uint256 collateralReserve,
         uint256 atPrice
     ) internal view {
@@ -435,15 +444,11 @@ contract Position is Ownable, IPosition, MathUtil {
             revert InsufficientCollateral();
     }
 
-    function emitUpdate() internal {
-        emit MintingUpdate(collateralBalance(), price, minted, limit);
-    }
-
     error ChallengeTooSmall();
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
         // require minimum size, note that collateral balance can be below minimum if it was partially challenged before
-        if (size < minimumCollateral && size < collateralBalance())
+        if (size < minimumCollateral && size < _collateralBalance())
             revert ChallengeTooSmall();
         if (size == 0) revert ChallengeTooSmall();
         challengedAmount += size;
@@ -477,7 +482,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
                 // Don't allow minter to close the position immediately so challenge can be repeated before
                 // the owner has a chance to mint more on an undercollateralized position
-                restrictMinting(1 days);
+                _restrictMinting(1 days);
                 return true;
             } else {
                 return false;
@@ -502,7 +507,7 @@ contract Position is Ownable, IPosition, MathUtil {
     ) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
         uint256 repayment = minted; // Default repayment is the amount the owner has minted
-        uint256 colBal = collateralBalance();
+        uint256 colBal = _collateralBalance();
         if (_size > colBal) {
             // Challenge is larger than the position. This can for example happen if there are multiple concurrent
             // challenges that exceed the collateral balance in size. In this case, we need to redimension the bid and
@@ -513,12 +518,12 @@ contract Position is Ownable, IPosition, MathUtil {
             repayment = _mulDiv(repayment, _size, colBal);
         }
 
-        notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
-        internalWithdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
+        _notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
+        _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
 
         // Give time for additional challenges before the owner can mint again
         // In particular, the owner might have added collateral only seconds before the challenge ended, preventing a close
-        restrictMinting(3 days);
+        _restrictMinting(3 days);
 
         return (owner, _bid, repayment, reserveContribution);
     }

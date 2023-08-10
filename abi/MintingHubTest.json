@@ -33,7 +33,7 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "number",
+                "name": "challengeNumber",
                 "type": "uint256"
             }
         ],
@@ -60,7 +60,7 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "number",
+                "name": "challengeNumber",
                 "type": "uint256"
             }
         ],
@@ -146,12 +146,12 @@
         "inputs": [
             {
                 "internalType": "string",
-                "name": "msg",
+                "name": "message",
                 "type": "string"
             },
             {
                 "internalType": "uint256",
-                "name": "number",
+                "name": "errorNumber",
                 "type": "uint256"
             }
         ],
@@ -164,7 +164,7 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "number",
+                "name": "challengeNumber",
                 "type": "uint256"
             }
         ],

@@ -102,7 +102,7 @@
         "inputs": [
             {
                 "internalType": "contract MintingHub",
-                "name": "hub",
+                "name": "",
                 "type": "address"
             },
             {

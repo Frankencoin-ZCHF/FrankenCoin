@@ -125,11 +125,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * We trust minters and the positions they have created to mint and burn as they please, so
      * giving them arbitraty allowances does not pose an additional risk.
      */
-    function allowanceInternal(
+    function _allowance(
         address owner,
         address spender
     ) internal view override returns (uint256) {
-        uint256 explicit = super.allowanceInternal(owner, spender);
+        uint256 explicit = super._allowance(owner, spender);
         if (explicit > 0) {
             return explicit; // don't waste gas checking minter
         } else if (isMinter(spender) || isMinter(isPosition(spender))) {
@@ -195,7 +195,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * Mints the provided amount of ZCHF to the target address, automatically forwarding
      * the minting fee and the reserve to the right place.
      */
-    function mint(
+    function mintWithReserve(
         address _target,
         uint256 _amount,
         uint32 _reservePPM,

@@ -42,17 +42,17 @@ contract StablecoinBridge {
      */
     function mintTo(address target, uint256 amount) public {
         chf.transferFrom(msg.sender, address(this), amount);
-        _mintInternal(target, amount);
+        _mint(target, amount);
     }
 
-    function _mintInternal(address target, uint256 amount) internal {
+    function _mint(address target, uint256 amount) internal {
         require(block.timestamp <= horizon, "expired");
         require(chf.balanceOf(address(this)) <= limit, "limit");
         zchf.mint(target, amount);
     }
 
     function burn(uint256 amount) external {
-        _burnInternal(msg.sender, msg.sender, amount);
+        _burn(msg.sender, msg.sender, amount);
     }
 
     /**
@@ -60,10 +60,10 @@ contract StablecoinBridge {
      * No allowance required.
      */
     function burnFrom(address target, uint256 amount) external {
-        _burnInternal(msg.sender, target, amount);
+        _burn(msg.sender, target, amount);
     }
 
-    function _burnInternal(
+    function _burn(
         address zchfHolder,
         address target,
         uint256 amount
@@ -81,9 +81,9 @@ contract StablecoinBridge {
         bytes calldata
     ) external returns (bool) {
         if (msg.sender == address(chf)) {
-            _mintInternal(from, amount);
+            _mint(from, amount);
         } else if (msg.sender == address(zchf)) {
-            _burnInternal(address(this), from, amount);
+            _burn(address(this), from, amount);
         } else {
             require(false, "unsupported token");
         }

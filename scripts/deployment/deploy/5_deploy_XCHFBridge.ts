@@ -83,7 +83,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         let amount = floatToDec18(20_000);
         const mockXCHF = await ethers.getContractAt("TestToken", xchfAddress);
         await mockXCHF.approve(bridgeAddr, amount);
-        await bridge["mint(uint256)"](amount);
+        await bridge.mint(amount);
     }
 };
 export default deploy;

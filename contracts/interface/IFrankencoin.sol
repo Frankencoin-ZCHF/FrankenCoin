@@ -37,7 +37,7 @@ interface IFrankencoin is IERC20 {
 
     function mint(address target, uint256 amount) external;
 
-    function mint(
+    function mintWithReserve(
         address target,
         uint256 amount,
         uint32 reservePPM,

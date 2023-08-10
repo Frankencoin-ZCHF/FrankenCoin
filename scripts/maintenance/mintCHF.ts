@@ -24,26 +24,26 @@ export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
     return signingContractManager;
 }
 
-async function mintXCHF(amount : number, address : string) {
+async function mintXCHF(amount: number, address: string) {
     const wallet = new ethers.Wallet(pk);
-    
+
     let tokenContract = await getSigningManagerFromPK(mockXCHFAddr, ERC20_ABI, NODE_URL, pk);
     await tokenContract.mint(address, floatToDec18(amount));
 }
 
-async function mintMockVOLToken(amount : number, address : string) {
+async function mintMockVOLToken(amount: number, address: string) {
     const wallet = new ethers.Wallet(pk);
     let tokenContract = await getSigningManagerFromPK(mockVOLTknAddr, ERC20_ABI, NODE_URL, pk);
     await tokenContract.mint(address, floatToDec18(amount));
 }
 
-async function mintZCHF(amount : number) {
+async function mintZCHF(amount: number) {
     // mint ZCHF via XCHF bridge
     let dAmount = floatToDec18(amount);
     let tokenContract = await getSigningManagerFromPK(mockXCHFAddr, ERC20_ABI, NODE_URL, pk);
     let bridgeContract = await getSigningManagerFromPK(bridgeAddr, BRIDGE_ABI, NODE_URL, pk);
     await tokenContract.approve(bridgeAddr, dAmount);
-    let tx = await bridgeContract["mint(uint256)"](dAmount);
+    let tx = await bridgeContract.mint(dAmount);
     console.log("minted ZCHF:", tx.hash);
 }
 
@@ -53,7 +53,7 @@ async function start() {
     let address = wallet.address;
     //let address = "0x71C696acd63979B39B8eD5b7a8030c46f34Da716"; // manu
     console.log("minting for ", address);
-    
+
     //let zchfContract = await getSigningManagerFromPK("0xC578aC4f81112a87FD6eec13aE6e2C4d17129D4a", FC_ABI, NODE_URL, pk);
     // create a minting hub too while we have no ZCHF supply
     /*let tx = await zchfContract.suggestMinter("0x240b812F8B8E42b623E00707A12150FF7cE2d72F", 

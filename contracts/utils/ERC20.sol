@@ -105,10 +105,10 @@ abstract contract ERC20 is IERC20 {
         address owner,
         address spender
     ) external view override returns (uint256) {
-        return allowanceInternal(owner, spender);
+        return _allowance(owner, spender);
     }
 
-    function allowanceInternal(
+    function _allowance(
         address owner,
         address spender
     ) internal view virtual returns (uint256) {
@@ -148,7 +148,7 @@ abstract contract ERC20 is IERC20 {
         uint256 amount
     ) external override returns (bool) {
         _transfer(sender, recipient, amount);
-        uint256 currentAllowance = allowanceInternal(sender, msg.sender);
+        uint256 currentAllowance = _allowance(sender, msg.sender);
         if (currentAllowance < INFINITY) {
             // Only decrease the allowance if it was not set to 'infinite'
             // Documented in /doc/infiniteallowance.md

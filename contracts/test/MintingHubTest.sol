@@ -114,14 +114,9 @@ contract MintingHubTest {
         bob.obtainFrankencoins(swap, 30_000 ether);
         bob.bid(hub, second, 10_000 ether);
         bob.bid(hub, latestChallenge, 20_000 ether);
-        (
-            address challenger,
-            IPosition p,
-            uint256 size,
-            uint256 a,
-            address b,
-            uint256 bid
-        ) = hub.challenges(latestChallenge);
+        (address challenger, , , , , uint256 bid) = hub.challenges(
+            latestChallenge
+        );
         require(challenger != address(0x0), "challenge not found");
         require(bid == 20_000 ether);
         return latestChallenge;
@@ -141,29 +136,22 @@ contract MintingHubTest {
     }
 
     function getChallenge(
-        uint256 number
+        uint256 challengeNumber
     ) public view returns (uint256, uint256) {
-        (
-            address challenger1,
-            IPosition p1,
-            uint256 size1,
-            uint256 a1,
-            address b1,
-            uint256 bid1
-        ) = hub.challenges(number);
+        (, , uint256 size1, , , uint256 bid1) = hub.challenges(challengeNumber);
         return (size1, bid1);
     }
 
-    function splitAndEnd(uint256 number) public {
-        (uint256 size1, uint256 bid1) = getChallenge(number);
+    function splitAndEnd(uint256 challengeNumber) public {
+        (uint256 size1, uint256 bid1) = getChallenge(challengeNumber);
         // revertWith("bid1 ", bid1); // 10000000000000000000000
         uint256 other = hub.splitChallenge(latestChallenge - 1, 101);
         (uint256 size2, uint256 bid2) = getChallenge(other);
-        (uint256 size3, uint256 bid3) = getChallenge(number);
+        (uint256 size3, uint256 bid3) = getChallenge(challengeNumber);
         // revertWith("bid2 ", bid2); // 2525000000000000000000
         require(size1 == size2 + size3);
         require(bid1 == bid2 + bid3);
-        endChallenge(number); // devastating loss, equity wiped out
+        endChallenge(challengeNumber); // devastating loss, equity wiped out
         // revertWith("minted ", Position(latestPosition).minted()); 20100000000000000000000
         alice.repay(
             Position(latestPosition),
@@ -174,18 +162,12 @@ contract MintingHubTest {
         require(zchf.equity() == 0);
     }
 
-    function endChallenge(uint256 number) public {
+    function endChallenge(uint256 challengeNumber) public {
         uint256 equityBefore = zchf.equity();
-        (
-            address challenger,
-            IPosition p,
-            uint256 size,
-            uint256 a,
-            address b,
-            uint256 bid
-        ) = hub.challenges(number);
+        (address challenger, IPosition p, uint256 size, , , uint256 bid) = hub
+            .challenges(challengeNumber);
         require(challenger != address(0x0), "challenge not found");
-        hub.end(number, true);
+        hub.end(challengeNumber, true);
         User user = challenger == address(bob) ? bob : alice;
         user.reclaimCollateral(hub, p.collateral(), size);
 
@@ -262,8 +244,13 @@ contract MintingHubTest {
     }
 
     // poor man's replacement for console.out in solidity...
-    function revertWith(string memory msg, uint256 number) public pure {
-        revert(string(abi.encodePacked(msg, Strings.toString(number))));
+    function revertWith(
+        string memory message,
+        uint256 errorNumber
+    ) public pure {
+        revert(
+            string(abi.encodePacked(message, Strings.toString(errorNumber)))
+        );
     }
 
     function challengeExpiredPosition() public {
@@ -277,25 +264,11 @@ contract MintingHubTest {
     }
 
     function bidNearEndOfChallenge() public {
-        (
-            address challenger,
-            IPosition p,
-            uint256 size,
-            uint256 end,
-            address b,
-            uint256 bid
-        ) = hub.challenges(latestChallenge);
+        (, , , uint256 end, , ) = hub.challenges(latestChallenge);
         require(block.timestamp < end);
         require(end < block.timestamp + 30 minutes);
         bob.bid(hub, latestChallenge, 5000 ether);
-        (
-            address challenger2,
-            IPosition p2,
-            uint256 size2,
-            uint256 end2,
-            address b2,
-            uint256 bid2
-        ) = hub.challenges(latestChallenge);
+        (, , , uint256 end2, , ) = hub.challenges(latestChallenge);
         require(end2 > end); // time should be increased near end of auction
     }
 
@@ -362,7 +335,7 @@ contract User {
         Position(pos).transferOwnership(newOwner);
     }
 
-    function deny(MintingHub hub, address pos) public {
+    function deny(MintingHub, address pos) public {
         address[] memory empty = new address[](0);
         Position(pos).deny(empty, "not approved");
     }
@@ -442,39 +415,18 @@ contract User {
         uint256 first
     ) public {
         {
-            (
-                address challenger,
-                IPosition p,
-                uint256 size,
-                uint256 a,
-                address b,
-                uint256 bid
-            ) = hub.challenges(first);
+            (, IPosition p, uint256 size, , , ) = hub.challenges(first);
             uint256 amount = (size * p.price()) / 10 ** 18;
             obtainFrankencoins(swap, amount);
             hub.bid(first, amount, size); // avert challenge
         }
-        (
-            address challenger,
-            IPosition p,
-            uint256 size,
-            uint256 a,
-            address b,
-            uint256 bid
-        ) = hub.challenges(first);
+        (address challenger, , , , , ) = hub.challenges(first);
         require(challenger == address(0x0), "challenge not averted");
         require(!hub.isChallengeOpen(first));
     }
 
     function bid(MintingHub hub, uint256 number, uint256 amount) public {
-        (
-            address challenger,
-            IPosition p,
-            uint256 size,
-            uint256 a,
-            address b,
-            uint256 bid
-        ) = hub.challenges(number);
+        (, , uint256 size, , , ) = hub.challenges(number);
         hub.bid(number, amount, size);
         require(hub.minBid(number) > amount); // min bid must increase
     }
