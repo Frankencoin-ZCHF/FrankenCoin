@@ -96,13 +96,6 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     uint32 public immutable reserveContribution;
 
-    event PositionOpened(
-        address indexed owner,
-        address original,
-        address zchf,
-        address collateral,
-        uint256 price
-    );
     event MintingUpdate(
         uint256 collateral,
         uint256 price,
@@ -145,14 +138,6 @@ contract Position is Ownable, IPosition, MathUtil {
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;
-
-        emit PositionOpened(
-            _owner,
-            original,
-            _zchf,
-            address(collateral),
-            _liqPrice
-        );
     }
 
     /**
@@ -175,13 +160,6 @@ contract Position is Ownable, IPosition, MathUtil {
         expiration = expirationTime;
         _mint(owner, _initialMint, _coll);
 
-        emit PositionOpened(
-            owner,
-            original,
-            address(zchf),
-            address(collateral),
-            _price
-        );
     }
 
     /**

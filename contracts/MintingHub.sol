@@ -203,13 +203,7 @@ contract MintingHub {
         );
         existing.collateral().transferFrom(msg.sender, pos, _initialCollateral); // At the end to guard against ERC-777 reentrancy
 
-        emit PositionOpened(
-            msg.sender,
-            address(pos),
-            address(zchf),
-            address(existing.collateral()),
-            existing.price()
-        );
+        emit PositionOpened(msg.sender, address(pos), address(zchf), address(existing.collateral()), existing.price());
         return address(pos);
     }
 
