@@ -35,10 +35,10 @@ contract MathUtil {
         if (factor == 0){
             return 0;
         } else if (type(uint256).max / factor > x){
+            return x * factor / divisor;
+        } else {
             // divide first to avoid overflow
             return x > factor ? x / divisor * factor : factor / divisor * x;
-        } else {
-            return x * factor / divisor;
         }
     }
 
