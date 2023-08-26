@@ -66,9 +66,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * given 18 decimals (about 60 Bits), this implies that the total supply cannot exceed
      *   192 - 60 - 44 - 20 = 68 Bits
      * Here, we are also save, as 68 Bits would imply more than a trillion outstanding shares. In fact,
-     * a limit of about 2**30 shares (that's 2**90 Bits when taking into account the decimals) is imposed
-     * when minting. This means that the maximum supply is about a billion shares, which is reached at a market
-     * cap of 3,000,000,000,000,000,000 CHF. This limit could in theory be reached in times of hyper inflaction.
+     * a limit of about 2**36 shares (that's about 2**96 Bits when taking into account the decimals) is imposed
+     * when minting. This means that the maximum supply is billions shares, which is could only be reached in
+     * a scenario with hyper inflation, in which case the stablecoin is worthless anyway.
      */
     uint192 private totalVotesAtAnchor; // Total number of votes at the anchor time, see comment on the um
     uint64 private totalVotesAnchorTime; // 44 Bit for the time stamp, 20 Bit sub-second time resolution
@@ -348,8 +348,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         emit Trade(from, int(shares), amount, price());
 
         // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
-        // the 128 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
-        require(totalSupply() <= type(uint128).max, "total supply exceeded");
+        // the 36 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
+        require(totalSupply() <= type(uint96).max, "total supply exceeded");
         return shares;
     }
 
@@ -367,15 +367,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 investment
     ) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 investmentExFees = (investment * 997) / 1000;
-        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18
-            ? 1000 * ONE_DEC18
-            : _mulD18(
-                totalShares,
-                _cubicRoot(
-                    _divD18(capitalBefore + investmentExFees, capitalBefore)
-                )
-            );
+        uint256 investmentExFees = investment * 997 / 1000;
+        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18 ? 1000 * ONE_DEC18 : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investmentExFees, capitalBefore)));
         return newTotalShares - totalShares;
     }
 
@@ -411,11 +404,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 totalShares = totalSupply();
         require(shares + ONE_DEC18 < totalShares, "too many shares"); // make sure there is always at least one share
         uint256 capital = zchf.equity();
-        uint256 reductionAfterFees = (shares * 997) / 1000;
-        uint256 newCapital = _mulD18(
-            capital,
-            _power3(_divD18(totalShares - reductionAfterFees, totalShares))
-        );
+        uint256 reductionAfterFees = shares * 997 / 1000;
+        uint256 newCapital = _mulD18(capital, _power3(_divD18(totalShares - reductionAfterFees, totalShares)));
         return capital - newCapital;
     }
 
