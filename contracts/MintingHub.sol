@@ -164,7 +164,7 @@ contract MintingHub {
         IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
         existing.collateral().transferFrom(msg.sender, pos, _initialCollateral); // At the end to guard against ERC-777 reentrancy
 
-        emit PositionOpened(msg.sender, address(pos), address(zchf), address(existing.collateral()), existing.price());
+        emit PositionOpened(msg.sender, address(pos), address(zchf), address(IPosition(pos).collateral()), IPosition(pos).price());
         return address(pos);
     }
 
