@@ -146,7 +146,7 @@ describe("Equity Tests", () => {
         });
 
         it("kamikaze", async () => {
-            let tx = equity.connect(alice).kamikaze(bob.address, BN.from(1000000));
+            let tx = equity.connect(alice).kamikaze([bob.address, bob.address], BN.from(1000000));
             await expect(tx).to.be.reverted; // account 2 has no votes
 
             await evm_increaseTime(80);
@@ -157,18 +157,16 @@ describe("Equity Tests", () => {
             let votesBefore0 = await equity.votes(owner.address);
             let votesBefore5 = await equity.votes(bob.address);
             let totalVotesBefore = await equity.totalVotes();
-            await equity.kamikaze(bob.address, votesBefore5);
+            expect(votesBefore0.add(votesBefore5)).to.be.eq(totalVotesBefore);
+            await equity.kamikaze([bob.address], votesBefore5.add(balance5.mul(BN.from(2).pow(20))));
             let votesAfter0 = await equity.votes(owner.address);
             let votesAfter5 = await equity.votes(bob.address);
-            let adjustement0 = balance0.mul(BN.from(2).pow(20));
-            let adjustement5 = balance5.mul(BN.from(2).pow(20));
-            let expectedTotalVotes = totalVotesBefore.add(totalSupply.mul(BN.from(2).pow(20)));
-            let loss0 = votesBefore0.sub(votesAfter0.sub(adjustement0));
-            let loss5 = votesBefore5.sub(votesAfter5.sub(adjustement5));
+            expect(votesAfter5).to.be.eq(0);
+            let loss0 = votesBefore0.sub(votesAfter0);
             expect(loss5).to.be.eq(votesBefore5);
-            expect(loss0).to.be.approximately(votesBefore5, BN.from(2000).mul(BN.from(10).pow(18)));
+            expect(loss0).to.be.approximately(votesBefore5.add(balance5.mul(BN.from(2).pow(20))));
             let totalVotesA = await equity.totalVotes();
-            expect(expectedTotalVotes.sub(totalVotesA)).to.be.eq(loss0.add(loss5));
+            expect(totalVotesA).to.be.eq(votesAfter0);
         });
     });
 });

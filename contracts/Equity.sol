@@ -257,18 +257,27 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * Since this is a rather aggressive measure, delegation is not supported. Every holder must call this
      * method on their own.
      */
-    function kamikaze(address target, uint256 votesToDestroy) external {
-        uint256 destroyedVotes = _reduceVotes(msg.sender, votesToDestroy);
-        destroyedVotes += _reduceVotes(target, votesToDestroy);
-        totalVotesAtAnchor = uint192(totalVotes() - destroyedVotes);
+    function kamikaze(address[] calldata targets, uint256 votesToDestroy) external {
+        uint256 budget = _reduceVotes(msg.sender, votesToDestroy);
+        uint256 destroyedVotes = 0;
+        for (uint256 i=0; i<targets.length && destroyedVotes < budget; i++) {
+            destroyedVotes += _reduceVotes(targets[i], budget - destroyedVotes);
+        }
+        require(destroyedVotes > 0); // sanity check
+        totalVotesAtAnchor = uint192(totalVotes() - destroyedVotes - budget);
         totalVotesAnchorTime = _anchorTime();
     }
 
     function _reduceVotes(address target, uint256 amount) internal returns (uint256) {
         uint256 votesBefore = votes(target);
-        require(votesBefore >= amount, "not enough votes");
-        voteAnchor[target] = uint64(_anchorTime() - (votesBefore - amount) / balanceOf(target));
-        return votesBefore - votes(target);
+        if (amount >= votesBefore){
+            amount = votesBefore;
+            voteAnchor[target] = _anchorTime();
+            return votesBefore;
+        } else {
+            voteAnchor[target] = uint64(_anchorTime() - (votesBefore - amount) / balanceOf(target));
+            return votesBefore - votes(target);
+        }
     }
 
     /**
