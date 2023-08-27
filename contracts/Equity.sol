@@ -357,22 +357,29 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * Redeem the given amount of shares owned by the sender and transfer the proceeds to the target.
      */
-    function redeem(address target, uint256 shares) public returns (uint256) {
-        require(canRedeem(msg.sender));
-        uint256 proceeds = calculateProceeds(shares);
-        _burn(msg.sender, shares);
-        zchf.transfer(target, proceeds);
-        emit Trade(msg.sender, -int(shares), proceeds, price());
+    function redeem(address target, uint256 shares) external returns (uint256) {
+        return _redeemFrom(msg.sender, target, shares);
+    }
+
+    function redeemExpected(address target, uint256 shares, uint256 expectedProceeds) external returns (uint256) {
+        uint256 proceeds = _redeemFrom(msg.sender, target, shares);
+        require(proceeds >= expectedProceeds);
         return proceeds;
     }
 
-    function redeemExpected(
-        address target,
-        uint256 shares,
-        uint256 expectedProceeds
-    ) external returns (uint256) {
-        uint256 proceeds = redeem(target, shares);
+    function redeemFrom(address owner, address target, uint256 shares, uint256 expectedProceeds) external returns (uint256) {
+        require(_allowance(owner, msg.sender) >= shares);
+        uint256 proceeds = _redeemFrom(owner, target, shares);
         require(proceeds >= expectedProceeds);
+        return proceeds;
+    }
+
+    function _redeemFrom(address owner, address target, uint256 shares) internal returns (uint256) {
+        require(canRedeem(owner));
+        uint256 proceeds = calculateProceeds(shares);
+        _burn(owner, shares);
+        zchf.transfer(target, proceeds);
+        emit Trade(owner, -int(shares), proceeds, price());
         return proceeds;
     }
 
