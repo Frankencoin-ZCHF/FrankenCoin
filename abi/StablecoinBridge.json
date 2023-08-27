@@ -24,6 +24,38 @@
         "inputs": [
             {
                 "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expiration",
+                "type": "uint256"
+            }
+        ],
+        "name": "Expired",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "limit",
+                "type": "uint256"
+            }
+        ],
+        "name": "Limit",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
                 "name": "amount",
                 "type": "uint256"
             }

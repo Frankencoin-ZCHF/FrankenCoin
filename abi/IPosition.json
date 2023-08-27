@@ -179,11 +179,6 @@
             },
             {
                 "internalType": "uint256",
-                "name": "bid",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
                 "name": "size",
                 "type": "uint256"
             }
@@ -194,11 +189,6 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
             },
             {
                 "internalType": "uint256",

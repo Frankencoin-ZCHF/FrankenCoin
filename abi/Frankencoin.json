@@ -405,7 +405,7 @@
                 "type": "uint32"
             }
         ],
-        "name": "burnWithourReserve",
+        "name": "burnWithoutReserve",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

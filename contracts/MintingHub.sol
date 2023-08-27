@@ -304,24 +304,16 @@ contract MintingHub {
 
         // notify the position that will send the collateral to the bidder. If there is no bid, send the collateral to msg.sender
         address recipient = challenge.bidder == address(0x0) ? msg.sender : challenge.bidder;
-        (address owner, uint256 effectiveBid, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(
-            recipient,
-            challenge.bid,
-            challenge.size
-        );
-        if (effectiveBid < challenge.bid) {
-            // overbid, return excess amount
-            IERC20(zchf).transfer(recipient, challenge.bid - effectiveBid);
-        }
-        uint256 reward = (effectiveBid * CHALLENGER_REWARD) / 1000_000;
+        (address owner, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(recipient, challenge.size);
+        uint256 reward = (challenge.bid * CHALLENGER_REWARD) / 1000_000;
         uint256 fundsNeeded = reward + repayment;
-        if (effectiveBid > fundsNeeded) {
-            zchf.transfer(owner, effectiveBid - fundsNeeded);
-        } else if (effectiveBid < fundsNeeded) {
-            zchf.notifyLoss(fundsNeeded - effectiveBid); // ensure we have enough to pay everything
+        if (challenge.bid > fundsNeeded) {
+            zchf.transfer(owner, challenge.bid - fundsNeeded);
+        } else if (challenge.bid < fundsNeeded) {
+            zchf.notifyLoss(fundsNeeded - challenge.bid); // ensure we have enough to pay everything
         }
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
-        zchf.burnWithourReserve(repayment, reservePPM); // Repay the challenged part
+        zchf.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part
         _returnCollateral(challenge.position.collateral(), challenge.challenger, challenge.size, postponeCollateralReturn);
         emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
     }

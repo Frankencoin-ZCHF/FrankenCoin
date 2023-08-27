@@ -348,10 +348,7 @@ contract Position is Ownable, IPosition, MathUtil {
             IERC20(collateral).transfer(target, amount);
         }
         uint256 balance = _collateralBalance();
-        if (balance < minimumCollateral && challengedAmount == 0) {
-            // This leaves a slightly unsatisfying possibility open: if the withdrawal happens due to a successful challenge,
-            // there might be a small amount of collateral left that is not withheld in case there are no other pending challenges.
-            // The only way to cleanly solve this would be to have two distinct cooldowns, one for minting and one for withdrawals.
+        if (balance == 0) {
             _close();
         }
 
@@ -368,11 +365,15 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     error ChallengeTooSmall();
+    error ChallengesTooLarge(uint256 alreadyChallenged, uint256 latest, uint256 limit);
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
         // require minimum size, note that collateral balance can be below minimum if it was partially challenged before
-        if (size < minimumCollateral && size < _collateralBalance()) revert ChallengeTooSmall();
-        if (size == 0) revert ChallengeTooSmall();
+        uint256 balance = _collateralBalance();
+        if (size < minimumCollateral) revert ChallengeTooSmall();
+        if (challengedAmount + size > balance) revert ChallengesTooLarge(challengedAmount, size, balance);
+        uint256 left = balance - challengedAmount - size;
+        if (0 < left && left < minimumCollateral) revert ChallengeTooSmall();
         challengedAmount += size;
     }
 
@@ -414,21 +415,14 @@ contract Position is Ownable, IPosition, MathUtil {
      * Everything else is assumed to be handled by the hub.
      *
      * @param _bidder   address of the bidder that receives the collateral
-     * @param _bid      bid amount in ZCHF (dec18)
      * @param _size     size of the collateral bid for (dec 18)
-     * @return (position owner, effective bid size in ZCHF, effective challenge size in ZCHF, repaid amount, reserve ppm)
+     * @return (position owner, repaid amount, reserve ppm)
      */
-    function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
+    function notifyChallengeSucceeded(address _bidder, uint256 _size) external onlyHub returns (address, uint256, uint32) {
         challengedAmount -= _size;
         uint256 repayment = minted; // Default repayment is the amount the owner has minted
         uint256 colBal = _collateralBalance();
-        if (_size > colBal) {
-            // Challenge is larger than the position. This can for example happen if there are multiple concurrent
-            // challenges that exceed the collateral balance in size. In this case, we need to redimension the bid and
-            // tell the caller that a part of the bid needs to be returned to the bidder.
-            _bid = _mulDiv(_bid, colBal, _size);
-            _size = colBal;
-        } else if (_size < colBal) {
+        if (_size < colBal) {
             repayment = _mulDiv(repayment, _size, colBal);
         }
 
@@ -439,7 +433,7 @@ contract Position is Ownable, IPosition, MathUtil {
         // In particular, the owner might have added collateral only seconds before the challenge ended, preventing a close
         _restrictMinting(3 days);
 
-        return (owner, _bid, repayment, reserveContribution);
+        return (owner, repayment, reserveContribution);
     }
 
     error Expired();

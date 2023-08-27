@@ -76,6 +76,27 @@
         "type": "error"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "alreadyChallenged",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "latest",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "limit",
+                "type": "uint256"
+            }
+        ],
+        "name": "ChallengesTooLarge",
+        "type": "error"
+    },
+    {
         "inputs": [],
         "name": "Expired",
         "type": "error"
@@ -497,11 +518,6 @@
             },
             {
                 "internalType": "uint256",
-                "name": "_bid",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
                 "name": "_size",
                 "type": "uint256"
             }
@@ -512,11 +528,6 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
             },
             {
                 "internalType": "uint256",

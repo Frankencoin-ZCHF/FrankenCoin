@@ -46,7 +46,7 @@ interface IFrankencoin is IERC20 {
 
     function burnFrom(address target, uint256 amount) external;
 
-    function burnWithourReserve(
+    function burnWithoutReserve(
         uint256 amountIncludingReserve,
         uint32 reservePPM
     ) external;
