@@ -91,12 +91,9 @@ contract MintingHub {
 
     /**
      * Open a collateralized loan position. See also https://docs.frankencoin.com/positions/open .
-     * For a successful call, you must set allowances for both ZCHF and the collateral token, allowing
+     * For a successful call, you must set an allowance for the collateral token, allowing
      * the minting hub to transfer the initial collateral amount to the newly created position and to
      * withdraw the fees.
-     *
-     * Together, the expiration and the minting fee imply an interest rate.
-     * TODO: in future versions, it might be better to fix the interest and not the fee
      *
      * @param _collateralAddress        address of collateral token
      * @param _minCollateral     minimum collateral required to prevent dust amounts

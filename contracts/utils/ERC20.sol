@@ -190,11 +190,6 @@ abstract contract ERC20 is IERC20 {
      * total supply.
      *
      * Emits a `Transfer` event with `to` set to the zero address.
-     *
-     * Requirements
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal virtual {
         _beforeTokenTransfer(account, address(0), amount);
@@ -211,11 +206,6 @@ abstract contract ERC20 is IERC20 {
      * e.g. set automatic allowances for certain subsystems, etc.
      *
      * Emits an `Approval` event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
      */
     function _approve(address owner, address spender, uint256 value) internal {
         _allowances[owner][spender] = value;

@@ -13,7 +13,6 @@ pragma solidity ^0.8.0;
 
 interface IERC20 {
 
-    // Optional functions
     function name() external view returns (string memory);
 
     function symbol() external view returns (string memory);
@@ -33,7 +32,7 @@ interface IERC20 {
     /**
      * @dev Moves `amount` tokens from the caller's account to `recipient`.
      *
-     * Returns a boolean value indicating whether the operation succeeded.
+     * Returns always true. Throws error on failure.
      *
      * Emits a `Transfer` event.
      */
@@ -46,7 +45,7 @@ interface IERC20 {
      * allowed to spend on behalf of `owner` through `transferFrom`. This is
      * zero by default.
      *
-     * This value changes when `approve` or `transferFrom` are called.
+     * This value can change when `approve` or `transferFrom` are called.
      */
     function allowance(address owner, address spender) external view returns (uint256);
 
@@ -71,7 +70,7 @@ interface IERC20 {
      * allowance mechanism. `amount` is then deducted from the caller's
      * allowance.
      *
-     * Returns a boolean value indicating whether the operation succeeded.
+     * Returns always true. Throws error on failure.
      *
      * Emits a `Transfer` event.
      */
