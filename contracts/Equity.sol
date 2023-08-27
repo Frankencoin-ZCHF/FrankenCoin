@@ -289,19 +289,13 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      */
     function invest(uint256 amount, uint256 expectedShares) public returns (uint256) {
         zchf.transferFrom(msg.sender, address(this), amount);
-        uint256 shares = _createShares(msg.sender, amount);
-        require(shares >= expectedShares);
-        return shares;
-    }
-
-    function _createShares(address from, uint256 amount) internal returns (uint256) {
         uint256 equity = zchf.equity();
         require(equity >= MINIMUM_EQUITY, "insuf equity"); // ensures that the initial deposit is at least 1000 ZCHF
 
-        // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
-        uint256 shares = equity <= amount ? 1000 * ONE_DEC18 : _calculateShares(equity - amount, amount);
-        _mint(from, shares);
-        emit Trade(from, int(shares), amount, price());
+        uint256 shares = _calculateShares(equity <= amount ? 0 : equity - amount, amount);
+        require(shares >= expectedShares);
+        _mint(msg.sender, shares);
+        emit Trade(msg.sender, int(shares), amount, price());
 
         // limit the total supply to a reasonable amount to guard against overflows with price and vote calculations
         // the 36 bits are 68 bits for magnitude and 60 bits for precision, as calculated in an above comment
@@ -321,8 +315,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     function _calculateShares(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
         uint256 investmentExFees = (investment * 997) / 1000;
-        uint256 newTotalShares = totalShares < 1000 * ONE_DEC18
-            ? 1000 * ONE_DEC18
+        // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
+        uint256 newTotalShares = capitalBefore < MINIMUM_EQUITY || totalShares == 0 ? totalShares + 1000 * ONE_DEC18
             : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investmentExFees, capitalBefore)));
         return newTotalShares - totalShares;
     }
