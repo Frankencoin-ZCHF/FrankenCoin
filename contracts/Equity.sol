@@ -307,36 +307,21 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return votesBefore - votes(target);
     }
 
-    function invest(
-        uint256 amount,
-        uint256 expectedShares
-    ) external returns (uint256) {
+    /**
+     * Call this method to buy newly minted pool shares with Frankencoins.
+     * No allowance required (i.e. it is hardcoded in the Trankencoin token contract).
+     * Make sure to invest at least 10e-12 * market cap to avoid rounding losses.
+     *
+     * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
+     */
+    function invest(uint256 amount, uint256 expectedShares) external returns (uint256) {
         zchf.transferFrom(msg.sender, address(this), amount);
         uint256 shares = _createShares(msg.sender, amount);
         require(shares >= expectedShares);
         return shares;
     }
 
-    /**
-     * In order to mint new FPS tokens, one needs to send ZCHF to this contract using the transferAndCall function
-     * in the ZCHF contract.
-     *
-     * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
-     */
-    function onTokenTransfer(
-        address from,
-        uint256 amount,
-        bytes calldata
-    ) external returns (bool) {
-        require(msg.sender == address(zchf), "caller must be zchf");
-        _createShares(from, amount);
-        return true;
-    }
-
-    function _createShares(
-        address from,
-        uint256 amount
-    ) internal returns (uint256) {
+    function _createShares(address from, uint256 amount) internal returns (uint256) {
         uint256 equity = zchf.equity();
         require(equity >= MINIMUM_EQUITY, "insuf equity"); // ensures that the initial deposit is at least 1000 ZCHF
 
@@ -362,10 +347,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return _calculateShares(zchf.equity(), investment);
     }
 
-    function _calculateShares(
-        uint256 capitalBefore,
-        uint256 investment
-    ) internal view returns (uint256) {
+    function _calculateShares(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
         uint256 investmentExFees = investment * 997 / 1000;
         uint256 newTotalShares = totalShares < 1000 * ONE_DEC18 ? 1000 * ONE_DEC18 : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investmentExFees, capitalBefore)));

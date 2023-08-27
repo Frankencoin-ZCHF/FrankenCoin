@@ -8,7 +8,10 @@ pragma solidity ^0.8.0;
 contract MathUtil {
 
     uint256 internal constant ONE_DEC18 = 10**18;
-    uint256 internal constant THRESH_DEC18 = 10000000000000000; //0.01
+
+     // Let's go for 12 digits of precision (18-6)
+    uint256 internal constant THRESH_DEC18 = 10**6;
+    
     /**
      * @notice Cubic root with Halley approximation
      *         Number 1e18 decimal
@@ -16,15 +19,15 @@ contract MathUtil {
      * @return returns _v**(1/3)
      */
     function _cubicRoot(uint256 _v) internal pure returns (uint256) {
-        uint256 x = ONE_DEC18;
-        uint256 xOld;
-        bool cond;
+        // Good first guess for _v slightly above 1.0, which is often the case in the Frankencoin system
+        uint256 x = _v > ONE_DEC18 ? (_v - ONE_DEC18)/3 + ONE_DEC18 : ONE_DEC18;
+        uint256 diff;
         do {
-            xOld = x;
             uint256 powX3 = _mulD18(_mulD18(x, x), x);
-            x = _mulD18(x, _divD18( (powX3 + 2 * _v) , (2 * powX3 + _v)));
-            cond = xOld > x ? xOld - x > THRESH_DEC18 : x - xOld > THRESH_DEC18;
-        } while ( cond );
+            uint256 xnew = _mulDiv(x, (powX3 + 2 * _v) , (2 * powX3 + _v));
+            diff = xnew > x ? xnew - x : x - xnew;
+            x = xnew;
+        } while ( diff > THRESH_DEC18 );
         return x;
     }
 

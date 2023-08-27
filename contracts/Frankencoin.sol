@@ -132,7 +132,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         uint256 explicit = super._allowance(owner, spender);
         if (explicit > 0) {
             return explicit; // don't waste gas checking minter
-        } else if (isMinter(spender) || isMinter(isPosition(spender))) {
+        } else if (isMinter(spender) || isMinter(isPosition(spender)) || spender == address(reserve)) {
             return INFINITY;
         } else {
             return 0;

@@ -1,13 +1,28 @@
 [
     {
+        "inputs": [],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "_v",
+                "name": "totalShares",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "capitalBefore",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "investment",
                 "type": "uint256"
             }
         ],
-        "name": "cubicRoot",
+        "name": "calculateShares",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -16,6 +31,24 @@
             }
         ],
         "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "a",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "recordResult",
+                "type": "bool"
+            }
+        ],
+        "name": "cubicRoot",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -83,6 +116,19 @@
             }
         ],
         "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "result",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     }
 ]

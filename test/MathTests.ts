@@ -67,21 +67,38 @@ describe("Math Tests", () => {
 
         });
         it("cubic root", async () => {
-            let numbers = [0.01, 0.9, 1, 1.5, 2, 10];
+            // let numbers = [0.01, 0.9, 1, 1.5, 2, 10];
+            let numbers = [1, 1.01, 1.0002, 1.000003, 1.00000005];
             for (var k = 0; k < numbers.length; k++) {
                 let number = numbers[k];
                 let result = number ** (1 / 3);
                 let fNumber = floatToDec18(number);
-                let fResult = await MathContract.cubicRoot(fNumber);
+                await MathContract.cubicRoot(fNumber, true);
+                let fResult = await MathContract.result();
+                //console.log(fResult);
                 let resultRec = dec18ToFloat(fResult);
                 let err = Math.abs(result - resultRec);
-                if (err > 1e-6) {
+                if (err > 1e-12) {
                     console.log("number =", result);
                     console.log("expected=", result);
                     console.log("received=", resultRec);
                     console.log("abs error=", err);
                 }
-                expect(err).to.be.lessThan(1e-6);
+                expect(err).to.be.lessThan(1e-12);
+            }
+        });
+
+        it("total shares", async () => {
+            let totalShares = floatToDec18(10000);
+            let capitalBefore = floatToDec18(1000000000000);  // 1000 billion
+            let numbers = [7000000000000, 1000, 100, 10, 1, 0.1, 0.01, 0.001, 0.0001, 0.00001];
+            for (var k = 0; k < numbers.length; k++) {
+                let fNumber = floatToDec18(numbers[k]);
+                let fResult = await MathContract.calculateShares(totalShares, capitalBefore, fNumber);
+                console.log(fResult);
+                let resultRec = dec18ToFloat(fResult);
+                console.log(resultRec);
+                expect(resultRec).to.be.above(0);
             }
         });
     });

@@ -4,13 +4,13 @@ import { BigNumber } from "ethers";
 export function toWei(n : BigNumber) {
     return ethers.utils.parseEther(n);
 }
-export function fromWei(n) {
+export function fromWei(n: any) {
     return ethers.utils.formatEther(n);
 }
-export function toBytes32(s) {
+export function toBytes32(s: any) {
     return ethers.utils.formatBytes32String(s);
 }
-export function fromBytes32(s) {
+export function fromBytes32(s: any) {
     return ethers.utils.parseBytes32String(s);
 }
 
@@ -29,16 +29,13 @@ export async function getAccounts(): Promise<any[]> {
     return accounts;
 }
 
-export async function createFactory(path: String, libraries = {}) {
+export async function createFactory(path: String) {
     const parsed = {};
-    for (var name in libraries) {
-        parsed[name] = libraries[name].address;
-    }
     return await ethers.getContractFactory(path, { libraries: parsed });
 }
 
-export async function createContract(path: String, args = [], libraries = {}) {
-    const factory = await createFactory(path, libraries);
+export async function createContract(path: String, args = []) {
+    const factory = await createFactory(path);
     if (defaultSigner != null) {
         return await factory.connect(defaultSigner).deploy(...args);
     } else {
@@ -51,7 +48,7 @@ export function sleep(ms : number) {
 }
 
 
-export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
+export async function getSigningManagerFromPK(ctrAddr: string, ctrAbi: string, nodeUrl: string, pk: any) {
     const provider = new ethers.providers.JsonRpcProvider(nodeUrl);
     const wallet = new ethers.Wallet(pk);
     const signer = wallet.connect(provider);
