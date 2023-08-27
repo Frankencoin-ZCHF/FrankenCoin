@@ -209,7 +209,7 @@ contract User {
     }
 
     function invest(uint256 amount) public {
-        zchf.transferAndCall(address(zchf.reserve()), amount, "");
+        zchf.reserve().invest(amount, 0);
     }
 
     function redeem(Equity equity, uint256 amount) public {

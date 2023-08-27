@@ -137,7 +137,7 @@ describe("Basic Tests", () => {
             let totalShares = dec18ToFloat(fTotalShares);
             let totalCapital = dec18ToFloat(fTotalCapital);
             let dShares = capitalToShares(totalCapital, totalShares, amount);
-            await zchf.transferAndCall(equity.address, fAmount, 0);
+            await equity.invest(fAmount, 0);
             let balanceAfter = await equity.balanceOf(owner.address);
             let balanceAfterZCHF = await zchf.balanceOf(owner.address);
             let poolTokenShares = dec18ToFloat(balanceAfter.sub(balanceBefore));

@@ -85,7 +85,7 @@ describe("Position Tests", () => {
             let rc = await tx.wait();
             const topic = '0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2'; // PositionOpened
             const log = rc.logs.find(x => x.topics.indexOf(topic) >= 0);
-            positionAddr = log.address;
+            positionAddr = '0x' + log.topics[2].substring(26);
             let balAfter = await ZCHFContract.balanceOf(owner.address);
             let balAfterVOL = await mockVOL.balanceOf(owner.address);
             let dZCHF = dec18ToFloat(balAfter.sub(balBefore));
@@ -140,7 +140,7 @@ describe("Position Tests", () => {
             let rc = await tx.wait();
             const topic = '0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2'; // PositionOpened
             const log = rc.logs.find(x => x.topics.indexOf(topic) >= 0);
-            clonePositionAddr = log.address;
+            clonePositionAddr = '0x' + log.topics[2].substring(26);
             clonePositionContract = await ethers.getContractAt('Position', clonePositionAddr, alice);
             let newFees = await clonePositionContract.calculateCurrentFee();
             expect(fees / 2).to.be.approximately(newFees, 0.5);

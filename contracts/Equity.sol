@@ -314,7 +314,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      *
      * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
      */
-    function invest(uint256 amount, uint256 expectedShares) external returns (uint256) {
+    function invest(uint256 amount, uint256 expectedShares) public returns (uint256) {
         zchf.transferFrom(msg.sender, address(this), amount);
         uint256 shares = _createShares(msg.sender, amount);
         require(shares >= expectedShares);

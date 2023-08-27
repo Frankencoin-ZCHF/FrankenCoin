@@ -58,14 +58,14 @@ describe("Equity Tests", () => {
 
     describe("minting shares", () => {
         it("should create an initial share", async () => {
-            await zchf.transferAndCall(equity.address, floatToDec18(1000), 0);
+            await equity.invest(floatToDec18(1000), 0);
             let balance = await equity.balanceOf(owner.address);
             expect(balance).to.be.equal(floatToDec18(1000));
         });
         it("should create 1000 more shares when adding seven capital plus fees", async () => {
             let expected = await equity.calculateShares(floatToDec18(7000 / 0.997));
             expect(expected).to.be.approximately(floatToDec18(1000), floatToDec18(0.01));
-            await zchf.transferAndCall(equity.address, floatToDec18(7000 / 0.997), 0);
+            await equity.invest(floatToDec18(7000 / 0.997), expected);
             let balance = await equity.balanceOf(owner.address);
             expect(balance).to.be.approximately(floatToDec18(2000), floatToDec18(0.01));
         });
