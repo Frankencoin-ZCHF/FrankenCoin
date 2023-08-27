@@ -318,7 +318,7 @@ contract MintingHub {
             zchf.notifyLoss(fundsNeeded - effectiveBid); // ensure we have enough to pay everything
         }
         zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
-        zchf.burnWithourReserve(repayment, reservePPM); // Repay the challenged part
+        zchf.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part
         _returnCollateral(challenge.position.collateral(), challenge.challenger, challenge.size, postponeCollateralReturn);
         emit ChallengeSucceeded(address(challenge.position), challenge.bid, _challengeNumber);
     }
