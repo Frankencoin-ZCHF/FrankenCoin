@@ -9,7 +9,6 @@ import "./interface/IFrankencoin.sol";
  * A minting contract for another Swiss franc stablecoin ('source stablecoin') that we trust.
  */
 contract StablecoinBridge {
-    
     IERC20 public immutable chf; // the source stablecoin
     IFrankencoin public immutable zchf; // the Frankencoin
 

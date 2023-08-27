@@ -7,29 +7,21 @@ pragma solidity ^0.8.0;
 import "./ERC20.sol";
 
 abstract contract ERC20PermitLight is ERC20 {
-   
-   /*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                             EIP-2612 STORAGE
     //////////////////////////////////////////////////////////////*/
 
     mapping(address account => uint256 nonce) public nonces;
 
-  /*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                              EIP-2612 LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public {
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
         require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
-        unchecked { // unchecked to save a little gas with the nonce increment...
+        unchecked {
+            // unchecked to save a little gas with the nonce increment...
             address recoveredAddress = ecrecover(
                 keccak256(
                     abi.encodePacked(
@@ -69,5 +61,4 @@ abstract contract ERC20PermitLight is ERC20 {
                 )
             );
     }
-
 }
