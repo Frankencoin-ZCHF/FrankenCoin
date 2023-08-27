@@ -119,6 +119,8 @@ contract MintingHub {
         uint256 _liqPrice,
         uint32 _reservePPM
     ) public returns (address) {
+        require(_yearlyInterestPPM <= 1000000);
+        require(_reservePPM <= 1000000);
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
