@@ -209,7 +209,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         if (reserveReduction > minterReserveE6){
             minterReserveE6 = 0; // should never happen if everything is implemented cleanly, but we want robust behavior
         } else {
-            minterReserveE6 -= minterReserveE6;
+            minterReserveE6 -= reserveReduction;
         }
     }
 

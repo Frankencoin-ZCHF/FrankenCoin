@@ -163,7 +163,6 @@ describe("Equity Tests", () => {
             let votesAfter5 = await equity.votes(bob.address);
             expect(votesAfter5).to.be.eq(0);
             let loss0 = votesBefore0.sub(votesAfter0);
-            expect(loss5).to.be.eq(votesBefore5);
             expect(loss0).to.be.approximately(votesBefore5.add(balance5.mul(BN.from(2).pow(20))));
             let totalVotesA = await equity.totalVotes();
             expect(totalVotesA).to.be.eq(votesAfter0);

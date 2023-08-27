@@ -58,32 +58,6 @@
         "type": "error"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "votesToDestroy",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "budget",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "votesBefore",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "destroyed",
-                "type": "uint256"
-            }
-        ],
-        "name": "Test",
-        "type": "error"
-    },
-    {
         "anonymous": false,
         "inputs": [
             {
