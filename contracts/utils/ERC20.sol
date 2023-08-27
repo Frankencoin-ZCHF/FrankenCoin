@@ -33,9 +33,6 @@ import "../interface/IERC677Receiver.sol";
  * by listening to said events. Other implementations of the EIP may not emit
  * these events, as it isn't required by the specification.
  *
- * Finally, the non-standard `decreaseAllowance` and `increaseAllowance`
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See `IERC20.approve`.
  */
 
 abstract contract ERC20 is IERC20 {
