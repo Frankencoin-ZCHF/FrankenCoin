@@ -14,16 +14,24 @@ import "./interface/IPosition.sol";
  * contract. Pending challenges are stored as structs in an array.
  */
 contract MintingHub {
+
     /**
      * Irrevocable fee in ZCHF when proposing a new position (but not when cloning an existing one).
      */
     uint256 public constant OPENING_FEE = 1000 * 10 ** 18;
 
     /**
+     * When a challenge is split, this is the minimum bid amount each of the two resulting challenges
+     * should have.
+     */
+    uint256 public constant MIN_SPLIT_OFF_VALUE = 2_500 ether; // 2500 ZCHF
+
+    /**
      * The challenger reward in parts per million (ppm) relative to the challenged amount, whereas
      * challenged amount if defined as the challenged collateral amount times the liquidation price.
      */
     uint32 public constant CHALLENGER_REWARD = 20000; // 2%
+
 
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
 
@@ -247,6 +255,7 @@ contract MintingHub {
     }
 
     error UnexpectedPrice();
+    error SplitTooSmall(uint256 size1, uint256 size2);
 
     /**
      * Splits a challenge into two smaller challenges.
@@ -274,6 +283,7 @@ contract MintingHub {
         uint256 min = IPosition(challenge.position).minimumCollateral();
         require(challenge.size >= min);
         require(copy.size >= min);
+        if (challenge.bid < MIN_SPLIT_OFF_VALUE || copy.bid < MIN_SPLIT_OFF_VALUE) revert SplitTooSmall(challenge.bid, copy.bid);
 
         uint256 pos = challenges.length;
         challenges.push(copy);
