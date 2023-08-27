@@ -203,14 +203,9 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * 10 ZCHF into the reserve. Now they want to repay the debt by burning 50 ZCHF. When doing so using this method, 50 ZCHF get
      * burned and on top of that, 10 ZCHF previously assigned to the minter's reserved are reassigned to the pool share holders.
      */
-    function burnWithoutReserve(uint256 amount, uint32 reservePPM) public override minterOnly {
+    function burnWithourReserve(uint256 amount, uint32 reservePPM) external override minterOnly {
         _burn(msg.sender, amount);
-        uint256 reserveReduction = amount * reservePPM;
-        if (reserveReduction > minterReserveE6){
-            minterReserveE6 = 0; // should never happen if everything is implemented cleanly, but we want robust behavior
-        } else {
-            minterReserveE6 -= minterReserveE6;
-        }
+        minterReserveE6 -= amount * reservePPM;
     }
 
     /**
@@ -224,8 +219,9 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      */
     function burnWithReserve(uint256 _amountExcludingReserve, uint32 _reservePPM) external override minterOnly returns (uint256) {
         uint256 freedAmount = calculateFreedAmount(_amountExcludingReserve, _reservePPM); // this would be the 50 in the example
+        minterReserveE6 -= freedAmount * _reservePPM; // reduce reserve requirements by original ratio
         _transfer(address(reserve), msg.sender, freedAmount - _amountExcludingReserve); // collect assigned reserve, maybe less than original reserve
-        burnWithoutReserve(freedAmount, _reservePPM);
+        _burn(msg.sender, freedAmount); // burn the rest of the freed amount
         return freedAmount;
     }
 
