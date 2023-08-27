@@ -46,10 +46,13 @@ contract StablecoinBridge {
     }
 
     function _mint(address target, uint256 amount) internal {
-        require(block.timestamp <= horizon, "expired");
-        require(chf.balanceOf(address(this)) <= limit, "limit");
+        if (block.timestamp > horizon) revert Expired(block.timestamp, horizon);
+        if (chf.balanceOf(address(this)) > limit) revert Limit(amount, limit);
         zchf.mint(target, amount);
     }
+
+    error Limit(uint256 amount, uint256 limit);
+    error Expired(uint256 time, uint256 expiration);
 
     function burn(uint256 amount) external {
         _burn(msg.sender, msg.sender, amount);
