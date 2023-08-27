@@ -342,7 +342,7 @@ contract MintingHub {
             if (_bidAmountZCHF < _minBid(challenge))
                 revert BidTooLow(_bidAmountZCHF, _minBid(challenge));
             uint256 earliestEnd = block.timestamp + 30 minutes;
-            if (earliestEnd >= endTime && block.timestamp < endTime) {
+            if (earliestEnd >= endTime) {
                 // bump remaining time like ebay does when last minute bids come in
                 // An attacker trying to postpone the challenge forever must increase the bid by 0.5%
                 // every 30 minutes, or double it every three days, making the attack hard to sustain
