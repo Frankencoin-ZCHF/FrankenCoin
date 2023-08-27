@@ -159,8 +159,17 @@ contract Position is Ownable, IPosition, MathUtil {
         limit = _initialMint;
         expiration = expirationTime;
         _mint(owner, _initialMint, _coll);
-
     }
+
+    function limitForClones() public view returns(uint256) {
+        uint256 backedLimit = _collateralBalance() * price / ONE_DEC18;
+        if (backedLimit >= limit){
+            return 0;
+        } else {
+            // due to invariants, this is always below (limit - minted)
+            return limit - backedLimit;
+        }
+    } 
 
     /**
      * Adjust this position's limit to allow a clone to mint its own Frankencoins.
@@ -172,10 +181,9 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 mint_,
         uint256 exp
     ) external noChallenge noCooldown alive onlyHub {
-        if (exp > expiration || exp < start) revert TooLate();
-        uint256 newLimit = limit - mint_;
-        if (minted > newLimit) revert LimitExceeded();
-        limit = newLimit;
+        if (exp > expiration || exp < start) revert TooLate(); // ensure exp < start so calculateCurrentFee() cannot fail
+        if (mint_ > limitForClones()) revert LimitExceeded();
+        limit -= mint_;
     }
 
     error TooLate();
