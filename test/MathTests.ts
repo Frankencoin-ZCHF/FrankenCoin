@@ -95,9 +95,9 @@ describe("Math Tests", () => {
             for (var k = 0; k < numbers.length; k++) {
                 let fNumber = floatToDec18(numbers[k]);
                 let fResult = await MathContract.calculateShares(totalShares, capitalBefore, fNumber);
-                console.log(fResult);
+                //console.log(fResult);
                 let resultRec = dec18ToFloat(fResult);
-                console.log(resultRec);
+                //console.log(resultRec);
                 expect(resultRec).to.be.above(0);
             }
         });

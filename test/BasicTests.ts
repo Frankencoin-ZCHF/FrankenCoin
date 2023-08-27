@@ -105,7 +105,7 @@ describe("Basic Tests", () => {
             expect(allowance2).to.be.eq(floatToDec18(0));
             await zchf.burn(amount);
             await bridge.burn(amount);
-            await bridge.burnFrom(owner.address, amount);
+            await bridge.burnAndSend(owner.address, amount);
             await zchf.transferAndCall(bridge.address, amount, 0);
             let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
             let balanceXCHFAfter = await mockXCHF.balanceOf(owner.address);
@@ -174,6 +174,7 @@ describe("Basic Tests", () => {
             let sharesBefore = await equity.balanceOf(owner.address);
             let capitalBefore = await zchf.balanceOf(owner.address);
             await equity.redeem(owner.address, fAmountShares);
+
             let sharesAfter = await equity.balanceOf(owner.address);
             let capitalAfter = await zchf.balanceOf(owner.address);
 

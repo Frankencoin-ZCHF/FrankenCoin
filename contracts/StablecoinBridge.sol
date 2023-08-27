@@ -9,6 +9,7 @@ import "./interface/IFrankencoin.sol";
  * A minting contract for another Swiss franc stablecoin ('source stablecoin') that we trust.
  */
 contract StablecoinBridge {
+    
     IERC20 public immutable chf; // the source stablecoin
     IFrankencoin public immutable zchf; // the Frankencoin
 
@@ -59,15 +60,11 @@ contract StablecoinBridge {
      * Burn the indicated amount of Frankencoin and send the same number of source coin to the caller.
      * No allowance required.
      */
-    function burnFrom(address target, uint256 amount) external {
+    function burnAndSend(address target, uint256 amount) external {
         _burn(msg.sender, target, amount);
     }
 
-    function _burn(
-        address zchfHolder,
-        address target,
-        uint256 amount
-    ) internal {
+    function _burn(address zchfHolder, address target, uint256 amount) internal {
         zchf.burnFrom(zchfHolder, amount);
         chf.transfer(target, amount);
     }
@@ -75,11 +72,7 @@ contract StablecoinBridge {
     /**
      * Supporting the direct minting and burning through ERC-677, if supported by the sent coin.
      */
-    function onTokenTransfer(
-        address from,
-        uint256 amount,
-        bytes calldata
-    ) external returns (bool) {
+    function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         if (msg.sender == address(chf)) {
             _mint(from, amount);
         } else if (msg.sender == address(zchf)) {
