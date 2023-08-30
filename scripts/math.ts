@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-const DECIMALS = BigNumber.from(10).pow(BigNumber.from(18));
+export const DECIMALS = BigNumber.from(10).pow(BigNumber.from(18));
 
 export function floatToDec18(x: any) {
     // float number to dec 18

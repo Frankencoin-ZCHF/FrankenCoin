@@ -1,12 +1,35 @@
 [
     {
         "inputs": [],
-        "name": "challengePeriod",
+        "name": "challengeData",
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "",
+                "name": "liqPrice",
                 "type": "uint256"
+            },
+            {
+                "internalType": "uint64",
+                "name": "phase1",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "phase2",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "challengePeriod",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
             }
         ],
         "stateMutability": "nonpayable",
@@ -165,6 +188,19 @@
                 "type": "uint256"
             }
         ],
+        "name": "notifyChallengeAverted",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "size",
+                "type": "uint256"
+            }
+        ],
         "name": "notifyChallengeStarted",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -174,21 +210,16 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "bidder",
+                "name": "_bidder",
                 "type": "address"
             },
             {
                 "internalType": "uint256",
-                "name": "bid",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "size",
+                "name": "_size",
                 "type": "uint256"
             }
         ],
-        "name": "notifyChallengeSucceeded",
+        "name": "notifyChallengeSucceeded2",
         "outputs": [
             {
                 "internalType": "address",
@@ -253,35 +284,6 @@
                 "internalType": "uint32",
                 "name": "",
                 "type": "uint32"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "size",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "bid",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "challengeEnd",
-                "type": "uint256"
-            }
-        ],
-        "name": "tryAvertChallenge",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
             }
         ],
         "stateMutability": "nonpayable",

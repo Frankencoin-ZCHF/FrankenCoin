@@ -37,7 +37,7 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * Challenge period in seconds.
      */
-    uint256 public immutable challengePeriod;
+    uint64 public immutable challengePeriod;
 
     /**
      * End of the latest cooldown. If this is in the future, minting is suspended.
@@ -113,7 +113,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 _initialLimit,
         uint256 _initPeriod,
         uint256 _duration,
-        uint256 _challengePeriod,
+        uint64 _challengePeriod,
         uint32 _yearlyInterestPPM,
         uint256 _liqPrice,
         uint32 _reservePPM
@@ -122,7 +122,6 @@ contract Position is Ownable, IPosition, MathUtil {
         _setOwner(_owner);
         original = address(this);
         hub = _hub;
-        price = _liqPrice;
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
         yearlyInterestPPM = _yearlyInterestPPM;
@@ -133,6 +132,7 @@ contract Position is Ownable, IPosition, MathUtil {
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;
+        setPrice(_liqPrice);
     }
 
     /**
@@ -141,12 +141,13 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _initialMint, uint256 expirationTime) external onlyHub {
         if (_coll < minimumCollateral) revert InsufficientCollateral();
-        price = (_initialMint * ONE_DEC18) / _coll;
-        _initialMint = (price * _coll) / ONE_DEC18; // to cancel potential rounding errors
-        if (price > _price) revert InsufficientCollateral();
+        uint256 impliedPrice = (_initialMint * ONE_DEC18) / _coll;
+        _initialMint = (impliedPrice * _coll) / ONE_DEC18; // to cancel potential rounding errors
+        if (impliedPrice > _price) revert InsufficientCollateral();
         _setOwner(owner);
         limit = _initialMint;
         expiration = expirationTime;
+        setPrice(impliedPrice);
         _mint(owner, _initialMint, _coll);
     }
 
@@ -241,8 +242,13 @@ contract Position is Ownable, IPosition, MathUtil {
         } else {
             _checkCollateral(_collateralBalance(), newPrice);
         }
-        price = newPrice;
+        setPrice(newPrice);
         emit MintingUpdate(_collateralBalance(), price, minted, limit);
+    }
+
+    function setPrice(uint256 newPrice) internal {
+        require(newPrice * minimumCollateral <= limit * ONE_DEC18); // sanity check
+        price = newPrice;
     }
 
     function _collateralBalance() internal view returns (uint256) {
@@ -355,7 +361,7 @@ contract Position is Ownable, IPosition, MathUtil {
             _close();
         }
 
-        emit MintingUpdate(_collateralBalance(), price, minted, limit);
+        emit MintingUpdate(balance, price, minted, limit);
         return balance;
     }
 
@@ -365,6 +371,10 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function _checkCollateral(uint256 collateralReserve, uint256 atPrice) internal view {
         if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral();
+    }
+
+    function challengeData() external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2) {
+        return (price, challengePeriod, challengePeriod);
     }
 
     error ChallengeTooSmall();
@@ -377,35 +387,13 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice check whether challenge can be averted
-     * @param _collateralAmount   amount of collateral challenged (dec18)
-     * @param _bidAmountZCHF      bid amount in ZCHF (dec18)
-     * @return true if challenge can be averted
+     * @param size   amount of collateral challenged (dec18)
      */
-    function tryAvertChallenge(uint256 _collateralAmount, uint256 _bidAmountZCHF, uint256 challengeEnd) external onlyHub returns (bool) {
-        if (block.timestamp >= expiration) {
-            return false; // position expired, let every challenge succeed
-        } else {
-            uint256 p_ = price;
-            if (type(uint256).max / _collateralAmount < p_) {
-                // note that _collateralAmount > 0 is assumed
-                return false; // price was set absurdly high, let challenge succeed
-            } else if (_bidAmountZCHF * ONE_DEC18 >= p_ * _collateralAmount) {
-                // Challenge cannot be started and averted in same block
-                // This prevents a malicious challenger + bidder to postpone minting forver without risking anything
-                require(block.timestamp != challengeEnd - challengePeriod);
-
-                // challenge averted, bid is high enough
-                challengedAmount -= _collateralAmount;
-
-                // Don't allow minter to close the position immediately so challenge can be repeated before
-                // the owner has a chance to mint more on an undercollateralized position
-                _restrictMinting(1 days);
-                return true;
-            } else {
-                return false;
-            }
-        }
+    function notifyChallengeAverted(uint256 size) external onlyHub {
+        challengedAmount -= size;
+        // Don't allow minter to close the position immediately so challenge can be repeated before
+        // the owner has a chance to mint more on an undercollateralized position
+        _restrictMinting(1 days);
     }
 
     /**
@@ -414,24 +402,16 @@ contract Position is Ownable, IPosition, MathUtil {
      * Everything else is assumed to be handled by the hub.
      *
      * @param _bidder   address of the bidder that receives the collateral
-     * @param _bid      bid amount in ZCHF (dec18)
      * @param _size     size of the collateral bid for (dec 18)
      * @return (position owner, effective bid size in ZCHF, effective challenge size in ZCHF, repaid amount, reserve ppm)
      */
-    function notifyChallengeSucceeded(address _bidder, uint256 _bid, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
+    function notifyChallengeSucceeded2(address _bidder, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
-        uint256 repayment = minted; // Default repayment is the amount the owner has minted
         uint256 colBal = _collateralBalance();
-        if (_size > colBal) {
-            // Challenge is larger than the position. This can for example happen if there are multiple concurrent
-            // challenges that exceed the collateral balance in size. In this case, we need to redimension the bid and
-            // tell the caller that a part of the bid needs to be returned to the bidder.
-            _bid = _mulDiv(_bid, colBal, _size);
+        if (colBal < _size){
             _size = colBal;
-        } else if (_size < colBal) {
-            repayment = _mulDiv(repayment, _size, colBal);
         }
-
+        uint256 repayment = _mulDiv(minted, _size, colBal);
         _notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
         _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
 
@@ -439,7 +419,7 @@ contract Position is Ownable, IPosition, MathUtil {
         // In particular, the owner might have added collateral only seconds before the challenge ended, preventing a close
         _restrictMinting(3 days);
 
-        return (owner, _bid, repayment, reserveContribution);
+        return (owner, _size, repayment, reserveContribution);
     }
 
     error Expired();

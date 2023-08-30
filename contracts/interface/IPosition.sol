@@ -11,7 +11,7 @@ interface IPosition {
 
     function minimumCollateral() external returns (uint256);
 
-    function challengePeriod() external returns (uint256);
+    function challengePeriod() external returns (uint64);
 
     function expiration() external returns (uint256);
 
@@ -31,10 +31,12 @@ interface IPosition {
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
+    function challengeData() external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2);
+
     function notifyChallengeStarted(uint256 size) external;
 
-    function tryAvertChallenge(uint256 size, uint256 bid, uint256 challengeEnd) external returns (bool);
+    function notifyChallengeAverted(uint256 size) external;
 
-    function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external returns (address, uint256, uint256, uint32);
+    function notifyChallengeSucceeded2(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);
 
 }

@@ -17,7 +17,7 @@ contract PositionFactory {
         uint256 _initialLimit,
         uint256 _initPeriod,
         uint256 _duration,
-        uint256 _challengePeriod,
+        uint64 _challengePeriod,
         uint32 _yearlyInterestPPM,
         uint256 _liqPrice,
         uint32 _reserve

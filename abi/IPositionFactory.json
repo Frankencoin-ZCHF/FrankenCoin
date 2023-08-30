@@ -56,9 +56,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_challengePeriod",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "internalType": "uint32",

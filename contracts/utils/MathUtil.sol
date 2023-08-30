@@ -55,4 +55,8 @@ contract MathUtil {
     function _power3(uint256 _x) internal pure returns (uint256) {
         return _mulD18(_mulD18(_x, _x), _x);
     }
+
+    function _min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
+    }
 }
