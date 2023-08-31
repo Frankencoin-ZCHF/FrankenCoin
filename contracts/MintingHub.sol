@@ -187,7 +187,7 @@ contract MintingHub {
      * @param postponeCollateralReturn Can be used to postpone the return of the collateral to the challenger. Usually false.
      */
     function bid(uint32 _challengeNumber, uint256 size, bool postponeCollateralReturn) external {
-        Challenge storage challenge = challenges[_challengeNumber];
+        Challenge memory challenge = challenges[_challengeNumber];
         (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData();
         size = challenge.size < size ? challenge.size : size; // cannot bid for more than the size of the challenge
 
@@ -204,7 +204,7 @@ contract MintingHub {
 
     function finishChallenge(Challenge memory challenge, uint256 liqPrice, uint64 phase1, uint64 phase2, uint256 size) internal returns (uint256, uint256) {
         // note that repayment depends on what was actually minted, whereas the bid depends on how much could have been minted given the collateral
-        (address owner, uint256 transferredCollateral, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded2(msg.sender, size);
+        (address owner, uint256 transferredCollateral, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(msg.sender, size);
         
         // No overflow possible thanks to invariant (col * price <= limit * 10**18) enforced in Position.setPrice and knowing that transferredCollateral <= col.
         uint256 offer = calculatePrice(challenge.start + phase1, phase2, liqPrice) * transferredCollateral / 10 ** 18;
@@ -221,9 +221,7 @@ contract MintingHub {
         return (transferredCollateral, offer);
     }
 
-    error Debug(uint256, uint256);
-
-    function avertChallenge(Challenge storage challenge, uint32 number, uint256 liqPrice, uint256 size) internal {
+    function avertChallenge(Challenge memory challenge, uint32 number, uint256 liqPrice, uint256 size) internal {
         if (msg.sender == challenge.challenger) {
             // allow challenger to cancel challenge even if they do not have the funds they would need to send to themselves
         } else {
@@ -233,7 +231,7 @@ contract MintingHub {
         challenge.position.notifyChallengeAverted(size);
         challenge.position.collateral().transfer(msg.sender, size);
         if (size < challenge.size) {
-            challenge.size = challenge.size - size;
+            challenges[number].size = challenge.size - size;
         } else {
             require(size == challenge.size);
             delete challenges[number];

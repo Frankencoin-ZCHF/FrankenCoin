@@ -405,7 +405,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * @param _size     size of the collateral bid for (dec 18)
      * @return (position owner, effective bid size in ZCHF, effective challenge size in ZCHF, repaid amount, reserve ppm)
      */
-    function notifyChallengeSucceeded2(address _bidder, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
+    function notifyChallengeSucceeded(address _bidder, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
         uint256 colBal = _collateralBalance();
         if (colBal < _size){

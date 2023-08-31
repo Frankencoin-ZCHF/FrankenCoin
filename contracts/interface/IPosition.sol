@@ -37,6 +37,6 @@ interface IPosition {
 
     function notifyChallengeAverted(uint256 size) external;
 
-    function notifyChallengeSucceeded2(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);
+    function notifyChallengeSucceeded(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);
 
 }
