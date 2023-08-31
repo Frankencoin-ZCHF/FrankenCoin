@@ -192,22 +192,22 @@ contract MintingHub {
         size = challenge.size < size ? challenge.size : size; // cannot bid for more than the size of the challenge
 
         if (block.timestamp <= challenge.start + phase1) {
-            avertChallenge(challenge, _challengeNumber, liqPrice, size);
+            _avertChallenge(challenge, _challengeNumber, liqPrice, size);
             emit ChallengeAverted(address(challenge.position), _challengeNumber, size);
         } else {
             // challenge successful
-            returnChallengerCollateral(challenge, _challengeNumber, size, postponeCollateralReturn);
-            (uint256 transferredCollateral, uint256 offer) = finishChallenge(challenge, liqPrice, phase1, phase2, size);
+            _returnChallengerCollateral(challenge, _challengeNumber, size, postponeCollateralReturn);
+            (uint256 transferredCollateral, uint256 offer) = _finishChallenge(challenge, liqPrice, phase1, phase2, size);
             emit ChallengeSucceeded(address(challenge.position), _challengeNumber, offer, transferredCollateral, size);
         }
     }
 
-    function finishChallenge(Challenge memory challenge, uint256 liqPrice, uint64 phase1, uint64 phase2, uint256 size) internal returns (uint256, uint256) {
+    function _finishChallenge(Challenge memory challenge, uint256 liqPrice, uint64 phase1, uint64 phase2, uint256 size) internal returns (uint256, uint256) {
         // note that repayment depends on what was actually minted, whereas the bid depends on how much could have been minted given the collateral
         (address owner, uint256 transferredCollateral, uint256 repayment, uint32 reservePPM) = challenge.position.notifyChallengeSucceeded(msg.sender, size);
         
         // No overflow possible thanks to invariant (col * price <= limit * 10**18) enforced in Position.setPrice and knowing that transferredCollateral <= col.
-        uint256 offer = calculatePrice(challenge.start + phase1, phase2, liqPrice) * transferredCollateral / 10 ** 18;
+        uint256 offer = (_calculatePrice(challenge.start + phase1, phase2, liqPrice) * transferredCollateral) / 10 ** 18;
         zchf.transferFrom(msg.sender, address(this), offer); // get money from bidder
         uint256 reward = (offer * CHALLENGER_REWARD) / 1000_000;
         uint256 fundsNeeded = reward + repayment;
@@ -221,7 +221,7 @@ contract MintingHub {
         return (transferredCollateral, offer);
     }
 
-    function avertChallenge(Challenge memory challenge, uint32 number, uint256 liqPrice, uint256 size) internal {
+    function _avertChallenge(Challenge memory challenge, uint32 number, uint256 liqPrice, uint256 size) internal {
         if (msg.sender == challenge.challenger) {
             // allow challenger to cancel challenge even if they do not have the funds they would need to send to themselves
         } else {
@@ -238,7 +238,7 @@ contract MintingHub {
         }
     }
 
-    function returnChallengerCollateral(Challenge memory challenge, uint32 number, uint256 size, bool postpone) internal {
+    function _returnChallengerCollateral(Challenge memory challenge, uint32 number, uint256 size, bool postpone) internal {
         _returnCollateral(challenge.position.collateral(), challenge.challenger, size, postpone);
         if (challenge.size == size) {
             // bid on full amount
@@ -249,7 +249,7 @@ contract MintingHub {
         }
     }
 
-    function calculatePrice(uint64 start, uint64 phase2, uint256 liqPrice) internal view returns (uint256) {
+    function _calculatePrice(uint64 start, uint64 phase2, uint256 liqPrice) internal view returns (uint256) {
         uint64 timeNow = uint64(block.timestamp);
         if (timeNow <= start) {
             return liqPrice;
@@ -267,7 +267,7 @@ contract MintingHub {
             return 0;
         } else {
             (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData();
-            return calculatePrice(challenge.start + phase1, phase2, liqPrice);
+            return _calculatePrice(challenge.start + phase1, phase2, liqPrice);
         }
     }
 
