@@ -132,7 +132,7 @@ contract Position is Ownable, IPosition, MathUtil {
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;
-        setPrice(_liqPrice);
+        _setPrice(_liqPrice);
     }
 
     /**
@@ -147,7 +147,7 @@ contract Position is Ownable, IPosition, MathUtil {
         _setOwner(owner);
         limit = _initialMint;
         expiration = expirationTime;
-        setPrice(impliedPrice);
+        _setPrice(impliedPrice);
         _mint(owner, _initialMint, _coll);
     }
 
@@ -242,11 +242,11 @@ contract Position is Ownable, IPosition, MathUtil {
         } else {
             _checkCollateral(_collateralBalance(), newPrice);
         }
-        setPrice(newPrice);
+        _setPrice(newPrice);
         emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }
 
-    function setPrice(uint256 newPrice) internal {
+    function _setPrice(uint256 newPrice) internal {
         require(newPrice * minimumCollateral <= limit * ONE_DEC18); // sanity check
         price = newPrice;
     }
@@ -310,13 +310,13 @@ contract Position is Ownable, IPosition, MathUtil {
     function repay(uint256 amount) public {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
         uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(amount, reserveContribution);
-        _notifyRepaidInternal(actuallyRepaid);
+        _notifyRepaid(actuallyRepaid);
         emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }
 
     error RepaidTooMuch(uint256 excess);
 
-    function _notifyRepaidInternal(uint256 amount) internal {
+    function _notifyRepaid(uint256 amount) internal {
         if (amount > minted) revert RepaidTooMuch(amount - minted);
         minted -= amount;
     }
@@ -408,11 +408,11 @@ contract Position is Ownable, IPosition, MathUtil {
     function notifyChallengeSucceeded2(address _bidder, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
         uint256 colBal = _collateralBalance();
-        if (colBal < _size){
+        if (colBal < _size) {
             _size = colBal;
         }
         uint256 repayment = _mulDiv(minted, _size, colBal);
-        _notifyRepaidInternal(repayment); // we assume the caller takes care of the actual repayment
+        _notifyRepaid(repayment); // we assume the caller takes care of the actual repayment
         _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
 
         // Give time for additional challenges before the owner can mint again
