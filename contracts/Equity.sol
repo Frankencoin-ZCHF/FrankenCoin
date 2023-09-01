@@ -40,7 +40,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * The quorum in basis points. 100 is 1%.
      */
-    uint32 private constant QUORUM = 300;
+    uint32 private constant QUORUM = 200;
 
     /**
      * The number of digits to store the average holding time of share tokens.
