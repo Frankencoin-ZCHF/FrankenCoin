@@ -183,7 +183,7 @@ contract MintingHub {
      * challenger is on it), it is possible to postpone the return of the collateral.
      *
      * @param _challengeNumber   index of the challenge as broadcast in the event
-     * @param size               how much of the collateral the caller wants to bid for
+     * @param size               how much of the collateral the caller wants to bid for at most (automaticallzy reduced to the available amount)
      * @param postponeCollateralReturn Can be used to postpone the return of the collateral to the challenger. Usually false.
      */
     function bid(uint32 _challengeNumber, uint256 size, bool postponeCollateralReturn) external {
@@ -195,7 +195,6 @@ contract MintingHub {
             _avertChallenge(challenge, _challengeNumber, liqPrice, size);
             emit ChallengeAverted(address(challenge.position), _challengeNumber, size);
         } else {
-            // challenge successful
             _returnChallengerCollateral(challenge, _challengeNumber, size, postponeCollateralReturn);
             (uint256 transferredCollateral, uint256 offer) = _finishChallenge(challenge, liqPrice, phase1, phase2, size);
             emit ChallengeSucceeded(address(challenge.position), _challengeNumber, offer, transferredCollateral, size);
@@ -245,7 +244,7 @@ contract MintingHub {
             delete challenges[number];
         } else {
             // bid on partial amount
-            challenge.size -= size;
+            challenges[number].size -= size;
         }
     }
 
