@@ -237,17 +237,23 @@ contract MintingHub {
         }
     }
 
-    function _returnChallengerCollateral(Challenge memory challenge, uint32 number, uint256 size, bool postpone) internal {
-        _returnCollateral(challenge.position.collateral(), challenge.challenger, size, postpone);
-        if (challenge.size == size) {
+    /**
+     * Returns 'amount' of the collateral to the challenger and reduces or deletes the relevant challenge.
+     */
+    function _returnChallengerCollateral(Challenge memory challenge, uint32 number, uint256 amount, bool postpone) internal {
+        _returnCollateral(challenge.position.collateral(), challenge.challenger, amount, postpone);
+        if (challenge.size == amount) {
             // bid on full amount
             delete challenges[number];
         } else {
             // bid on partial amount
-            challenges[number].size -= size;
+            challenges[number].size -= amount;
         }
     }
 
+    /**
+     * Calculates the current Dutch auction price, starting at the full price at time 'start' and linearly going to 0 as 'phase2' passes.
+     */
     function _calculatePrice(uint64 start, uint64 phase2, uint256 liqPrice) internal view returns (uint256) {
         uint64 timeNow = uint64(block.timestamp);
         if (timeNow <= start) {
@@ -260,6 +266,11 @@ contract MintingHub {
         }
     }
 
+    /**
+     * Get the price per unit of the collateral for the given challenge.
+     * The price comes with (36-collateral.decimals()) digits, such that multiplying it with the
+     * raw collateral amount always yields a price with 36 digits, or 18 digits after dividing by 10**18 again. 
+     */
     function price(uint32 challengeNumber) public view returns (uint256) {
         Challenge memory challenge = challenges[challengeNumber];
         if (challenge.challenger == address(0x0)) {

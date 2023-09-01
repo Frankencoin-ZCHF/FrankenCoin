@@ -373,6 +373,10 @@ contract Position is Ownable, IPosition, MathUtil {
         if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral();
     }
 
+    /**
+     * Returns the liquidation price and the durations for phase1 and phase2 of the challenge.
+     * In this implementation, both phases are always of equal length.
+     */
     function challengeData() external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2) {
         return (price, challengePeriod, challengePeriod);
     }
