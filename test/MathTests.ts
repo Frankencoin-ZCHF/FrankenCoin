@@ -68,21 +68,21 @@ describe("Math Tests", () => {
         });
         it("cubic root", async () => {
             // let numbers = [0.01, 0.9, 1, 1.5, 2, 10];
-            let numbers = [1, 1.01, 1.0002, 1.000003, 1.00000005];
+            let numbers = [1000000000000, 1, 1.01, 1.0002, 1.000003, 1.00000005];
             for (var k = 0; k < numbers.length; k++) {
                 let number = numbers[k];
                 let result = number ** (1 / 3);
                 let fNumber = floatToDec18(number);
                 await MathContract.cubicRoot(fNumber, true);
                 let fResult = await MathContract.result();
-                //console.log(fResult);
                 let resultRec = dec18ToFloat(fResult);
-                let err = Math.abs(result - resultRec);
+                // console.log(resultRec);
+                let err = Math.abs((result - resultRec)/result);
                 if (err > 1e-12) {
                     console.log("number =", result);
                     console.log("expected=", result);
                     console.log("received=", resultRec);
-                    console.log("abs error=", err);
+                    console.log("rel error=", err);
                 }
                 expect(err).to.be.lessThan(1e-12);
             }
@@ -97,7 +97,7 @@ describe("Math Tests", () => {
                 let fResult = await MathContract.calculateShares(totalShares, capitalBefore, fNumber);
                 //console.log(fResult);
                 let resultRec = dec18ToFloat(fResult);
-                //console.log(resultRec);
+                // console.log(resultRec);
                 expect(resultRec).to.be.above(0);
             }
         });

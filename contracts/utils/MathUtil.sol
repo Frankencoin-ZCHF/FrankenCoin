@@ -19,7 +19,7 @@ contract MathUtil {
      */
     function _cubicRoot(uint256 _v) internal pure returns (uint256) {
         // Good first guess for _v slightly above 1.0, which is often the case in the Frankencoin system
-        uint256 x = _v > ONE_DEC18 ? (_v - ONE_DEC18) / 3 + ONE_DEC18 : ONE_DEC18;
+        uint256 x = _v > ONE_DEC18 && _v < 10 ** 19 ? (_v - ONE_DEC18) / 3 + ONE_DEC18 : ONE_DEC18;
         uint256 diff;
         do {
             uint256 powX3 = _mulD18(_mulD18(x, x), x);
