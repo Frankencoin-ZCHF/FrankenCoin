@@ -73,7 +73,8 @@ describe("Math Tests", () => {
                 let number = numbers[k];
                 let result = number ** (1 / 3);
                 let fNumber = floatToDec18(number);
-                await MathContract.cubicRoot(fNumber, true);
+                let tx = await MathContract.cubicRoot(fNumber, true);
+                expect(tx).to.not.be.reverted;
                 let fResult = await MathContract.result();
                 let resultRec = dec18ToFloat(fResult);
                 // console.log(resultRec);
