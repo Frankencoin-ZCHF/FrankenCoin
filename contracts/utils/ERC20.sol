@@ -120,14 +120,18 @@ abstract contract ERC20 is IERC20 {
      */
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
         _transfer(sender, recipient, amount);
-        uint256 currentAllowance = _allowance(sender, msg.sender);
+        _useAllowance(sender, msg.sender, amount);
+        return true;
+    }
+
+    function _useAllowance(address owner, address spender, uint256 amount) internal {
+        uint256 currentAllowance = _allowance(owner, spender);
         if (currentAllowance < INFINITY) {
             // Only decrease the allowance if it was not set to 'infinite'
-            // Documented in /doc/infiniteallowance.md
-            if (currentAllowance < amount) revert ERC20InsufficientAllowance(sender, currentAllowance, amount);
-            _approve(sender, msg.sender, currentAllowance - amount);
+            // Documented in github.com/aktionariat/contracts/blob/master/doc/infiniteallowance.md
+            if (currentAllowance < amount) revert ERC20InsufficientAllowance(owner, currentAllowance, amount);
+            _approve(owner, spender, currentAllowance - amount);
         }
-        return true;
     }
 
     /**

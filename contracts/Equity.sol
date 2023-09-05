@@ -342,7 +342,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 shares,
         uint256 expectedProceeds
     ) external returns (uint256) {
-        require(_allowance(owner, msg.sender) >= shares);
+        _useAllowance(owner, msg.sender, shares);
         uint256 proceeds = _redeemFrom(owner, target, shares);
         require(proceeds >= expectedProceeds);
         return proceeds;
