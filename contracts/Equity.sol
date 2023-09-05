@@ -82,7 +82,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     /**
      * A time stamp in the past such that: votes = balance * (time passed since anchor was set)
      */
-    mapping(address owner => uint64 timestamp) private voteAnchor; // 44 Bit for the time stamp, 20 Bit sub-second time resolution
+    mapping(address owner => uint64 timestamp) private voteAnchor; // 44 bits for time stamp, 20 subsecond resolution
 
     event Delegation(address indexed from, address indexed to); // indicates a delegation
     event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
@@ -115,8 +115,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         super._beforeTokenTransfer(from, to, amount);
         if (amount > 0) {
             // No need to adjust the sender votes. When they send out 10% of their shares, they also lose 10% of
-            // their votes so everything falls nicely into place.
-            // Recipient votes should stay the same, but grow faster in the future, requiring an adjustment of the anchor.
+            // their votes so everything falls nicely into place. Recipient votes should stay the same, but grow 
+            // faster in the future, requiring an adjustment of the anchor.
             uint256 roundingLoss = _adjustRecipientVoteAnchor(to, amount);
             // The total also must be adjusted and kept accurate by taking into account the rounding error.
             _adjustTotalVotes(from, amount, roundingLoss);
@@ -154,7 +154,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         if (to != address(0x0)) {
             uint256 recipientVotes = votes(to); // for example 21 if 7 shares were held for 3 seconds
             uint256 newbalance = balanceOf(to) + amount; // for example 11 if 4 shares are added
-            voteAnchor[to] = uint64(_anchorTime() - recipientVotes / newbalance); // new example anchor is only 21 / 11 = 1 second in the past
+            // new example anchor is only 21 / 11 = 1 second in the past
+            voteAnchor[to] = uint64(_anchorTime() - recipientVotes / newbalance);
             return recipientVotes % newbalance; // we have lost 21 % 11 = 10 votes
         } else {
             // optimization for burn, vote anchor of null address does not matter
@@ -260,7 +261,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     function kamikaze(address[] calldata targets, uint256 votesToDestroy) external {
         uint256 budget = _reduceVotes(msg.sender, votesToDestroy);
         uint256 destroyedVotes = 0;
-        for (uint256 i=0; i<targets.length && destroyedVotes < budget; i++) {
+        for (uint256 i = 0; i < targets.length && destroyedVotes < budget; i++) {
             destroyedVotes += _reduceVotes(targets[i], budget - destroyedVotes);
         }
         require(destroyedVotes > 0); // sanity check
@@ -270,7 +271,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     function _reduceVotes(address target, uint256 amount) internal returns (uint256) {
         uint256 votesBefore = votes(target);
-        if (amount >= votesBefore){
+        if (amount >= votesBefore) {
             amount = votesBefore;
             voteAnchor[target] = _anchorTime();
             return votesBefore;
@@ -316,7 +317,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 totalShares = totalSupply();
         uint256 investmentExFees = (investment * 997) / 1000;
         // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
-        uint256 newTotalShares = capitalBefore < MINIMUM_EQUITY || totalShares == 0 ? totalShares + 1000 * ONE_DEC18
+        uint256 newTotalShares = capitalBefore < MINIMUM_EQUITY || totalShares == 0
+            ? totalShares + 1000 * ONE_DEC18
             : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investmentExFees, capitalBefore)));
         return newTotalShares - totalShares;
     }
@@ -334,7 +336,12 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return proceeds;
     }
 
-    function redeemFrom(address owner, address target, uint256 shares, uint256 expectedProceeds) external returns (uint256) {
+    function redeemFrom(
+        address owner,
+        address target,
+        uint256 shares,
+        uint256 expectedProceeds
+    ) external returns (uint256) {
         require(_allowance(owner, msg.sender) >= shares);
         uint256 proceeds = _redeemFrom(owner, target, shares);
         require(proceeds >= expectedProceeds);

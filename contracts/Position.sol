@@ -139,7 +139,13 @@ contract Position is Ownable, IPosition, MathUtil {
      * Method to initialize a freshly created clone. It is the responsibility of the creator to make sure this is only
      * called once and to call reduceLimitForClone on the original position before initializing the clone.
      */
-    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _initialMint, uint256 expirationTime) external onlyHub {
+    function initializeClone(
+        address owner,
+        uint256 _price,
+        uint256 _coll,
+        uint256 _initialMint,
+        uint256 expirationTime
+    ) external onlyHub {
         if (_coll < minimumCollateral) revert InsufficientCollateral();
         uint256 impliedPrice = (_initialMint * ONE_DEC18) / _coll;
         _initialMint = (impliedPrice * _coll) / ONE_DEC18; // to cancel potential rounding errors
@@ -168,7 +174,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
      */
     function reduceLimitForClone(uint256 mint_, uint256 exp) external noChallenge noCooldown alive onlyHub {
-        if (exp > expiration || exp < start) revert TooLate(); // ensure exp < start so calculateCurrentFee() cannot fail
+        if (exp > expiration || exp < start) revert TooLate(); // ensure exp < start so calculateCurrentFee() cant fail
         if (mint_ > limitForClones()) revert LimitExceeded();
         limit -= mint_;
     }
@@ -299,13 +305,14 @@ contract Position is Ownable, IPosition, MathUtil {
      * Repay some ZCHF. Requires an allowance to be in place. If too much is repaid, the call fails.
      * It is possible to repay while there are challenges, but the collateral is locked until all is clear again.
      *
-     * The repaid amount should fulfill the following equation in order to close the position, i.e. bring the minted amount to 0:
+     * The repaid amount should fulfill the following equation in order to close the position,
+     * i.e. bring the minted amount to 0:
      * minted = amount + zchf.calculateAssignedReserve(amount, reservePPM)
      *
      * Under normal circumstances, this implies:
      * amount = minted * (1000000 - reservePPM)
      *
-     * For example, if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
+     * E.g. if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
      */
     function repay(uint256 amount) public {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
@@ -345,7 +352,7 @@ contract Position is Ownable, IPosition, MathUtil {
         if (block.timestamp <= cooldown && !isClosed()) revert Hot();
         uint256 balance = _withdrawCollateral(target, amount);
         _checkCollateral(balance, price);
-        if (balance < minimumCollateral && balance > 0) revert InsufficientCollateral(); // Do not allow creation of dust amounts
+        if (balance < minimumCollateral && balance > 0) revert InsufficientCollateral(); // Prevent dust amounts
     }
 
     function _withdrawCollateral(address target, uint256 amount) internal returns (uint256) {
@@ -355,9 +362,10 @@ contract Position is Ownable, IPosition, MathUtil {
         }
         uint256 balance = _collateralBalance();
         if (balance < minimumCollateral && challengedAmount == 0) {
-            // This leaves a slightly unsatisfying possibility open: if the withdrawal happens due to a successful challenge,
-            // there might be a small amount of collateral left that is not withheld in case there are no other pending challenges.
-            // The only way to cleanly solve this would be to have two distinct cooldowns, one for minting and one for withdrawals.
+            // This leaves a slightly unsatisfying possibility open: if the withdrawal happens due to a successful
+            // challenge, there might be a small amount of collateral left that is not withheld in case there are no
+            // other pending challenges. The only way to cleanly solve this would be to have two distinct cooldowns, 
+            // one for minting and one for withdrawals.
             _close();
         }
 
@@ -384,7 +392,7 @@ contract Position is Ownable, IPosition, MathUtil {
     error ChallengeTooSmall();
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
-        // require minimum size, note that collateral balance can be below minimum if it was partially challenged before
+        // Require minimum size. Collateral balance can be below minimum if it was partially challenged before.
         if (size < minimumCollateral && size < _collateralBalance()) revert ChallengeTooSmall();
         if (size == 0) revert ChallengeTooSmall();
         challengedAmount += size;
@@ -407,9 +415,12 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * @param _bidder   address of the bidder that receives the collateral
      * @param _size     size of the collateral bid for (dec 18)
-     * @return (position owner, effective bid size in ZCHF, effective challenge size in ZCHF, repaid amount, reserve ppm)
+     * @return (position owner, effective challenge size in ZCHF, repaid amount, reserve ppm)
      */
-    function notifyChallengeSucceeded(address _bidder, uint256 _size) external onlyHub returns (address, uint256, uint256, uint32) {
+    function notifyChallengeSucceeded(
+        address _bidder,
+        uint256 _size
+    ) external onlyHub returns (address, uint256, uint256, uint32) {
         challengedAmount -= _size;
         uint256 colBal = _collateralBalance();
         if (colBal < _size) {
@@ -419,8 +430,8 @@ contract Position is Ownable, IPosition, MathUtil {
         _notifyRepaid(repayment); // we assume the caller takes care of the actual repayment
         _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
 
-        // Give time for additional challenges before the owner can mint again
-        // In particular, the owner might have added collateral only seconds before the challenge ended, preventing a close
+        // Give time for additional challenges before the owner can mint again. In particular,
+        // the owner might have added collateral only seconds before the challenge ended, preventing a close.
         _restrictMinting(3 days);
 
         return (owner, _size, repayment, reserveContribution);
