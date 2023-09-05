@@ -21,12 +21,14 @@ contract StablecoinBridge {
      * The maximum amount of outstanding converted source stablecoins.
      */
     uint256 public immutable limit;
+    uint256 public minted;
 
     constructor(address other, address zchfAddress, uint256 limit_) {
         chf = IERC20(other);
         zchf = IFrankencoin(zchfAddress);
         horizon = block.timestamp + 52 weeks;
         limit = limit_;
+        minted = 0;
     }
 
     /**
@@ -47,8 +49,9 @@ contract StablecoinBridge {
 
     function _mint(address target, uint256 amount) internal {
         if (block.timestamp > horizon) revert Expired(block.timestamp, horizon);
-        if (chf.balanceOf(address(this)) > limit) revert Limit(amount, limit);
         zchf.mint(target, amount);
+        minted += amount;
+        if (minted > limit) revert Limit(amount, limit);
     }
 
     error Limit(uint256 amount, uint256 limit);
@@ -69,6 +72,7 @@ contract StablecoinBridge {
     function _burn(address zchfHolder, address target, uint256 amount) internal {
         zchf.burnFrom(zchfHolder, amount);
         chf.transfer(target, amount);
+        minted -= amount;
     }
 
     /**
