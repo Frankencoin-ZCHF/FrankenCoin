@@ -205,7 +205,8 @@ contract MintingHub {
     error UnexpectedPrice();
 
     /**
-     * Post a bid in ZCHF given an open challenge. Requires a ZCHF allowance from the caller to the minting hub.
+     * Post a bid in ZCHF given an open challenge.
+     *
      * In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token
      * has a blacklist and the challenger is on it), it is possible to postpone the return of the collateral.
      *

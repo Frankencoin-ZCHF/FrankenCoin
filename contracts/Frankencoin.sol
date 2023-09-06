@@ -107,7 +107,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * Make the system more user friendly by skipping the allowance in many cases.
      *
      * We trust minters and the positions they have created to mint and burn as they please, so
-     * giving them arbitraty allowances does not pose an additional risk.
+     * giving them arbitrary allowances does not pose an additional risk.
      */
     function _allowance(address owner, address spender) internal view override returns (uint256) {
         uint256 explicit = super._allowance(owner, spender);

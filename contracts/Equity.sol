@@ -283,7 +283,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     /**
      * Call this method to buy newly minted pool shares with Frankencoins.
-     * No allowance required (i.e. it is hardcoded in the Trankencoin token contract).
+     * No allowance required (i.e. it is hardcoded in the Frankencoin token contract).
      * Make sure to invest at least 10e-12 * market cap to avoid rounding losses.
      *
      * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.

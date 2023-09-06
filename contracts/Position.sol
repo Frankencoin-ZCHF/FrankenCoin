@@ -302,7 +302,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * Repay some ZCHF. Requires an allowance to be in place. If too much is repaid, the call fails.
+     * Repay some ZCHF. If too much is repaid, the call fails.
      * It is possible to repay while there are challenges, but the collateral is locked until all is clear again.
      *
      * The repaid amount should fulfill the following equation in order to close the position,
