@@ -7,6 +7,8 @@ import "./IFrankencoin.sol";
 
 interface IPosition {
 
+    function original() external returns (address);
+
     function collateral() external returns (IERC20);
 
     function minimumCollateral() external returns (uint256);
@@ -17,7 +19,7 @@ interface IPosition {
 
     function price() external returns (uint256);
 
-    function reduceLimitForClone(uint256 amount, uint256 expiration) external;
+    function reduceLimitForClone(uint256 amount) external;
 
     function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expiration) external;
 

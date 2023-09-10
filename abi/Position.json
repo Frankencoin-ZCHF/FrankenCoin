@@ -608,11 +608,6 @@
                 "internalType": "uint256",
                 "name": "mint_",
                 "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "exp",
-                "type": "uint256"
             }
         ],
         "name": "reduceLimitForClone",

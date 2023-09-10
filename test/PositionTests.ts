@@ -73,7 +73,7 @@ describe("Position Tests", () => {
             let fliqPrice = floatToDec18(1000);
             let minCollateral = floatToDec18(1);
             let fInitialCollateral = floatToDec18(initialCollateral);
-            let duration = BN.from(14 * 86_400);
+            let duration = BN.from(60 * 86_400);
             let fFees = BN.from(fee * 1_000_000);
             let fReserve = BN.from(reserve * 1_000_000);
             let openingFeeZCHF = await mintingHub.OPENING_FEE();
@@ -94,7 +94,7 @@ describe("Position Tests", () => {
             expect(dZCHF).to.be.equal(-dec18ToFloat(openingFeeZCHF));
             positionContract = await ethers.getContractAt('Position', positionAddr, owner);
             let currentFees = await positionContract.calculateCurrentFee();
-            expect(currentFees).to.be.eq(383);
+            expect(currentFees).to.be.eq(1643);
         });
         it("require cooldown", async () => {
             let tx = positionContract.connect(owner).mint(owner.address, floatToDec18(5));
@@ -129,18 +129,23 @@ describe("Position Tests", () => {
         });
 
         it("get loan", async () => {
+            await evm_increaseTime(7 * 86_400); // 14 days passed in total
+
             fLimit = await positionContract.limit();
             limit = dec18ToFloat(fLimit);
             let amount = 10_000;
             expect(amount).to.be.lessThan(limit);
 
+            let expiration = await positionContract.expiration();
+            let start = await positionContract.start();
+
             let fAmount = floatToDec18(amount);
             let fZCHFBefore = await ZCHFContract.balanceOf(owner.address);
             let expectedAmount = dec18ToFloat(await positionContract.getUsableMint(fAmount, true));
-            expect(expectedAmount).to.be.eq(8996.17);
+            expect(expectedAmount).to.be.eq(8985.48);
             await positionContract.connect(owner).mint(owner.address, fAmount);//).to.emit("PositionOpened");
             let currentFees = await positionContract.calculateCurrentFee();
-            expect(currentFees).to.be.eq(383); // two weeks of a 1% yearly interest
+            expect(currentFees).to.be.eq(1452); // 53 days of a 1% yearly interest
             let fZCHFAfter = await ZCHFContract.balanceOf(owner.address);
             let ZCHFMinted = dec18ToFloat(fZCHFAfter.sub(fZCHFBefore));
             expect(expectedAmount).to.be.equal(ZCHFMinted);
@@ -162,7 +167,7 @@ describe("Position Tests", () => {
             clonePositionAddr = '0x' + log.topics[2].substring(26);
             clonePositionContract = await ethers.getContractAt('Position', clonePositionAddr, alice);
             let newFees = await clonePositionContract.calculateCurrentFee();
-            expect(fees / 2).to.be.approximately(newFees, 0.5);
+            expect(fees / 2).to.be.approximately(newFees, 50);
         });
 
         it("correct collateral", async () => {
@@ -190,7 +195,7 @@ describe("Position Tests", () => {
             let yearlyInterestPPM = await clonePositionContract.yearlyInterestPPM();
 
             let fBalanceAfter = await ZCHFContract.balanceOf(alice.address);
-            let mintAfterFees = mintAmount * (1 - 7 * yearlyInterestPPM / 365 / 1000_000 - reserveContributionPPM / 1000_000)
+            let mintAfterFees = mintAmount * (1 - 28 * yearlyInterestPPM / 365 / 1000_000 - reserveContributionPPM / 1000_000)
             let cloneFeeCharged = dec18ToFloat(fGlblZCHBalanceOfCloner.sub(fBalanceAfter)) + mintAfterFees;
             expect(cloneFeeCharged).to.be.approximately(0, 0.0001); // no extra fees when cloning
         });

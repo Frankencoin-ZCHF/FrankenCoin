@@ -86,6 +86,11 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 public immutable override minimumCollateral;
 
     /**
+     * Always pay interest for at least four weeks.
+     */
+    uint256 private constant MIN_INTEREST_DURATION = 4 weeks;
+
+    /**
      * The interest in parts per million per year that is deducted when minting Frankencoins.
      * To be paid upfront.
      */
@@ -173,8 +178,7 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
      */
-    function reduceLimitForClone(uint256 mint_, uint256 exp) external noChallenge noCooldown alive onlyHub {
-        if (exp > expiration || exp < start) revert TooLate(); // ensure exp < start so calculateCurrentFee() cant fail
+    function reduceLimitForClone(uint256 mint_) external noChallenge noCooldown alive onlyHub {
         if (mint_ > limitForClones()) revert LimitExceeded();
         limit -= mint_;
     }
@@ -271,16 +275,10 @@ contract Position is Ownable, IPosition, MathUtil {
 
     function calculateCurrentFee() public view returns (uint32) {
         uint256 exp = expiration;
-        uint256 time = block.timestamp;
-        if (time >= exp) {
-            return 0;
-        } else {
-            if (time < start) {
-                time = start;
-            }
-            // Time resolution is in the range of minutes for typical interest rates.
-            return uint32(((exp - time) * yearlyInterestPPM) / 365 days);
-        }
+        uint256 time = block.timestamp < start ? start : block.timestamp;
+        uint256 timePassed = time >= exp - MIN_INTEREST_DURATION ? MIN_INTEREST_DURATION : exp - time;
+        // Time resolution is in the range of minutes for typical interest rates.
+        return uint32((timePassed * yearlyInterestPPM) / 365 days);
     }
 
     error LimitExceeded();
