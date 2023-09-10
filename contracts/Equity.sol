@@ -329,7 +329,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     function _calculateShares(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 investmentExFees = (investment * 997) / 1000;
+        uint256 investmentExFees = (investment * 997) / 1000; // remove 0.3% fee
         // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
         uint256 newTotalShares = capitalBefore < MINIMUM_EQUITY || totalShares == 0
             ? totalShares + 1000 * ONE_DEC18

@@ -118,7 +118,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         uint256 explicit = super._allowance(owner, spender);
         if (explicit > 0) {
             return explicit; // don't waste gas checking minter
-        } else if (isMinter(spender) || isMinter(isPosition(spender)) || spender == address(reserve)) {
+        } else if (isMinter(spender) || isMinter(getPositionParent(spender)) || spender == address(reserve)) {
             return INFINITY;
         } else {
             return 0;
@@ -338,7 +338,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     /**
      * Returns the address of the minter that created this position or null if the provided address is unknown.
      */
-    function isPosition(address _position) public view override returns (address) {
+    function getPositionParent(address _position) public view override returns (address) {
         return positions[_position];
     }
 }

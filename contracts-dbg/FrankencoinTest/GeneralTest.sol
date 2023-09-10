@@ -87,7 +87,7 @@ event EvmStopFork();
         alice.obtainFrankencoins(swap, 1000 ether);
         address pos = alice.initiatePosition(col, hub);
         require(col.balanceOf(address(alice)) == 0);
-        require(zchf.isPosition(pos) == address(hub));
+        require(zchf.getPositionParent(pos) == address(hub));
         return pos;
     }
 

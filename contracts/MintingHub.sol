@@ -149,7 +149,7 @@ contract MintingHub {
     }
 
     modifier validPos(address position) {
-        require(zchf.isPosition(position) == address(this), "not our pos");
+        require(zchf.getPositionParent(position) == address(this), "not our pos");
         _;
     }
 
