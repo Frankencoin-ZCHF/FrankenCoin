@@ -405,8 +405,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * would be wrong to force them to share the other million with the passive FPS holders. Instead, they will get
      * the possibility to bootstrap the system again owning 100% of all FPS shares.
      *
-     * @param: helpers          A list of addresses that delegate to the caller in incremental order
-     * @param: addressesToWipe  A list of addresses whose FPS will be burned to zero
+     * @param helpers          A list of addresses that delegate to the caller in incremental order
+     * @param addressesToWipe  A list of addresses whose FPS will be burned to zero
      */
     function restructureCapTable(address[] calldata helpers, address[] calldata addressesToWipe) external {
         require(zchf.equity() < MINIMUM_EQUITY);
