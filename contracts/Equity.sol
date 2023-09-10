@@ -115,7 +115,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         super._beforeTokenTransfer(from, to, amount);
         if (amount > 0) {
             // No need to adjust the sender votes. When they send out 10% of their shares, they also lose 10% of
-            // their votes so everything falls nicely into place. Recipient votes should stay the same, but grow 
+            // their votes so everything falls nicely into place. Recipient votes should stay the same, but grow
             // faster in the future, requiring an adjustment of the anchor.
             uint256 roundingLoss = _adjustRecipientVoteAnchor(to, amount);
             // The total also must be adjusted and kept accurate by taking into account the rounding error.
@@ -171,7 +171,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * The relative voting power of the address. 1e18 is 100%.
+     * The relative voting power of the address.
+     * @return A percentage with 1e18 being 100%
      */
     function relativeVotes(address holder) external view returns (uint256) {
         return (ONE_DEC18 * votes(holder)) / totalVotes();
@@ -191,6 +192,14 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         return totalVotesAtAnchor + totalSupply() * (_anchorTime() - totalVotesAnchorTime);
     }
 
+    /**
+     * The number of votes the sender commands when taking the support of the helpers into account.
+     * @param sender    The address whose total voting power is of interest
+     * @param helpers   An incrementally sorted list of helpers without duplicates and without the sender.
+     *                  The call fails if the list contains an address that does not delegate to sender.
+     *                  For indirect delegates, i.e. a -> b -> c, both a and b must be included for both to count.
+     * @return          The total number of votes of sender at the current point in time.
+     */
     function votesDelegated(address sender, address[] calldata helpers) public view returns (uint256) {
         uint256 _votes = votes(sender);
         require(_checkDuplicatesAndSorted(helpers));
@@ -257,6 +266,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      *
      * Since this is a rather aggressive measure, delegation is not supported. Every holder must call this
      * method on their own.
+     * @param targets   The target addresses to remove votes from
+     * @param votesToDestroy    The maximum number of votes the caller is willing to sacrifice
      */
     function kamikaze(address[] calldata targets, uint256 votesToDestroy) external {
         uint256 budget = _reduceVotes(msg.sender, votesToDestroy);
@@ -282,11 +293,14 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Call this method to buy newly minted pool shares with Frankencoins.
+     * Call this method to obtain newly minted pool shares in exchange for Frankencoins.
      * No allowance required (i.e. it is hardcoded in the Frankencoin token contract).
      * Make sure to invest at least 10e-12 * market cap to avoid rounding losses.
      *
      * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
+     *
+     * @param amount            Frankencoins to invest
+     * @param expectedShares    Minimum amount of expected shares for frontrunning protection
      */
     function invest(uint256 amount, uint256 expectedShares) external returns (uint256) {
         zchf.transferFrom(msg.sender, address(this), amount);
@@ -305,9 +319,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * @notice Calculate shares received when depositing ZCHF
-     * @param investment ZCHF invested
-     * @return amount of shares received for the ZCHF invested
+     * Calculate shares received when investing Frankencoins
+     * @param investment    ZCHF to be invested
+     * @return shares to be received in return
      */
     function calculateShares(uint256 investment) external view returns (uint256) {
         return _calculateShares(zchf.equity(), investment);
@@ -325,17 +339,26 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
 
     /**
      * Redeem the given amount of shares owned by the sender and transfer the proceeds to the target.
+     * @return The amount of ZCHF transferred to the target
      */
     function redeem(address target, uint256 shares) external returns (uint256) {
         return _redeemFrom(msg.sender, target, shares);
     }
 
+    /**
+     * Like redeem(...), but with an extra parameter to protect against frontrunning.
+     * @param expectedProceeds  The minimum acceptable redemption proceeds.
+     */
     function redeemExpected(address target, uint256 shares, uint256 expectedProceeds) external returns (uint256) {
         uint256 proceeds = _redeemFrom(msg.sender, target, shares);
         require(proceeds >= expectedProceeds);
         return proceeds;
     }
 
+    /**
+     * Redeem FPS based on an allowance from the owner to the caller.
+     * See also redeemExpected(...).
+     */
     function redeemFrom(
         address owner,
         address target,
@@ -381,6 +404,9 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * 2'000'000 ZCHF to save it. These brave souls are essentially donating 1'000'000 to the minter reserve and it
      * would be wrong to force them to share the other million with the passive FPS holders. Instead, they will get
      * the possibility to bootstrap the system again owning 100% of all FPS shares.
+     *
+     * @param: helpers          A list of addresses that delegate to the caller in incremental order
+     * @param: addressesToWipe  A list of addresses whose FPS will be burned to zero
      */
     function restructureCapTable(address[] calldata helpers, address[] calldata addressesToWipe) external {
         require(zchf.equity() < MINIMUM_EQUITY);

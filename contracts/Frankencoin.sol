@@ -84,6 +84,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * above the minimum. It is assumed that over time, informal ways to coordinate on new minters emerge. The message
      * parameter might be useful for initiating further communication. Maybe it contains a link to a website describing
      * the proposed minter.
+     *
+     * @param _minter              An address that is given the permission to mint Frankencoins
+     * @param _applicationPeriod   The time others have to veto the suggestion, at least MIN_APPLICATION_PERIOD
+     * @param _applicationFee      The fee paid by the caller, at least MIN_FEE
+     * @param _message             An optional human readable message to everyone watching this contract 
      */
     function suggestMinter(
         address _minter,
@@ -129,7 +134,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Registers a collateralized debt position, thereby giving it the ability to mint Frankencoins.
+     * Allows minters to register collateralized debt positions, thereby giving them the ability to mint Frankencoins.
      * It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
      */
     function registerPosition(address _position) external override {

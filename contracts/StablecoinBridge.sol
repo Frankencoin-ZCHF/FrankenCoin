@@ -57,13 +57,15 @@ contract StablecoinBridge {
     error Limit(uint256 amount, uint256 limit);
     error Expired(uint256 time, uint256 expiration);
 
+    /**
+     * Convenience method for burnAndSend(msg.sender, amount)
+     */
     function burn(uint256 amount) external {
         _burn(msg.sender, msg.sender, amount);
     }
 
     /**
      * Burn the indicated amount of Frankencoin and send the same number of source coin to the caller.
-     * No allowance required.
      */
     function burnAndSend(address target, uint256 amount) external {
         _burn(msg.sender, target, amount);

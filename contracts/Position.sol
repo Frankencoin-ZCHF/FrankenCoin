@@ -205,7 +205,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
     /**
      * This is how much the minter can actually use when minting ZCHF, with the rest being used
-     * to buy reserve pool shares.
+     * assigned to the minter reserve or (if applicable) fees.
      */
     function getUsableMint(uint256 totalMint, bool afterFees) external view returns (uint256) {
         if (afterFees) {
