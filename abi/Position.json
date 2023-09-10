@@ -42,9 +42,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_challengePeriod",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "internalType": "uint32",
@@ -241,12 +241,35 @@
     },
     {
         "inputs": [],
-        "name": "challengePeriod",
+        "name": "challengeData",
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "",
+                "name": "liqPrice",
                 "type": "uint256"
+            },
+            {
+                "internalType": "uint64",
+                "name": "phase1",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "phase2",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "challengePeriod",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -483,6 +506,19 @@
                 "type": "uint256"
             }
         ],
+        "name": "notifyChallengeAverted",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "size",
+                "type": "uint256"
+            }
+        ],
         "name": "notifyChallengeStarted",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -494,11 +530,6 @@
                 "internalType": "address",
                 "name": "_bidder",
                 "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_bid",
-                "type": "uint256"
             },
             {
                 "internalType": "uint256",
@@ -577,11 +608,6 @@
                 "internalType": "uint256",
                 "name": "mint_",
                 "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "exp",
-                "type": "uint256"
             }
         ],
         "name": "reduceLimitForClone",
@@ -638,35 +664,6 @@
         ],
         "name": "transferOwnership",
         "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_collateralAmount",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_bidAmountZCHF",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "challengeEnd",
-                "type": "uint256"
-            }
-        ],
-        "name": "tryAvertChallenge",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
         "stateMutability": "nonpayable",
         "type": "function"
     },

@@ -7,17 +7,19 @@ import "./IFrankencoin.sol";
 
 interface IPosition {
 
+    function original() external returns (address);
+
     function collateral() external returns (IERC20);
 
     function minimumCollateral() external returns (uint256);
 
-    function challengePeriod() external returns (uint256);
+    function challengePeriod() external returns (uint64);
 
     function expiration() external returns (uint256);
 
     function price() external returns (uint256);
 
-    function reduceLimitForClone(uint256 amount, uint256 expiration) external;
+    function reduceLimitForClone(uint256 amount) external;
 
     function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expiration) external;
 
@@ -31,10 +33,12 @@ interface IPosition {
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
+    function challengeData() external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2);
+
     function notifyChallengeStarted(uint256 size) external;
 
-    function tryAvertChallenge(uint256 size, uint256 bid, uint256 challengeEnd) external returns (bool);
+    function notifyChallengeAverted(uint256 size) external;
 
-    function notifyChallengeSucceeded(address bidder, uint256 bid, uint256 size) external returns (address, uint256, uint256, uint32);
+    function notifyChallengeSucceeded(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);
 
 }

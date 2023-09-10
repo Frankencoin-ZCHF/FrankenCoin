@@ -17,7 +17,7 @@ contract PositionFactory {
         uint256 _initialLimit,
         uint256 _initPeriod,
         uint256 _duration,
-        uint256 _challengePeriod,
+        uint64 _challengePeriod,
         uint32 _yearlyInterestPPM,
         uint256 _liqPrice,
         uint32 _reserve
@@ -53,7 +53,7 @@ contract PositionFactory {
         return address(clone);
     }
 
-    // copied from https://github.com/optionality/clone-factory/blob/32782f82dfc5a00d103a7e61a17a5dedbd1e8e9d/contracts/CloneFactory.sol
+    // github.com/optionality/clone-factory/blob/32782f82dfc5a00d103a7e61a17a5dedbd1e8e9d/contracts/CloneFactory.sol
     function _createClone(address target) internal returns (address result) {
         bytes20 targetBytes = bytes20(target);
         assembly {
