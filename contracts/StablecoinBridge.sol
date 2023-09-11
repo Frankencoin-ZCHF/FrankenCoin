@@ -6,14 +6,16 @@ import "./interface/IERC677Receiver.sol";
 import "./interface/IFrankencoin.sol";
 
 /**
- * A minting contract for another Swiss franc stablecoin ('source stablecoin') that we trust.
+ * @title Stable Coin Bridge
+ * @notice A minting contract for another Swiss franc stablecoin ('source stablecoin') that we trust.
+ * @author Frankencoin
  */
 contract StablecoinBridge {
     IERC20 public immutable chf; // the source stablecoin
     IFrankencoin public immutable zchf; // the Frankencoin
 
     /**
-     * The time horizon after which this bridge expires and needs to be replaced by a new contract.
+     * @notice The time horizon after which this bridge expires and needs to be replaced by a new contract.
      */
     uint256 public immutable horizon;
 
@@ -22,6 +24,10 @@ contract StablecoinBridge {
      */
     uint256 public immutable limit;
     uint256 public minted;
+
+    error Limit(uint256 amount, uint256 limit);
+    error Expired(uint256 time, uint256 expiration);
+    error UnsupportedToken(address token);
 
     constructor(address other, address zchfAddress, uint256 limit_) {
         chf = IERC20(other);
@@ -32,15 +38,15 @@ contract StablecoinBridge {
     }
 
     /**
-     * Convenience method for mint(msg.sender, amount)
+     * @notice Convenience method for mint(msg.sender, amount)
      */
     function mint(uint256 amount) external {
         mintTo(msg.sender, amount);
     }
 
     /**
-     * Mint the target amount of Frankencoins, taking the equal amount of source coins from the sender.
-     * This only works if an allowance for the source coins has been set and the caller has enough of them.
+     * @notice Mint the target amount of Frankencoins, taking the equal amount of source coins from the sender.
+     * @dev This only works if an allowance for the source coins has been set and the caller has enough of them.
      */
     function mintTo(address target, uint256 amount) public {
         chf.transferFrom(msg.sender, address(this), amount);
@@ -54,18 +60,15 @@ contract StablecoinBridge {
         if (minted > limit) revert Limit(amount, limit);
     }
 
-    error Limit(uint256 amount, uint256 limit);
-    error Expired(uint256 time, uint256 expiration);
-
     /**
-     * Convenience method for burnAndSend(msg.sender, amount)
+     * @notice Convenience method for burnAndSend(msg.sender, amount)
      */
     function burn(uint256 amount) external {
         _burn(msg.sender, msg.sender, amount);
     }
 
     /**
-     * Burn the indicated amount of Frankencoin and send the same number of source coin to the caller.
+     * @notice Burn the indicated amount of Frankencoin and send the same number of source coin to the caller.
      */
     function burnAndSend(address target, uint256 amount) external {
         _burn(msg.sender, target, amount);
@@ -78,7 +81,7 @@ contract StablecoinBridge {
     }
 
     /**
-     * Supporting the direct minting and burning through ERC-677, if supported by the sent coin.
+     * @notice Supporting the direct minting and burning through ERC-677, if supported by the sent coin.
      */
     function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
         if (msg.sender == address(chf)) {
@@ -86,7 +89,7 @@ contract StablecoinBridge {
         } else if (msg.sender == address(zchf)) {
             _burn(address(this), from, amount);
         } else {
-            require(false, "unsupported token");
+            revert UnsupportedToken(msg.sender);
         }
         return true;
     }

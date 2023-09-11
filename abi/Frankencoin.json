@@ -536,6 +536,25 @@
         "inputs": [
             {
                 "internalType": "address",
+                "name": "_position",
+                "type": "address"
+            }
+        ],
+        "name": "getPositionParent",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
                 "name": "_minter",
                 "type": "address"
             },
@@ -564,25 +583,6 @@
                 "internalType": "bool",
                 "name": "",
                 "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_position",
-                "type": "address"
-            }
-        ],
-        "name": "isPosition",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
             }
         ],
         "stateMutability": "view",

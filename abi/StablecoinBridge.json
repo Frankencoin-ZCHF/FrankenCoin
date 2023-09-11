@@ -55,6 +55,17 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            }
+        ],
+        "name": "UnsupportedToken",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "uint256",
                 "name": "amount",
                 "type": "uint256"

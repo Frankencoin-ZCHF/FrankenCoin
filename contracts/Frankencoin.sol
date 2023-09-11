@@ -88,7 +88,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * @param _minter              An address that is given the permission to mint Frankencoins
      * @param _applicationPeriod   The time others have to veto the suggestion, at least MIN_APPLICATION_PERIOD
      * @param _applicationFee      The fee paid by the caller, at least MIN_FEE
-     * @param _message             An optional human readable message to everyone watching this contract 
+     * @param _message             An optional human readable message to everyone watching this contract
      */
     function suggestMinter(
         address _minter,
