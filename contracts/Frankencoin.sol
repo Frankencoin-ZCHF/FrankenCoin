@@ -7,37 +7,38 @@ import "./interface/IReserve.sol";
 import "./interface/IFrankencoin.sol";
 
 /**
- * The Frankencoin (ZCHF) is an ERC-20 token that is designed to track the value of the Swiss franc.
+ * @title FrankenCoin
+ * @notice The Frankencoin (ZCHF) is an ERC-20 token that is designed to track the value of the Swiss franc.
  * It is not upgradable, but open to arbitrary minting plugins. These are automatically accepted if none of the
  * qualified pool share holders casts a veto, leading to a flexible but conservative governance.
  */
 contract Frankencoin is ERC20PermitLight, IFrankencoin {
     /**
-     * Minimal fee and application period when suggesting a new minter.
+     * @notice Minimal fee and application period when suggesting a new minter.
      */
     uint256 public constant MIN_FEE = 1000 * (10 ** 18);
     uint256 public immutable MIN_APPLICATION_PERIOD; // for example 10 days
 
     /**
-     * The contract that holds the reserve.
+     * @notice The contract that holds the reserve.
      */
     IReserve public immutable override reserve;
 
     /**
-     * How much of the reserve belongs to the minters. Everything else belongs to the pool share holders.
+     * @notice How much of the reserve belongs to the minters. Everything else belongs to the pool share holders.
      * Stored with 6 additional digits of accuracy so no rounding is necessary when dealing with parts per
      * million (ppm) in reserve calculations.
      */
     uint256 private minterReserveE6;
 
     /**
-     * Map of minters to approval time stamps. If the time stamp is in the past, the minter contract is allowed
+     * @notice Map of minters to approval time stamps. If the time stamp is in the past, the minter contract is allowed
      * to mint Frankencoins.
      */
     mapping(address minter => uint256 validityStart) public minters;
 
     /**
-     * List of positions that are allowed to mint and the minter that registered them.
+     * @notice List of positions that are allowed to mint and the minter that registered them.
      */
     mapping(address position => address registeringMinter) public positions;
 
@@ -46,13 +47,19 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     event Loss(address indexed reportingMinter, uint256 amount, uint256 reserve);
     event Profit(address indexed minter, uint256 amount, uint256 reserve);
 
+    error PeriodTooShort();
+    error FeeTooLow();
+    error AlreadyRegistered();
+    error NotMinter();
+    error TooLate();
+
     modifier minterOnly() {
         if (!isMinter(msg.sender) && !isMinter(positions[msg.sender])) revert NotMinter();
         _;
     }
 
     /**
-     * Initiates the Frankencoin with the provided minimum application period for new plugins
+     * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
     constructor(uint256 _minApplicationPeriod) ERC20(18) {
@@ -75,10 +82,8 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Publicly accessible method to suggest a new way of minting Frankencoin.
-     *
-     * The caller has to pay an application fee that is irrevocably lost even if the new minter is vetoed.
-     *
+     * @notice Publicly accessible method to suggest a new way of minting Frankencoin.
+     * @dev The caller has to pay an application fee that is irrevocably lost even if the new minter is vetoed.
      * The caller must assume that someone will veto the new minter unless there is broad consensus that the new minter
      * adds value to the Frankencoin system. Complex proposals should have application periods and applications fees
      * above the minimum. It is assumed that over time, informal ways to coordinate on new minters emerge. The message
@@ -104,14 +109,9 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         emit MinterApplied(_minter, _applicationPeriod, _applicationFee, _message);
     }
 
-    error PeriodTooShort();
-    error FeeTooLow();
-    error AlreadyRegistered();
-
     /**
-     * Make the system more user friendly by skipping the allowance in many cases.
-     *
-     * We trust minters and the positions they have created to mint and burn as they please, so
+     * @notice Make the system more user friendly by skipping the allowance in many cases.
+     * @dev We trust minters and the positions they have created to mint and burn as they please, so
      * giving them arbitrary allowances does not pose an additional risk.
      */
     function _allowance(address owner, address spender) internal view override returns (uint256) {
@@ -126,27 +126,25 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * The reserve provided by the owners of collateralized positions.
-     * The minter reserve can be used to cover losses after the equity holders have been wiped out.
+     * @notice The reserve provided by the owners of collateralized positions.
+     * @dev The minter reserve can be used to cover losses after the equity holders have been wiped out.
      */
     function minterReserve() public view returns (uint256) {
         return minterReserveE6 / 1000000;
     }
 
     /**
-     * Allows minters to register collateralized debt positions, thereby giving them the ability to mint Frankencoins.
-     * It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
+     * @notice Allows minters to register collateralized debt positions, thereby giving them the ability to mint Frankencoins.
+     * @dev It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
      */
     function registerPosition(address _position) external override {
         if (!isMinter(msg.sender)) revert NotMinter();
         positions[_position] = msg.sender;
     }
 
-    error NotMinter();
-
     /**
-     * The amount of equity of the Frankencoin system in ZCHF, owned by the holders of Frankencoin Pool Shares.
-     * Note that the equity contract technically holds both the minter reserve as well as the equity, so the minter
+     * @notice The amount of equity of the Frankencoin system in ZCHF, owned by the holders of Frankencoin Pool Shares.
+     * @dev Note that the equity contract technically holds both the minter reserve as well as the equity, so the minter
      * reserve must be subtracted. All fees and other kind of income is added to the Equity contract and essentially
      * constitutes profits attributable to the pool share holders.
      */
@@ -161,8 +159,8 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Qualified pool share holders can deny minters during the application period.
-     * Calling this function is relatively cheap thanks to the deletion of a storage slot.
+     * @notice Qualified pool share holders can deny minters during the application period.
+     * @dev Calling this function is relatively cheap thanks to the deletion of a storage slot.
      */
     function denyMinter(address _minter, address[] calldata _helpers, string calldata _message) external override {
         if (block.timestamp > minters[_minter]) revert TooLate();
@@ -171,10 +169,8 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         emit MinterDenied(_minter, _message);
     }
 
-    error TooLate();
-
     /**
-     * Mints the provided amount of ZCHF to the target address, automatically forwarding
+     * @notice Mints the provided amount of ZCHF to the target address, automatically forwarding
      * the minting fee and the reserve to the right place.
      */
     function mintWithReserve(
@@ -201,14 +197,14 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Burn someone elses ZCHF.
+     * @notice Burn someone elses ZCHF.
      */
     function burnFrom(address _owner, uint256 _amount) external override minterOnly {
         _burn(_owner, _amount);
     }
 
     /**
-     * Burn that amount without reclaiming the reserve, but freeing it up and thereby essentially donating it to the
+     * @notice Burn that amount without reclaiming the reserve, but freeing it up and thereby essentially donating it to the
      * pool share holders. This can make sense in combination with 'notifyLoss', i.e. when it is the pool share
      * holders that bear the risk and depending on the outcome they make a profit or a loss.
      *
@@ -233,7 +229,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Burns the provided number of tokens plus whatever reserves are associated with that amount given the reserve
+     * @notice Burns the provided number of tokens plus whatever reserves are associated with that amount given the reserve
      * requirement. The caller is only allowed to use this method for tokens also minted through the caller with the
      * same _reservePPM amount.
      *
@@ -255,7 +251,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Burns the target amount taking the tokens to be burned from the payer and the payer's reserve.
+     * @notice Burns the target amount taking the tokens to be burned from the payer and the payer's reserve.
      * Only use this method for tokens also minted by the caller with the same _reservePPM.
      *
      * Example: the calling contract has previously minted 100 ZCHF with a reserve ratio of 20% (i.e. 200000 ppm).
@@ -276,7 +272,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Calculates the reserve attributable to someone who minted the given amount with the given reserve requirement.
+     * @notice Calculates the reserve attributable to someone who minted the given amount with the given reserve requirement.
      * Under normal circumstances, this is just the reserver requirement multiplied by the amount. However, after a
      * severe loss of capital that burned into the minter's reserve, this can also be less than that.
      */
@@ -293,7 +289,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Calculate the amount that is freed when returning amountExcludingReserve given a reserve ratio of reservePPM,
+     * @notice Calculate the amount that is freed when returning amountExcludingReserve given a reserve ratio of reservePPM,
      * taking into account potential losses. Example values in the comments.
      */
     function calculateFreedAmount(
@@ -309,7 +305,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Notify the Frankencoin that a minter lost economic access to some coins. This does not mean that the coins are
+     * @notice Notify the Frankencoin that a minter lost economic access to some coins. This does not mean that the coins are
      * literally lost. It just means that some ZCHF will likely never be repaid and that in order to bring the system
      * back into balance, the lost amount of ZCHF must be removed from the reserve instead.
      *
@@ -329,14 +325,14 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Returns true if the address is an approved minter.
+     * @notice Returns true if the address is an approved minter.
      */
     function isMinter(address _minter) public view override returns (bool) {
         return minters[_minter] != 0 && block.timestamp >= minters[_minter];
     }
 
     /**
-     * Returns the address of the minter that created this position or null if the provided address is unknown.
+     * @notice Returns the address of the minter that created this position or null if the provided address is unknown.
      */
     function getPositionParent(address _position) public view override returns (address) {
         return positions[_position];

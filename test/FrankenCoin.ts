@@ -19,7 +19,8 @@ import { solidity } from "ethereum-waffle";
 
 chai.use(solidity);
 
-describe("Basic Tests", () => {
+const limit = floatToDec18(100_000);
+describe("FrankenCoin", () => {
   let owner: SignerWithAddress;
   let alice: SignerWithAddress;
 
@@ -40,41 +41,28 @@ describe("Basic Tests", () => {
     await createContract("MintingHub", [zchf.address, positionFactory.address]);
   });
 
-  describe("basic initialization", () => {
+  describe("Basic initialization", () => {
     it("symbol should be ZCHF", async () => {
       let symbol = await zchf.symbol();
       expect(symbol).to.be.equal("ZCHF");
       let name = await zchf.name();
       expect(name).to.be.equal("Frankencoin");
     });
+    it("create mock token", async () => {
+      mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
+      let symbol = await mockXCHF.symbol();
+      expect(symbol).to.be.equal("XCHF");
+    });
   });
 
-  describe("mock bridge", () => {
-    const limit = floatToDec18(100_000);
-
+  describe("Initializing Minters", () => {
     before(async () => {
-      const xchfFactory = await ethers.getContractFactory("TestToken");
-      mockXCHF = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
+      mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
       bridge = await createContract("StablecoinBridge", [
         mockXCHF.address,
         zchf.address,
         limit,
       ]);
-    });
-    it("create mock token", async () => {
-      let symbol = await mockXCHF.symbol();
-      expect(symbol).to.be.equal("XCHF");
-    });
-    it("minting fails if not approved", async () => {
-      let amount = floatToDec18(10000);
-      await mockXCHF.mint(owner.address, amount);
-      let balanceBefore = await zchf.balanceOf(owner.address);
-      await mockXCHF.approve(bridge.address, amount);
-      // set allowance
-      await expect(bridge.mint(amount)).to.be.revertedWithCustomError(
-        zchf,
-        "NotMinter"
-      );
     });
     it("bootstrap suggestMinter", async () => {
       let msg = "XCHF Bridge";
@@ -82,7 +70,65 @@ describe("Basic Tests", () => {
       let isMinter = await zchf.isMinter(bridge.address);
       expect(isMinter).to.be.true;
     });
+    it("should revert initialization when there is supply", async () => {
+      let amount = floatToDec18(10000);
+      await mockXCHF.approve(bridge.address, amount);
+      await bridge.mint(amount);
+      expect(zchf.initialize(bridge.address, "Bridge")).to.be.reverted;
+    });
+    it("should revert minter suggestion when application period is too short", async () => {
+      expect(
+        zchf.suggestMinter(owner.address, 9 * 86400, floatToDec18(1000), "")
+      ).to.be.revertedWith("PeriodTooShort");
+    });
+    it("should revert minter suggestion when application fee is too low", async () => {
+      expect(
+        zchf.suggestMinter(owner.address, 10 * 86400, floatToDec18(900), "")
+      ).to.be.revertedWith("FeeTooLow");
+    });
+    it("should revert when minter is already registered", async () => {
+      expect(
+        zchf.suggestMinter(bridge.address, 10 * 86400, floatToDec18(1000), "")
+      ).to.be.revertedWith("AlreadyRegistered");
+    });
+    it("should revert registering position when not from minters", async () => {
+      expect(await zchf.isMinter(owner.address)).to.be.false;
+      expect(zchf.registerPosition(owner.address)).to.be.revertedWith(
+        "NotMinter"
+      );
+    });
+    it("should revert denying minters when exceed application period", async () => {
+      await expect(
+        zchf.suggestMinter(owner.address, 10 * 86400, floatToDec18(1000), "")
+      ).to.emit(zchf, "MinterApplied");
+      await evm_increaseTime(86400 * 11);
+      expect(zchf.denyMinter(owner.address, [], "")).to.be.revertedWith(
+        "TooLate"
+      );
+    });
+  });
 
+  describe("Minting & Burning", () => {
+    before(async () => {
+      zchf = await createContract("Frankencoin", [10 * 86_400]);
+      mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
+      bridge = await createContract("StablecoinBridge", [
+        mockXCHF.address,
+        zchf.address,
+        limit,
+      ]);
+    });
+    it("should revert minting if minter is not whitelisted", async () => {
+      let amount = floatToDec18(10000);
+      await mockXCHF.mint(owner.address, amount);
+      await mockXCHF.approve(bridge.address, amount);
+      await expect(bridge.mint(amount)).to.be.revertedWithCustomError(
+        zchf,
+        "NotMinter"
+      );
+      zchf.initialize(bridge.address, "Bridge");
+      expect(await zchf.isMinter(bridge.address)).to.be.true;
+    });
     it("minter of XCHF-bridge should receive ZCHF", async () => {
       let amount = floatToDec18(5000);
       let balanceBefore = await zchf.balanceOf(owner.address);
@@ -108,9 +154,6 @@ describe("Basic Tests", () => {
         expect(isBridgeBalanceCorrect).to.be.true;
         expect(isSenderBalanceCorrect).to.be.true;
       }
-    });
-    it("should revert initialization when there is supply", async () => {
-      expect(zchf.initialize(bridge.address, "Bridge")).to.be.reverted;
     });
     it("burner of XCHF-bridge should receive XCHF", async () => {
       let amount = floatToDec18(50);
@@ -183,74 +226,25 @@ describe("Basic Tests", () => {
         "Expired"
       );
     });
-  });
-  describe("exchanges shares & pricing", () => {
-    it("deposit XCHF to reserve pool and receive share tokens", async () => {
-      let amount = 1000; // amount we will deposit
-      let fAmount = floatToDec18(1000); // amount we will deposit
-      let balanceBefore = await equity.balanceOf(owner.address);
-      let balanceBeforeZCHF = await zchf.balanceOf(owner.address);
-      let fTotalShares = await equity.totalSupply();
-      let fTotalCapital = await zchf.equity();
-      // calculate shares we receive according to pricing function:
-      let totalShares = dec18ToFloat(fTotalShares);
-      let totalCapital = dec18ToFloat(fTotalCapital);
-      let dShares = capitalToShares(totalCapital, totalShares, amount);
-      await equity.invest(fAmount, 0);
-      let balanceAfter = await equity.balanceOf(owner.address);
-      let balanceAfterZCHF = await zchf.balanceOf(owner.address);
-      let poolTokenShares = dec18ToFloat(balanceAfter.sub(balanceBefore));
-      let ZCHFReceived = dec18ToFloat(balanceAfterZCHF.sub(balanceBeforeZCHF));
-      let isPoolShareAmountCorrect = Math.abs(poolTokenShares - dShares) < 1e-7;
-      let isSenderBalanceCorrect = ZCHFReceived == -1000;
-      if (!isPoolShareAmountCorrect || !isSenderBalanceCorrect) {
-        console.log("Pool token shares received = ", poolTokenShares);
-        console.log("ZCHF tokens deposited = ", -ZCHFReceived);
-        expect(isPoolShareAmountCorrect).to.be.true;
-        expect(isSenderBalanceCorrect).to.be.true;
-      }
+    it("should revert minting with reserve from non minters", async () => {
+      expect(
+        zchf.mintWithReserve(owner.address, 1000, 0, 0)
+      ).to.be.revertedWith("NotMinter");
     });
-    it("cannot redeem shares immediately", async () => {
-      let canRedeem = await equity.canRedeem(owner.address);
-      expect(canRedeem).to.be.false;
+    it("should revert burning from non minters", async () => {
+      expect(zchf.burnFrom(owner.address, 1000)).to.be.revertedWith(
+        "NotMinter"
+      );
     });
-    it("can redeem shares after 90 days", async () => {
-      // increase block number so we can redeem
-      await evm_increaseTime(90 * 86400 + 60);
-      let canRedeem = await equity.canRedeem(owner.address);
-      expect(canRedeem).to.be.true;
+    it("should revert burning without reserve from non minters", async () => {
+      expect(zchf.burnWithoutReserve(owner.address, 1000)).to.be.revertedWith(
+        "NotMinter"
+      );
     });
-    it("redeem 1 share", async () => {
-      let amountShares = 1;
-      let fAmountShares = floatToDec18(amountShares);
-      let fTotalShares = await equity.totalSupply();
-      let fTotalCapital = await zchf.balanceOf(equity.address);
-      // calculate capital we receive according to pricing function:
-      let totalShares = dec18ToFloat(fTotalShares);
-      let totalCapital = dec18ToFloat(fTotalCapital);
-      let dCapital = sharesToCapital(totalCapital, totalShares, amountShares);
-
-      let sharesBefore = await equity.balanceOf(owner.address);
-      let capitalBefore = await zchf.balanceOf(owner.address);
-      await equity.redeem(owner.address, fAmountShares);
-
-      let sharesAfter = await equity.balanceOf(owner.address);
-      let capitalAfter = await zchf.balanceOf(owner.address);
-
-      let poolTokenSharesRec = dec18ToFloat(sharesAfter.sub(sharesBefore));
-      let ZCHFReceived = dec18ToFloat(capitalAfter.sub(capitalBefore));
-      let feeRate = ZCHFReceived / dCapital;
-      let isZCHFAmountCorrect = Math.abs(feeRate - 0.997) <= 1e-5;
-      let isPoolShareAmountCorrect = poolTokenSharesRec == -amountShares;
-      if (!isZCHFAmountCorrect || !isZCHFAmountCorrect) {
-        console.log("ZCHF tokens received = ", ZCHFReceived);
-        console.log("ZCHF tokens expected = ", dCapital);
-        console.log("Fee = ", feeRate);
-        console.log("Pool shares redeemed = ", -poolTokenSharesRec);
-        console.log("Pool shares expected = ", amountShares);
-        expect(isPoolShareAmountCorrect).to.be.true;
-        expect(isZCHFAmountCorrect).to.be.true;
-      }
+    it("should revert burning with reserve from non minters", async () => {
+      expect(zchf.burnWithReserve(owner.address, 1000)).to.be.revertedWith(
+        "NotMinter"
+      );
     });
   });
 });
