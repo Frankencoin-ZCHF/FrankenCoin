@@ -1,9 +1,9 @@
 /**
-* SPDX-License-Identifier: MIT
-*
-* Copyright (c) 2016-2019 zOS Global Limited
-*
-*/
+ * SPDX-License-Identifier: MIT
+ *
+ * Copyright (c) 2016-2019 zOS Global Limited
+ *
+ */
 pragma solidity ^0.8.0;
 
 /**
@@ -12,7 +12,6 @@ pragma solidity ^0.8.0;
  */
 
 interface IERC20 {
-
     function name() external view returns (string memory);
 
     function symbol() external view returns (string memory);
@@ -37,8 +36,6 @@ interface IERC20 {
      * Emits a `Transfer` event.
      */
     function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferAndCall(address recipient, uint256 amount, bytes calldata data) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -89,5 +86,4 @@ interface IERC20 {
      * a call to `approve`. `value` is the new allowance.
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
-
 }

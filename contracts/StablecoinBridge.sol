@@ -79,18 +79,4 @@ contract StablecoinBridge {
         chf.transfer(target, amount);
         minted -= amount;
     }
-
-    /**
-     * @notice Supporting the direct minting and burning through ERC-677, if supported by the sent coin.
-     */
-    function onTokenTransfer(address from, uint256 amount, bytes calldata) external returns (bool) {
-        if (msg.sender == address(chf)) {
-            _mint(from, amount);
-        } else if (msg.sender == address(zchf)) {
-            _burn(address(this), from, amount);
-        } else {
-            revert UnsupportedToken(msg.sender);
-        }
-        return true;
-    }
 }

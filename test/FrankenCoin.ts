@@ -1,11 +1,7 @@
 import chai, { expect } from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
 import { ethers } from "hardhat";
-import {
-  capitalToShares,
-  createContract,
-  sharesToCapital,
-} from "../scripts/utils";
+import { createContract } from "../scripts/utils";
 import {
   Equity,
   Frankencoin,
@@ -135,16 +131,12 @@ describe("FrankenCoin", () => {
       // set allowance
       await mockXCHF.approve(bridge.address, amount);
       await bridge.mint(amount);
-      await mockXCHF.transferAndCall(
-        bridge.address,
-        amount,
-        ethers.constants.HashZero
-      );
+
       let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
       let balanceAfter = await zchf.balanceOf(owner.address);
       let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
-      let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge) == 10000;
-      let isSenderBalanceCorrect = ZCHFReceived == 10000;
+      let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge) == 5000;
+      let isSenderBalanceCorrect = ZCHFReceived == 5000;
       if (!isBridgeBalanceCorrect || !isSenderBalanceCorrect) {
         console.log(
           "Bridge received XCHF tokens ",
@@ -167,19 +159,15 @@ describe("FrankenCoin", () => {
       await zchf.burn(amount);
       await bridge.burn(amount);
       await bridge.burnAndSend(owner.address, amount);
-      await zchf.transferAndCall(
-        bridge.address,
-        amount,
-        ethers.constants.HashZero
-      );
+
       let balanceXCHFOfBridge = await mockXCHF.balanceOf(bridge.address);
       let balanceXCHFAfter = await mockXCHF.balanceOf(owner.address);
       let balanceAfter = await zchf.balanceOf(owner.address);
       let ZCHFReceived = dec18ToFloat(balanceAfter.sub(balanceBefore));
       let XCHFReceived = dec18ToFloat(balanceXCHFAfter.sub(balanceXCHFBefore));
-      let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge) == 9850;
-      let isSenderBalanceCorrect = ZCHFReceived == -200;
-      let isXCHFBalanceCorrect = XCHFReceived == 150;
+      let isBridgeBalanceCorrect = dec18ToFloat(balanceXCHFOfBridge) == 4900;
+      let isSenderBalanceCorrect = ZCHFReceived == -150;
+      let isXCHFBalanceCorrect = XCHFReceived == 100;
       if (
         !isBridgeBalanceCorrect ||
         !isSenderBalanceCorrect ||
@@ -195,22 +183,6 @@ describe("FrankenCoin", () => {
         expect(isSenderBalanceCorrect).to.be.true;
         expect(isXCHFBalanceCorrect).to.be.true;
       }
-    });
-    it("should revert transferAndCall from non supported tokens", async () => {
-      let amount = floatToDec18(5000);
-      const testToken: TestToken = await createContract("TestToken", [
-        "CryptoFranc",
-        "XCHF",
-        18,
-      ]);
-      await testToken.mint(owner.address, amount);
-      expect(
-        testToken.transferAndCall(
-          bridge.address,
-          amount,
-          ethers.constants.HashZero
-        )
-      ).to.be.revertedWith("UnsupportedToken");
     });
     it("should revert minting when exceed limit", async () => {
       let amount = limit.add(100);

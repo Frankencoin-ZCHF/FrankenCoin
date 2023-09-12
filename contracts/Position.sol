@@ -10,6 +10,7 @@ import "./interface/IReserve.sol";
 import "./interface/IFrankencoin.sol";
 
 /**
+ * @title Position
  * @notice A collateralized minting position.
  */
 contract Position is Ownable, IPosition, MathUtil {
