@@ -360,7 +360,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_yearlyInterestPPM",
+                "name": "_annualInterestPPM",
                 "type": "uint32"
             },
             {
@@ -419,7 +419,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_yearlyInterestPPM",
+                "name": "_annualInterestPPM",
                 "type": "uint32"
             },
             {

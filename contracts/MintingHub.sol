@@ -80,7 +80,7 @@ contract MintingHub {
         uint256 _mintingMaximum,
         uint256 _expirationSeconds,
         uint64 _challengeSeconds,
-        uint32 _yearlyInterestPPM,
+        uint32 _annualInterestPPM,
         uint256 _liqPrice,
         uint32 _reservePPM
     ) public returns (address) {
@@ -93,7 +93,7 @@ contract MintingHub {
                 7 days,
                 _expirationSeconds,
                 _challengeSeconds,
-                _yearlyInterestPPM,
+                _annualInterestPPM,
                 _liqPrice,
                 _reservePPM
             );
@@ -111,7 +111,7 @@ contract MintingHub {
      * @param _mintingMaximum    maximal amount of ZCHF that can be minted by the position owner
      * @param _expirationSeconds position tenor in unit of timestamp (seconds) from 'now'
      * @param _challengeSeconds  challenge period. Longer for less liquid collateral.
-     * @param _yearlyInterestPPM ppm of minted amount that is paid as fee for each year of duration
+     * @param _annualInterestPPM ppm of minted amount that is paid as fee for each year of duration
      * @param _liqPrice          Liquidation price with (36 - token decimals) decimals,
      *                           e.g. 18 decimals for an 18 dec collateral, 36 decs for a 0 dec collateral.
      * @param _reservePPM        ppm of minted amount that is locked as borrower's reserve, e.g. 20%
@@ -125,12 +125,15 @@ contract MintingHub {
         uint256 _initPeriodSeconds,
         uint256 _expirationSeconds,
         uint64 _challengeSeconds,
-        uint32 _yearlyInterestPPM,
+        uint32 _annualInterestPPM,
         uint256 _liqPrice,
         uint32 _reservePPM
     ) public returns (address) {
-        require(_yearlyInterestPPM <= 1000000);
+        require(_annualInterestPPM <= 1000000);
         require(_reservePPM <= 1000000);
+        require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
+        require(_initialCollateral >= _minCollateral, "must start with min col");
+        require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
@@ -141,14 +144,11 @@ contract MintingHub {
                 _initPeriodSeconds,
                 _expirationSeconds,
                 _challengeSeconds,
-                _yearlyInterestPPM,
+                _annualInterestPPM,
                 _liqPrice,
                 _reservePPM
             )
         );
-        require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
-        require(_initialCollateral >= _minCollateral, "must start with min col");
-        require(_minCollateral * _liqPrice >= 5000 ether); // must start with at least 5000 ZCHF worth of collateral
         zchf.registerPosition(address(pos));
         zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);

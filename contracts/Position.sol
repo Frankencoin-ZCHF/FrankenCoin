@@ -95,7 +95,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * @notice The interest in parts per million per year that is deducted when minting Frankencoins.
      * To be paid upfront.
      */
-    uint32 public immutable yearlyInterestPPM;
+    uint32 public immutable annualInterestPPM;
 
     /**
      * @notice The reserve contribution in parts per million of the minted amount.
@@ -148,7 +148,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 _initPeriod,
         uint256 _duration,
         uint64 _challengePeriod,
-        uint32 _yearlyInterestPPM,
+        uint32 _annualInterestPPM,
         uint256 _liqPrice,
         uint32 _reservePPM
     ) {
@@ -158,7 +158,7 @@ contract Position is Ownable, IPosition, MathUtil {
         hub = _hub;
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
-        yearlyInterestPPM = _yearlyInterestPPM;
+        annualInterestPPM = _annualInterestPPM;
         reserveContribution = _reservePPM;
         minimumCollateral = _minCollateral;
         challengePeriod = _challengePeriod;
@@ -305,7 +305,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 time = block.timestamp < start ? start : block.timestamp;
         uint256 timePassed = time >= exp - MIN_INTEREST_DURATION ? MIN_INTEREST_DURATION : exp - time;
         // Time resolution is in the range of minutes for typical interest rates.
-        return uint32((timePassed * yearlyInterestPPM) / 365 days);
+        return uint32((timePassed * annualInterestPPM) / 365 days);
     }
 
     function _mint(address target, uint256 amount, uint256 collateral_) internal {

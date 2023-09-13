@@ -84,20 +84,26 @@ describe("Position Tests", () => {
   let initialCollateral = 110;
   let initialCollateralClone = 4;
   let challengeAmount: number;
+
   describe("Use Minting Hub", () => {
+    let collateral: string;
+    let fliqPrice = floatToDec18(5000);
+    let minCollateral = floatToDec18(1);
+    let fInitialCollateral = floatToDec18(initialCollateral);
+    let duration = BN.from(60 * 86_400);
+    let fFees = BN.from(fee * 1_000_000);
+    let fReserve = BN.from(reserve * 1_000_000);
+    let challengePeriod = BN.from(3 * 86400); // 3 days
+
+    before(async () => {
+      collateral = mockVOL.address;
+    });
+
     it("should revert position opening when initial period is less than 3 days", async () => {
-      let collateral = mockVOL.address;
-      let fliqPrice = floatToDec18(1000);
-      let minCollateral = floatToDec18(1);
-      let fInitialCollateral = floatToDec18(initialCollateral);
-      let duration = BN.from(60 * 86_400);
-      let fFees = BN.from(fee * 1_000_000);
-      let fReserve = BN.from(reserve * 1_000_000);
-      let challengePeriod = BN.from(3 * 86400); // 3 days
       await mockVOL
         .connect(owner)
         .approve(mintingHub.address, fInitialCollateral);
-      expect(
+      await expect(
         mintingHub.openPosition(
           collateral,
           minCollateral,
@@ -112,19 +118,73 @@ describe("Position Tests", () => {
         )
       ).to.be.reverted;
     });
+    it("should revert creating position when annual interest is less than 1M PPM", async () => {
+      await expect(
+        mintingHub.openPosition(
+          collateral,
+          minCollateral,
+          fInitialCollateral,
+          initialLimit,
+          86400 * 2,
+          duration,
+          challengePeriod,
+          BN.from(2 * 1_000_000),
+          fliqPrice,
+          fReserve
+        )
+      ).to.be.reverted;
+    });
+    it("should revert creating position when reserve fee is less than 1M PPM", async () => {
+      await expect(
+        mintingHub.openPosition(
+          collateral,
+          minCollateral,
+          fInitialCollateral,
+          initialLimit,
+          86400 * 2,
+          duration,
+          challengePeriod,
+          fFees,
+          fliqPrice,
+          BN.from(2 * 1_000_000)
+        )
+      ).to.be.reverted;
+    });
+    it("should revert creating position when initial collateral is less than minimal", async () => {
+      await expect(
+        mintingHub.openPosition(
+          collateral,
+          minCollateral,
+          minCollateral.div(2),
+          initialLimit,
+          86400 * 2,
+          duration,
+          challengePeriod,
+          fFees,
+          fliqPrice,
+          fReserve
+        )
+      ).to.be.reverted;
+    });
+    it("should revert creating position when minimal collateral is not worth of at least 5k ZCHF", async () => {
+      await expect(
+        mintingHub.openPosition(
+          collateral,
+          minCollateral,
+          fInitialCollateral,
+          initialLimit,
+          86400 * 2,
+          duration,
+          challengePeriod,
+          fFees,
+          floatToDec18(4000),
+          fReserve
+        )
+      ).to.be.reverted;
+    });
     it("create position", async () => {
-      let collateral = mockVOL.address;
-      let fliqPrice = floatToDec18(1000);
-      let minCollateral = floatToDec18(1);
-      let fInitialCollateral = floatToDec18(initialCollateral);
-      let duration = BN.from(60 * 86_400);
-      let fFees = BN.from(fee * 1_000_000);
-      let fReserve = BN.from(reserve * 1_000_000);
       let openingFeeZCHF = await mintingHub.OPENING_FEE();
-      let challengePeriod = BN.from(3 * 86400); // 3 days
-      await mockVOL
-        .connect(owner)
-        .approve(mintingHub.address, fInitialCollateral);
+      await mockVOL.approve(mintingHub.address, fInitialCollateral);
       let balBefore = await zchf.balanceOf(owner.address);
       let balBeforeVOL = await mockVOL.balanceOf(owner.address);
       let tx = await mintingHub.openPositionOneWeek(
@@ -279,7 +339,7 @@ describe("Position Tests", () => {
 
       let minted = await positionContract.minted();
       let avaiable = fLimit1.sub(minted);
-      expect(
+      await expect(
         positionContract.mint(owner.address, avaiable.add(100))
       ).to.be.revertedWith("LimitExceeded");
     });
@@ -290,7 +350,7 @@ describe("Position Tests", () => {
       // - position fee (or clone fee)
       let reserveContributionPPM =
         await clonePositionContract.reserveContribution();
-      let yearlyInterestPPM = await clonePositionContract.yearlyInterestPPM();
+      let yearlyInterestPPM = await clonePositionContract.annualInterestPPM();
 
       let fBalanceAfter = await zchf.balanceOf(alice.address);
       let mintAfterFees =
@@ -352,7 +412,7 @@ describe("Position Tests", () => {
   describe("denying challenge", () => {
     it("create position", async () => {
       let collateral = mockVOL.address;
-      let fliqPrice = floatToDec18(1000);
+      let fliqPrice = floatToDec18(5000);
       let minCollateral = floatToDec18(1);
       let fInitialCollateral = floatToDec18(initialCollateral);
       let duration = BN.from(60 * 86_400);
@@ -403,14 +463,14 @@ describe("Position Tests", () => {
     });
     it("should revert denying challenge when challenge started", async () => {
       await evm_increaseTime(86400 * 8);
-      expect(positionContract.deny([], "")).to.be.revertedWith("TooLate");
+      await expect(positionContract.deny([], "")).to.be.revertedWith("TooLate");
     });
   });
   describe("challenge clone", () => {
     it("should revert challenging from non minting hub address", async () => {
       challengeAmount = initialCollateralClone / 2;
       let fchallengeAmount = floatToDec18(challengeAmount);
-      expect(
+      await expect(
         positionContract.notifyChallengeStarted(fchallengeAmount)
       ).to.be.revertedWith("NotHub");
     });
@@ -418,7 +478,7 @@ describe("Position Tests", () => {
       challengeAmount = initialCollateralClone / 2;
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await clonePositionContract.price();
-      expect(
+      await expect(
         mintingHub.launchChallenge(owner.address, fchallengeAmount, price)
       ).to.be.revertedWith("not our pos");
     });
@@ -426,7 +486,7 @@ describe("Position Tests", () => {
       challengeAmount = initialCollateralClone / 2;
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await positionContract.price();
-      expect(
+      await expect(
         mintingHub.launchChallenge(
           positionContract.address,
           fchallengeAmount,
@@ -438,10 +498,10 @@ describe("Position Tests", () => {
       let price = await positionContract.price();
       await mockVOL.approve(mintingHub.address, floatToDec18(0.1));
 
-      expect(
+      await expect(
         mintingHub.launchChallenge(positionContract.address, 0, price)
       ).to.be.revertedWith("ChallengeTooSmall");
-      expect(
+      await expect(
         mintingHub.launchChallenge(
           positionContract.address,
           floatToDec18(0.1),
@@ -558,7 +618,7 @@ describe("Position Tests", () => {
   describe("adjusting price", async () => {
     beforeEach(async () => {
       let collateral = mockVOL.address;
-      let fliqPrice = floatToDec18(1000);
+      let fliqPrice = floatToDec18(5000);
       let minCollateral = floatToDec18(1);
       let fInitialCollateral = floatToDec18(initialCollateral);
       let duration = BN.from(60 * 86_400);
@@ -591,7 +651,7 @@ describe("Position Tests", () => {
       );
     });
     it("should revert adjusting price from non position owner", async () => {
-      expect(
+      await expect(
         positionContract.connect(alice).adjustPrice(floatToDec18(1500))
       ).to.be.revertedWith("NotOwner");
     });
@@ -601,18 +661,18 @@ describe("Position Tests", () => {
       let price = await positionContract.price();
       await mockVOL.approve(mintingHub.address, fchallengeAmount);
       await mintingHub.launchChallenge(positionAddr, fchallengeAmount, price);
-      expect(
+      await expect(
         positionContract.adjustPrice(floatToDec18(1500))
       ).to.be.revertedWith("Challenged");
     });
     it("should increase cooldown for 3 days when submitted price is greater than the current price", async () => {
       await evm_increaseTime(86400 * 6);
       const prevCooldown = await positionContract.cooldown();
-      expect(positionContract.adjustPrice(floatToDec18(1500))).to.be.emit(
+      expect(positionContract.adjustPrice(floatToDec18(5500))).to.be.emit(
         positionContract,
         "MintingUpdate"
       );
-      expect(dec18ToFloat(await positionContract.price())).to.be.equal(1500);
+      expect(dec18ToFloat(await positionContract.price())).to.be.equal(5500);
 
       const currentCooldown = await positionContract.cooldown();
       expect(currentCooldown.gt(prevCooldown)).to.be.true;
@@ -621,7 +681,7 @@ describe("Position Tests", () => {
       await evm_increaseTime(86400 * 8);
       await positionContract.mint(owner.address, floatToDec18(1000 * 100));
 
-      expect(
+      await expect(
         positionContract.adjustPrice(floatToDec18(100))
       ).to.be.revertedWith("InsufficientCollateral");
     });
@@ -629,14 +689,15 @@ describe("Position Tests", () => {
       const underPrice = initialLimit
         .div(floatToDec18(1))
         .mul(BigNumber.from(10).pow(18));
-      expect(positionContract.adjustPrice(underPrice.mul(2))).to.be.reverted;
+      await expect(positionContract.adjustPrice(underPrice.mul(2))).to.be
+        .reverted;
     });
   });
 
   describe("adjusting position", async () => {
     beforeEach(async () => {
       let collateral = mockVOL.address;
-      let fliqPrice = floatToDec18(1000);
+      let fliqPrice = floatToDec18(5000);
       let minCollateral = floatToDec18(1);
       let fInitialCollateral = floatToDec18(initialCollateral);
       let duration = BN.from(60 * 86_400);
@@ -669,7 +730,7 @@ describe("Position Tests", () => {
       );
     });
     it("should revert adjusting position from non position owner", async () => {
-      expect(
+      await expect(
         positionContract.connect(alice).adjust(0, 0, 0)
       ).to.be.revertedWith("NotOwner");
     });
@@ -737,7 +798,7 @@ describe("Position Tests", () => {
 
     beforeEach(async () => {
       let collateral = mockVOL.address;
-      let fliqPrice = floatToDec18(1000);
+      let fliqPrice = floatToDec18(5000);
       let minCollateral = floatToDec18(1);
       let fInitialCollateral = floatToDec18(initialCollateral);
       let duration = BN.from(60 * 86_400);
@@ -771,21 +832,21 @@ describe("Position Tests", () => {
       await mockVOL.transfer(positionAddr, amount);
     });
     it("should revert withdrawing collaterals from non position owner", async () => {
-      expect(
+      await expect(
         positionContract
           .connect(alice)
           .withdrawCollateral(owner.address, amount)
       ).to.be.revertedWith("NotOwner");
     });
     it("should revert withdrawing when it is in hot auctions", async () => {
-      expect(
+      await expect(
         positionContract.withdrawCollateral(owner.address, amount)
       ).to.be.revertedWith("Hot");
     });
     it("should revert when withdrawing portion of collaterals leaving dust", async () => {
       await positionContract.deny([], "");
       const balance = await mockVOL.balanceOf(positionAddr);
-      expect(
+      await expect(
         positionContract.withdrawCollateral(
           owner.address,
           balance.sub(floatToDec18(0.5))
@@ -807,7 +868,7 @@ describe("Position Tests", () => {
   describe("withdrawing any tokens", () => {
     it("should revert withdrawing tokens from non position owner", async () => {
       const amount = floatToDec18(1);
-      expect(
+      await expect(
         positionContract
           .connect(alice)
           .withdraw(zchf.address, owner.address, amount)

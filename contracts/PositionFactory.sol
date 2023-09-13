@@ -18,7 +18,7 @@ contract PositionFactory {
         uint256 _initPeriod,
         uint256 _duration,
         uint64 _challengePeriod,
-        uint32 _yearlyInterestPPM,
+        uint32 _annualInterestPPM,
         uint256 _liqPrice,
         uint32 _reserve
     ) external returns (address) {
@@ -34,7 +34,7 @@ contract PositionFactory {
                     _initPeriod,
                     _duration,
                     _challengePeriod,
-                    _yearlyInterestPPM,
+                    _annualInterestPPM,
                     _liqPrice,
                     _reserve
                 )

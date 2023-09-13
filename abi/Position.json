@@ -48,7 +48,7 @@
             },
             {
                 "internalType": "uint32",
-                "name": "_yearlyInterestPPM",
+                "name": "_annualInterestPPM",
                 "type": "uint32"
             },
             {
@@ -224,6 +224,19 @@
         "name": "adjustPrice",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "annualInterestPPM",
+        "outputs": [
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -706,19 +719,6 @@
         "name": "withdrawCollateral",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "yearlyInterestPPM",
-        "outputs": [
-            {
-                "internalType": "uint32",
-                "name": "",
-                "type": "uint32"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     },
     {
