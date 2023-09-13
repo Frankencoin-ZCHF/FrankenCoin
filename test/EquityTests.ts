@@ -180,8 +180,9 @@ describe("Equity Tests", () => {
       ]);
       let qualified2 = await equity.votesDelegated(owner.address, []);
       expect(qualified1 > qualified2).to.be.true;
-      await expect(equity.votesDelegated(bob.address, [alice.address])).to.be
-        .reverted;
+      await expect(
+        equity.votesDelegated(bob.address, [alice.address])
+      ).to.be.revertedWithoutReason();
     });
 
     it("kamikaze", async () => {

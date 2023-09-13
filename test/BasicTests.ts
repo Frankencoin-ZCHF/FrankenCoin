@@ -106,7 +106,9 @@ describe("Basic Tests", () => {
       }
     });
     it("should revert initialization when there is supply", async () => {
-      expect(zchf.initialize(bridge.address, "Bridge")).to.be.reverted;
+      await expect(
+        zchf.initialize(bridge.address, "Bridge")
+      ).to.be.revertedWithoutReason();
     });
     it("burner of XCHF-bridge should receive XCHF", async () => {
       let amount = floatToDec18(50);
@@ -148,13 +150,13 @@ describe("Basic Tests", () => {
     it("should revert minting when exceed limit", async () => {
       let amount = limit.add(100);
       await mockXCHF.approve(bridge.address, amount);
-      expect(bridge.mint(amount)).to.be.revertedWith("Limit");
+      await expect(bridge.mint(amount)).to.be.revertedWith("Limit");
     });
     it("should revert minting when bridge is expired", async () => {
       let amount = floatToDec18(1);
       await evm_increaseTime(60 * 60 * 24 * 7 * 53); // pass 53 weeks
       await mockXCHF.approve(bridge.address, amount);
-      expect(bridge.mint(amount)).to.be.revertedWithCustomError(
+      await expect(bridge.mint(amount)).to.be.revertedWithCustomError(
         bridge,
         "Expired"
       );

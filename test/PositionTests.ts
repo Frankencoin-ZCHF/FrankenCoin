@@ -116,7 +116,7 @@ describe("Position Tests", () => {
           fliqPrice,
           fReserve
         )
-      ).to.be.reverted;
+      ).to.be.revertedWithoutReason();
     });
     it("should revert creating position when annual interest is less than 1M PPM", async () => {
       await expect(
@@ -132,7 +132,7 @@ describe("Position Tests", () => {
           fliqPrice,
           fReserve
         )
-      ).to.be.reverted;
+      ).to.be.revertedWithoutReason();
     });
     it("should revert creating position when reserve fee is less than 1M PPM", async () => {
       await expect(
@@ -148,7 +148,7 @@ describe("Position Tests", () => {
           fliqPrice,
           BN.from(2 * 1_000_000)
         )
-      ).to.be.reverted;
+      ).to.be.revertedWithoutReason();
     });
     it("should revert creating position when initial collateral is less than minimal", async () => {
       await expect(
@@ -164,7 +164,7 @@ describe("Position Tests", () => {
           fliqPrice,
           fReserve
         )
-      ).to.be.reverted;
+      ).to.be.revertedWithoutReason();
     });
     it("should revert creating position when minimal collateral is not worth of at least 5k ZCHF", async () => {
       await expect(
@@ -180,7 +180,7 @@ describe("Position Tests", () => {
           floatToDec18(4000),
           fReserve
         )
-      ).to.be.reverted;
+      ).to.be.revertedWithoutReason();
     });
     it("create position", async () => {
       let openingFeeZCHF = await mintingHub.OPENING_FEE();
@@ -377,7 +377,7 @@ describe("Position Tests", () => {
       let tx = mintingHub
         .connect(alice)
         .clonePosition(positionAddr, fInitialCollateralClone, initialLimit, 0);
-      await expect(tx).to.be.reverted; // underflow
+      await expect(tx).to.be.revertedWithoutReason(); // underflow
     });
     it("repay position", async () => {
       let cloneOwner = await clonePositionContract.connect(alice).owner();
@@ -565,7 +565,7 @@ describe("Position Tests", () => {
     });
     it("bid on not existing challenge", async () => {
       let tx = mintingHub.connect(bob).bid(42, floatToDec18(42), false);
-      await expect(tx).to.be.reverted;
+      await expect(tx).to.be.revertedWithoutReason();
     });
     it("bid on successful challenge", async () => {
       let challengeNumber = 0;
@@ -689,8 +689,9 @@ describe("Position Tests", () => {
       const underPrice = initialLimit
         .div(floatToDec18(1))
         .mul(BigNumber.from(10).pow(18));
-      await expect(positionContract.adjustPrice(underPrice.mul(2))).to.be
-        .reverted;
+      await expect(
+        positionContract.adjustPrice(underPrice.mul(2))
+      ).to.be.revertedWithoutReason();
     });
   });
 

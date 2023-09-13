@@ -70,26 +70,28 @@ describe("FrankenCoin", () => {
       let amount = floatToDec18(10000);
       await mockXCHF.approve(bridge.address, amount);
       await bridge.mint(amount);
-      expect(zchf.initialize(bridge.address, "Bridge")).to.be.reverted;
+      await expect(
+        zchf.initialize(bridge.address, "Bridge")
+      ).to.be.revertedWithoutReason();
     });
     it("should revert minter suggestion when application period is too short", async () => {
-      expect(
+      await expect(
         zchf.suggestMinter(owner.address, 9 * 86400, floatToDec18(1000), "")
       ).to.be.revertedWith("PeriodTooShort");
     });
     it("should revert minter suggestion when application fee is too low", async () => {
-      expect(
+      await expect(
         zchf.suggestMinter(owner.address, 10 * 86400, floatToDec18(900), "")
       ).to.be.revertedWith("FeeTooLow");
     });
     it("should revert when minter is already registered", async () => {
-      expect(
+      await expect(
         zchf.suggestMinter(bridge.address, 10 * 86400, floatToDec18(1000), "")
       ).to.be.revertedWith("AlreadyRegistered");
     });
     it("should revert registering position when not from minters", async () => {
       expect(await zchf.isMinter(owner.address)).to.be.false;
-      expect(zchf.registerPosition(owner.address)).to.be.revertedWith(
+      await expect(zchf.registerPosition(owner.address)).to.be.revertedWith(
         "NotMinter"
       );
     });
@@ -98,7 +100,7 @@ describe("FrankenCoin", () => {
         zchf.suggestMinter(owner.address, 10 * 86400, floatToDec18(1000), "")
       ).to.emit(zchf, "MinterApplied");
       await evm_increaseTime(86400 * 11);
-      expect(zchf.denyMinter(owner.address, [], "")).to.be.revertedWith(
+      await expect(zchf.denyMinter(owner.address, [], "")).to.be.revertedWith(
         "TooLate"
       );
     });
@@ -187,36 +189,36 @@ describe("FrankenCoin", () => {
     it("should revert minting when exceed limit", async () => {
       let amount = limit.add(100);
       await mockXCHF.approve(bridge.address, amount);
-      expect(bridge.mint(amount)).to.be.revertedWith("Limit");
+      await expect(bridge.mint(amount)).to.be.revertedWith("Limit");
     });
     it("should revert minting when bridge is expired", async () => {
       let amount = floatToDec18(1);
       await evm_increaseTime(60 * 60 * 24 * 7 * 53); // pass 53 weeks
       await mockXCHF.approve(bridge.address, amount);
-      expect(bridge.mint(amount)).to.be.revertedWithCustomError(
+      await expect(bridge.mint(amount)).to.be.revertedWithCustomError(
         bridge,
         "Expired"
       );
     });
     it("should revert minting with reserve from non minters", async () => {
-      expect(
+      await expect(
         zchf.mintWithReserve(owner.address, 1000, 0, 0)
       ).to.be.revertedWith("NotMinter");
     });
     it("should revert burning from non minters", async () => {
-      expect(zchf.burnFrom(owner.address, 1000)).to.be.revertedWith(
+      await expect(zchf.burnFrom(owner.address, 1000)).to.be.revertedWith(
         "NotMinter"
       );
     });
     it("should revert burning without reserve from non minters", async () => {
-      expect(zchf.burnWithoutReserve(owner.address, 1000)).to.be.revertedWith(
-        "NotMinter"
-      );
+      await expect(
+        zchf.burnWithoutReserve(owner.address, 1000)
+      ).to.be.revertedWith("NotMinter");
     });
     it("should revert burning with reserve from non minters", async () => {
-      expect(zchf.burnWithReserve(owner.address, 1000)).to.be.revertedWith(
-        "NotMinter"
-      );
+      await expect(
+        zchf.burnWithReserve(owner.address, 1000)
+      ).to.be.revertedWith("NotMinter");
     });
   });
 });
