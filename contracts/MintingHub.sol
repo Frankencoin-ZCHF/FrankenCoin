@@ -5,20 +5,22 @@ import "./interface/IERC20.sol";
 import "./interface/IReserve.sol";
 import "./interface/IFrankencoin.sol";
 import "./interface/IPosition.sol";
+import "./interface/IPositionFactory.sol";
 
 /**
- * The central hub for creating, cloning and challenging collateralized Frankencoin positions.
- * Only one instance of this contract is required, whereas every new position comes with a new position
+ * @title Minting Hub
+ * @notice The central hub for creating, cloning and challenging collateralized Frankencoin positions.
+ * @dev Only one instance of this contract is required, whereas every new position comes with a new position
  * contract. Pending challenges are stored as structs in an array.
  */
 contract MintingHub {
     /**
-     * Irrevocable fee in ZCHF when proposing a new position (but not when cloning an existing one).
+     * @notice Irrevocable fee in ZCHF when proposing a new position (but not when cloning an existing one).
      */
     uint256 public constant OPENING_FEE = 1000 * 10 ** 18;
 
     /**
-     * The challenger reward in parts per million (ppm) relative to the challenged amount, whereas
+     * @notice The challenger reward in parts per million (ppm) relative to the challenged amount, whereas
      * challenged amount if defined as the challenged collateral amount times the liquidation price.
      */
     uint32 public constant CHALLENGER_REWARD = 20000; // 2%
@@ -29,8 +31,8 @@ contract MintingHub {
     Challenge[] public challenges; // list of open challenges
 
     /**
-     * Map to remember pending postponed collateral returns.
-     * It maps collateral => beneficiary => amount.
+     * @notice Map to remember pending postponed collateral returns.
+     * @dev It maps collateral => beneficiary => amount.
      */
     mapping(address collateral => mapping(address owner => uint256 amount)) public pendingReturns;
 
@@ -58,6 +60,13 @@ contract MintingHub {
         uint256 challengeSize
     );
     event PostPonedReturn(address collateral, address indexed beneficiary, uint256 amount);
+
+    error UnexpectedPrice();
+
+    modifier validPos(address position) {
+        require(zchf.getPositionParent(position) == address(this), "not our pos");
+        _;
+    }
 
     constructor(address _zchf, address _factory) {
         zchf = IFrankencoin(_zchf);
@@ -91,8 +100,8 @@ contract MintingHub {
     }
 
     /**
-     * Open a collateralized loan position. See also https://docs.frankencoin.com/positions/open .
-     * For a successful call, you must set an allowance for the collateral token, allowing
+     * @notice Open a collateralized loan position. See also https://docs.frankencoin.com/positions/open .
+     * @dev For a successful call, you must set an allowance for the collateral token, allowing
      * the minting hub to transfer the initial collateral amount to the newly created position and to
      * withdraw the fees.
      *
@@ -148,14 +157,9 @@ contract MintingHub {
         return address(pos);
     }
 
-    modifier validPos(address position) {
-        require(zchf.getPositionParent(position) == address(this), "not our pos");
-        _;
-    }
-
     /**
-     * Clones an existing position and immediately tries to mint the specified amount using the given collateral.
-     * This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
+     * @notice Clones an existing position and immediately tries to mint the specified amount using the given collateral.
+     * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
     function clonePosition(
         address position,
@@ -182,7 +186,7 @@ contract MintingHub {
     }
 
     /**
-     * Launch a challenge (Dutch auction) on a position
+     * @notice Launch a challenge (Dutch auction) on a position
      * @param _positionAddr      address of the position we want to challenge
      * @param _collateralAmount  size of the collateral we want to challenge (dec 18)
      * @param expectedPrice      position.price() to guard against the minter fruntrunning with a price change
@@ -203,12 +207,10 @@ contract MintingHub {
         return pos;
     }
 
-    error UnexpectedPrice();
-
     /**
-     * Post a bid in ZCHF given an open challenge.
+     * @notice Post a bid in ZCHF given an open challenge.
      *
-     * In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token
+     * @dev In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token
      * has a blacklist and the challenger is on it), it is possible to postpone the return of the collateral.
      *
      * @param _challengeNumber  index of the challenge as broadcast in the event
@@ -283,7 +285,7 @@ contract MintingHub {
     }
 
     /**
-     * Returns 'amount' of the collateral to the challenger and reduces or deletes the relevant challenge.
+     * @notice Returns 'amount' of the collateral to the challenger and reduces or deletes the relevant challenge.
      */
     function _returnChallengerCollateral(
         Challenge memory challenge,
@@ -302,8 +304,8 @@ contract MintingHub {
     }
 
     /**
-     * Calculates the current Dutch auction price.
-     * Starts at the full price at time 'start' and linearly goes to 0 as 'phase2' passes.
+     * @notice Calculates the current Dutch auction price.
+     * @dev Starts at the full price at time 'start' and linearly goes to 0 as 'phase2' passes.
      */
     function _calculatePrice(uint64 start, uint64 phase2, uint256 liqPrice) internal view returns (uint256) {
         uint64 timeNow = uint64(block.timestamp);
@@ -318,8 +320,8 @@ contract MintingHub {
     }
 
     /**
-     * Get the price per unit of the collateral for the given challenge.
-     * The price comes with (36-collateral.decimals()) digits, such that multiplying it with the
+     * @notice Get the price per unit of the collateral for the given challenge.
+     * @dev The price comes with (36-collateral.decimals()) digits, such that multiplying it with the
      * raw collateral amount always yields a price with 36 digits, or 18 digits after dividing by 10**18 again.
      */
     function price(uint32 challengeNumber) public view returns (uint256) {
@@ -333,7 +335,7 @@ contract MintingHub {
     }
 
     /**
-     * Challengers can call this method to withdraw collateral whose return was postponed.
+     * @notice Challengers can call this method to withdraw collateral whose return was postponed.
      */
     function returnPostponedCollateral(address collateral, address target) external {
         uint256 amount = pendingReturns[collateral][msg.sender];
@@ -350,22 +352,4 @@ contract MintingHub {
             collateral.transfer(recipient, amount); // return the challenger's collateral
         }
     }
-}
-
-interface IPositionFactory {
-    function createNewPosition(
-        address _owner,
-        address _zchf,
-        address _collateral,
-        uint256 _minCollateral,
-        uint256 _initialLimit,
-        uint256 _initPeriodSeconds,
-        uint256 _duration,
-        uint64 _challengePeriod,
-        uint32 _yearlyInterestPPM,
-        uint256 _liqPrice,
-        uint32 _reserve
-    ) external returns (address);
-
-    function clonePosition(address _existing) external returns (address);
 }
