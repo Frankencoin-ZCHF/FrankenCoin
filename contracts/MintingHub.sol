@@ -62,9 +62,10 @@ contract MintingHub {
     event PostPonedReturn(address collateral, address indexed beneficiary, uint256 amount);
 
     error UnexpectedPrice();
+    error InvalidPos();
 
     modifier validPos(address position) {
-        require(zchf.getPositionParent(position) == address(this), "not our pos");
+        if (zchf.getPositionParent(position) != address(this)) revert InvalidPos();
         _;
     }
 

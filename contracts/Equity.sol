@@ -8,7 +8,8 @@ import "./interface/IReserve.sol";
 import "./interface/IERC677Receiver.sol";
 
 /**
- * If the Frankencoin system was a bank, this contract would represent the equity on its balance sheet.
+ * @title Equity
+ * @notice If the Frankencoin system was a bank, this contract would represent the equity on its balance sheet.
  * Like with a corporation, the owners of the equity capital are the shareholders, or in this case the holders
  * of Frankencoin Pool Shares (FPS) tokens. Anyone can mint additional FPS tokens by adding Frankencoins to the
  * reserve pool. Also, FPS tokens can be redeemed for Frankencoins again after a minimum holding period.
@@ -38,17 +39,17 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     uint256 private constant MINIMUM_EQUITY = 1000 * ONE_DEC18;
 
     /**
-     * The quorum in basis points. 100 is 1%.
+     * @notice The quorum in basis points. 100 is 1%.
      */
     uint32 private constant QUORUM = 200;
 
     /**
-     * The number of digits to store the average holding time of share tokens.
+     * @notice The number of digits to store the average holding time of share tokens.
      */
     uint8 private constant TIME_RESOLUTION_BITS = 20;
 
     /**
-     * The minimum holding duration. You are not allowed to redeem your pool shares if you held them
+     * @notice The minimum holding duration. You are not allowed to redeem your pool shares if you held them
      * for less than the minimum holding duration at average. For example, if you have two pool shares on your
      * address, one acquired 5 days ago and one acquired 105 days ago, you cannot redeem them as the average
      * holding duration of your shares is only 55 days < 90 days.
@@ -58,7 +59,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     Frankencoin public immutable zchf;
 
     /**
-     * To track the total number of votes we need to know the number of votes at the anchor time and when the
+     * @dev To track the total number of votes we need to know the number of votes at the anchor time and when the
      * anchor time was. This is (hopefully) stored in one 256 bit slot, with the anchor time taking 64 Bits and
      * the total vote count 192 Bits. Given the sub-second resolution of 20 Bits, the implicit assumption is
      * that the timestamp can always be stored in 44 Bits (i.e. it does not exceed half a million years). Further,
@@ -73,14 +74,14 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     uint64 private totalVotesAnchorTime; // 44 Bit for the time stamp, 20 Bit sub-second time resolution
 
     /**
-     * Keeping track on who delegated votes to whom.
+     * @notice Keeping track on who delegated votes to whom.
      * Note that delegation does not mean you cannot vote / veto any more, it just means that the delegate can
      * benefit from your votes when invoking a veto. Circular delegations are valid, do not help when voting.
      */
     mapping(address owner => address delegate) public delegates;
 
     /**
-     * A time stamp in the past such that: votes = balance * (time passed since anchor was set)
+     * @notice A time stamp in the past such that: votes = balance * (time passed since anchor was set)
      */
     mapping(address owner => uint64 timestamp) private voteAnchor; // 44 bits for time stamp, 20 subsecond resolution
 
@@ -100,7 +101,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Returns the price of one FPS in ZCHF with 18 decimals precision.
+     * @notice Returns the price of one FPS in ZCHF with 18 decimals precision.
      */
     function price() public view returns (uint256) {
         uint256 equity = zchf.equity();
@@ -124,7 +125,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Returns whether the given address is allowed to redeem FPS, which is the
+     * @notice Returns whether the given address is allowed to redeem FPS, which is the
      * case after their average holding duration is larger than the required minimum.
      */
     function canRedeem(address owner) public view returns (bool) {
@@ -164,14 +165,14 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Time stamp with some additional bits for higher resolution.
+     * @notice Time stamp with some additional bits for higher resolution.
      */
     function _anchorTime() internal view returns (uint64) {
         return uint64(block.timestamp << TIME_RESOLUTION_BITS);
     }
 
     /**
-     * The relative voting power of the address.
+     * @notice The relative voting power of the address.
      * @return A percentage with 1e18 being 100%
      */
     function relativeVotes(address holder) external view returns (uint256) {
@@ -179,21 +180,21 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * The votes of the holder, excluding votes from delegates.
+     * @notice The votes of the holder, excluding votes from delegates.
      */
     function votes(address holder) public view returns (uint256) {
         return balanceOf(holder) * (_anchorTime() - voteAnchor[holder]);
     }
 
     /**
-     * Total number of votes in the system.
+     * @notice Total number of votes in the system.
      */
     function totalVotes() public view returns (uint256) {
         return totalVotesAtAnchor + totalSupply() * (_anchorTime() - totalVotesAnchorTime);
     }
 
     /**
-     * The number of votes the sender commands when taking the support of the helpers into account.
+     * @notice The number of votes the sender commands when taking the support of the helpers into account.
      * @param sender    The address whose total voting power is of interest
      * @param helpers   An incrementally sorted list of helpers without duplicates and without the sender.
      *                  The call fails if the list contains an address that does not delegate to sender.
@@ -228,7 +229,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Checks whether the sender address is qualified given a list of helpers that delegated their votes
+     * @notice Checks whether the sender address is qualified given a list of helpers that delegated their votes
      * directly or indirectly to the sender. It is the responsiblity of the caller to figure out whether
      * helpes are necessary and to identify them by scanning the blockchain for Delegation events.
      */
@@ -240,7 +241,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     error NotQualified();
 
     /**
-     * Increases the voting power of the delegate by your number of votes without taking away any voting power
+     * @notice Increases the voting power of the delegate by your number of votes without taking away any voting power
      * from the sender.
      */
     function delegateVoteTo(address delegate) external {
@@ -259,7 +260,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Since quorum is rather low, it is important to have a way to prevent malicious minority holders
+     * @notice Since quorum is rather low, it is important to have a way to prevent malicious minority holders
      * from blocking the whole system. This method provides a way for the good guys to team up and destroy
      * the bad guy's votes (at the cost of also reducing their own votes). This mechanism potentially
      * gives full control over the system to whoever has 51% of the votes.
@@ -293,11 +294,11 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Call this method to obtain newly minted pool shares in exchange for Frankencoins.
+     * @notice Call this method to obtain newly minted pool shares in exchange for Frankencoins.
      * No allowance required (i.e. it is hardcoded in the Frankencoin token contract).
      * Make sure to invest at least 10e-12 * market cap to avoid rounding losses.
      *
-     * If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
+     * @dev If equity is close to zero or negative, you need to send enough ZCHF to bring equity back to 1000 ZCHF.
      *
      * @param amount            Frankencoins to invest
      * @param expectedShares    Minimum amount of expected shares for frontrunning protection
@@ -319,7 +320,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Calculate shares received when investing Frankencoins
+     * @notice Calculate shares received when investing Frankencoins
      * @param investment    ZCHF to be invested
      * @return shares to be received in return
      */
@@ -338,7 +339,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Redeem the given amount of shares owned by the sender and transfer the proceeds to the target.
+     * @notice Redeem the given amount of shares owned by the sender and transfer the proceeds to the target.
      * @return The amount of ZCHF transferred to the target
      */
     function redeem(address target, uint256 shares) external returns (uint256) {
@@ -346,7 +347,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Like redeem(...), but with an extra parameter to protect against frontrunning.
+     * @notice Like redeem(...), but with an extra parameter to protect against frontrunning.
      * @param expectedProceeds  The minimum acceptable redemption proceeds.
      */
     function redeemExpected(address target, uint256 shares, uint256 expectedProceeds) external returns (uint256) {
@@ -356,7 +357,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * Redeem FPS based on an allowance from the owner to the caller.
+     * @notice Redeem FPS based on an allowance from the owner to the caller.
      * See also redeemExpected(...).
      */
     function redeemFrom(
@@ -396,7 +397,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
-     * If there is less than 1000 ZCHF in equity left (maybe even negative), the system is at risk
+     * @notice If there is less than 1000 ZCHF in equity left (maybe even negative), the system is at risk
      * and we should allow qualified FPS holders to restructure the system.
      *
      * Example: there was a devastating loss and equity stands at -1'000'000. Most shareholders have lost hope in the

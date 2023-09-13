@@ -164,12 +164,29 @@ describe("Position Tests", () => {
           fliqPrice,
           fReserve
         )
-      ).to.be.revertedWithoutReason();
+      ).to.be.revertedWith("must start with min col");
     });
     it("should revert creating position when minimal collateral is not worth of at least 5k ZCHF", async () => {
       await expect(
         mintingHub.openPosition(
           collateral,
+          minCollateral,
+          fInitialCollateral,
+          initialLimit,
+          86400 * 2,
+          duration,
+          challengePeriod,
+          fFees,
+          floatToDec18(4000),
+          fReserve
+        )
+      ).to.be.revertedWithoutReason();
+    });
+    it("should revert creating position when collateral token has +25 decimals", async () => {
+      const testToken = await createContract("TestToken", ["Test", "Test", 25]);
+      await expect(
+        mintingHub.openPosition(
+          testToken.address,
           minCollateral,
           fInitialCollateral,
           initialLimit,
@@ -293,6 +310,41 @@ describe("Position Tests", () => {
       let ZCHFMinted = dec18ToFloat(fZCHFAfter.sub(fZCHFBefore));
       expect(expectedAmount).to.be.equal(ZCHFMinted);
     });
+    it("should revert cloning for invalid position", async () => {
+      let fInitialCollateralClone = floatToDec18(initialCollateralClone);
+      fGlblZCHBalanceOfCloner = await zchf.balanceOf(alice.address);
+
+      let start = await positionContract.start();
+      let expiration = await positionContract.expiration();
+      let duration = expiration.sub(start).div(2);
+      let newExpiration = expiration.sub(duration);
+      await expect(
+        mintingHub
+          .connect(alice)
+          .clonePosition(
+            owner.address,
+            fInitialCollateralClone,
+            fMintAmount,
+            newExpiration
+          )
+      ).to.be.revertedWith("InvalidPos");
+    });
+    it("should revert cloning when new expiration is greater than original one", async () => {
+      let fInitialCollateralClone = floatToDec18(initialCollateralClone);
+      fGlblZCHBalanceOfCloner = await zchf.balanceOf(alice.address);
+
+      let expiration = await positionContract.expiration();
+      await expect(
+        mintingHub
+          .connect(alice)
+          .clonePosition(
+            positionAddr,
+            fInitialCollateralClone,
+            fMintAmount,
+            expiration.add(100)
+          )
+      ).to.be.revertedWithoutReason();
+    });
     it("clone position", async () => {
       let fInitialCollateralClone = floatToDec18(initialCollateralClone);
       fGlblZCHBalanceOfCloner = await zchf.balanceOf(alice.address);
@@ -377,7 +429,7 @@ describe("Position Tests", () => {
       let tx = mintingHub
         .connect(alice)
         .clonePosition(positionAddr, fInitialCollateralClone, initialLimit, 0);
-      await expect(tx).to.be.revertedWithoutReason(); // underflow
+      await expect(tx).to.be.revertedWith("LimitExceeded");
     });
     it("repay position", async () => {
       let cloneOwner = await clonePositionContract.connect(alice).owner();
@@ -480,7 +532,7 @@ describe("Position Tests", () => {
       let price = await clonePositionContract.price();
       await expect(
         mintingHub.launchChallenge(owner.address, fchallengeAmount, price)
-      ).to.be.revertedWith("not our pos");
+      ).to.be.revertedWith("InvalidPos");
     });
     it("should revert challenging with different position price", async () => {
       challengeAmount = initialCollateralClone / 2;
@@ -565,7 +617,7 @@ describe("Position Tests", () => {
     });
     it("bid on not existing challenge", async () => {
       let tx = mintingHub.connect(bob).bid(42, floatToDec18(42), false);
-      await expect(tx).to.be.revertedWithoutReason();
+      await expect(tx).to.be.revertedWithPanic();
     });
     it("bid on successful challenge", async () => {
       let challengeNumber = 0;
@@ -590,7 +642,7 @@ describe("Position Tests", () => {
       // bob sends a bid
       let bidAmountZCHF = auctionPrice.mul(bidSize).div(DECIMALS);
       let challengerAddress = (await mintingHub.challenges(challengeNumber))[0];
-      await zchf.connect(owner).transfer(bob.address, bidAmountZCHF);
+      await zchf.transfer(bob.address, bidAmountZCHF);
       let balanceBeforeBob = await zchf.balanceOf(bob.address);
       let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
       let volBalanceBefore = await mockVOL.balanceOf(bob.address);
@@ -613,6 +665,12 @@ describe("Position Tests", () => {
         balanceAfterChallenger.sub(balanceBeforeChallenger)
       ).to.be.approximately(bidAmountZCHF.div(50), bidAmountZCHF.div(5000));
       expect(volBalanceAfter.sub(volBalanceBefore)).to.be.eq(bidSize);
+
+      bidAmountZCHF = bidAmountZCHF.mul(2);
+      await zchf.transfer(alice.address, bidAmountZCHF);
+      await expect(
+        mintingHub.connect(alice).bid(challengeNumber, bidSize.mul(2), true)
+      ).to.be.emit(mintingHub, "PostPonedReturn");
     });
   });
   describe("adjusting price", async () => {
