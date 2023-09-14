@@ -93,6 +93,7 @@ describe("Equity Tests", () => {
       await zchf.transfer(equity.address, 1);
       const price = await equity.price();
       expect(price).to.be.equal(floatToDec18(1));
+      await equity.calculateShares(floatToDec18(1000));
 
       await equity.invest(floatToDec18(1000), expected);
       let balance = await equity.balanceOf(owner.address);

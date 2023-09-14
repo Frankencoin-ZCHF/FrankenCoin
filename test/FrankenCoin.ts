@@ -220,5 +220,13 @@ describe("FrankenCoin", () => {
         zchf.burnWithReserve(owner.address, 1000)
       ).to.be.revertedWith("NotMinter");
     });
+    it("should revert burning from with reserve from non minters", async () => {
+      await expect(
+        zchf.burnFromWithReserve(owner.address, 0, 0)
+      ).to.be.revertedWith("NotMinter");
+    });
+    it("should revert notifying loss from non minters", async () => {
+      await expect(zchf.notifyLoss(0)).to.be.revertedWith("NotMinter");
+    });
   });
 });
