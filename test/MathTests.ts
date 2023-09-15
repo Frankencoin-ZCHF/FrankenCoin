@@ -1,18 +1,12 @@
-// @ts-nocheck
 import { expect } from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
-const { ethers, bytes } = require("hardhat");
-const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
-
-let MathContract;
-let owner, accounts;
+import { TestMathUtil } from "../typechain";
 
 describe("Math Tests", () => {
+  let MathContract: TestMathUtil;
+
   before(async () => {
-    accounts = await ethers.getSigners();
-    owner = accounts[0].address;
-    // create contracts
     MathContract = await createContract("TestMathUtil");
   });
 

@@ -258,6 +258,7 @@ contract MintingHub {
         zchf.transferFrom(msg.sender, address(this), offer); // get money from bidder
         uint256 reward = (offer * CHALLENGER_REWARD) / 1000_000;
         uint256 fundsNeeded = reward + repayment;
+
         if (offer > fundsNeeded) {
             zchf.transfer(owner, offer - fundsNeeded);
         } else if (offer < fundsNeeded) {

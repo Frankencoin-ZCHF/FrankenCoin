@@ -1,15 +1,13 @@
-// @ts-nocheck
 import { expect } from "chai";
 import { floatToDec18 } from "../scripts/math";
 import { ethers } from "hardhat";
 import { createContract } from "../scripts/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Frankencoin, StablecoinBridge } from "../typechain";
+import { Frankencoin, StablecoinBridge, TestToken } from "../typechain";
 import { evm_increaseTime } from "./helper";
 
 let equityContract, equityAddr, mintingHubContract;
 let positionFactoryContract;
-let mockXCHF, mockDCHF;
 
 describe("Plugin Veto Tests", () => {
   let owner: SignerWithAddress;
@@ -18,6 +16,8 @@ describe("Plugin Veto Tests", () => {
   let bridge: StablecoinBridge;
   let secondBridge: StablecoinBridge;
   let zchf: Frankencoin;
+  let mockXCHF: TestToken;
+  let mockDCHF: TestToken;
 
   before(async () => {
     [owner, alice] = await ethers.getSigners();
@@ -56,7 +56,7 @@ describe("Plugin Veto Tests", () => {
 
   describe("create secondary bridge plugin", () => {
     it("create mock DCHF token&bridge", async () => {
-      let limit: BigNumber = floatToDec18(100_000);
+      let limit = floatToDec18(100_000);
       mockDCHF = await createContract("TestToken", ["Test Name", "Symbol", 18]);
       await mockDCHF.mint(alice.address, floatToDec18(100_000));
       secondBridge = await createContract("StablecoinBridge", [

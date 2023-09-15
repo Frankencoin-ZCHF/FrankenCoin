@@ -3,7 +3,7 @@ import { floatToDec18, dec18ToFloat, DECIMALS } from "../scripts/math";
 import { ethers } from "hardhat";
 const BN = ethers.BigNumber;
 import { createContract } from "../scripts/utils";
-import { evm_increaseTime, evm_mine_blocks } from "./helper";
+import { evm_increaseTime } from "./helper";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   Equity,
@@ -57,19 +57,23 @@ describe("Position Tests", () => {
     // wait for 1 block
     await evm_increaseTime(60);
     // now we are ready to bootstrap ZCHF with Mock-XCHF
-    await mockXCHF.mint(owner.address, limit.div(2));
-    await mockXCHF.mint(alice.address, limit.div(2));
+    await mockXCHF.mint(owner.address, limit.div(3));
+    await mockXCHF.mint(alice.address, limit.div(3));
+    await mockXCHF.mint(bob.address, limit.div(3));
     // mint some ZCHF to block bridges without veto
     let amount = floatToDec18(20_000);
     await mockXCHF.connect(alice).approve(bridge.address, amount);
     await bridge.connect(alice).mint(amount);
-    // owner mints some to be able to create a position
     await mockXCHF.connect(owner).approve(bridge.address, amount);
     await bridge.connect(owner).mint(amount);
+    await mockXCHF.connect(bob).approve(bridge.address, amount);
+    await bridge.connect(bob).mint(amount);
     // vol tokens
     mockVOL = await createContract("TestToken", ["Volatile Token", "VOL", 18]);
     amount = floatToDec18(500_000);
     await mockVOL.mint(owner.address, amount);
+    await mockVOL.mint(alice.address, amount);
+    await mockVOL.mint(bob.address, amount);
   });
 
   let positionAddr: string, positionContract: Position;
@@ -77,7 +81,7 @@ describe("Position Tests", () => {
   let fee = 0.01;
   let reserve = 0.1;
   let mintAmount = 100;
-  let initialLimit = floatToDec18(110_000);
+  let initialLimit = floatToDec18(550_000);
   let fMintAmount = floatToDec18(mintAmount);
   let fLimit, limit: number;
   let fGlblZCHBalanceOfCloner: BigNumber;
@@ -894,6 +898,7 @@ describe("Position Tests", () => {
       let price = await positionContract.price();
       await mockVOL.approve(mintingHub.address, fchallengeAmount);
       await mintingHub.launchChallenge(positionAddr, fchallengeAmount, price);
+      challengeNumber++;
       await expect(
         positionContract.adjustPrice(floatToDec18(1500))
       ).to.be.revertedWith("Challenged");
@@ -1132,6 +1137,93 @@ describe("Position Tests", () => {
         mockVOL.address,
         owner.address
       );
+    });
+  });
+  describe("notifying loss", async () => {
+    const amount = floatToDec18(10);
+    const initialLimit = floatToDec18(1_000_000);
+    let fliqPrice = floatToDec18(5000);
+    let minCollateral = floatToDec18(1);
+    let fInitialCollateral = floatToDec18(initialCollateral);
+    let fchallengeAmount = floatToDec18(initialCollateral);
+    let duration = BN.from(60 * 86_400);
+    let fFees = BN.from(fee * 1_000_000);
+    let fReserve = BN.from(reserve * 1_000_000);
+    let challengePeriod = BN.from(3 * 86400); // 3 days
+
+    beforeEach(async () => {
+      let collateral = mockVOL.address;
+      await mockVOL
+        .connect(owner)
+        .approve(mintingHub.address, fInitialCollateral);
+      let tx = await mintingHub.openPositionOneWeek(
+        collateral,
+        minCollateral,
+        fInitialCollateral,
+        initialLimit,
+        duration,
+        challengePeriod,
+        fFees,
+        fliqPrice,
+        fReserve
+      );
+      let rc = await tx.wait();
+      let topic =
+        "0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2"; // PositionOpened
+      let log = rc.logs.find((x) => x.topics.indexOf(topic) >= 0);
+      positionAddr = "0x" + log?.topics[2].substring(26);
+      positionContract = await ethers.getContractAt(
+        "Position",
+        positionAddr,
+        owner
+      );
+      await mockVOL.transfer(positionAddr, amount);
+
+      await evm_increaseTime(86400 * 7);
+      await mockVOL.approve(mintingHub.address, initialLimit);
+      const cloneLimit = await positionContract.limitForClones();
+      tx = await mintingHub.clonePosition(
+        positionAddr,
+        fInitialCollateral,
+        cloneLimit,
+        duration
+      );
+      rc = await tx.wait();
+      log = rc.logs.find((x) => x.topics.indexOf(topic) >= 0);
+      clonePositionAddr = "0x" + log?.topics[2].substring(26);
+      clonePositionContract = await ethers.getContractAt(
+        "Position",
+        clonePositionAddr,
+        alice
+      );
+
+      let price = await clonePositionContract.price();
+      await mockVOL.approve(mintingHub.address, fchallengeAmount);
+      await mintingHub.launchChallenge(
+        clonePositionAddr,
+        fchallengeAmount,
+        price
+      );
+      challengeNumber++;
+    });
+    it("should transfer loss amount from reserve to minting hub when notify loss", async () => {
+      await evm_increaseTime(86400 * 6);
+      await zchf.transfer(equity.address, floatToDec18(400_000));
+      let tx = await mintingHub
+        .connect(bob)
+        .bid(challengeNumber, fchallengeAmount, false);
+      await expect(tx)
+        .to.emit(mintingHub, "ChallengeSucceeded")
+        .emit(zchf, "Loss");
+    });
+    it("should transfer loss amount from reserve to minting hub when notify loss", async () => {
+      await evm_increaseTime(86400 * 6);
+      let tx = await mintingHub
+        .connect(bob)
+        .bid(challengeNumber, fchallengeAmount, false);
+      await expect(tx)
+        .to.emit(mintingHub, "ChallengeSucceeded")
+        .emit(zchf, "Loss");
     });
   });
 

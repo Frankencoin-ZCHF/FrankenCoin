@@ -229,4 +229,17 @@ describe("FrankenCoin", () => {
       await expect(zchf.notifyLoss(0)).to.be.revertedWith("NotMinter");
     });
   });
+
+  describe("view func", () => {
+    before(async () => {
+      zchf = await createContract("Frankencoin", [10 * 86_400]);
+      mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
+      bridge = await createContract("StablecoinBridge", [
+        mockXCHF.address,
+        zchf.address,
+        limit,
+      ]);
+    });
+    it("calculateAssignedReserve", async () => {});
+  });
 });
