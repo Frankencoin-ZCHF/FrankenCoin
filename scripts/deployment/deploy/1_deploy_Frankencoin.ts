@@ -15,26 +15,29 @@ import { deployContract } from "../deployUtils";
     npm run-script deployPositions:network sepolia
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    const paramFile = "paramsFrankencoin.json";
-    let chainId = hre.network.config["chainId"];
-    let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
+  const paramFile = "paramsFrankencoin.json";
+  let chainId = hre.network.config["chainId"];
+  let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
 
-    // find config for current chain
-    for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
-    let params = paramsArr[k];
-    if (chainId != params.chainId) {
-        throw new Error("ChainId doesn't match");
-    }
+  // find config for current chain
+  for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
+  let params = paramsArr[k];
+  if (chainId != params.chainId) {
+    throw new Error("ChainId doesn't match");
+  }
 
-    let minApplicationPeriod = params['minApplicationPeriod'];
-    console.log("\nMin application period =", minApplicationPeriod);
+  let minApplicationPeriod = params["minApplicationPeriod"];
+  console.log("\nMin application period =", minApplicationPeriod);
 
-    let FC = await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
-    console.log(`Verify Frankencoin:\nnpx hardhat verify --network sepolia ${FC.address} ${minApplicationPeriod}`)
+  let FC = await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
+  console.log(
+    `Verify Frankencoin:\nnpx hardhat verify --network sepolia ${FC.address} ${minApplicationPeriod}`
+  );
 
-    let reserve = await FC.reserve();
-    console.log(`Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${FC.address}\n`)
+  let reserve = await FC.reserve();
+  console.log(
+    `Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${FC.address}\n`
+  );
 };
 export default deploy;
 deploy.tags = ["main", "Frankencoin"];
-
