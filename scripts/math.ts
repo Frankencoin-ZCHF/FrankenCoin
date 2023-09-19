@@ -1,19 +1,9 @@
 import { BigNumber } from "ethers";
+import { ethers } from "hardhat";
 export const DECIMALS = BigNumber.from(10).pow(BigNumber.from(18));
 
 export function floatToDec18(x: any) {
-  // float number to dec 18
-  if (x === 0) {
-    return BigNumber.from(0);
-  }
-  let sg = Math.sign(x);
-  x = Math.abs(x);
-  let strX = x.toFixed(18);
-  const arrX = strX.split(".");
-  let xInt = BigNumber.from(arrX[0]);
-  let xDec = BigNumber.from(arrX[1]);
-  let xIntBig = xInt.mul(DECIMALS);
-  return xIntBig.add(xDec).mul(sg);
+  return ethers.utils.parseUnits(x.toString(), 18);
 }
 
 export function dec18ToFloat(x: any) {

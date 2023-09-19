@@ -1,8 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { ethers } from "hardhat";
 import { deployContract, sleep } from "../deployUtils";
-import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
 import { StablecoinBridge } from "../../../typechain";
 var prompt = require("prompt");
@@ -25,13 +23,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const limit = 10_000_000;
   const {
     deployments: { get },
+    ethers,
   } = hre;
   let xchfAddress;
   let applicationMsg;
   if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
     console.log("Setting Mock-XCHF-Token Bridge");
     try {
-      const xchfDeployment = await get("MockCHFToken");
+      const xchfDeployment = await get("TestToken");
       xchfAddress = xchfDeployment.address;
     } catch (err: unknown) {
       xchfAddress = await getAddress();
@@ -52,7 +51,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     ZCHFDeployment.address
   );
 
-  let dLimit: BigNumber = floatToDec18(limit);
+  let dLimit = floatToDec18(limit);
   console.log("\nDeploying StablecoinBridge with limit = ", limit, "CHF");
   const bridge = <StablecoinBridge>(
     await deployContract(hre, "StablecoinBridge", [

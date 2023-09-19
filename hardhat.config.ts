@@ -1,34 +1,35 @@
-import { HardhatUserConfig } from "hardhat/config";
-import { ethers } from "ethers";
-import { SigningKey } from "@ethersproject/signing-key";
+import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
+// import "hardhat-deploy-ethers";
 import "hardhat-abi-exporter";
-import { error } from "console";
+import "hardhat-contract-sizer";
+import { HardhatUserConfig } from "hardhat/config";
+import { SigningKey } from "@ethersproject/signing-key";
+
 import dotenv from "dotenv";
 dotenv.config();
-const config: HardhatUserConfig = {
-  solidity: "0.8.20",
-};
 
 //export default config;
-const ZERO_PK = "0x0000000000000000000000000000000000000000000000000000000000000000";
 let pk: string | SigningKey = <string>process.env.PK;
 let etherscanapikey: string = <string>process.env.APIKEY;
-let wallet;
-try {
-  wallet = new ethers.Wallet(pk);
-}
-catch (e) {
-  pk = ZERO_PK;
-}
-if (pk != ZERO_PK && etherscanapikey == "") {
-  error("define api key for polygonscan: export APIKEY=...")
-}
 
-export default {
-  defaultNetwork: "hardhat",
+const config: HardhatUserConfig = {
+  solidity: {
+    version: "0.8.20",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+      outputSelection: {
+        "*": {
+          "*": ["storageLayout"],
+        },
+      },
+    },
+  },
   networks: {
     //https://hardhat.org/hardhat-runner/docs/config
     hardhat: {
@@ -36,21 +37,11 @@ export default {
       // hardfork: "istanbul",
       allowUnlimitedContractSize: true,
       saveDeployments: true,
-      timeout: 30000000,
       // forking: {
       //     enabled: true,
       //     url: process.env.RINKEBY_ENDPOINT,
       //     blockNumber: 9664123
       // }
-    },
-    localhost: {
-      // exposed node of hardhat network:
-      // 1. hh node --network hardhat
-      // 2. hh deploy --network localhost
-      chainId: 31337,
-      allowUnlimitedContractSize: true,
-      timeout: 30000000,
-      url: "http://localhost:8545",
     },
     sepolia: {
       //url: "https://sepolia.etherscan.io",
@@ -67,7 +58,6 @@ export default {
       gasPrice: "auto",
       accounts: [pk],
       timeout: 50_000,
-      confirmations: 1,
     },
     mainnet: {
       url: "https://ethereum.publicnode.com",
@@ -77,7 +67,6 @@ export default {
       gasPrice: "auto",
       accounts: [pk],
       timeout: 50_000,
-      confirmations: 1,
     },
     goerli: {
       url: "https://goerli.infura.io/v3/",
@@ -86,34 +75,18 @@ export default {
       gasPrice: "auto",
       accounts: [pk],
       timeout: 50000,
-      confirmations: 1,
-    }
+    },
   },
   etherscan: {
     apiKey: etherscanapikey,
-  },
-  solidity: {
-    version: "0.8.20",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      },
-      outputSelection: {
-        "*": {
-          "*": ["storageLayout"]
-        }
-      }
-    }
   },
   paths: {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
-    abi: "./abi",
     deploy: "./scripts/deployment/deploy",
-    deployments: './scripts/deployment/deployments'
+    deployments: "./scripts/deployment/deployments",
   },
   contractSizer: {
     alphaSort: false,
@@ -122,7 +95,7 @@ export default {
   },
   gasReporter: {
     enabled: true,
-    currency: 'USD',
+    currency: "USD",
   },
   abiExporter: {
     path: "./abi",
@@ -133,13 +106,15 @@ export default {
     pretty: false,
   },
   mocha: {
-    timeout: 120000
+    timeout: 120000,
   },
   namedAccounts: {
-    deployer: 0
+    deployer: 0,
   },
   typechain: {
-    outDir: 'typechain',
-    target: 'ethers-v5'
+    outDir: "typechain",
+    target: "ethers-v5",
   },
-} as HardhatUserConfig;
+};
+
+export default config;

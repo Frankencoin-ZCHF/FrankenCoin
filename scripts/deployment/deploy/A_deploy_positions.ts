@@ -1,6 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { deployments, ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
 
@@ -18,19 +17,17 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
         fliqPrice, fReserve);
     */
   //------
-  // get minting hub contract
   const {
     deployments: { get },
+    ethers,
   } = hre;
   const mintingHubDeployment = await get("MintingHub");
   const fcDeployment = await get("Frankencoin");
-  const collateralDeployment = await get(params.name);
 
   let mintingHubContract = await ethers.getContractAt(
     "MintingHub",
     mintingHubDeployment.address
   );
-
   let collateralAddr = params.collateralTknAddr;
   let fMinCollateral = floatToDec18(params.minCollateral);
   let fInitialCollateral = floatToDec18(params.initialCollateral);
@@ -42,21 +39,9 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
   let fReservePPM = BigNumber.from(params.reservePercent * 1e4);
   let fOpeningFeeZCHF = BigNumber.from(1000).mul(BigNumber.from(10).pow(18));
 
-  console.log;
-  // approvals
-  let ZCHFContract = await ethers.getContractAt(
-    "Frankencoin",
-    fcDeployment.address
-  );
   let CollateralContract = await ethers.getContractAt(
     params.name,
     params.collateralTknAddr
-  );
-
-  const accounts = await hre.getUnnamedAccounts();
-  console.log("Owner:", accounts[0]);
-  console.log(
-    await ZCHFContract.balanceOf("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
   );
 
   //console.log("Collateral balance of owner = ", dec18ToFloat(balColl));
@@ -69,7 +54,8 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
     fInitialCollateral,
     { gasLimit: 1_000_000 }
   );
-  tx1.wait();
+  console.log("tx:", tx1.hash);
+  await tx1.wait();
   /*
     openPosition(
     address _collateral,
@@ -82,7 +68,17 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
     uint256 _liqPrice,
     uint32 _reserve
   */
-  console.log(params);
+  // console.log(
+  //   collateralAddr.toString(),
+  //   fMinCollateral.toString(),
+  //   fInitialCollateral.toString(),
+  //   initialLimitZCHF.toString(),
+  //   duration.toString(),
+  //   challengePeriod.toString(),
+  //   feesPPM.toString(),
+  //   fliqPrice.toString(),
+  //   fReservePPM.toString()
+  // );
   let tx = await mintingHubContract.openPositionOneWeek(
     collateralAddr,
     fMinCollateral,
@@ -97,10 +93,10 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
 
   await tx.wait();
 
-  console.log("Arguments for verification of position:");
-  console.log(
-    `npx hardhat verify --network sepolia <POSITIONADDRESS> ${accounts[0]} ${mintingHubDeployment.address} ${fcDeployment.address} ${collateralAddr} ${fMinCollateral} ${fInitialCollateral} ${initialLimitZCHF} ${duration} ${challengePeriod} ${feesPPM} ${fliqPrice} ${fReservePPM}`
-  );
+  // console.log("Arguments for verification of position:");
+  // console.log(
+  //   `npx hardhat verify --network sepolia <POSITIONADDRESS> ${accounts[0]} ${mintingHubDeployment.address} ${fcDeployment.address} ${collateralAddr} ${fMinCollateral} ${fInitialCollateral} ${initialLimitZCHF} ${duration} ${challengePeriod} ${feesPPM} ${fliqPrice} ${fReservePPM}`
+  // );
   return tx.hash;
 }
 
