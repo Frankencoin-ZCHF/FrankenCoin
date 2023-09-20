@@ -1,7 +1,8 @@
-import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-etherscan";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-toolbox";
-import "hardhat-deploy";
+import "@nomicfoundation/hardhat-network-helpers";
+// import "hardhat-deploy";
 // import "hardhat-deploy-ethers";
 import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
@@ -36,7 +37,7 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       // hardfork: "istanbul",
       allowUnlimitedContractSize: true,
-      saveDeployments: true,
+      // saveDeployments: true,
       // forking: {
       //     enabled: true,
       //     url: process.env.RINKEBY_ENDPOINT,
@@ -85,8 +86,8 @@ const config: HardhatUserConfig = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
-    deploy: "./scripts/deployment/deploy",
-    deployments: "./scripts/deployment/deployments",
+    // deploy: "./scripts/deployment/deploy",
+    // deployments: "./scripts/deployment/deployments",
   },
   contractSizer: {
     alphaSort: false,
@@ -108,12 +109,9 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 120000,
   },
-  namedAccounts: {
-    deployer: 0,
-  },
   typechain: {
     outDir: "typechain",
-    target: "ethers-v5",
+    target: "ethers-v6",
   },
 };
 

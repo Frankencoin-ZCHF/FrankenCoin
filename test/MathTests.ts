@@ -1,13 +1,14 @@
 import { expect } from "chai";
-import { floatToDec18, dec18ToFloat } from "../scripts/math";
-import { createContract } from "../scripts/utils";
+import { floatToDec18, abs } from "../scripts/math";
 import { TestMathUtil } from "../typechain";
+import { ethers } from "hardhat";
 
 describe("Math Tests", () => {
   let MathContract: TestMathUtil;
 
   before(async () => {
-    MathContract = await createContract("TestMathUtil");
+    const factory = await ethers.getContractFactory("TestMathUtil");
+    MathContract = await factory.deploy();
   });
 
   describe("math", () => {
@@ -18,14 +19,13 @@ describe("Math Tests", () => {
       let fA = floatToDec18(a);
       let fB = floatToDec18(b);
       let fResult = await MathContract.divD18(fA, fB);
-      let resultRec = dec18ToFloat(fResult);
-      let err = Math.abs(result - resultRec);
-      if (err > 1e-12) {
+      let err = abs(floatToDec18(result) - fResult);
+      if (err > BigInt(10e6)) {
         console.log("expected=", result);
-        console.log("received=", resultRec);
+        console.log("received=", fResult);
         console.log("abs error=", err);
       }
-      expect(err).to.be.lessThan(1e-12);
+      expect(err).to.be.lessThan(BigInt(10e6));
     });
     it("mul", async () => {
       let a = 1.5;
@@ -34,28 +34,26 @@ describe("Math Tests", () => {
       let fA = floatToDec18(a);
       let fB = floatToDec18(b);
       let fResult = await MathContract.mulD18(fA, fB);
-      let resultRec = dec18ToFloat(fResult);
-      let err = Math.abs(result - resultRec);
-      if (err > 1e-12) {
+      let err = abs(floatToDec18(result) - fResult);
+      if (err > BigInt(1e6)) {
         console.log("expected=", result);
-        console.log("received=", resultRec);
+        console.log("received=", fResult);
         console.log("abs error=", err);
       }
-      expect(err).to.be.lessThan(1e-12);
+      expect(err).to.be.lessThan(BigInt(10e6));
     });
     it("pow3", async () => {
       let a = 1.5;
       let result = a ** 3;
       let fA = floatToDec18(a);
       let fResult = await MathContract.power3(fA);
-      let resultRec = dec18ToFloat(fResult);
-      let err = Math.abs(result - resultRec);
-      if (err > 1e-12) {
+      let err = abs(floatToDec18(result) - fResult);
+      if (err > BigInt(10e6)) {
         console.log("expected=", result);
-        console.log("received=", resultRec);
+        console.log("received=", fResult);
         console.log("abs error=", err);
       }
-      expect(err).to.be.lessThan(1e-12);
+      expect(err).to.be.lessThan(BigInt(10e6));
     });
     it("cubic root", async () => {
       // let numbers = [0.01, 0.9, 1, 1.5, 2, 10];
@@ -67,16 +65,14 @@ describe("Math Tests", () => {
         let tx = await MathContract.cubicRoot(fNumber, true);
         await expect(tx).to.not.be.reverted;
         let fResult = await MathContract.result();
-        let resultRec = dec18ToFloat(fResult);
         // console.log(resultRec);
-        let err = Math.abs((result - resultRec) / result);
-        if (err > 1e-12) {
-          console.log("number =", result);
+        let err = abs(floatToDec18(result) - fResult);
+        if (err > BigInt(10e6)) {
           console.log("expected=", result);
-          console.log("received=", resultRec);
+          console.log("received=", fResult);
           console.log("rel error=", err);
         }
-        expect(err).to.be.lessThan(1e-12);
+        expect(err).to.be.lessThan(BigInt(10e6));
       }
     });
 
@@ -93,10 +89,7 @@ describe("Math Tests", () => {
           capitalBefore,
           fNumber
         );
-        //console.log(fResult);
-        let resultRec = dec18ToFloat(fResult);
-        // console.log(resultRec);
-        expect(resultRec).to.be.above(0);
+        expect(fResult).to.be.above(0n);
       }
     });
   });

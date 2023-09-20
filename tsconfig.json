@@ -1,18 +1,21 @@
 {
   "compilerOptions": {
-    "target": "es2018",
+    "target": "ES2021",
     "module": "commonjs",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "strict": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
-    "outDir": "dist",
-    "resolveJsonModule": true
+    "noEmitOnError": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true
   },
   "include": [
     "hardhat.config.ts",
     "./scripts",
     "./deploy",
-    "./test",
+    "./test/**/*.ts",
     "./typechain",
     "deploy",
     "utils"

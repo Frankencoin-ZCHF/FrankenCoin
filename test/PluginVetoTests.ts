@@ -1,17 +1,13 @@
 import { expect } from "chai";
 import { floatToDec18 } from "../scripts/math";
 import { ethers } from "hardhat";
-import { createContract } from "../scripts/utils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Frankencoin, StablecoinBridge, TestToken } from "../typechain";
 import { evm_increaseTime } from "./helper";
-
-let equityContract, equityAddr, mintingHubContract;
-let positionFactoryContract;
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Plugin Veto Tests", () => {
-  let owner: SignerWithAddress;
-  let alice: SignerWithAddress;
+  let owner: HardhatEthersSigner;
+  let alice: HardhatEthersSigner;
 
   let bridge: StablecoinBridge;
   let secondBridge: StablecoinBridge;
@@ -22,61 +18,63 @@ describe("Plugin Veto Tests", () => {
   before(async () => {
     [owner, alice] = await ethers.getSigners();
     // create contracts
-    zchf = await createContract("Frankencoin", [10 * 86_400]);
-    equityAddr = await zchf.reserve();
-    equityContract = await ethers.getContractAt("Equity", equityAddr);
-    positionFactoryContract = await createContract("PositionFactory");
-    mintingHubContract = await createContract("MintingHub", [
-      zchf.address,
-      positionFactoryContract.address,
-    ]);
+    const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
+    zchf = await frankenCoinFactory.deploy(10 * 86400);
+
     // mocktoken
-    mockXCHF = await createContract("TestToken", ["CryptoFranc", "XCHF", 18]);
+    const xchfFactory = await ethers.getContractFactory("TestToken");
+    mockXCHF = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
     // mocktoken bridge to bootstrap
     let limit = floatToDec18(100_000);
-    bridge = await createContract("StablecoinBridge", [
-      mockXCHF.address,
-      zchf.address,
-      limit,
-    ]);
-    zchf.initialize(bridge.address, "");
+    const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
+    bridge = await bridgeFactory.deploy(
+      await mockXCHF.getAddress(),
+      await zchf.getAddress(),
+      limit
+    );
+    await zchf.initialize(await bridge.getAddress(), "");
     // wait for 1 block
     await evm_increaseTime(60);
     // now we are ready to bootstrap ZCHF with Mock-XCHF
-    await mockXCHF.mint(owner.address, limit.div(2));
-    await mockXCHF.mint(alice.address, limit.div(2));
+    await mockXCHF.mint(owner.address, limit / 2n);
+    await mockXCHF.mint(alice.address, limit / 2n);
     // mint some ZCHF to block bridges without veto
     let amount = floatToDec18(20_000);
-    await mockXCHF.connect(alice).approve(bridge.address, amount);
+    await mockXCHF.connect(alice).approve(await bridge.getAddress(), amount);
     await bridge.connect(alice).mint(amount);
     // owner also mints some to be able to veto
-    await mockXCHF.approve(bridge.address, amount);
+    await mockXCHF.approve(await bridge.getAddress(), amount);
     await bridge.mint(amount);
   });
 
   describe("create secondary bridge plugin", () => {
     it("create mock DCHF token&bridge", async () => {
       let limit = floatToDec18(100_000);
-      mockDCHF = await createContract("TestToken", ["Test Name", "Symbol", 18]);
+      const xchfFactory = await ethers.getContractFactory("TestToken");
+      mockDCHF = await xchfFactory.deploy("Test Name", "Symbol", 18);
       await mockDCHF.mint(alice.address, floatToDec18(100_000));
-      secondBridge = await createContract("StablecoinBridge", [
-        mockDCHF.address,
-        zchf.address,
-        limit,
-      ]);
+
+      const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
+      secondBridge = await bridgeFactory.deploy(
+        await mockDCHF.getAddress(),
+        await zchf.getAddress(),
+        limit
+      );
     });
     it("Participant suggests minter", async () => {
       let applicationPeriod = await zchf.MIN_APPLICATION_PERIOD();
       let applicationFee = await zchf.MIN_FEE();
       let msg = "DCHF Bridge";
-      await mockXCHF.connect(alice).approve(zchf.address, applicationFee);
+      await mockXCHF
+        .connect(alice)
+        .approve(await zchf.getAddress(), applicationFee);
       let balance = await zchf.balanceOf(alice.address);
       expect(balance).to.be.greaterThan(applicationFee);
       await expect(
         zchf
           .connect(alice)
           .suggestMinter(
-            secondBridge.address,
+            await secondBridge.getAddress(),
             applicationPeriod,
             applicationFee,
             msg
@@ -85,7 +83,9 @@ describe("Plugin Veto Tests", () => {
     });
     it("can't mint before min period", async () => {
       let amount = floatToDec18(1_000);
-      await mockDCHF.connect(alice).approve(secondBridge.address, amount);
+      await mockDCHF
+        .connect(alice)
+        .approve(await secondBridge.getAddress(), amount);
       // set allowance
       await expect(
         secondBridge.connect(alice).mint(amount)
@@ -93,7 +93,7 @@ describe("Plugin Veto Tests", () => {
     });
     it("deny minter", async () => {
       await expect(
-        zchf.denyMinter(secondBridge.address, [], "other denied")
+        zchf.denyMinter(await secondBridge.getAddress(), [], "other denied")
       ).to.emit(zchf, "MinterDenied");
       await expect(
         secondBridge.connect(alice).mint(floatToDec18(1_000))

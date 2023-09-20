@@ -1,18 +1,4 @@
-const { ethers } = require("hardhat");
-import { BigNumber } from "ethers";
-
-export function toWei(n: BigNumber) {
-  return ethers.utils.parseEther(n);
-}
-export function fromWei(n: any) {
-  return ethers.utils.formatEther(n);
-}
-export function toBytes32(s: any) {
-  return ethers.utils.formatBytes32String(s);
-}
-export function fromBytes32(s: any) {
-  return ethers.utils.parseBytes32String(s);
-}
+import { ethers } from "hardhat";
 
 let defaultSigner: String;
 
@@ -29,18 +15,14 @@ export async function getAccounts(): Promise<any[]> {
   return accounts;
 }
 
-export async function createFactory(path: String) {
+export async function createFactory(path: string) {
   const parsed = {};
   return await ethers.getContractFactory(path, { libraries: parsed });
 }
 
-export async function createContract(path: String, args: any[] = []) {
+export async function createContract(path: string, args: any[] = []) {
   const factory = await createFactory(path);
-  if (defaultSigner != null) {
-    return await factory.connect(defaultSigner).deploy(...args);
-  } else {
-    return await factory.deploy(...args);
-  }
+  return await factory.deploy(...args);
 }
 
 export function sleep(ms: number) {
@@ -61,22 +43,23 @@ export async function getSigningManagerFromPK(
 }
 
 export function capitalToShares(
-  totalCapital: number,
-  totalShares: number,
-  dCapital: number
-): number {
-  if (totalShares == 0) {
-    return 1000;
+  totalCapital: bigint,
+  totalShares: bigint,
+  dCapital: bigint
+): bigint {
+  if (totalShares == 0n) {
+    return 1000n;
   } else {
     return (
-      totalShares * (((totalCapital + dCapital) / totalCapital) ** (1 / 3) - 1)
+      totalShares *
+      (((totalCapital + dCapital) / totalCapital) ** (1n / 3n) - 1n)
     );
   }
 }
 export function sharesToCapital(
-  totalCapital: number,
-  totalShares: number,
-  dShares: number
+  totalCapital: bigint,
+  totalShares: bigint,
+  dShares: bigint
 ) {
-  return -totalCapital * (((totalShares - dShares) / totalShares) ** 3 - 1);
+  return -totalCapital * (((totalShares - dShares) / totalShares) ** 3n - 1n);
 }
