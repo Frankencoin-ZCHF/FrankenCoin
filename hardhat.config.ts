@@ -2,7 +2,7 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-network-helpers";
-// import "hardhat-deploy";
+import "hardhat-deploy";
 // import "hardhat-deploy-ethers";
 import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
@@ -86,8 +86,8 @@ const config: HardhatUserConfig = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
-    // deploy: "./scripts/deployment/deploy",
-    // deployments: "./scripts/deployment/deployments",
+    deploy: "./scripts/deployment/deploy",
+    deployments: "./scripts/deployment/deployments",
   },
   contractSizer: {
     alphaSort: false,

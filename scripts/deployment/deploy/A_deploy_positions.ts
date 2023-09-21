@@ -1,6 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { BigNumber } from "ethers";
 import { floatToDec18 } from "../../math";
 
 /*
@@ -32,12 +31,12 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
   let fMinCollateral = floatToDec18(params.minCollateral);
   let fInitialCollateral = floatToDec18(params.initialCollateral);
   let initialLimitZCHF = floatToDec18(params.initialLimitZCHF);
-  let duration = BigNumber.from(params.durationDays).mul(86_400);
-  let challengePeriod = BigNumber.from(params.challengePeriodSeconds);
-  let feesPPM = BigNumber.from(params.feesPercent * 1e4);
+  let duration = BigInt(params.durationDays) * 86_400n;
+  let challengePeriod = BigInt(params.challengePeriodSeconds);
+  let feesPPM = BigInt(params.feesPercent * 1e4);
   let fliqPrice = floatToDec18(params.liqPriceCHF);
-  let fReservePPM = BigNumber.from(params.reservePercent * 1e4);
-  let fOpeningFeeZCHF = BigNumber.from(1000).mul(BigNumber.from(10).pow(18));
+  let fReservePPM = BigInt(params.reservePercent * 1e4);
+  let fOpeningFeeZCHF = 1000n * BigInt(1e18);
 
   let CollateralContract = await ethers.getContractAt(
     params.name,
@@ -47,10 +46,10 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
   //console.log("Collateral balance of owner = ", dec18ToFloat(balColl));
   //console.log("ZCHF balance of owner = ", dec18ToFloat(balZCHF));
   console.log("ZCHF address ", fcDeployment.address);
-  console.log("coll address ", CollateralContract.address);
+  console.log("coll address ", params.collateralTknAddr);
 
   let tx1 = await CollateralContract.approve(
-    mintingHubContract.address,
+    mintingHubDeployment.address,
     fInitialCollateral,
     { gasLimit: 1_000_000 }
   );

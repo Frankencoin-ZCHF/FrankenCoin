@@ -19,7 +19,6 @@ async function getAddress() {
 }
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  console.log(hre.network.name);
   const limit = 10_000_000;
   const {
     deployments: { get },
@@ -53,13 +52,11 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   let dLimit = floatToDec18(limit);
   console.log("\nDeploying StablecoinBridge with limit = ", limit, "CHF");
-  const bridge = <StablecoinBridge>(
-    await deployContract(hre, "StablecoinBridge", [
-      xchfAddress,
-      ZCHFDeployment.address,
-      dLimit,
-    ])
-  );
+  await deployContract(hre, "StablecoinBridge", [
+    xchfAddress,
+    ZCHFDeployment.address,
+    dLimit,
+  ]);
 
   // suggest minter
   const bridgeDeployment = await get("StablecoinBridge");
@@ -99,6 +96,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let amount = floatToDec18(20_000);
     const mockXCHF = await ethers.getContractAt("TestToken", xchfAddress);
     await mockXCHF.approve(bridgeAddr, amount);
+    const bridge = await ethers.getContractAt("StablecoinBridge", bridgeAddr);
     await bridge.mint(amount);
   }
 };

@@ -20,20 +20,22 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   let mintingHubContract = await deployContract(hre, "MintingHub", [
-    zchfContract.address,
-    positionFactoryContract.address,
+    zchfDeployment.address,
+    positionFactoryDeployment.address,
   ]);
 
   //let mintingHubContract = await get("MintingHub");
 
-  console.log(
-    `Verify mintingHubContract:\nnpx hardhat verify --network sepolia ${mintingHubContract.address} ${zchfContract.address} ${positionFactoryContract.address}\n`
-  );
+  console.log(`Verify mintingHubContract:
+npx hardhat verify --network sepolia ${await mintingHubContract.getAddress()} ${
+    zchfDeployment.address
+  } ${positionFactoryDeployment.address}
+`);
 
   // create a minting hub too while we have no ZCHF supply
   try {
     let tx = await zchfContract.initialize(
-      mintingHubContract.address,
+      await mintingHubContract.getAddress(),
       "Minting Hub"
     );
     await tx.wait();
