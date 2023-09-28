@@ -382,16 +382,19 @@ contract Position is Ownable, IPosition, MathUtil {
             IERC20(collateral).transfer(target, amount);
         }
         uint256 balance = _collateralBalance();
-        if (balance < minimumCollateral && challengedAmount == 0) {
+        _considerClose(balance);
+        emit MintingUpdate(balance, price, minted, limit);
+        return balance;
+    }
+
+    function _considerClose(uint256 collateralBalance) internal {
+        if (collateralBalance < minimumCollateral && challengedAmount == 0) {
             // This leaves a slightly unsatisfying possibility open: if the withdrawal happens due to a successful
             // challenge, there might be a small amount of collateral left that is not withheld in case there are no
             // other pending challenges. The only way to cleanly solve this would be to have two distinct cooldowns,
             // one for minting and one for withdrawals.
             _close();
         }
-
-        emit MintingUpdate(balance, price, minted, limit);
-        return balance;
     }
 
     /**
@@ -422,9 +425,13 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function notifyChallengeAverted(uint256 size) external onlyHub {
         challengedAmount -= size;
+
         // Don't allow minter to close the position immediately so challenge can be repeated before
         // the owner has a chance to mint more on an undercollateralized position
         _restrictMinting(1 days);
+
+        // If this was the last open challenge and there is only a dust amount of collateral left, the position should be closed
+        _considerClose(_collateralBalance());
     }
 
     /**
