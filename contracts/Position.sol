@@ -407,10 +407,12 @@ contract Position is Ownable, IPosition, MathUtil {
 
     /**
      * @notice Returns the liquidation price and the durations for phase1 and phase2 of the challenge.
-     * In this implementation, both phases are always of equal length.
+     * Both phases are usually of equal duration, but near expiration, phase one is adjusted such that
+     * it cannot last beyond the expiration date of the position.
      */
     function challengeData() external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2) {
-        return (price, challengePeriod, challengePeriod);
+        uint256 timeToExpiration = block.timestamp >= expiration ? 0 : expiration - block.timestamp;
+        return (price, uint64(_min(timeToExpiration, challengePeriod)), challengePeriod);
     }
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
