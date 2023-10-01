@@ -410,8 +410,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * Both phases are usually of equal duration, but near expiration, phase one is adjusted such that
      * it cannot last beyond the expiration date of the position.
      */
-    function challengeData() external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2) {
-        uint256 timeToExpiration = block.timestamp >= expiration ? 0 : expiration - block.timestamp;
+    function challengeData(uint256 challengeStart) external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2) {
+        uint256 timeToExpiration = challengeStart >= expiration ? 0 : expiration - challengeStart;
         return (price, uint64(_min(timeToExpiration, challengePeriod)), challengePeriod);
     }
 

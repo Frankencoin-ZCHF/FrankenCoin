@@ -33,7 +33,7 @@ interface IPosition {
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
-    function challengeData() external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2);
+    function challengeData(uint256 challengeStart) external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2);
 
     function notifyChallengeStarted(uint256 size) external;
 

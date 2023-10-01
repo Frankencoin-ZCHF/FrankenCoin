@@ -221,7 +221,7 @@ contract MintingHub {
      */
     function bid(uint32 _challengeNumber, uint256 size, bool postponeCollateralReturn) external {
         Challenge memory challenge = challenges[_challengeNumber];
-        (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData();
+        (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData(challenge.start);
         size = challenge.size < size ? challenge.size : size; // cannot bid for more than the size of the challenge
 
         if (block.timestamp <= challenge.start + phase1) {
@@ -332,7 +332,7 @@ contract MintingHub {
         if (challenge.challenger == address(0x0)) {
             return 0;
         } else {
-            (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData();
+            (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData(challenge.start);
             return _calculatePrice(challenge.start + phase1, phase2, liqPrice);
         }
     }
