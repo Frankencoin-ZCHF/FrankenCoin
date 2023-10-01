@@ -44,39 +44,6 @@ const config: HardhatUserConfig = {
       //     blockNumber: 9664123
       // }
     },
-    sepolia: {
-      //url: "https://sepolia.etherscan.io",
-      // currency SEP
-      // https://sepolia.dev/#
-      //url: "https://rpc.sepolia.dev",
-      //url: "https://rpc.sepolia.dev",
-      //url: "https://rpc.sepolia.online",
-      //url: "https://www.sepoliarpc.space",
-      url: "https://ethereum-sepolia.blockpi.network/v1/rpc/public",
-      //url: "https://rpc-sepolia.rockx.com",
-      chainId: 11155111,
-      gas: 50_000,
-      gasPrice: "auto",
-      accounts: [pk],
-      timeout: 50_000,
-    },
-    mainnet: {
-      url: "https://ethereum.publicnode.com",
-      //url: "https://rpc-sepolia.rockx.com",
-      chainId: 1,
-      gas: 50_000,
-      gasPrice: "auto",
-      accounts: [pk],
-      timeout: 50_000,
-    },
-    goerli: {
-      url: "https://goerli.infura.io/v3/",
-      chainId: 5,
-      gas: "auto",
-      gasPrice: "auto",
-      accounts: [pk],
-      timeout: 50000,
-    },
   },
   etherscan: {
     apiKey: etherscanapikey,
