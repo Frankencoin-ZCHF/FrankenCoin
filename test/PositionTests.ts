@@ -1,7 +1,6 @@
 import { expect } from "chai";
 import { floatToDec18, dec18ToFloat, DECIMALS } from "../scripts/math";
 import { ethers } from "hardhat";
-import { createContract } from "../scripts/utils";
 import { evm_increaseTime } from "./helper";
 import {
   Equity,
@@ -12,7 +11,6 @@ import {
   TestToken,
 } from "../typechain";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 let mockXCHF;
 
@@ -595,7 +593,7 @@ describe("Position Tests", () => {
       ).to.be.revertedWithCustomError(positionContract, "Challenged");
     });
   });
-  describe("denying challenge", () => {
+  describe("denying position", () => {
     it("create position", async () => {
       let collateral = await mockVOL.getAddress();
       let fliqPrice = floatToDec18(5000);
@@ -655,7 +653,50 @@ describe("Position Tests", () => {
       );
     });
   });
-  describe("challenge clone", () => {
+  describe("challenge active", () => {
+    it("create position", async () => {
+      let collateral = await mockVOL.getAddress();
+      let fliqPrice = floatToDec18(5000);
+      let minCollateral = floatToDec18(1);
+      let fInitialCollateral = floatToDec18(initialCollateral);
+      let duration = BigInt(60 * 86_400);
+      let fFees = BigInt(fee * 1_000_000);
+      let fReserve = BigInt(reserve * 1_000_000);
+      let openingFeeZCHF = await mintingHub.OPENING_FEE();
+      let challengePeriod = BigInt(3 * 86400); // 3 days
+      await mockVOL
+        .connect(owner)
+        .approve(await mintingHub.getAddress(), fInitialCollateral);
+      let balBefore = await zchf.balanceOf(owner.address);
+      let balBeforeVOL = await mockVOL.balanceOf(owner.address);
+      let tx = await mintingHub.openPositionOneWeek(
+        collateral,
+        minCollateral,
+        fInitialCollateral,
+        initialLimit,
+        duration,
+        challengePeriod,
+        fFees,
+        fliqPrice,
+        fReserve
+      );
+      let rc = await tx.wait();
+      const topic =
+        "0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2"; // PositionOpened
+      const log = rc?.logs.find((x) => x.topics.indexOf(topic) >= 0);
+      positionAddr = "0x" + log?.topics[2].substring(26);
+      let balAfter = await zchf.balanceOf(owner.address);
+      let balAfterVOL = await mockVOL.balanceOf(owner.address);
+      let dZCHF = dec18ToFloat(balAfter - balBefore);
+      let dVOL = dec18ToFloat(balAfterVOL - balBeforeVOL);
+      expect(dVOL).to.be.equal(BigInt(-initialCollateral));
+      expect(dZCHF).to.be.equal(-dec18ToFloat(openingFeeZCHF));
+      positionContract = await ethers.getContractAt(
+        "Position",
+        positionAddr,
+        owner
+      );
+    });
     it("should revert challenging from non minting hub address", async () => {
       challengeAmount = initialCollateralClone / 2;
       let fchallengeAmount = floatToDec18(challengeAmount);
@@ -664,18 +705,15 @@ describe("Position Tests", () => {
       ).to.be.revertedWithCustomError(positionContract, "NotHub");
     });
     it("should revert challenging with zero collateral", async () => {
-      let price = await clonePositionContract.price();
+      let price = await positionContract.price();
       await expect(
-        mintingHub.launchChallenge(clonePositionAddr, 0, price)
-      ).to.be.revertedWithCustomError(
-        clonePositionContract,
-        "ChallengeTooSmall"
-      );
+        mintingHub.launchChallenge(positionAddr, 0, price)
+      ).to.be.revertedWithCustomError(positionContract, "ChallengeTooSmall");
     });
     it("should revert challenging for invalid position address", async () => {
       challengeAmount = initialCollateralClone / 2;
       let fchallengeAmount = floatToDec18(challengeAmount);
-      let price = await clonePositionContract.price();
+      let price = await positionContract.price();
       await expect(
         mintingHub.launchChallenge(owner.address, fchallengeAmount, price)
       ).to.be.revertedWithCustomError(mintingHub, "InvalidPos");
@@ -699,6 +737,117 @@ describe("Position Tests", () => {
         mintingHub.launchChallenge(positionAddr, floatToDec18(0.1), price)
       ).to.be.revertedWithCustomError(positionContract, "ChallengeTooSmall");
     });
+    it("bid on challenged, flat sale, not expired position", async () => {
+      challengeAmount = initialCollateralClone / 2;
+      const fchallengeAmount = floatToDec18(challengeAmount);
+      const price = await positionContract.price();
+      await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
+      let tx = await mintingHub.launchChallenge(
+        positionAddr,
+        fchallengeAmount,
+        price
+      );
+      challengeNumber++;
+      const challenge = await mintingHub.challenges(challengeNumber);
+      const challengerAddress = challenge.challenger;
+      const challengeData = await positionContract.challengeData(0);
+
+      // Flat sale
+      await evm_increaseTime(challengeData.phase1 / 2n);
+      let liqPrice = await mintingHub.price(challengeNumber);
+      expect(liqPrice).to.be.equal(price);
+
+      const bidSize = floatToDec18(challengeAmount / 4);
+      let bidAmountZCHF = (liqPrice * bidSize) / DECIMALS;
+      let balanceBeforeBob = await zchf.balanceOf(bob.address);
+      let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
+      let volBalanceBefore = await mockVOL.balanceOf(bob.address);
+
+      tx = await mintingHub.connect(bob).bid(challengeNumber, bidSize, false);
+      await expect(tx).to.emit(mintingHub, "ChallengeAverted");
+      let balanceAfterChallenger = await zchf.balanceOf(challengerAddress);
+      let balanceAfterBob = await zchf.balanceOf(bob.address);
+      let volBalanceAfter = await mockVOL.balanceOf(bob.address);
+
+      expect(volBalanceAfter - volBalanceBefore).to.be.eq(bidSize);
+      expect(balanceBeforeBob - balanceAfterBob).to.be.equal(bidAmountZCHF);
+      expect(balanceAfterChallenger - balanceBeforeChallenger).to.be.equal(
+        bidAmountZCHF
+      );
+
+      // Self bidding, should reduce challenge size
+      balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
+      volBalanceBefore = await mockVOL.balanceOf(challengerAddress);
+
+      let updatedChallenge = await mintingHub.challenges(challengeNumber);
+      await mintingHub.bid(challengeNumber, updatedChallenge.size, true);
+
+      balanceAfterChallenger = await zchf.balanceOf(challengerAddress);
+      volBalanceAfter = await mockVOL.balanceOf(challengerAddress);
+      expect(balanceAfterChallenger).to.be.equal(balanceBeforeChallenger);
+    });
+    it("bid on challenged, auction sale, not expired position", async () => {
+      challengeAmount = initialCollateralClone / 2;
+      const fchallengeAmount = floatToDec18(challengeAmount);
+      const price = await positionContract.price();
+      await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
+      let tx = await mintingHub.launchChallenge(
+        positionAddr,
+        fchallengeAmount,
+        price
+      );
+      challengeNumber++;
+      const challenge = await mintingHub.challenges(challengeNumber);
+      const challengeData = await positionContract.challengeData(0);
+
+      // Auction sale
+      await evm_increaseTime(challengeData.phase1 + challengeData.phase2 / 2n);
+      let liqPrice = await positionContract.price();
+      let auctionPrice = await mintingHub.price(challengeNumber);
+      expect(auctionPrice).to.be.approximately(
+        liqPrice / 2n,
+        auctionPrice / 100n
+      );
+
+      const bidSize = floatToDec18(challengeAmount / 4);
+      await mockVOL.mint(challenge.position, floatToDec18(challengeAmount / 2));
+      let availableCollateral = await mockVOL.balanceOf(challenge.position);
+      expect(availableCollateral).to.be.above(bidSize);
+
+      // bob sends a bid
+      let bidAmountZCHF = (auctionPrice * bidSize) / DECIMALS;
+      let challengerAddress = challenge.challenger;
+      await zchf.transfer(bob.address, bidAmountZCHF);
+      let balanceBeforeBob = await zchf.balanceOf(bob.address);
+      let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
+      let volBalanceBefore = await mockVOL.balanceOf(bob.address);
+      tx = await mintingHub.connect(bob).bid(challengeNumber, bidSize, true);
+      await expect(tx)
+        .to.emit(mintingHub, "ChallengeSucceeded")
+        .emit(zchf, "Profit");
+
+      let balanceAfterChallenger = await zchf.balanceOf(challengerAddress);
+      let balanceAfterBob = await zchf.balanceOf(bob.address);
+      let volBalanceAfter = await mockVOL.balanceOf(bob.address);
+      expect(volBalanceAfter - volBalanceBefore).to.be.eq(bidSize);
+      expect(balanceBeforeBob - balanceAfterBob).to.be.approximately(
+        bidAmountZCHF,
+        bidAmountZCHF / 100n
+      );
+      expect(
+        balanceAfterChallenger - balanceBeforeChallenger
+      ).to.be.approximately(bidAmountZCHF, bidAmountZCHF / 100n);
+
+      bidAmountZCHF = bidAmountZCHF * 2n;
+      await zchf.transfer(alice.address, bidAmountZCHF);
+      await expect(
+        mintingHub
+          .connect(alice)
+          .bid(challengeNumber, challenge.size * 2n, true)
+      ).to.be.emit(mintingHub, "PostPonedReturn");
+    });
+  });
+  describe("challenge clone", () => {
     it("should return 0 price when the launch is expired", async () => {
       challengeAmount = initialCollateralClone / 2;
       let fchallengeAmount = floatToDec18(challengeAmount);
@@ -747,7 +896,7 @@ describe("Position Tests", () => {
       let challengerAddress = challenge.challenger;
       let positionsAddress = challenge.position;
       // await mockXCHF.connect(alice).mint(alice.address, floatToDec18(bidSize));
-      
+
       // console.log("Challenging challenge " + challengeNumber + " at price " + price + " instead of " + liqPrice);
       // Challenging challenge 3 at price 24999903549382556050 instead of 25
       // const timestamp = await time.latest();
@@ -758,12 +907,26 @@ describe("Position Tests", () => {
       // console.log("Balance alice " + balanceBeforeAlice + " and bid size " + floatToDec18(bidSize) + " position collateral: " + await mockVOL.balanceOf(clonePositionAddr));
       let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
       let volBalanceBefore = await mockVOL.balanceOf(alice.address);
-      let tx = await mintingHub.connect(alice).bid(challengeNumber, floatToDec18(bidSize), false);
+      let tx = await mintingHub
+        .connect(alice)
+        .bid(challengeNumber, floatToDec18(bidSize), false);
       let price = await mintingHub.price(challengeNumber);
-      let bidAmountZCHF = price * floatToDec18(bidSize) / DECIMALS;
-      console.log("Expecting " + (floatToDec18(bidSize) * price / DECIMALS) + " and " + floatToDec18(bidSize));
-      await expect(tx).to.emit(mintingHub, "ChallengeSucceeded")
-          .withArgs(positionsAddress, challengeNumber, floatToDec18(bidSize) * price / DECIMALS, floatToDec18(bidSize), floatToDec18(bidSize));
+      let bidAmountZCHF = (price * floatToDec18(bidSize)) / DECIMALS;
+      console.log(
+        "Expecting " +
+          (floatToDec18(bidSize) * price) / DECIMALS +
+          " and " +
+          floatToDec18(bidSize)
+      );
+      await expect(tx)
+        .to.emit(mintingHub, "ChallengeSucceeded")
+        .withArgs(
+          positionsAddress,
+          challengeNumber,
+          (floatToDec18(bidSize) * price) / DECIMALS,
+          floatToDec18(bidSize),
+          floatToDec18(bidSize)
+        );
       let balanceAfterChallenger = await zchf.balanceOf(challengerAddress);
       let balanceAfterAlice = await zchf.balanceOf(alice.address);
       let volBalanceAfter = await mockVOL.balanceOf(alice.address);
@@ -774,7 +937,14 @@ describe("Position Tests", () => {
       );
       await evm_increaseTime(86400);
       let price2 = await mintingHub.price(challengeNumber);
-      console.log("Challenging challenge " + challengeNumber + " at price " + price2 + " instead of " + liqPrice);
+      console.log(
+        "Challenging challenge " +
+          challengeNumber +
+          " at price " +
+          price2 +
+          " instead of " +
+          liqPrice
+      );
       // Challenging challenge 3 at price 24999903549382556050 instead of 25
       await expect(
         mintingHub.bid(challengeNumber, floatToDec18(bidSize), false)
@@ -785,72 +955,6 @@ describe("Position Tests", () => {
       let tx = mintingHub.connect(bob).bid(42, floatToDec18(42), false);
       await expect(tx).to.be.revertedWithPanic();
     });
-/*     it("bid on successful challenge", async () => {
-      challengeAmount = initialCollateralClone / 2;
-      let fchallengeAmount = floatToDec18(challengeAmount);
-      let price = await clonePositionContract.price();
-      await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      let tx = await mintingHub.launchChallenge(
-        clonePositionAddr,
-        fchallengeAmount,
-        price
-      );
-      challengeNumber++;
-      let challenge = await mintingHub.challenges(challengeNumber);
-      let position = await ethers.getContractAt(
-        "Position",
-        challenge.position,
-        bob
-      );
-      let challengeData = await position.challengeData(0);
-      await evm_increaseTime(challengeData.phase1 + challengeData.phase2 / 2n);
-      let liquidationPrice = await position.price();
-      let auctionPrice = await mintingHub.price(challengeNumber);
-      expect(auctionPrice).to.be.approximately(
-        liquidationPrice / 2n,
-        auctionPrice / 100n
-      );
-      let bidSize = floatToDec18(challengeAmount / 4);
-
-      await mockVOL.mint(challenge.position, floatToDec18(challengeAmount / 2));
-      let availableCollateral = await mockVOL.balanceOf(challenge.position);
-      expect(availableCollateral).to.be.above(bidSize);
-
-      // bob sends a bid
-      let bidAmountZCHF = (auctionPrice * bidSize) / DECIMALS;
-      let challengerAddress = (await mintingHub.challenges(challengeNumber))[0];
-      await zchf.transfer(bob.address, bidAmountZCHF);
-      let balanceBeforeBob = await zchf.balanceOf(bob.address);
-      let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
-      let volBalanceBefore = await mockVOL.balanceOf(bob.address);
-      tx = await mintingHub.connect(bob).bid(challengeNumber, bidSize, false);
-      await expect(tx)
-        .to.emit(mintingHub, "ChallengeSucceeded")
-        .emit(zchf, "Profit");
-
-      // AssertionError: expected 6249710648148108150 to equal 6249855324074034075.
-      //.withArgs(challenge[2], challengeNumber, bidAmountZCHF, bidSize, bidSize);
-
-      let balanceAfterChallenger = await zchf.balanceOf(challengerAddress);
-      let balanceAfterBob = await zchf.balanceOf(bob.address);
-      let volBalanceAfter = await mockVOL.balanceOf(bob.address);
-      expect(balanceBeforeBob - balanceAfterBob).to.be.approximately(
-        bidAmountZCHF,
-        bidAmountZCHF / 100n
-      );
-      expect(
-        balanceAfterChallenger - balanceBeforeChallenger
-      ).to.be.approximately(bidAmountZCHF / 50n, bidAmountZCHF / 5000n);
-      expect(volBalanceAfter - volBalanceBefore).to.be.eq(bidSize);
-
-      bidAmountZCHF = bidAmountZCHF * 2n;
-      await zchf.transfer(alice.address, bidAmountZCHF);
-      await expect(
-        mintingHub
-          .connect(alice)
-          .bid(challengeNumber, challenge.size * 2n, true)
-      ).to.be.emit(mintingHub, "PostPonedReturn");
-    }); */
     it("should revert notify challenge succeed call from non hub", async () => {
       await expect(
         positionContract.notifyChallengeSucceeded(owner.address, 100)
