@@ -131,7 +131,7 @@ contract MintingHub {
         uint32 _reservePPM
     ) public returns (address) {
         require(_annualInterestPPM <= 1000000);
-        require(_reservePPM <= 1000000);
+        require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);
         require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
         require(_initialCollateral >= _minCollateral, "must start with min col");
         require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
