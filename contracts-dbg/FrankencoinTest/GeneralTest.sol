@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import "../../contracts/test/Strings.sol";
 import "../../contracts/test/TestToken.sol";
-import "../../contracts/IERC20.sol";
+import "../../contracts/interface/IERC20.sol";
 import "../../contracts/Equity.sol";
-import "../../contracts/IReserve.sol";
-import "../../contracts/IFrankencoin.sol";
-import "../../contracts/Ownable.sol";
+import "../../contracts/interface/IReserve.sol";
+import "../../contracts/interface/IFrankencoin.sol";
+import "../../contracts/utils/Ownable.sol";
 import "../../contracts/Position.sol";
-import "../../contracts/IPosition.sol";
+import "../../contracts/interface/IPosition.sol";
 import "../../contracts/MintingHub.sol";
 import "../../contracts/PositionFactory.sol";
 import "../../contracts/StablecoinBridge.sol";

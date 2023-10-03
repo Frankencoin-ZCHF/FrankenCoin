@@ -162,7 +162,7 @@ contract MintingHub {
      * @notice Clones an existing position and immediately tries to mint the specified amount using the given collateral.
      * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
-    function clonePosition(
+    function clone(
         address position,
         uint256 _initialCollateral,
         uint256 _initialMint,
