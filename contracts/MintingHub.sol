@@ -193,7 +193,7 @@ contract MintingHub {
      * @param expectedPrice      position.price() to guard against the minter fruntrunning with a price change
      * @return index of the challenge in challenge-array
      */
-    function launchChallenge(
+    function challenge(
         address _positionAddr,
         uint256 _collateralAmount,
         uint256 expectedPrice
@@ -220,41 +220,41 @@ contract MintingHub {
      * @param postponeCollateralReturn To postpone the return of the collateral to the challenger. Usually false.
      */
     function bid(uint32 _challengeNumber, uint256 size, bool postponeCollateralReturn) external {
-        Challenge memory challenge = challenges[_challengeNumber];
-        (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData(challenge.start);
-        size = challenge.size < size ? challenge.size : size; // cannot bid for more than the size of the challenge
+        Challenge memory _challenge = challenges[_challengeNumber];
+        (uint256 liqPrice, uint64 phase1, uint64 phase2) = _challenge.position.challengeData(_challenge.start);
+        size = _challenge.size < size ? _challenge.size : size; // cannot bid for more than the size of the challenge
 
-        if (block.timestamp <= challenge.start + phase1) {
-            _avertChallenge(challenge, _challengeNumber, liqPrice, size);
-            emit ChallengeAverted(address(challenge.position), _challengeNumber, size);
+        if (block.timestamp <= _challenge.start + phase1) {
+            _avertChallenge(_challenge, _challengeNumber, liqPrice, size);
+            emit ChallengeAverted(address(_challenge.position), _challengeNumber, size);
         } else {
-            _returnChallengerCollateral(challenge, _challengeNumber, size, postponeCollateralReturn);
+            _returnChallengerCollateral(_challenge, _challengeNumber, size, postponeCollateralReturn);
             (uint256 transferredCollateral, uint256 offer) = _finishChallenge(
-                challenge,
+                _challenge,
                 liqPrice,
                 phase1,
                 phase2,
                 size
             );
-            emit ChallengeSucceeded(address(challenge.position), _challengeNumber, offer, transferredCollateral, size);
+            emit ChallengeSucceeded(address(_challenge.position), _challengeNumber, offer, transferredCollateral, size);
         }
     }
 
     function _finishChallenge(
-        Challenge memory challenge,
+        Challenge memory _challenge,
         uint256 liqPrice,
         uint64 phase1,
         uint64 phase2,
         uint256 size
     ) internal returns (uint256, uint256) {
         // Repayments depend on what was actually minted, whereas bids depend on the available collateral
-        (address owner, uint256 collateral, uint256 repayment, uint32 reservePPM) = challenge
+        (address owner, uint256 collateral, uint256 repayment, uint32 reservePPM) = _challenge
             .position
             .notifyChallengeSucceeded(msg.sender, size);
 
         // No overflow possible thanks to invariant (col * price <= limit * 10**18)
         // enforced in Position.setPrice and knowing that collateral <= col.
-        uint256 offer = (_calculatePrice(challenge.start + phase1, phase2, liqPrice) * collateral) / 10 ** 18;
+        uint256 offer = (_calculatePrice(_challenge.start + phase1, phase2, liqPrice) * collateral) / 10 ** 18;
         zchf.transferFrom(msg.sender, address(this), offer); // get money from bidder
         uint256 reward = (offer * CHALLENGER_REWARD) / 1000_000;
         uint256 fundsNeeded = reward + repayment;
@@ -264,25 +264,25 @@ contract MintingHub {
         } else if (offer < fundsNeeded) {
             zchf.notifyLoss(fundsNeeded - offer); // ensure we have enough to pay everything
         }
-        zchf.transfer(challenge.challenger, reward); // pay out the challenger reward
+        zchf.transfer(_challenge.challenger, reward); // pay out the challenger reward
         zchf.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part
         return (collateral, offer);
     }
 
-    function _avertChallenge(Challenge memory challenge, uint32 number, uint256 liqPrice, uint256 size) internal {
-        require(block.timestamp != challenge.start); // do not allow to avert the challenge in the same transaction, see CS-ZCHF-037
-        if (msg.sender == challenge.challenger) {
+    function _avertChallenge(Challenge memory _challenge, uint32 number, uint256 liqPrice, uint256 size) internal {
+        require(block.timestamp != _challenge.start); // do not allow to avert the challenge in the same transaction, see CS-ZCHF-037
+        if (msg.sender == _challenge.challenger) {
             // allow challenger to cancel challenge without paying themselves
         } else {
-            zchf.transferFrom(msg.sender, challenge.challenger, (size * liqPrice) / (10 ** 18));
+            zchf.transferFrom(msg.sender, _challenge.challenger, (size * liqPrice) / (10 ** 18));
         }
 
-        challenge.position.notifyChallengeAverted(size);
-        challenge.position.collateral().transfer(msg.sender, size);
-        if (size < challenge.size) {
-            challenges[number].size = challenge.size - size;
+        _challenge.position.notifyChallengeAverted(size);
+        _challenge.position.collateral().transfer(msg.sender, size);
+        if (size < _challenge.size) {
+            challenges[number].size = _challenge.size - size;
         } else {
-            require(size == challenge.size);
+            require(size == _challenge.size);
             delete challenges[number];
         }
     }
@@ -291,13 +291,13 @@ contract MintingHub {
      * @notice Returns 'amount' of the collateral to the challenger and reduces or deletes the relevant challenge.
      */
     function _returnChallengerCollateral(
-        Challenge memory challenge,
+        Challenge memory _challenge,
         uint32 number,
         uint256 amount,
         bool postpone
     ) internal {
-        _returnCollateral(challenge.position.collateral(), challenge.challenger, amount, postpone);
-        if (challenge.size == amount) {
+        _returnCollateral(_challenge.position.collateral(), _challenge.challenger, amount, postpone);
+        if (_challenge.size == amount) {
             // bid on full amount
             delete challenges[number];
         } else {
@@ -328,12 +328,12 @@ contract MintingHub {
      * raw collateral amount always yields a price with 36 digits, or 18 digits after dividing by 10**18 again.
      */
     function price(uint32 challengeNumber) public view returns (uint256) {
-        Challenge memory challenge = challenges[challengeNumber];
-        if (challenge.challenger == address(0x0)) {
+        Challenge memory _challenge = challenges[challengeNumber];
+        if (_challenge.challenger == address(0x0)) {
             return 0;
         } else {
-            (uint256 liqPrice, uint64 phase1, uint64 phase2) = challenge.position.challengeData(challenge.start);
-            return _calculatePrice(challenge.start + phase1, phase2, liqPrice);
+            (uint256 liqPrice, uint64 phase1, uint64 phase2) = _challenge.position.challengeData(_challenge.start);
+            return _calculatePrice(_challenge.start + phase1, phase2, liqPrice);
         }
     }
 

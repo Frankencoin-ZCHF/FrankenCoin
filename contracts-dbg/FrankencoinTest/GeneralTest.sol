@@ -15,7 +15,6 @@ import "../../contracts/PositionFactory.sol";
 import "../../contracts/StablecoinBridge.sol";
 
 contract GeneralTest {
-
     MintingHub hub;
     StablecoinBridge swap;
 
@@ -26,52 +25,52 @@ contract GeneralTest {
     User alice;
     User bob;
 
-// Print value to the debugger output window
-event EvmPrint(string value);
-event EvmPrint(address value);
-event EvmPrint(uint256 value);
+    // Print value to the debugger output window
+    event EvmPrint(string value);
+    event EvmPrint(address value);
+    event EvmPrint(uint256 value);
 
-// Sets all subsequent outputs of the ADDRESS opcode to be the specified address
-event EvmSpoofAddressOpcode(address addr);
+    // Sets all subsequent outputs of the ADDRESS opcode to be the specified address
+    event EvmSpoofAddressOpcode(address addr);
 
-// Set tx.origin
-event EvmSpoofOriginOpcode(address addr);
+    // Set tx.origin
+    event EvmSpoofOriginOpcode(address addr);
 
-// Sets all subsequent outputs of the CALLER opcode to be the specified address
-event EvmSpoofCallerOpcode(address addr);
+    // Sets all subsequent outputs of the CALLER opcode to be the specified address
+    event EvmSpoofCallerOpcode(address addr);
 
-// Sets all subsequent calls' msg.sender to be the specified address
-event EvmSpoofMsgSender(address addr);
+    // Sets all subsequent calls' msg.sender to be the specified address
+    event EvmSpoofMsgSender(address addr);
 
-// Resets the effects of EvmSpoof*()
-event EvmUnspoof();
+    // Resets the effects of EvmSpoof*()
+    event EvmUnspoof();
 
-// Sets the value of block.timestamp
-// Call "emit EvmSetBlockTimestamp(0);" to revert back to the original
-event EvmSetBlockTimestamp(uint256 newTimeStamp);
+    // Sets the value of block.timestamp
+    // Call "emit EvmSetBlockTimestamp(0);" to revert back to the original
+    event EvmSetBlockTimestamp(uint256 newTimeStamp);
 
-// Sets the value of block.number
-// Call "emit EvmSetBlockNumber(0);" to revert back to the original
-event EvmSetBlockNumber(uint256 value);
+    // Sets the value of block.number
+    // Call "emit EvmSetBlockNumber(0);" to revert back to the original
+    event EvmSetBlockNumber(uint256 value);
 
-// Sets the value of block.difficulty
-// Call "emit EvmSetBlockDifficulty(0);" to revert back to the original
-event EvmSetBlockDifficulty(uint256 value);
+    // Sets the value of block.difficulty
+    // Call "emit EvmSetBlockDifficulty(0);" to revert back to the original
+    event EvmSetBlockDifficulty(uint256 value);
 
-// Sets the value of block.chainid
-// Call "emit EvmSetChainId(0);" to revert back to the original
-event EvmSetChainId(uint256 value);
+    // Sets the value of block.chainid
+    // Call "emit EvmSetChainId(0);" to revert back to the original
+    event EvmSetChainId(uint256 value);
 
-// Sets the ETH balance of an address
-event EvmSetBalance(address addr, uint256 ethBalance);
+    // Sets the ETH balance of an address
+    event EvmSetBalance(address addr, uint256 ethBalance);
 
-// Programmatically enable or disable forking to an external Ethereum RPC node
-event EvmSetForkUrl(string url);
-event EvmSetForkBlockNumber(uint256 blockNumber);
-event EvmStartFork();
-event EvmStopFork();
+    // Programmatically enable or disable forking to an external Ethereum RPC node
+    event EvmSetForkUrl(string url);
+    event EvmSetForkBlockNumber(uint256 blockNumber);
+    event EvmStartFork();
+    event EvmStopFork();
 
-    constructor(){
+    constructor() {
         zchf = new Frankencoin(864000);
         xchf = new TestToken("CryptoFranc", "XCHF", uint8(18));
         swap = new StablecoinBridge(address(xchf), address(zchf), 1_000_000 ether);
@@ -128,7 +127,7 @@ event EvmStopFork();
         alice.transferOwnership(pos, address(bob));
         uint256 bobbalance = zchf.balanceOf(address(bob));
         bob.mint(pos, 7);
-        require(zchf.balanceOf(address(bob))> bobbalance);
+        require(zchf.balanceOf(address(bob)) > bobbalance);
         bob.transferOwnership(pos, address(alice));
         alice.mint(pos, 0);
         alice.mint(pos, 100000 * (10 ** 18) - 8);
@@ -139,7 +138,7 @@ event EvmStopFork();
 
     function test05MintFail() public {
         address pos = initPosition();
-        emit EvmSetBlockTimestamp(block.timestamp +7 * 86_400 + 60);
+        emit EvmSetBlockTimestamp(block.timestamp + 7 * 86_400 + 60);
         // vm.expectRevert();
         bob.mint(pos, 1);
     }
@@ -186,17 +185,17 @@ event EvmStopFork();
     }
 
     function getChallenge(uint256 number) public view returns (uint256, uint256) {
-         (address challenger1, IPosition p1, uint256 size1, uint256 a1, address b1, uint256 bid1) = hub.challenges(number);
-         return (size1, bid1);
+        (address challenger1, IPosition p1, uint256 size1, uint256 a1, address b1, uint256 bid1) = hub.challenges(
+            number
+        );
+        return (size1, bid1);
     }
-
 }
 
 contract User {
-
     IFrankencoin zchf;
 
-    constructor(IFrankencoin zchf_){
+    constructor(IFrankencoin zchf_) {
         zchf = zchf_;
     }
 
@@ -224,7 +223,17 @@ contract User {
         col.mint(address(this), 1001);
         col.approve(address(hub), 1001);
         uint256 balanceBefore = zchf.balanceOf(address(this));
-        address pos = hub.openPosition(address(col), 100, 1001, 1000000 ether, 100 days, 1 days, 25000, 100 * (10 ** 36), 200000);
+        address pos = hub.openPosition(
+            address(col),
+            100,
+            1001,
+            1000000 ether,
+            100 days,
+            1 days,
+            25000,
+            100 * (10 ** 36),
+            200000
+        );
         require((balanceBefore - hub.OPENING_FEE()) == zchf.balanceOf(address(this)));
         Position(pos).adjust(0, 1001, 200 * (10 ** 36));
         Position(pos).adjustPrice(100 * (10 ** 36));
@@ -277,21 +286,29 @@ contract User {
         IPosition(pos).mint(address(this), amount);
         uint256 obtained = zchf.balanceOf(address(this)) - balanceBefore;
         uint256 usable = IPosition(pos).getUsableMint(amount, true);
-        require(obtained == usable, string(abi.encodePacked(Strings.toString(usable), " should be ", Strings.toString(obtained))));
+        require(
+            obtained == usable,
+            string(abi.encodePacked(Strings.toString(usable), " should be ", Strings.toString(obtained)))
+        );
         uint256 usableBeforeFee = IPosition(pos).getUsableMint(amount, false);
-        require(usable <= 100 || usableBeforeFee > usable, string(abi.encodePacked(Strings.toString(usableBeforeFee), " should be larger than ", Strings.toString(usable))));
+        require(
+            usable <= 100 || usableBeforeFee > usable,
+            string(
+                abi.encodePacked(Strings.toString(usableBeforeFee), " should be larger than ", Strings.toString(usable))
+            )
+        );
     }
 
     function challenge(MintingHub hub, address pos, uint256 size) public returns (uint256) {
         IERC20 col = IPosition(pos).collateral();
         col.approve(address(hub), size);
-        return hub.launchChallenge(pos, size, IPosition(pos).price());
+        return hub.challenge(pos, size, IPosition(pos).price());
     }
 
     function avertChallenge(MintingHub hub, StablecoinBridge swap, uint256 first) public {
         {
             (address challenger, IPosition p, uint256 size, uint256 a, address b, uint256 bid) = hub.challenges(first);
-            uint256 amount = size * p.price() / 10 ** 18;
+            uint256 amount = (size * p.price()) / 10 ** 18;
             obtainFrankencoins(swap, amount);
             hub.bid(first, amount, size); // avert challenge
         }
@@ -316,5 +333,4 @@ contract User {
     function restructure(address[] calldata helpers, address[] calldata addressesToWipe) public {
         Equity(address(zchf.reserve())).restructureCapTable(helpers, addressesToWipe);
     }
-
 }

@@ -283,7 +283,7 @@ describe("Position Tests", () => {
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await positionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      await mintingHub.launchChallenge(
+      await mintingHub.challenge(
         await positionContract.getAddress(),
         fchallengeAmount,
         price
@@ -586,7 +586,7 @@ describe("Position Tests", () => {
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await positionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      await mintingHub.launchChallenge(positionAddr, fchallengeAmount, price);
+      await mintingHub.challenge(positionAddr, fchallengeAmount, price);
       challengeNumber++;
       await expect(
         positionContract.reduceLimitForClone(0)
@@ -707,7 +707,7 @@ describe("Position Tests", () => {
     it("should revert challenging with zero collateral", async () => {
       let price = await positionContract.price();
       await expect(
-        mintingHub.launchChallenge(positionAddr, 0, price)
+        mintingHub.challenge(positionAddr, 0, price)
       ).to.be.revertedWithCustomError(positionContract, "ChallengeTooSmall");
     });
     it("should revert challenging for invalid position address", async () => {
@@ -715,7 +715,7 @@ describe("Position Tests", () => {
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await positionContract.price();
       await expect(
-        mintingHub.launchChallenge(owner.address, fchallengeAmount, price)
+        mintingHub.challenge(owner.address, fchallengeAmount, price)
       ).to.be.revertedWithCustomError(mintingHub, "InvalidPos");
     });
     it("should revert challenging with different position price", async () => {
@@ -723,7 +723,7 @@ describe("Position Tests", () => {
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await positionContract.price();
       await expect(
-        mintingHub.launchChallenge(positionAddr, fchallengeAmount, price + 100n)
+        mintingHub.challenge(positionAddr, fchallengeAmount, price + 100n)
       ).to.be.revertedWithCustomError(mintingHub, "UnexpectedPrice");
     });
     it("should revert challenging zero amount or less than minimal collateral", async () => {
@@ -731,10 +731,10 @@ describe("Position Tests", () => {
       await mockVOL.approve(await mintingHub.getAddress(), floatToDec18(0.1));
 
       await expect(
-        mintingHub.launchChallenge(positionAddr, 0, price)
+        mintingHub.challenge(positionAddr, 0, price)
       ).to.be.revertedWithCustomError(positionContract, "ChallengeTooSmall");
       await expect(
-        mintingHub.launchChallenge(positionAddr, floatToDec18(0.1), price)
+        mintingHub.challenge(positionAddr, floatToDec18(0.1), price)
       ).to.be.revertedWithCustomError(positionContract, "ChallengeTooSmall");
     });
     it("bid on challenged, flat sale, not expired position", async () => {
@@ -742,7 +742,7 @@ describe("Position Tests", () => {
       const fchallengeAmount = floatToDec18(challengeAmount);
       const price = await positionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      let tx = await mintingHub.launchChallenge(
+      let tx = await mintingHub.challenge(
         positionAddr,
         fchallengeAmount,
         price
@@ -791,7 +791,7 @@ describe("Position Tests", () => {
       const fchallengeAmount = floatToDec18(challengeAmount);
       const price = await positionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      let tx = await mintingHub.launchChallenge(
+      let tx = await mintingHub.challenge(
         positionAddr,
         fchallengeAmount,
         price
@@ -853,7 +853,7 @@ describe("Position Tests", () => {
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await clonePositionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      let tx = await mintingHub.launchChallenge(
+      let tx = await mintingHub.challenge(
         clonePositionAddr,
         fchallengeAmount,
         price
@@ -868,7 +868,7 @@ describe("Position Tests", () => {
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await clonePositionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      let tx = await mintingHub.launchChallenge(
+      let tx = await mintingHub.challenge(
         clonePositionAddr,
         fchallengeAmount,
         price
@@ -1011,7 +1011,7 @@ describe("Position Tests", () => {
       let fchallengeAmount = floatToDec18(challengeAmount);
       let price = await positionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      await mintingHub.launchChallenge(positionAddr, fchallengeAmount, price);
+      await mintingHub.challenge(positionAddr, fchallengeAmount, price);
       challengeNumber++;
       await expect(
         positionContract.adjustPrice(floatToDec18(1500))
@@ -1317,11 +1317,7 @@ describe("Position Tests", () => {
 
       let price = await clonePositionContract.price();
       await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      await mintingHub.launchChallenge(
-        clonePositionAddr,
-        fchallengeAmount,
-        price
-      );
+      await mintingHub.challenge(clonePositionAddr, fchallengeAmount, price);
       challengeNumber++;
     });
     it("should transfer loss amount from reserve to minting hub when notify loss", async () => {

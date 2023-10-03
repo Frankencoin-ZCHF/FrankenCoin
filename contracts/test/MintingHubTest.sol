@@ -249,7 +249,17 @@ contract User {
         col.mint(address(this), 1001);
         col.approve(address(hub), 1001);
         uint256 balanceBefore = zchf.balanceOf(address(this));
-        address pos = hub.openPositionOneWeek(address(col), 100, 1001, 1000000 ether, 100 days, 1 days, 25000, 100 * (10 ** 36), 200000);
+        address pos = hub.openPositionOneWeek(
+            address(col),
+            100,
+            1001,
+            1000000 ether,
+            100 days,
+            1 days,
+            25000,
+            100 * (10 ** 36),
+            200000
+        );
         require((balanceBefore - hub.OPENING_FEE()) == zchf.balanceOf(address(this)));
         Position(pos).adjust(0, 1001, 200 * (10 ** 36));
         Position(pos).adjustPrice(100 * (10 ** 36));
@@ -301,18 +311,23 @@ contract User {
         IPosition(pos).mint(address(this), amount);
         uint256 obtained = zchf.balanceOf(address(this)) - balanceBefore;
         uint256 usable = IPosition(pos).getUsableMint(amount, true);
-        require(obtained == usable, string(abi.encodePacked(Strings.toString(usable), " should be ", Strings.toString(obtained))));
+        require(
+            obtained == usable,
+            string(abi.encodePacked(Strings.toString(usable), " should be ", Strings.toString(obtained)))
+        );
         uint256 usableBeforeFee = IPosition(pos).getUsableMint(amount, false);
         require(
             usable <= 100 || usableBeforeFee > usable,
-            string(abi.encodePacked(Strings.toString(usableBeforeFee), " should be larger than ", Strings.toString(usable)))
+            string(
+                abi.encodePacked(Strings.toString(usableBeforeFee), " should be larger than ", Strings.toString(usable))
+            )
         );
     }
 
     function challenge(MintingHub hub, address pos, uint256 size) public returns (uint256) {
         IERC20 col = IPosition(pos).collateral();
         col.approve(address(hub), size);
-        return hub.launchChallenge(pos, size, IPosition(pos).price());
+        return hub.challenge(pos, size, IPosition(pos).price());
     }
 
     function avertChallenge(MintingHub hub, StablecoinBridge swap, uint256 first) public {
@@ -328,7 +343,7 @@ contract User {
     }
 
     function bid(MintingHub hub, uint256 number, uint256 amount) public {
-      /*   (, , uint256 size, , , ) = hub.challenges(number);
+        /*   (, , uint256 size, , , ) = hub.challenges(number);
         hub.bid(number, amount, size);
         require(hub.minBid(number) > amount); // min bid must increase */
     }
