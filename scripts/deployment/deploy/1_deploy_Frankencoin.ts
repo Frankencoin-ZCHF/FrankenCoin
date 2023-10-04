@@ -30,12 +30,12 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   let FC = await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
   console.log(
-    `Verify Frankencoin:\nnpx hardhat verify --network sepolia ${FC.address} ${minApplicationPeriod}`
+    `Verify Frankencoin:\nnpx hardhat verify --network sepolia ${await FC.getAddress()} ${minApplicationPeriod}`
   );
 
   let reserve = await FC.reserve();
   console.log(
-    `Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${FC.address}\n`
+    `Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${await FC.address()}\n`
   );
 };
 export default deploy;
