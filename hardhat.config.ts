@@ -31,7 +31,7 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    sepolia: {
+    /* sepolia: {
       url: "https://ethereum-sepolia.blockpi.network/v1/rpc/public",
       chainId: 11155111,
       gas: 50_000,
@@ -54,7 +54,7 @@ const config: HardhatUserConfig = {
       gasPrice: "auto",
       accounts: [pk],
       timeout: 50000,
-    },
+    }, */
   },
   namedAccounts: {
     deployer: {

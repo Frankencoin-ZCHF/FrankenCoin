@@ -18,6 +18,7 @@ describe("Position Tests", () => {
   let owner: HardhatEthersSigner;
   let alice: HardhatEthersSigner;
   let bob: HardhatEthersSigner;
+  let charles: HardhatEthersSigner;
 
   let zchf: Frankencoin;
   let mintingHub: MintingHub;
@@ -28,7 +29,7 @@ describe("Position Tests", () => {
   let limit: bigint;
 
   before(async () => {
-    [owner, alice, bob] = await ethers.getSigners();
+    [owner, alice, bob, charles] = await ethers.getSigners();
     // create contracts
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
     zchf = await frankenCoinFactory.deploy(10 * 86400);
@@ -780,8 +781,9 @@ describe("Position Tests", () => {
       challengeAmount = initialCollateralClone / 2;
       const fchallengeAmount = floatToDec18(challengeAmount);
       const price = await positionContract.price();
-      await mockVOL.approve(await mintingHub.getAddress(), fchallengeAmount);
-      let tx = await mintingHub.challenge(
+      await mockVOL.connect(charles).approve(await mintingHub.getAddress(), fchallengeAmount);
+      await mockVOL.connect(charles).mint(charles.address, fchallengeAmount);
+      let tx = await mintingHub.connect(charles).challenge(
         positionAddr,
         fchallengeAmount,
         price
@@ -826,7 +828,7 @@ describe("Position Tests", () => {
       );
       expect(
         balanceAfterChallenger - balanceBeforeChallenger
-      ).to.be.approximately(bidAmountZCHF, bidAmountZCHF / 100n);
+      ).to.be.approximately(bidAmountZCHF / 50n, bidAmountZCHF / 5000n);
 
       bidAmountZCHF = bidAmountZCHF * 2n;
       await zchf.transfer(alice.address, bidAmountZCHF);
@@ -895,19 +897,12 @@ describe("Position Tests", () => {
       await mockVOL.mint(clonePositionAddr, floatToDec18(bidSize)); // ensure there is something to bid on
       let balanceBeforeAlice = await zchf.balanceOf(alice.address);
       // console.log("Balance alice " + balanceBeforeAlice + " and bid size " + floatToDec18(bidSize) + " position collateral: " + await mockVOL.balanceOf(clonePositionAddr));
-      let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
+      // let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
       let volBalanceBefore = await mockVOL.balanceOf(alice.address);
       let tx = await mintingHub
         .connect(alice)
         .bid(challengeNumber, floatToDec18(bidSize), false);
       let price = await mintingHub.price(challengeNumber);
-      let bidAmountZCHF = (price * floatToDec18(bidSize)) / DECIMALS;
-      console.log(
-        "Expecting " +
-          (floatToDec18(bidSize) * price) / DECIMALS +
-          " and " +
-          floatToDec18(bidSize)
-      );
       await expect(tx)
         .to.emit(mintingHub, "ChallengeSucceeded")
         .withArgs(
@@ -917,8 +912,8 @@ describe("Position Tests", () => {
           floatToDec18(bidSize),
           floatToDec18(bidSize)
         );
-      let balanceAfterChallenger = await zchf.balanceOf(challengerAddress);
-      let balanceAfterAlice = await zchf.balanceOf(alice.address);
+      // let balanceAfterChallenger = await zchf.balanceOf(challengerAddress);
+      // let balanceAfterAlice = await zchf.balanceOf(alice.address);
       let volBalanceAfter = await mockVOL.balanceOf(alice.address);
       // expect(balanceBeforeAlice - balanceAfterAlice).to.be.eq(bidAmountZCHF);
       // expect(balanceAfterChallenger - balanceBeforeChallenger).to.be.eq(bidAmountZCHF);
@@ -926,16 +921,7 @@ describe("Position Tests", () => {
         floatToDec18(bidSize)
       );
       await evm_increaseTime(86400);
-      let price2 = await mintingHub.price(challengeNumber);
-      console.log(
-        "Challenging challenge " +
-          challengeNumber +
-          " at price " +
-          price2 +
-          " instead of " +
-          liqPrice
-      );
-      // Challenging challenge 3 at price 24999903549382556050 instead of 25
+      // Challenging challenge 3 at price 16666280864197424200 instead of 25
       await expect(
         mintingHub.bid(challengeNumber, floatToDec18(bidSize), false)
       ).to.be.emit(mintingHub, "ChallengeSucceeded");

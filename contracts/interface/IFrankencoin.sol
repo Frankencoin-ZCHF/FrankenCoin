@@ -35,5 +35,7 @@ interface IFrankencoin is IERC20 {
 
     function burnWithReserve(uint256 amountExcludingReserve, uint32 reservePPM) external returns (uint256);
 
-    function notifyLoss(uint256 amount) external;
+    function coverLoss(address source, uint256 amount) external;
+
+    function collectProfits(address source, uint256 _amount) external;
 }

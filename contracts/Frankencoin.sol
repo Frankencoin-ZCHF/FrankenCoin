@@ -205,7 +205,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
     /**
      * @notice Burn that amount without reclaiming the reserve, but freeing it up and thereby essentially donating it to the
-     * pool share holders. This can make sense in combination with 'notifyLoss', i.e. when it is the pool share
+     * pool share holders. This can make sense in combination with 'coverLoss', i.e. when it is the pool share
      * holders that bear the risk and depending on the outcome they make a profit or a loss.
      *
      * Design rule: Minters calling this method are only allowed to so for tokens amounts they previously minted with
@@ -220,11 +220,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         _burn(msg.sender, amount);
         uint256 reserveReduction = amount * reservePPM;
         if (reserveReduction > minterReserveE6) {
-            emit Profit(msg.sender, minterReserveE6, 0);
+            emit Profit(msg.sender, minterReserveE6 / 1000_000, 0);
             minterReserveE6 = 0; // should never happen, but we want robust behavior in case it does
         } else {
             minterReserveE6 -= reserveReduction;
-            emit Profit(msg.sender, reserveReduction, minterReserveE6);
+            emit Profit(msg.sender, reserveReduction / 1000_000, minterReserveE6 / 1000_000);
         }
     }
 
@@ -313,15 +313,20 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * the house only yielding 800'000 in the subsequent auction, there is a loss of 200'000 that needs to be covered
      * by the reserve.
      */
-    function notifyLoss(uint256 _amount) external override minterOnly {
+    function coverLoss(address source, uint256 _amount) external override minterOnly {
         uint256 reserveLeft = balanceOf(address(reserve));
         if (reserveLeft >= _amount) {
-            _transfer(address(reserve), msg.sender, _amount);
+            _transfer(address(reserve), source, _amount);
         } else {
-            _transfer(address(reserve), msg.sender, reserveLeft);
-            _mint(msg.sender, _amount - reserveLeft);
+            _transfer(address(reserve), source, reserveLeft);
+            _mint(source, _amount - reserveLeft);
         }
-        emit Loss(msg.sender, _amount, reserveLeft);
+        emit Loss(source, _amount, reserveLeft);
+    }
+
+    function collectProfits(address source, uint256 _amount) external override minterOnly {
+        _transfer(source, address(reserve), _amount);
+        emit Profit(source, _amount, minterReserveE6 / 1000_000);
     }
 
     /**

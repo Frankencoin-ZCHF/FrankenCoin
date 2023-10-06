@@ -231,8 +231,14 @@ describe("FrankenCoin", () => {
         zchf.burnFromWithReserve(owner.address, 0, 0)
       ).to.be.revertedWithCustomError(zchf, "NotMinter");
     });
-    it("should revert notifying loss from non minters", async () => {
-      await expect(zchf.notifyLoss(0)).to.be.revertedWithCustomError(
+    it("should revert covering loss from non minters", async () => {
+      await expect(zchf.coverLoss(owner.address, 0)).to.be.revertedWithCustomError(
+        zchf,
+        "NotMinter"
+      );
+    });
+    it("should revert collecting profits from non minters", async () => {
+      await expect(zchf.collectProfits(owner.address, 7)).to.be.revertedWithCustomError(
         zchf,
         "NotMinter"
       );

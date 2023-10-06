@@ -257,15 +257,26 @@ contract MintingHub {
         uint256 offer = (_calculatePrice(_challenge.start + phase1, phase2, liqPrice) * collateral) / 10 ** 18;
         zchf.transferFrom(msg.sender, address(this), offer); // get money from bidder
         uint256 reward = (offer * CHALLENGER_REWARD) / 1000_000;
-        uint256 fundsNeeded = reward + repayment;
-
-        if (offer > fundsNeeded) {
-            zchf.transfer(owner, offer - fundsNeeded);
-        } else if (offer < fundsNeeded) {
-            zchf.notifyLoss(fundsNeeded - offer); // ensure we have enough to pay everything
-        }
         zchf.transfer(_challenge.challenger, reward); // pay out the challenger reward
-        zchf.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part
+        uint256 fundsAvailable = offer - reward; // funds available after reward
+
+        // Example: available funds are 90, repayment is 50, reserve 20%. Then 20%*(90-50)=16 are collected as profits
+        // and the remaining 34 are sent to the position owner. If the position owner maxed out debt before the challenge
+        // started and the liquidation price was 100, they would be slightly better off as they would get away with 80
+        // instead of 40+36 = 76 in this example.
+        if (fundsAvailable > repayment) {
+            // The excess amount is distributed between the system and the owner using the reserve ratio
+            // At this point, we cannot rely on the liquidation price because the challenge might have been started as a
+            // response to an unreasonable increase of the liquidation price, such that we have to use this heuristic
+            // for excess fund distribution, which make position owners that maxed out their positions slightly better
+            // off in comparison to those who did not.
+            uint256 profits = reservePPM * (fundsAvailable - repayment) / 1000_000;
+            zchf.collectProfits(address(this), profits);
+            zchf.transfer(owner, fundsAvailable - repayment - profits);
+        } else if (fundsAvailable < repayment) {
+            zchf.coverLoss(address(this), repayment - fundsAvailable); // ensure we have enough to pay everything
+        }
+        zchf.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part, example: 50 ZCHF leading to 10 ZCHf in implicit profits
         return (collateral, offer);
     }
 
