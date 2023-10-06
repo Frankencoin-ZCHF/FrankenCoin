@@ -454,7 +454,7 @@ contract Position is Ownable, IPosition, MathUtil {
         if (colBal < _size) {
             _size = colBal;
         }
-        uint256 repayment = _mulDiv(minted, _size, colBal);
+        uint256 repayment = colBal == 0 ? 0 : minted * _size / colBal; // for enormous colBal, this could be rounded to 0, which is ok
         _notifyRepaid(repayment); // we assume the caller takes care of the actual repayment
 
         // Give time for additional challenges before the owner can mint again. In particular,

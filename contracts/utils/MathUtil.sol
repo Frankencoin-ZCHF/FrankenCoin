@@ -23,25 +23,11 @@ contract MathUtil {
         uint256 diff;
         do {
             uint256 powX3 = _mulD18(_mulD18(x, x), x);
-            uint256 xnew = _mulDiv(x, (powX3 + 2 * _v), (2 * powX3 + _v));
+            uint256 xnew = x * (powX3 + 2 * _v) / (2 * powX3 + _v);
             diff = xnew > x ? xnew - x : x - xnew;
             x = xnew;
         } while (diff > THRESH_DEC18);
         return x;
-    }
-
-    /**
-     * Divides and multiplies, with divisor > 0.
-     */
-    function _mulDiv(uint256 x, uint256 factor, uint256 divisor) internal pure returns (uint256) {
-        if (factor == 0) {
-            return 0;
-        } else if (type(uint256).max / factor > x) {
-            return (x * factor) / divisor;
-        } else {
-            // divide first to avoid overflow
-            return x > factor ? (x / divisor) * factor : (factor / divisor) * x;
-        }
     }
 
     function _mulD18(uint256 _a, uint256 _b) internal pure returns (uint256) {
