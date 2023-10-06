@@ -456,11 +456,12 @@ contract Position is Ownable, IPosition, MathUtil {
         }
         uint256 repayment = _mulDiv(minted, _size, colBal);
         _notifyRepaid(repayment); // we assume the caller takes care of the actual repayment
-        _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
 
         // Give time for additional challenges before the owner can mint again. In particular,
         // the owner might have added collateral only seconds before the challenge ended, preventing a close.
         _restrictMinting(3 days);
+        
+        _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
 
         return (owner, _size, repayment, reserveContribution);
     }
