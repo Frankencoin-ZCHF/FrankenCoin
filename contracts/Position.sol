@@ -442,8 +442,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * Everything else is assumed to be handled by the hub.
      *
      * @param _bidder   address of the bidder that receives the collateral
-     * @param _size     size of the collateral bid for (dec 18)
-     * @return (position owner, effective challenge size in ZCHF, repaid amount, reserve ppm)
+     * @param _size     amount of the collateral bid for
+     * @return (position owner, effective challenge size in ZCHF, amount to be repaid, reserve ppm)
      */
     function notifyChallengeSucceeded(
         address _bidder,

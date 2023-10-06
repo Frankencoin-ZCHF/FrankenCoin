@@ -189,7 +189,7 @@ contract MintingHub {
     /**
      * @notice Launch a challenge (Dutch auction) on a position
      * @param _positionAddr      address of the position we want to challenge
-     * @param _collateralAmount  size of the collateral we want to challenge (dec 18)
+     * @param _collateralAmount  amount of the collateral we want to challenge
      * @param expectedPrice      position.price() to guard against the minter fruntrunning with a price change
      * @return index of the challenge in challenge-array
      */
