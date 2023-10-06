@@ -12,7 +12,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 //export default config;
-let pk: string | SigningKey = <string>process.env.PK;
+const DEFAULT_PK = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // do not send ETH to this account
+
+let pk: string | SigningKey = <string>process.env.PK == null ? DEFAULT_PK : <string>process.env.PK;
 let etherscanapikey: string = <string>process.env.APIKEY;
 
 const config: HardhatUserConfig = {
@@ -31,7 +33,7 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    /* sepolia: {
+    sepolia: {
       url: "https://ethereum-sepolia.blockpi.network/v1/rpc/public",
       chainId: 11155111,
       gas: 50_000,
@@ -54,7 +56,7 @@ const config: HardhatUserConfig = {
       gasPrice: "auto",
       accounts: [pk],
       timeout: 50000,
-    }, */
+    },
   },
   namedAccounts: {
     deployer: {
