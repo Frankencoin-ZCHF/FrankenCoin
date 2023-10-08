@@ -187,6 +187,13 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     }
 
     /**
+     * @notice How long the holder already held onto their average FPS in seconds.
+     */
+    function holdingDuration(address holder) public view returns (uint256) {
+        return (_anchorTime() - voteAnchor[holder]) >> TIME_RESOLUTION_BITS;
+    }
+
+    /**
      * @notice Total number of votes in the system.
      */
     function totalVotes() public view returns (uint256) {
