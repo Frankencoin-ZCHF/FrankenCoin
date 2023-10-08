@@ -183,7 +183,7 @@
             {
                 "indexed": true,
                 "internalType": "address",
-                "name": "minter",
+                "name": "reportingMinter",
                 "type": "address"
             },
             {

@@ -45,7 +45,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
     event MinterDenied(address indexed minter, string message);
     event Loss(address indexed reportingMinter, uint256 amount, uint256 reserve);
-    event Profit(address indexed minter, uint256 amount, uint256 reserve);
+    event Profit(address indexed reportingMinter, uint256 amount, uint256 reserve);
 
     error PeriodTooShort();
     error FeeTooLow();
@@ -104,7 +104,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         if (_applicationPeriod < MIN_APPLICATION_PERIOD) revert PeriodTooShort();
         if (_applicationFee < MIN_FEE) revert FeeTooLow();
         if (minters[_minter] != 0) revert AlreadyRegistered();
-        _transfer(msg.sender, address(reserve), _applicationFee);
+        _collectProfits(address(this), msg.sender, _applicationFee);
         minters[_minter] = block.timestamp + _applicationPeriod;
         emit MinterApplied(_minter, _applicationPeriod, _applicationFee, _message);
     }
@@ -183,6 +183,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         _mint(_target, usableMint);
         _mint(address(reserve), _amount - usableMint); // rest goes to equity as reserves or as fees
         minterReserveE6 += _amount * _reservePPM;
+        emit Profit(msg.sender, (_feesPPM * _amount) / 1000_000, minterReserveE6);
     }
 
     function mint(address _target, uint256 _amount) external override minterOnly {
@@ -325,8 +326,12 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     function collectProfits(address source, uint256 _amount) external override minterOnly {
+        _collectProfits(msg.sender, source, _amount);
+    }
+
+    function _collectProfits(address minter, address source, uint256 _amount) internal {
         _transfer(source, address(reserve), _amount);
-        emit Profit(source, _amount, minterReserveE6 / 1000_000);
+        emit Profit(minter, _amount, minterReserveE6 / 1000_000);
     }
 
     /**

@@ -151,7 +151,7 @@ contract MintingHub {
             )
         );
         zchf.registerPosition(address(pos));
-        zchf.transferFrom(msg.sender, address(zchf.reserve()), OPENING_FEE);
+        zchf.collectProfits(msg.sender, OPENING_FEE);
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
         emit PositionOpened(msg.sender, address(pos), address(zchf), _collateralAddress, _liqPrice);
