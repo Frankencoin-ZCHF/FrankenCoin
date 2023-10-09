@@ -35,7 +35,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   let reserve = await FC.reserve();
   console.log(
-    `Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${await FC.address()}\n`
+    `Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${await FC.getAddress()}\n`
   );
 };
 export default deploy;
