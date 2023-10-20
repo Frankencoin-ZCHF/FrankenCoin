@@ -44,8 +44,8 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
     event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
     event MinterDenied(address indexed minter, string message);
-    event Loss(address indexed reportingMinter, uint256 amount, uint256 reserve);
-    event Profit(address indexed reportingMinter, uint256 amount, uint256 reserve);
+    event Loss(address indexed reportingMinter, uint256 amount);
+    event Profit(address indexed reportingMinter, uint256 amount);
 
     error PeriodTooShort();
     error FeeTooLow();
@@ -183,7 +183,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         _mint(_target, usableMint);
         _mint(address(reserve), _amount - usableMint); // rest goes to equity as reserves or as fees
         minterReserveE6 += _amount * _reservePPM;
-        emit Profit(msg.sender, (_feesPPM * _amount) / 1000_000, minterReserveE6);
+        emit Profit(msg.sender, (_feesPPM * _amount) / 1000_000);
     }
 
     function mint(address _target, uint256 _amount) external override minterOnly {
@@ -221,11 +221,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
         _burn(msg.sender, amount);
         uint256 reserveReduction = amount * reservePPM;
         if (reserveReduction > minterReserveE6) {
-            emit Profit(msg.sender, minterReserveE6 / 1000_000, 0);
+            emit Profit(msg.sender, minterReserveE6 / 1000_000);
             minterReserveE6 = 0; // should never happen, but we want robust behavior in case it does
         } else {
             minterReserveE6 -= reserveReduction;
-            emit Profit(msg.sender, reserveReduction / 1000_000, minterReserveE6 / 1000_000);
+            emit Profit(msg.sender, reserveReduction / 1000_000);
         }
     }
 
@@ -322,7 +322,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
             _transfer(address(reserve), source, reserveLeft);
             _mint(source, _amount - reserveLeft);
         }
-        emit Loss(source, _amount, reserveLeft);
+        emit Loss(source, _amount);
     }
 
     function collectProfits(address source, uint256 _amount) external override minterOnly {
@@ -331,7 +331,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
     function _collectProfits(address minter, address source, uint256 _amount) internal {
         _transfer(source, address(reserve), _amount);
-        emit Profit(minter, _amount, minterReserveE6 / 1000_000);
+        emit Profit(minter, _amount);
     }
 
     /**
