@@ -20,7 +20,6 @@
     "type": "mock",
     "chainName": "Local",
     "chainId": 31337,
-    "collateralTknAddr": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "minCollateral": 5,
     "initialCollateral": 25,
     "initialLimitZCHF": 40000,

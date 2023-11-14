@@ -15,6 +15,6 @@
         "name": "Frankencoin",
         "chainId": 1,
         "chainName" : "Ethereum",
-        "minApplicationPeriod" : 864000
+        "minApplicationPeriod" : 1209600
     }
 ]
