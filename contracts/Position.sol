@@ -88,6 +88,9 @@ contract Position is Ownable, IPosition, MathUtil {
 
     /**
      * @notice Always pay interest for at least four weeks.
+     *
+     * This is to prevent an attacker from consuming all of the limit without paying anything.
+     * The min interest duration could be removed in future versions that have a better limit enforcing mechanism.
      */
     uint256 private constant MIN_INTEREST_DURATION = 4 weeks;
 
@@ -301,7 +304,10 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function calculateCurrentFee() public view returns (uint32) {
-        uint256 exp = expiration;
+        return calculateFee(expiration);
+    }
+
+    function calculateFee(uint256 exp) public view returns (uint32) {
         uint256 time = block.timestamp < start ? start : block.timestamp;
         uint256 timePassed = time >= exp - MIN_INTEREST_DURATION ? MIN_INTEREST_DURATION : exp - time;
         // Time resolution is in the range of minutes for typical interest rates.
