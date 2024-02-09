@@ -13,9 +13,10 @@ dotenv.config();
 
 //export default config;
 const DEFAULT_PK = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // do not send ETH to this account
+const DEFAULT_API_KEY = "5U72KF899MIGKQP64MHFSCINXV1V3W27J3";
 
 let pk: string | SigningKey = <string>process.env.PK == null ? DEFAULT_PK : <string>process.env.PK;
-let etherscanapikey: string = <string>process.env.APIKEY;
+let etherscanapikey: string = <string>process.env.APIKEY == null ? DEFAULT_API_KEY : <string>process.env.APIKEY;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -42,9 +43,9 @@ const config: HardhatUserConfig = {
       timeout: 50_000,
     },
     mainnet: {
-      url: "https://ethereum.publicnode.com",
+      url: "https://mainnet.infura.io/v3/2920e698d02f40ca8724daa8a19a91e7",
       chainId: 1,
-      gas: 50_000,
+      gas: "auto",
       gasPrice: "auto",
       accounts: [pk],
       timeout: 50_000,

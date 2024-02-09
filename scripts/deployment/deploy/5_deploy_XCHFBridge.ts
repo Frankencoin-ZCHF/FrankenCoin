@@ -42,7 +42,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   } else {
     console.log("Deploying XCHF-Token Bridge");
     xchfAddress = "0xb4272071ecadd69d933adcd19ca99fe80664fc08";
-    applicationMsg = "XCHF Token Bridge";
+    applicationMsg = "XCHF Bridge";
   }
   const ZCHFDeployment = await get("Frankencoin");
   let zchfContract = await ethers.getContractAt(
