@@ -1,9 +1,4 @@
-import { ethers } from "hardhat";
 import * as helper from "@nomicfoundation/hardhat-network-helpers";
-
-export const latestBlockNumber = async () => {
-  return await ethers.provider.getBlockNumber();
-};
 
 export const evm_increaseTime = async (seconds: number | bigint) => {
   await helper.time.increase(seconds);

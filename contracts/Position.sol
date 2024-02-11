@@ -48,7 +48,12 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * @notice How much can be minted at most.
      */
-    uint256 public limit;
+    uint256 public immutable limit;
+
+    /**
+     * @notice The total amount minted across all positions. Only has a meaningful value for the parent position.
+     */
+    uint256 private totalMinted;
 
     /**
      * @notice Timestamp when minting can start and the position no longer denied.
@@ -87,14 +92,6 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 public immutable override minimumCollateral;
 
     /**
-     * @notice Always pay interest for at least four weeks.
-     *
-     * This is to prevent an attacker from consuming all of the limit without paying anything.
-     * The min interest duration could be removed in future versions that have a better limit enforcing mechanism.
-     */
-    uint256 private constant MIN_INTEREST_DURATION = 4 weeks;
-
-    /**
      * @notice The interest in parts per million per year that is deducted when minting Frankencoins.
      * To be paid upfront.
      */
@@ -105,13 +102,13 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     uint32 public immutable reserveContribution;
 
-    event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
+    event MintingUpdate(uint256 collateral, uint256 price, uint256 minted);
     event PositionDenied(address indexed sender, string message); // emitted if closed by governance
 
-    error InsufficientCollateral();
+    error InsufficientCollateral(uint256 available, uint256 required);
     error TooLate();
     error RepaidTooMuch(uint256 excess);
-    error LimitExceeded();
+    error LimitExceeded(uint256 amountLeft, uint256 triedToMint);
     error ChallengeTooSmall();
     error Expired();
     error Hot();
@@ -174,7 +171,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
     /**
      * @notice Method to initialize a freshly created clone. It is the responsibility of the creator to make sure this is only
-     * called once and to call reduceLimitForClone on the original position before initializing the clone.
+     * called once and to call checkClonable on the original position before initializing the clone.
      */
     function initializeClone(
         address owner,
@@ -183,36 +180,18 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 _initialMint,
         uint256 expirationTime
     ) external onlyHub {
-        if (_coll < minimumCollateral) revert InsufficientCollateral();
-        uint256 impliedPrice = (_initialMint * ONE_DEC18) / _coll;
-        _initialMint = (impliedPrice * _coll) / ONE_DEC18; // to cancel potential rounding errors
-        if (impliedPrice > _price) revert InsufficientCollateral();
+        if (_coll < minimumCollateral) revert InsufficientCollateral(_coll, minimumCollateral);
         _setOwner(owner);
-        limit = _initialMint;
         expiration = expirationTime;
-        _setPrice(impliedPrice);
+        _setPrice(_price);
         _mint(owner, _initialMint, _coll);
     }
 
-    function limitForClones() public view returns (uint256) {
-        uint256 backedLimit = (_collateralBalance() * price) / ONE_DEC18;
-        if (backedLimit >= limit) {
-            return 0;
-        } else {
-            // due to invariants, this is always below (limit - minted)
-            return limit - backedLimit;
-        }
-    }
-
     /**
-     * @notice Adjust this position's limit to allow a clone to mint its own Frankencoins.
-     * Invariant: global limit stays the same.
-     *
-     * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
+     * @notice Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
      */
-    function reduceLimitForClone(uint256 mint_) external noChallenge noCooldown alive onlyHub {
-        if (mint_ > limitForClones()) revert LimitExceeded();
-        limit -= mint_;
+    function checkClonable() external view noChallenge noCooldown alive onlyHub returns (uint256){
+        return price;
     }
 
     /**
@@ -257,6 +236,7 @@ contract Position is Ownable, IPosition, MathUtil {
         // Must be called after collateral deposit, but before withdrawal
         if (newMinted < minted) {
             zchf.burnFromWithReserve(msg.sender, minted - newMinted, reserveContribution);
+            Position(original).notifyRepaid(minted - newMinted);
             minted = newMinted;
         }
         if (newCollateral < colbal) {
@@ -283,7 +263,7 @@ contract Position is Ownable, IPosition, MathUtil {
             _checkCollateral(_collateralBalance(), newPrice);
         }
         _setPrice(newPrice);
-        emit MintingUpdate(_collateralBalance(), price, minted, limit);
+        emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
     function _setPrice(uint256 newPrice) internal {
@@ -309,18 +289,39 @@ contract Position is Ownable, IPosition, MathUtil {
 
     function calculateFee(uint256 exp) public view returns (uint32) {
         uint256 time = block.timestamp < start ? start : block.timestamp;
-        uint256 timePassed = time >= exp - MIN_INTEREST_DURATION ? MIN_INTEREST_DURATION : exp - time;
+        uint256 timeLeft = time >= exp ? 0 : exp - time;
         // Time resolution is in the range of minutes for typical interest rates.
-        return uint32((timePassed * annualInterestPPM) / 365 days);
+        return uint32((timeLeft * annualInterestPPM) / 365 days);
     }
 
     function _mint(address target, uint256 amount, uint256 collateral_) internal {
-        if (minted + amount > limit) revert LimitExceeded();
         zchf.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
+        Position(original).notifyMinted(amount);
         minted += amount;
 
         _checkCollateral(collateral_, price);
-        emit MintingUpdate(_collateralBalance(), price, minted, limit);
+        emit MintingUpdate(_collateralBalance(), price, minted);
+    }
+
+    function notifyMinted(uint256 amount) public {
+        require(zchf.getPositionParent(msg.sender) == hub);
+        totalMinted += amount;
+        if (totalMinted > limit){
+            revert LimitExceeded(limit + amount - totalMinted, amount);
+        }
+    }
+
+    function notifyRepaid(uint256 amount) public {
+        require(zchf.getPositionParent(msg.sender) == hub);
+        totalMinted -= amount;
+    }
+
+    function available() external view returns (uint256){
+        if (address(this) == original){
+            return limit - totalMinted;
+        } else {
+            return Position(original).available();
+        }
     }
 
     function _restrictMinting(uint256 period) internal {
@@ -347,7 +348,7 @@ contract Position is Ownable, IPosition, MathUtil {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
         uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
-        emit MintingUpdate(_collateralBalance(), price, minted, limit);
+        emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
     function _notifyRepaid(uint256 amount) internal {
@@ -379,7 +380,7 @@ contract Position is Ownable, IPosition, MathUtil {
         if (block.timestamp <= cooldown && !isClosed()) revert Hot();
         uint256 balance = _withdrawCollateral(target, amount);
         _checkCollateral(balance, price);
-        if (balance < minimumCollateral && balance > 0) revert InsufficientCollateral(); // Prevent dust amounts
+        if (balance < minimumCollateral && balance > 0) revert InsufficientCollateral(balance, minimumCollateral); // Prevent dust amounts
     }
 
     function _withdrawCollateral(address target, uint256 amount) internal returns (uint256) {
@@ -389,7 +390,7 @@ contract Position is Ownable, IPosition, MathUtil {
         }
         uint256 balance = _collateralBalance();
         _considerClose(balance);
-        emit MintingUpdate(balance, price, minted, limit);
+        emit MintingUpdate(balance, price, minted);
         return balance;
     }
 
@@ -408,7 +409,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * variables change in an adverse way.
      */
     function _checkCollateral(uint256 collateralReserve, uint256 atPrice) internal view {
-        if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral();
+        if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral(collateralReserve, minted * ONE_DEC18 / atPrice);
     }
 
     /**

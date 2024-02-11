@@ -166,14 +166,17 @@ contract MintingHub {
         address position,
         uint256 _initialCollateral,
         uint256 _initialMint,
+        uint256 _price,
         uint256 expiration
     ) public validPos(position) returns (address) {
         IPosition existing = IPosition(position);
-        require(expiration <= IPosition(existing.original()).expiration());
-        existing.reduceLimitForClone(_initialMint);
-        address pos = POSITION_FACTORY.clonePosition(position);
+        IPosition original = IPosition(existing.original());
+        require(expiration <= original.expiration());
+        uint256 referencePrice = existing.checkClonable();
+        require(_price <= referencePrice);
+        address pos = POSITION_FACTORY.clonePosition(address(original));
         zchf.registerPosition(pos);
-        IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
+        IPosition(pos).initializeClone(msg.sender, _price, _initialCollateral, _initialMint, expiration);
         existing.collateral().transferFrom(msg.sender, pos, _initialCollateral);
 
         emit PositionOpened(
