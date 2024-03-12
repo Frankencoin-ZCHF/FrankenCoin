@@ -28,7 +28,7 @@ contract FPSWrapper is ERC20 {
         super._mint(msg.sender, amount);
     }
 
-    function unwrap(uint256 amount) internal virtual {
+    function unwrap(uint256 amount) public {
         super._burn(msg.sender, amount);
         fps.transfer(msg.sender, amount);
     }
@@ -45,7 +45,7 @@ contract FPSWrapper is ERC20 {
      * 90 days such that the average holding period of this contract stays
      * below that duration.
      */
-    function unwrapAndSell(uint256 amount) internal virtual {
+    function unwrapAndSell(uint256 amount) public {
         super._burn(msg.sender, amount);
         fps.redeem(msg.sender, amount);
     }
