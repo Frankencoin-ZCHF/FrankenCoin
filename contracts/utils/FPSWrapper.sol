@@ -24,13 +24,38 @@ contract FPSWrapper is ERC20 {
 
     // requires allowance
     function wrap(uint256 amount) public {
+        depositFor(msg.sender, amount);
+    }
+
+    /**
+     * Same function as in openzeppelin ERC20Wrapper
+     * @dev Allow a user to deposit underlying tokens and mint the corresponding number of wrapped tokens.
+     */
+    function depositFor(address account, uint256 amount) public virtual returns (bool) {
         fps.transferFrom(msg.sender, address(this), amount);
-        super._mint(msg.sender, amount);
+        super._mint(account, amount);
+        return true;
     }
 
     function unwrap(uint256 amount) public {
+        withdrawTo(msg.sender, amount);
+    }
+
+    /**
+     * Same function as in openzeppelin ERC20Wrapper
+     * @dev Allow a user to burn a number of wrapped tokens and withdraw the corresponding number of underlying tokens.
+     */
+    function withdrawTo(address account, uint256 amount) public virtual returns (bool) {
         super._burn(msg.sender, amount);
-        fps.transfer(msg.sender, amount);
+        fps.transfer(account, amount);
+        return true;
+    }
+
+    /**
+     * @dev Returns the address of the underlying ERC-20 token that is being wrapped.
+     */
+    function underlying() public view returns (IERC20) {
+        return fps;
     }
 
     /**

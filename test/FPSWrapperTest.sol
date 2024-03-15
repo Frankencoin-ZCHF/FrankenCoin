@@ -60,4 +60,15 @@ contract FPSWrapperTest is Test {
         vm.expectRevert();
         wfps.halveHoldingDuration(new address[](0));
     }
+
+    function testDepositAndWithdraw() public {
+        fps.approve(address(wfps), 10 ether);
+        wfps.depositFor(address(0x1), 1 ether);
+        require(wfps.balanceOf(address(0x1)) == 1 ether);
+        vm.expectRevert();
+        wfps.withdrawTo(address(0x1), 1 ether);
+        wfps.wrap(1 ether);
+        wfps.withdrawTo(address(0x2), 1 ether);
+        require(wfps.underlying().balanceOf(address(0x2)) == 1 ether);
+    }
 }
