@@ -170,7 +170,7 @@ contract MintingHub {
     ) public validPos(position) returns (address) {
         IPosition existing = IPosition(position);
         require(expiration <= IPosition(existing.original()).expiration());
-        existing.reduceLimitForClone(_initialMint);
+        existing.assertCloneable();
         address pos = POSITION_FACTORY.clonePosition(position);
         zchf.registerPosition(pos);
         IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);

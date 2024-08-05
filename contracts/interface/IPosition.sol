@@ -19,7 +19,7 @@ interface IPosition {
 
     function price() external returns (uint256);
 
-    function reduceLimitForClone(uint256 amount) external;
+    function assertCloneable() external;
 
     function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expiration) external;
 
@@ -28,6 +28,8 @@ interface IPosition {
     function mint(address target, uint256 amount) external;
 
     function minted() external returns (uint256);
+
+    function availableForMinting() external returns (uint256);
 
     function reserveContribution() external returns (uint32);
 
