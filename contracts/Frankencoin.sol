@@ -274,7 +274,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
     /**
      * @notice Calculates the reserve attributable to someone who minted the given amount with the given reserve requirement.
-     * Under normal circumstances, this is just the reserver requirement multiplied by the amount. However, after a
+     * Under normal circumstances, this is just the reserve requirement multiplied by the amount. However, after a
      * severe loss of capital that burned into the minter's reserve, this can also be less than that.
      */
     function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) public view returns (uint256) {
@@ -293,10 +293,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * @notice Calculate the amount that is freed when returning amountExcludingReserve given a reserve ratio of reservePPM,
      * taking into account potential losses. Example values in the comments.
      */
-    function calculateFreedAmount(
-        uint256 amountExcludingReserve /* 41 */,
-        uint32 reservePPM /* 20% */
-    ) public view returns (uint256) {
+    function calculateFreedAmount(uint256 amountExcludingReserve /* 41 */, uint32 reservePPM /* 20% */) public view returns (uint256) {
         uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
         uint256 minterReserve_ = minterReserve(); // 20
         uint256 adjustedReservePPM = currentReserve < minterReserve_
