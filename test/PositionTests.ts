@@ -309,7 +309,7 @@ describe("Position Tests", () => {
       fGlblZCHBalanceOfCloner = await zchf.balanceOf(alice.address);
 
       let expiration = await positionContract.expiration();
-      let availableLimit = await positionContract.limitForClones();
+      let availableLimit = await positionContract.availableForClones();
       expect(availableLimit).to.be.equal(0);
       let tx = mintingHub
         .connect(alice)
@@ -325,7 +325,7 @@ describe("Position Tests", () => {
         .withdrawCollateral(owner.address, floatToDec18(100)); // make sure it works the next time
       let colbal2 = await mockVOL.balanceOf(positionAddr);
       expect(dec18ToFloat(colbal1)).to.be.equal(dec18ToFloat(colbal2) + 100n);
-      let availableLimit2 = await positionContract.limitForClones();
+      let availableLimit2 = await positionContract.availableForMinting();
       expect(availableLimit2).to.be.greaterThan(availableLimit);
     });
     it("get loan", async () => {
@@ -438,20 +438,17 @@ describe("Position Tests", () => {
       expect(col).to.be.equal(floatToDec18(initialCollateralClone));
     });
     it("global mint limit retained", async () => {
-      let fLimit0 = await clonePositionContract.limit();
-      let fLimit1 = await positionContract.limit();
-      let glblLimit = dec18ToFloat(fLimit0 + fLimit1);
-      if (glblLimit != BigInt(limit)) {
-        console.log("new global limit =", glblLimit);
-        console.log("original global limit =", limit);
+      let fLimit0 = await clonePositionContract.availableForMinting();
+      let fLimit1 = await positionContract.availableForClones();
+      if (fLimit0 != fLimit1) {
+        console.log("new global limit =", fLimit0);
+        console.log("original global limit =", fLimit1);
       }
-      expect(glblLimit).to.be.equal(limit);
+      expect(fLimit0).to.be.equal(fLimit1);
 
-      let minted = await positionContract.minted();
-      let avaiable = fLimit1 - minted;
       await expect(
-        positionContract.mint(owner.address, avaiable + 100n)
-      ).to.be.revertedWithCustomError(positionContract, "LimitExceeded");
+        clonePositionContract.mint(owner.address, fLimit0 + 100n)
+      ).to.be.revertedWithCustomError(clonePositionContract, "LimitExceeded");
     });
     it("correct fees charged", async () => {
       // fees:
@@ -477,20 +474,28 @@ describe("Position Tests", () => {
       let fInitialCollateralClone = floatToDec18(initialCollateralClone);
       let fZCHFAmount = floatToDec18(1000);
       // send some collateral and ZCHF to the cloner
-      await mockVOL.transfer(alice.address, fInitialCollateralClone);
+      await mockVOL.mint(alice.address, fInitialCollateralClone * 1000n);
       await zchf.transfer(alice.address, fZCHFAmount);
 
       await mockVOL
         .connect(alice)
-        .approve(await mintingHub.getAddress(), fInitialCollateralClone);
+        .approve(await mintingHub.getAddress(), fInitialCollateralClone * 1000n);
       fGlblZCHBalanceOfCloner = await zchf.balanceOf(alice.address);
       let tx = mintingHub
         .connect(alice)
         .clone(positionAddr, fInitialCollateralClone, initialLimit, 0);
       await expect(tx).to.be.revertedWithCustomError(
         positionContract,
-        "LimitExceeded"
+        "InsufficientCollateral"
       );
+
+      let tx2 = mintingHub
+      .connect(alice)
+      .clone(positionAddr, fInitialCollateralClone * 1000n, initialLimit, 0);
+    await expect(tx2).to.be.revertedWithCustomError(
+      positionContract,
+      "LimitExceeded"
+    );
     });
     it("repay position", async () => {
       let cloneOwner = await clonePositionContract.connect(alice).owner();
@@ -553,11 +558,15 @@ describe("Position Tests", () => {
         owner
       );
       await expect(
-        positionContract.reduceLimitForClone(0)
+        positionContract.assertCloneable()
       ).to.be.revertedWithCustomError(positionContract, "Hot");
       await evm_increaseTime(86400 * 7);
+      await positionContract.assertCloneable();
       await expect(
-        positionContract.reduceLimitForClone(0)
+        positionContract.notifyCloneMint(0)
+      ).to.be.revertedWithCustomError(positionContract, "NotHub");
+      await expect(
+        positionContract.notifyCloneRepaid(0)
       ).to.be.revertedWithCustomError(positionContract, "NotHub");
     });
     it("should revert cloning when it is expired", async () => async () => {
@@ -580,7 +589,7 @@ describe("Position Tests", () => {
       await mintingHub.challenge(positionAddr, fchallengeAmount, price);
       challengeNumber++;
       await expect(
-        positionContract.reduceLimitForClone(0)
+        positionContract.assertCloneable()
       ).to.be.revertedWithCustomError(positionContract, "Challenged");
     });
   });
@@ -741,10 +750,10 @@ describe("Position Tests", () => {
       challengeNumber++;
       const challenge = await mintingHub.challenges(challengeNumber);
       const challengerAddress = challenge.challenger;
-      const challengeData = await positionContract.challengeData(0);
+      const challengeData = await positionContract.challengeData();
 
       // Flat sale
-      await evm_increaseTime(challengeData.phase1 / 2n);
+      await evm_increaseTime(challengeData.phase / 2n);
       let liqPrice = await mintingHub.price(challengeNumber);
       expect(liqPrice).to.be.equal(price);
 
@@ -790,10 +799,10 @@ describe("Position Tests", () => {
       );
       challengeNumber++;
       const challenge = await mintingHub.challenges(challengeNumber);
-      const challengeData = await positionContract.challengeData(0);
+      const challengeData = await positionContract.challengeData();
 
       // Auction sale
-      await evm_increaseTime(challengeData.phase1 + challengeData.phase2 / 2n);
+      await evm_increaseTime(challengeData.phase + challengeData.phase / 2n);
       let liqPrice = await positionContract.price();
       let auctionPrice = await mintingHub.price(challengeNumber);
       expect(auctionPrice).to.be.approximately(
@@ -899,6 +908,8 @@ describe("Position Tests", () => {
       // console.log("Balance alice " + balanceBeforeAlice + " and bid size " + floatToDec18(bidSize) + " position collateral: " + await mockVOL.balanceOf(clonePositionAddr));
       // let balanceBeforeChallenger = await zchf.balanceOf(challengerAddress);
       let volBalanceBefore = await mockVOL.balanceOf(alice.address);
+      const challengeData = await positionContract.challengeData();
+      await evm_increaseTime(challengeData.phase);
       let tx = await mintingHub
         .connect(alice)
         .bid(challengeNumber, floatToDec18(bidSize), false);
@@ -1275,7 +1286,8 @@ describe("Position Tests", () => {
 
       await evm_increaseTime(86400 * 7);
       await mockVOL.approve(await mintingHub.getAddress(), initialLimit);
-      const cloneLimit = await positionContract.limitForClones();
+      await positionContract.assertCloneable();
+      const cloneLimit = await positionContract.availableForClones();
       tx = await mintingHub.clone(
         positionAddr,
         fInitialCollateral,

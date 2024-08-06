@@ -1,12 +1,26 @@
 [
     {
-        "inputs": [
+        "inputs": [],
+        "name": "assertCloneable",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "availableForMinting",
+        "outputs": [
             {
                 "internalType": "uint256",
-                "name": "challengeStart",
+                "name": "",
                 "type": "uint256"
             }
         ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "challengeData",
         "outputs": [
             {
@@ -16,12 +30,7 @@
             },
             {
                 "internalType": "uint64",
-                "name": "phase1",
-                "type": "uint64"
-            },
-            {
-                "internalType": "uint64",
-                "name": "phase2",
+                "name": "phase",
                 "type": "uint64"
             }
         ],
@@ -82,6 +91,29 @@
                 "type": "uint256"
             }
         ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "buyer",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "collAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "proceeds",
+                "type": "uint256"
+            }
+        ],
+        "name": "forceSale",
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -274,19 +306,6 @@
                 "type": "uint256"
             }
         ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "reduceLimitForClone",
-        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },

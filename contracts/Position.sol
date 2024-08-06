@@ -48,7 +48,7 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * @notice How much can still be minted. This variable is only used in the parent position.
      */
-    uint256 public available;
+    uint256 private available;
 
     /**
      * @notice Timestamp when minting can start and the position no longer denied.
@@ -172,7 +172,7 @@ contract Position is Ownable, IPosition, MathUtil {
         cooldown = start;
         expiration = start + _duration;
         available = _initialLimit;
-        _setPrice(_liqPrice);
+        _setPrice(_liqPrice, _initialLimit);
     }
 
     /**
@@ -192,7 +192,7 @@ contract Position is Ownable, IPosition, MathUtil {
         if (impliedPrice > _price) revert InsufficientCollateral();
         _setOwner(owner);
         expiration = expirationTime;
-        _setPrice(impliedPrice);
+        _setPrice(impliedPrice, _initialMint);
         _mint(owner, _initialMint, _coll);
     }
 
@@ -207,11 +207,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function notifyCloneMint(uint256 mint_) external {
         if (zchf.getPositionParent(msg.sender) != hub) revert NotHub();
-        if (mint_ > available){
-            revert LimitExceeded();
-        } else {
-            available -= mint_;
-        }
+        available -= mint_;
     }
 
     function notifyCloneRepaid(uint256 repaid_) external {
@@ -219,8 +215,26 @@ contract Position is Ownable, IPosition, MathUtil {
         available += repaid_;
     }
 
-    function availableForMinting() external view returns (uint256){
-        return Position(original).available();
+    function availableForClones() external view returns (uint256) {
+        // reserve capacity for the original to the extent the owner provided collateral
+        uint256 potential = _collateralBalance() * price / ONE_DEC18;
+        if (minted + available <= potential){
+            return 0;
+        } else {
+            return minted + available - potential;
+        }
+    }
+
+    function limit() public view returns (uint256) {
+        return availableForMinting() + minted;
+    }
+
+    function availableForMinting() public view returns (uint256){
+        if (address(this) == original){
+            return available;
+        } else {
+            return Position(original).availableForClones();
+        }
     }
 
     /**
@@ -290,12 +304,12 @@ contract Position is Ownable, IPosition, MathUtil {
         } else {
             _checkCollateral(_collateralBalance(), newPrice);
         }
-        _setPrice(newPrice);
+        _setPrice(newPrice, minted + availableForMinting());
         emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
-    function _setPrice(uint256 newPrice) internal {
-        require(newPrice * minimumCollateral <= (minted + Position(original).available()) * ONE_DEC18); // sanity check
+    function _setPrice(uint256 newPrice, uint256 bounds) internal {
+        require(newPrice * minimumCollateral <= bounds * ONE_DEC18); // sanity check
         price = newPrice;
     }
 
@@ -320,6 +334,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function _mint(address target, uint256 amount, uint256 collateral_) internal {
+        if (amount > availableForMinting()) revert LimitExceeded();
         Position(original).notifyCloneMint(amount);
         zchf.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
         minted += amount;
@@ -360,7 +375,7 @@ contract Position is Ownable, IPosition, MathUtil {
         minted -= amount;
     }
 
-    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired returns (uint256) {
+    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired {
         if (minted > 0){
             uint256 availableReserve = zchf.calculateAssignedReserve(minted, reserveContribution);
             if (proceeds + availableReserve >= minted){

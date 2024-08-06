@@ -399,8 +399,7 @@ contract MintingHub {
 
     function buyExpiredCollateral(IPosition pos, uint256 amount) external {
         uint256 costs = _expiredPurchasePrice(pos, pos.expiration()) * amount / 10**18;
-        uint256 proceeds = pos.forceSale(msg.sender, amount, costs);
-        zchf.transferFrom(msg.sender, pos.owner(), proceeds);
+        pos.forceSale(msg.sender, amount, costs);
     }
 
 }
