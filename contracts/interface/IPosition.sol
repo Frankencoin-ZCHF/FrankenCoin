@@ -35,12 +35,14 @@ interface IPosition {
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
-    function challengeData(uint256 challengeStart) external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2);
+    function challengeData() external view returns (uint256 liqPrice, uint64 phase);
 
     function notifyChallengeStarted(uint256 size) external;
 
     function notifyChallengeAverted(uint256 size) external;
 
     function notifyChallengeSucceeded(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);
+
+    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external returns (uint256);
 
 }

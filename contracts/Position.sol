@@ -111,12 +111,18 @@ contract Position is Ownable, IPosition, MathUtil {
     error LimitExceeded();
     error ChallengeTooSmall();
     error Expired();
+    error Alive();
     error Hot();
     error Challenged();
     error NotHub();
 
     modifier alive() {
         if (block.timestamp >= expiration) revert Expired();
+        _;
+    }
+
+    modifier expired() {
+        if (block.timestamp < expiration) revert Alive();
         _;
     }
 
@@ -354,6 +360,31 @@ contract Position is Ownable, IPosition, MathUtil {
         minted -= amount;
     }
 
+    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired returns (uint256) {
+        if (minted > 0){
+            uint256 availableReserve = zchf.calculateAssignedReserve(minted, reserveContribution);
+            if (proceeds + availableReserve >= minted){
+                // we can repay everything
+                uint256 returnedReserve = zchf.burnFromWithReserve(buyer, minted, reserveContribution);
+                assert(returnedReserve == availableReserve);
+                _notifyRepaid(minted);
+                zchf.transferFrom(buyer, owner, proceeds + returnedReserve - minted);
+            } else {
+                // we can only repay a part
+                zchf.transferFrom(buyer, address(this), proceeds);
+                uint256 repaid = zchf.burnWithReserve(proceeds, reserveContribution);
+                _notifyRepaid(repaid);
+                // nothing to return to the owner
+            }
+        } else {
+            // wire funds directly to owner
+            zchf.transferFrom(buyer, owner, proceeds);
+        }
+        // send collateral to buyer
+        collateral.transfer(buyer, collAmount);
+        _considerClose(_collateralBalance());
+    }
+
     /**
      * @notice Withdraw any ERC20 token that might have ended up on this address.
      * Withdrawing collateral is subject to the same restrictions as withdrawCollateral(...).
@@ -415,9 +446,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * Both phases are usually of equal duration, but near expiration, phase one is adjusted such that
      * it cannot last beyond the expiration date of the position.
      */
-    function challengeData(uint256 challengeStart) external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2) {
-        uint256 timeToExpiration = challengeStart >= expiration ? 0 : expiration - challengeStart;
-        return (price, uint64(_min(timeToExpiration, challengePeriod)), challengePeriod);
+    function challengeData() external view returns (uint256 liqPrice, uint64 phase) {
+        return (price, challengePeriod);
     }
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
@@ -470,4 +500,5 @@ contract Position is Ownable, IPosition, MathUtil {
 
         return (owner, _size, repayment, reserveContribution);
     }
+
 }

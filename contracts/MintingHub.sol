@@ -25,6 +25,8 @@ contract MintingHub {
      */
     uint32 public constant CHALLENGER_REWARD = 20000; // 2%
 
+    uint32 public constant EXPIRED_PRICE_FACTOR = 10;
+
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
 
     IFrankencoin public immutable zchf; // currency
@@ -221,10 +223,10 @@ contract MintingHub {
      */
     function bid(uint32 _challengeNumber, uint256 size, bool postponeCollateralReturn) external {
         Challenge memory _challenge = challenges[_challengeNumber];
-        (uint256 liqPrice, uint64 phase1, uint64 phase2) = _challenge.position.challengeData(_challenge.start);
+        (uint256 liqPrice, uint64 phase) = _challenge.position.challengeData();
         size = _challenge.size < size ? _challenge.size : size; // cannot bid for more than the size of the challenge
 
-        if (block.timestamp <= _challenge.start + phase1) {
+        if (block.timestamp <= _challenge.start + phase) {
             _avertChallenge(_challenge, _challengeNumber, liqPrice, size);
             emit ChallengeAverted(address(_challenge.position), _challengeNumber, size);
         } else {
@@ -232,8 +234,7 @@ contract MintingHub {
             (uint256 transferredCollateral, uint256 offer) = _finishChallenge(
                 _challenge,
                 liqPrice,
-                phase1,
-                phase2,
+                phase,
                 size
             );
             emit ChallengeSucceeded(address(_challenge.position), _challengeNumber, offer, transferredCollateral, size);
@@ -243,8 +244,7 @@ contract MintingHub {
     function _finishChallenge(
         Challenge memory _challenge,
         uint256 liqPrice,
-        uint64 phase1,
-        uint64 phase2,
+        uint64 phase,
         uint256 size
     ) internal returns (uint256, uint256) {
         // Repayments depend on what was actually minted, whereas bids depend on the available collateral
@@ -254,7 +254,7 @@ contract MintingHub {
 
         // No overflow possible thanks to invariant (col * price <= limit * 10**18)
         // enforced in Position.setPrice and knowing that collateral <= col.
-        uint256 offer = (_calculatePrice(_challenge.start + phase1, phase2, liqPrice) * collateral) / 10 ** 18;
+        uint256 offer = (_calculatePrice(_challenge.start + phase, phase, liqPrice) * collateral) / 10 ** 18;
         zchf.transferFrom(msg.sender, address(this), offer); // get money from bidder
         uint256 reward = (offer * CHALLENGER_REWARD) / 1000_000;
         zchf.transfer(_challenge.challenger, reward); // pay out the challenger reward
@@ -343,8 +343,8 @@ contract MintingHub {
         if (_challenge.challenger == address(0x0)) {
             return 0;
         } else {
-            (uint256 liqPrice, uint64 phase1, uint64 phase2) = _challenge.position.challengeData(_challenge.start);
-            return _calculatePrice(_challenge.start + phase1, phase2, liqPrice);
+            (uint256 liqPrice, uint64 phase) = _challenge.position.challengeData();
+            return _calculatePrice(_challenge.start + phase, phase, liqPrice);
         }
     }
 
@@ -366,4 +366,41 @@ contract MintingHub {
             collateral.transfer(recipient, amount); // return the challenger's collateral
         }
     }
+
+    function expiredPurchasePrice(IPosition pos) external returns (uint256) {
+        uint256 expiration = pos.expiration();
+        if (block.timestamp <= expiration){
+            return EXPIRED_PRICE_FACTOR * pos.price();
+        } else {
+            return _expiredPurchasePrice(pos, expiration);
+        }
+    }
+
+    function _expiredPurchasePrice(IPosition pos, uint256 expiration) internal returns (uint256) {
+        uint256 liqprice = pos.price();
+        if (block.timestamp <= expiration){
+            return EXPIRED_PRICE_FACTOR * liqprice;
+        } else {
+            uint256 challengePeriod = pos.challengePeriod();
+            uint256 timePassed = block.timestamp - expiration;
+            if (timePassed < challengePeriod){
+                uint256 timeLeft = challengePeriod - timePassed;
+                return liqprice + (EXPIRED_PRICE_FACTOR - 1) * liqprice / challengePeriod * timeLeft;
+            } else if (timePassed < 2*challengePeriod){
+                uint256 timeLeft = 2*challengePeriod - timePassed;
+                return liqprice / challengePeriod * timeLeft;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    error PositionAlive(address pos, uint256 exp, uint256 time);
+
+    function buyExpiredCollateral(IPosition pos, uint256 amount) external {
+        uint256 costs = _expiredPurchasePrice(pos, pos.expiration()) * amount / 10**18;
+        uint256 proceeds = pos.forceSale(msg.sender, amount, costs);
+        zchf.transferFrom(msg.sender, pos.owner(), proceeds);
+    }
+
 }
