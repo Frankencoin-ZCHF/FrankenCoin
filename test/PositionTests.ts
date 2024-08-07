@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { floatToDec18, dec18ToFloat, DECIMALS } from "../scripts/math";
 import { ethers } from "hardhat";
-import { evm_increaseTime } from "./helper";
+import { evm_increaseTime, evm_increaseTimeTo } from "./helper";
 import {
   Equity,
   Frankencoin,
@@ -10,7 +10,9 @@ import {
   StablecoinBridge,
   TestToken,
 } from "../typechain";
+import { PositionExpirationTest } from "../typechain/test";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 let mockXCHF;
 
@@ -1329,74 +1331,67 @@ describe("Position Tests", () => {
     });
   });
 
-  /* describe("native position test", () => {
+  describe("position expiration auction", () => {
 
-        let mintingHubTest: MintingHubTest;
+        let test: PositionExpirationTest;
+        let pos: Position;
 
         it("initialize", async () => {
-            let fpsSupply = await equity.totalSupply();
-            mintingHubTest = await createContract("MintingHubTest", [await mintingHub.getAddress(), bridge.address]);
-            await mintingHubTest.initiateEquity();
-            await mintingHubTest.initiatePosition();
+          const factory = await ethers.getContractFactory("PositionExpirationTest");
+          test = await factory.deploy(
+            await mintingHub.getAddress()
+          );
+          await zchf.transfer(await test.getAddress(), 1000n * 10n**18n);
+          let tx = await test.openPositionFor(await alice.getAddress());
+          let rc = await tx.wait();
+          const topic = "0x591ede549d7e337ac63249acd2d7849532b0a686377bbf0b0cca6c8abd9552f2"; // PositionOpened
+          const log = rc?.logs.find((x) => x.topics.indexOf(topic) >= 0);
+          let positionAddr = "0x" + log?.topics[2].substring(26);
+          pos = await ethers.getContractAt("Position", positionAddr, owner);
         });
 
-        it("deny position", async () => {
-            await mintingHubTest.initiateAndDenyPosition();
+        it("should be possible to borrow after starting", async () => {
+          await evm_increaseTimeTo(await pos.start());
+          let balanceBefore = await zchf.balanceOf(await alice.getAddress());
+          let mintedAmount = 50000n * 10n**18n;
+          let tx = await pos.connect(alice).mint(await alice.getAddress(), mintedAmount);
+          await tx.wait();
+          let balanceAfter = await zchf.balanceOf(await alice.getAddress());
+          expect(balanceAfter - balanceBefore).to.be.eq(39794550000000000000000n);
+          expect(await pos.minted()).to.be.eq(mintedAmount);
+          await zchf.transfer(await test.getAddress(), 39794550000000000000000n);
+          await zchf.transfer(await test.getAddress(), 100000000000000000000000n);
         });
 
-        it("fails when minting too early", async () => {
-            let tx = mintingHubTest.letAliceMint();
-            await expect(tx).to.be.reverted;
+        it("force sale should fail before expiration", async () => {
+          let tx = test.forceBuy(await pos.getAddress(), 1n);
+          expect(tx).to.be.revertedWithCustomError(pos, "Alive");
         });
 
-        it("allows minting after 2 days", async () => {
-            await evm_increaseTime(7 * 86_400 + 60);
-            await mintingHubTest.letAliceMint();
+        it("force sale should succeed after expiration", async () => {
+          await evm_increaseTimeTo(await pos.expiration());
+          let tx = await test.forceBuy(await pos.getAddress(), 1n);
         });
 
-        it("supports withdrawals", async () => {
-            await mintingHubTest.testWithdraw();
+        it("price should reach liq price after one period", async () => {
+          await evm_increaseTimeTo(await pos.expiration() + await pos.challengePeriod());
+          let expPrice = await mintingHub.expiredPurchasePrice(await pos.getAddress());
+          let liqPrice = await pos.price();
+          expect(liqPrice).to.be.eq(expPrice);
         });
 
-        it("fails when someone else mints", async () => {
-            let tx = mintingHubTest.letBobMint();
-            await expect(tx).to.be.reverted;
+        it("force sale at liquidation price should succeed in cleaning up position", async () => {
+          let tx = await test.forceBuy(await pos.getAddress(), 35n);
+          expect(await pos.minted()).to.be.eq(0n);
+          expect(await pos.isClosed()).to.be.false; // still collateral left
         });
 
-        it("perform challenge", async () => {
-            await mintingHubTest.letBobChallengePart1();
-            await evm_mine_blocks(1);
-            await mintingHubTest.letBobChallengePart2();
-            let tx = mintingHubTest.endChallenges();
-            await expect(tx).to.be.revertedWith('period has not ended');
-
-            await evm_increaseTime(1 * 86_400 + 60);
-            await mintingHubTest.endChallenges();
+        it("get rest for cheap and close position", async () => {
+          await evm_increaseTimeTo(await pos.expiration() + 2n * await pos.challengePeriod());
+          let tx = await test.forceBuy(await pos.getAddress(), 60n);
+          expect(await pos.minted()).to.be.eq(0n);
+          expect(await pos.isClosed()).to.be.true; // still collateral left
         });
 
-        it("excessive challenge", async () => {
-            await mintingHubTest.testExcessiveChallengePart1();
-            await evm_mine_blocks(1)
-            await mintingHubTest.testExcessiveChallengePart2();
-        });
-
-        it("restructuring", async () => {
-            await mintingHubTest.restructure();
-        });
-
-        it("challenge expired position", async () => {
-            await evm_increaseTime(100 * 86_400);
-            await mintingHubTest.challengeExpiredPosition();
-
-            await evm_increaseTime(86_400 - 10);// 10 seconds before end 
-            await mintingHubTest.bidNearEndOfChallenge();
-
-            await evm_increaseTime(20);
-            let tx = mintingHubTest.endLastChallenge();
-            await expect(tx).to.be.revertedWith("period has not ended");
-
-            await evm_increaseTime(30 * 60);
-            await mintingHubTest.endLastChallenge();
-        });
-    }); */
+    });
 });

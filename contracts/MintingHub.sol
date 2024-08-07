@@ -367,7 +367,7 @@ contract MintingHub {
         }
     }
 
-    function expiredPurchasePrice(IPosition pos) external returns (uint256) {
+    function expiredPurchasePrice(IPosition pos) external view returns (uint256) {
         uint256 expiration = pos.expiration();
         if (block.timestamp <= expiration){
             return EXPIRED_PRICE_FACTOR * pos.price();
@@ -376,14 +376,14 @@ contract MintingHub {
         }
     }
 
-    function _expiredPurchasePrice(IPosition pos, uint256 expiration) internal returns (uint256) {
+    function _expiredPurchasePrice(IPosition pos, uint256 expiration) internal view returns (uint256) {
         uint256 liqprice = pos.price();
         if (block.timestamp <= expiration){
             return EXPIRED_PRICE_FACTOR * liqprice;
         } else {
             uint256 challengePeriod = pos.challengePeriod();
             uint256 timePassed = block.timestamp - expiration;
-            if (timePassed < challengePeriod){
+            if (timePassed <= challengePeriod){
                 uint256 timeLeft = challengePeriod - timePassed;
                 return liqprice + (EXPIRED_PRICE_FACTOR - 1) * liqprice / challengePeriod * timeLeft;
             } else if (timePassed < 2*challengePeriod){

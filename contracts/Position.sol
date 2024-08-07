@@ -382,8 +382,8 @@ contract Position is Ownable, IPosition, MathUtil {
                 // we can repay everything
                 uint256 returnedReserve = zchf.burnFromWithReserve(buyer, minted, reserveContribution);
                 assert(returnedReserve == availableReserve);
-                _notifyRepaid(minted);
                 zchf.transferFrom(buyer, owner, proceeds + returnedReserve - minted);
+                _notifyRepaid(minted);
             } else {
                 // we can only repay a part
                 zchf.transferFrom(buyer, address(this), proceeds);

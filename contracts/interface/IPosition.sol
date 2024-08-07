@@ -7,17 +7,17 @@ import "./IFrankencoin.sol";
 
 interface IPosition {
 
-    function original() external returns (address);
+    function original() external view returns (address);
 
-    function collateral() external returns (IERC20);
+    function collateral() external view returns (IERC20);
 
-    function minimumCollateral() external returns (uint256);
+    function minimumCollateral() external view returns (uint256);
 
-    function challengePeriod() external returns (uint64);
+    function challengePeriod() external view returns (uint64);
 
-    function expiration() external returns (uint256);
+    function expiration() external view returns (uint256);
 
-    function price() external returns (uint256);
+    function price() external view returns (uint256);
 
     function assertCloneable() external;
 
@@ -27,7 +27,7 @@ interface IPosition {
 
     function mint(address target, uint256 amount) external;
 
-    function minted() external returns (uint256);
+    function minted() external view returns (uint256);
 
     function availableForMinting() external returns (uint256);
 
