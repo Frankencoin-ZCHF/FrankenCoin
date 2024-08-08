@@ -366,13 +366,13 @@ contract Position is Ownable, IPosition, MathUtil {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
         uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
-        emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
     function _notifyRepaid(uint256 amount) internal {
         if (amount > minted) revert RepaidTooMuch(amount - minted);
         Position(original).notifyCloneRepaid(amount);
         minted -= amount;
+        emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
     function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired {
