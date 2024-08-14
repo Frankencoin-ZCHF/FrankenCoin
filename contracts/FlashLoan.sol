@@ -40,6 +40,9 @@ contract FlashLoan {
     constructor(address _zchf) {
         zchf = IFrankencoin(_zchf);
         cooldown = block.timestamp + 3 days;
+
+        zchf.transferFrom(msg.sender, address(this), 1000 ether);
+        zchf.suggestMinter(address(this), 3 days, 1000 ether, "FlashLoanV0");
     }
 
     // ---------------------------------------------------------------------------------------------------
