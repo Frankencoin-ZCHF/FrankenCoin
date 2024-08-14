@@ -8,7 +8,6 @@ contract FlashLoan {
     IFrankencoin public immutable zchf;
     uint256 public constant FLASHLOAN_MAX = 1_000_000 ether;
     uint256 public constant FLASHLOAN_FEEPPM = 1_000;
-
     uint256 public cooldown;
 
     // ---------------------------------------------------------------------------------------------------
@@ -20,17 +19,20 @@ contract FlashLoan {
     // ---------------------------------------------------------------------------------------------------
     // Events
     event Denied(address indexed denier, string message);
-    event Minted(address indexed sender, uint256 amount);
-    event Repaid(address indexed behalfOf, uint256 amount, uint256 repay, uint256 fee);
+    event Minted(address indexed to, uint256 amount);
+    event Repaid(address indexed from, uint256 total, uint256 repay, uint256 fee);
     
     // ---------------------------------------------------------------------------------------------------
     // Errors
     error Cooldown();
+    error ExceedsLimit();
+    error NotPaidBack();
+    error DelegateCallFailed();
 
     // ---------------------------------------------------------------------------------------------------
     // Modifier
     modifier noCooldown() {
-        if (block.timestamp <= cooldown) revert Cooldown();
+       if (block.timestamp <= cooldown) revert Cooldown();
         _;
     }
 
@@ -52,7 +54,7 @@ contract FlashLoan {
         uint256 total = senderMinted[sender] * (1_000_000 + FLASHLOAN_FEEPPM);
         uint256 repaid = senderRepaid[sender] * 1_000_000;
         uint256 fee = senderFees[sender] * 1_000_000;
-        require(repaid + fee >= total, "Not paid bacm");
+        if (repaid + fee < total) revert NotPaidBack();
     }
 
     // ---------------------------------------------------------------------------------------------------
@@ -61,7 +63,7 @@ contract FlashLoan {
         address[] memory targets,
         bytes[] memory calldatas
     ) public noCooldown {
-        require(amount <= FLASHLOAN_MAX, "Exceeds limit");
+        if (amount > FLASHLOAN_MAX) revert ExceedsLimit();
         _verify(msg.sender);
 
         // mint flash loan
@@ -72,24 +74,26 @@ contract FlashLoan {
         // execute all
         for (uint256 i = 0; i < targets.length; ++i) {
             (bool success, ) = targets[i].delegatecall(calldatas[i]);
-            require(success, "Ext. call failed");
+            if (!success) revert DelegateCallFailed();
         }
         
         // verify after
         _verify(msg.sender);
     }
 
+    // @dev: i might be limited to msg.sender calls, due to _allowance as a minter
+    // You can call this method multiple times to repay within a tx, in the end _verify needs to pass.
     // ---------------------------------------------------------------------------------------------------
-    function repayLoan(address behalfOf, uint256 amount) public noCooldown {
-        zchf.transferFrom(behalfOf, address(this), amount);
-
+    function repayLoan(uint256 amount) public noCooldown {
         uint256 fee = amount * FLASHLOAN_FEEPPM / 1_000_000;
         uint256 repay = amount - fee;
 
-        senderRepaid[behalfOf] += repay;
-        senderFees[behalfOf] += fee;
+        zchf.burnFrom(msg.sender, repay);
+        zchf.transferFrom(msg.sender, address(zchf.reserve()), fee); 
 
-        zchf.transferFrom(address(this), address(zchf.reserve()), fee);
-        emit Repaid(behalfOf, amount, repay, fee);
+        senderRepaid[msg.sender] += repay;
+        senderFees[msg.sender] += fee;
+        
+        emit Repaid(msg.sender, amount, repay, fee);
     }
 }
