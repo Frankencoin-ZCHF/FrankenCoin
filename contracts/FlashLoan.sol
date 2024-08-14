@@ -56,16 +56,26 @@ contract FlashLoan {
     }
 
     // ---------------------------------------------------------------------------------------------------
-    function takeLoan(uint256 amount, bytes calldata callData) public noCooldown {
+    function takeLoan(
+        uint256 amount, 
+        address[] memory targets,
+        bytes[] memory calldatas
+    ) public noCooldown {
+        require(amount <= FLASHLOAN_MAX, "Exceeds limit");
         _verify(msg.sender);
 
+        // mint flash loan
         senderMinted[msg.sender] += amount;
         zchf.mint(msg.sender, amount);
         emit Minted(msg.sender, amount);
 
-        (bool success, ) = msg.sender.call(callData);
-        require(success, "Ext. call failed");
+        // execute all
+        for (uint256 i = 0; i < targets.length; ++i) {
+            (bool success, ) = targets[i].delegatecall(calldatas[i]);
+            require(success, "Ext. call failed");
+        }
         
+        // verify after
         _verify(msg.sender);
     }
 
