@@ -82,10 +82,7 @@ contract FlashLoan {
         // execute all
         for (uint256 i = 0; i < targets.length; i++) {
             (bool success, bytes memory returnData) = targets[i].delegatecall(calldatas[i]);
-            if (!success) {
-                string memory errorMsg = _revertMessage(returnData);
-                revert(errorMsg);
-            }
+            if (!success) revert(_revertMessage(returnData));
         }
         
         // verify after
@@ -94,10 +91,18 @@ contract FlashLoan {
 
     // revert message
     function _revertMessage(bytes memory returndata) internal pure returns (string memory) {
-        if (returndata.length < 68) return "Delegatecall failed silently";
-        assembly {
-            returndata := add(returndata, 0x04)
+        if (returndata.length < 4) return "Delegatecall failed silently";
+
+        if (returndata.length == 4) {
+            assembly {
+                returndata := mload(add(returndata, 0x20))
+            }
+        } else {
+            assembly {
+                returndata := add(returndata, 0x04)
+            }
         }
+
         return abi.decode(returndata, (string)); 
     }
 
