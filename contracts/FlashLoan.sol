@@ -6,8 +6,12 @@ import "./interface/IReserve.sol";
 
 contract FlashLoan {
     IFrankencoin public immutable zchf;
+    string public constant NAME = "FlashLoanV0";
+    uint256 public constant FLASHLOAN_TOTALMAX = 10_000_000 ether;
     uint256 public constant FLASHLOAN_MAX = 1_000_000 ether;
     uint256 public constant FLASHLOAN_FEEPPM = 1_000;
+    uint256 public constant FLASHLOAN_DELAY = 10; // 10sec for testing
+    uint256 public totalMinted = 0;
     uint256 public cooldown;
 
     // ---------------------------------------------------------------------------------------------------
@@ -18,16 +22,18 @@ contract FlashLoan {
 
     // ---------------------------------------------------------------------------------------------------
     // Events
-    event Denied(address indexed denier, string message);
-    event Minted(address indexed to, uint256 amount);
+    event Shutdown(address indexed denier, string message);
+    event LoanTaken(address indexed to, uint256 amount, uint256 totalMint);
     event Repaid(address indexed from, uint256 total, uint256 repay, uint256 fee);
     
     // ---------------------------------------------------------------------------------------------------
     // Errors
     error Cooldown();
     error ExceedsLimit();
+    error ExceedsTotalLimit();
     error NotPaidBack();
     error DelegateCallFailed();
+    error PaidTooMuch();
 
     // ---------------------------------------------------------------------------------------------------
     // Modifier
@@ -39,17 +45,14 @@ contract FlashLoan {
     // ---------------------------------------------------------------------------------------------------
     constructor(address _zchf) {
         zchf = IFrankencoin(_zchf);
-        cooldown = block.timestamp + 3 days;
-
-        zchf.transferFrom(msg.sender, address(this), 1000 ether);
-        zchf.suggestMinter(address(this), 3 days, 1000 ether, "FlashLoanV0");
+        cooldown = block.timestamp + FLASHLOAN_DELAY;
     }
 
     // ---------------------------------------------------------------------------------------------------
-    function deny(address[] calldata helpers, string calldata message) external noCooldown {
+    function shutdown(address[] calldata helpers, string calldata message) external noCooldown {
         IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
         cooldown = type(uint256).max;
-        emit Denied(msg.sender, message);
+        emit Shutdown(msg.sender, message);
     }
 
     // ---------------------------------------------------------------------------------------------------
@@ -66,22 +69,36 @@ contract FlashLoan {
         address[] memory targets,
         bytes[] memory calldatas
     ) public noCooldown {
+        if (amount + totalMinted > FLASHLOAN_TOTALMAX) revert ExceedsTotalLimit();
         if (amount > FLASHLOAN_MAX) revert ExceedsLimit();
         _verify(msg.sender);
 
         // mint flash loan
+        totalMinted += amount;
         senderMinted[msg.sender] += amount;
         zchf.mint(msg.sender, amount);
-        emit Minted(msg.sender, amount);
+        emit LoanTaken(msg.sender, amount, totalMinted);
 
         // execute all
-        for (uint256 i = 0; i < targets.length; ++i) {
-            (bool success, ) = targets[i].delegatecall(calldatas[i]);
-            if (!success) revert DelegateCallFailed();
+        for (uint256 i = 0; i < targets.length; i++) {
+            (bool success, bytes memory returnData) = targets[i].delegatecall(calldatas[i]);
+            if (!success) {
+                string memory errorMsg = _revertMessage(returnData);
+                revert(errorMsg);
+            }
         }
         
         // verify after
         _verify(msg.sender);
+    }
+
+    // revert message
+    function _revertMessage(bytes memory returndata) internal pure returns (string memory) {
+        if (returndata.length < 68) return "Delegatecall failed silently";
+        assembly {
+            returndata := add(returndata, 0x04)
+        }
+        return abi.decode(returndata, (string)); 
     }
 
     // @dev: i might be limited to msg.sender calls, due to _allowance as a minter
@@ -89,14 +106,15 @@ contract FlashLoan {
     // ---------------------------------------------------------------------------------------------------
     function repayLoan(uint256 amount) public noCooldown {
         uint256 fee = amount * FLASHLOAN_FEEPPM / 1_000_000;
-        uint256 repay = amount - fee;
+        uint256 total = amount + fee;
+        if (senderRepaid[msg.sender] + amount > senderMinted[msg.sender]) revert PaidTooMuch();
 
-        zchf.burnFrom(msg.sender, repay);
+        zchf.burnFrom(msg.sender, amount);
         zchf.transferFrom(msg.sender, address(zchf.reserve()), fee); 
 
-        senderRepaid[msg.sender] += repay;
+        senderRepaid[msg.sender] += amount;
         senderFees[msg.sender] += fee;
         
-        emit Repaid(msg.sender, amount, repay, fee);
+        emit Repaid(msg.sender, total, amount, fee);
     }
 }
