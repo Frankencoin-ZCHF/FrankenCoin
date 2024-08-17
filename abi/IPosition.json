@@ -1,6 +1,19 @@
 [
     {
         "inputs": [],
+        "name": "annualInterestPPM",
+        "outputs": [
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "assertCloneable",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -86,9 +99,9 @@
         "name": "expiration",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -115,6 +128,34 @@
         "name": "forceSale",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getPositionStatsOrFailIfNotOriginal",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "minted",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint64",
+                "name": "expiration",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint32",
+                "name": "interest",
+                "type": "uint32"
+            },
+            {
+                "internalType": "uint32",
+                "name": "magic",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -164,9 +205,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "expiration",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "name": "initializeClone",

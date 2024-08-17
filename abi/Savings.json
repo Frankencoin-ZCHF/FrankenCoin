@@ -1,0 +1,397 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "contract IFrankencoin",
+                "name": "zchf_",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "legacyHub_",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "account",
+                "type": "uint256"
+            }
+        ],
+        "name": "AccountAlive",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InsufficientVolume",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "pos",
+                "type": "address"
+            }
+        ],
+        "name": "InvalidPosition",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "boost",
+                "type": "address"
+            }
+        ],
+        "name": "BoostProposed",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint32",
+                "name": "id",
+                "type": "uint32"
+            }
+        ],
+        "name": "Cleanup",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint192",
+                "name": "interest",
+                "type": "uint192"
+            }
+        ],
+        "name": "InterestExtracted",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint32",
+                "name": "id",
+                "type": "uint32"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint32",
+                "name": "interest",
+                "type": "uint32"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "maturity",
+                "type": "uint64"
+            }
+        ],
+        "name": "Saved",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "accounts",
+        "outputs": [
+            {
+                "internalType": "uint192",
+                "name": "amount",
+                "type": "uint192"
+            },
+            {
+                "internalType": "uint64",
+                "name": "end",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "volume",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint32",
+                "name": "interest",
+                "type": "uint32"
+            },
+            {
+                "internalType": "uint64",
+                "name": "expiration",
+                "type": "uint64"
+            }
+        ],
+        "name": "boostInterest",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "uint32",
+                "name": "id",
+                "type": "uint32"
+            }
+        ],
+        "name": "cleanup",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "equity",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "uint32",
+                "name": "id",
+                "type": "uint32"
+            }
+        ],
+        "name": "getAccount",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint192",
+                        "name": "amount",
+                        "type": "uint192"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "end",
+                        "type": "uint64"
+                    }
+                ],
+                "internalType": "struct Savings.Account",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "legacyHub",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint192",
+                "name": "amount",
+                "type": "uint192"
+            },
+            {
+                "internalType": "uint32",
+                "name": "id",
+                "type": "uint32"
+            },
+            {
+                "internalType": "uint32",
+                "name": "yield",
+                "type": "uint32"
+            },
+            {
+                "internalType": "uint64",
+                "name": "maturity",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "cleanupIds",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "address[]",
+                "name": "interestProof",
+                "type": "address[]"
+            },
+            {
+                "internalType": "address[]",
+                "name": "legacyPositions",
+                "type": "address[]"
+            }
+        ],
+        "name": "save",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalSaved",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address[]",
+                "name": "interestProof",
+                "type": "address[]"
+            },
+            {
+                "internalType": "address[]",
+                "name": "legacyPositions",
+                "type": "address[]"
+            },
+            {
+                "internalType": "uint256",
+                "name": "volume",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint64",
+                "name": "expiration",
+                "type": "uint64"
+            }
+        ],
+        "name": "yieldAt",
+        "outputs": [
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address[]",
+                "name": "interestProof",
+                "type": "address[]"
+            },
+            {
+                "internalType": "address[]",
+                "name": "legacyPositions",
+                "type": "address[]"
+            },
+            {
+                "internalType": "uint256",
+                "name": "volume",
+                "type": "uint256"
+            }
+        ],
+        "name": "yieldCurve",
+        "outputs": [
+            {
+                "internalType": "uint32[]",
+                "name": "",
+                "type": "uint32[]"
+            },
+            {
+                "internalType": "uint64[]",
+                "name": "",
+                "type": "uint64[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "zchf",
+        "outputs": [
+            {
+                "internalType": "contract IFrankencoin",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

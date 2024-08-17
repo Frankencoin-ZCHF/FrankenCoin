@@ -81,7 +81,7 @@ contract MintingHub {
         uint256 _minCollateral,
         uint256 _initialCollateral,
         uint256 _mintingMaximum,
-        uint256 _expirationSeconds,
+        uint64 _expirationSeconds,
         uint64 _challengeSeconds,
         uint32 _annualInterestPPM,
         uint256 _liqPrice,
@@ -93,7 +93,7 @@ contract MintingHub {
                 _minCollateral,
                 _initialCollateral,
                 _mintingMaximum,
-                7 days,
+                uint64(7 days),
                 _expirationSeconds,
                 _challengeSeconds,
                 _annualInterestPPM,
@@ -125,8 +125,8 @@ contract MintingHub {
         uint256 _minCollateral,
         uint256 _initialCollateral,
         uint256 _mintingMaximum,
-        uint256 _initPeriodSeconds,
-        uint256 _expirationSeconds,
+        uint64 _initPeriodSeconds,
+        uint64 _expirationSeconds,
         uint64 _challengeSeconds,
         uint32 _annualInterestPPM,
         uint256 _liqPrice,
@@ -168,7 +168,7 @@ contract MintingHub {
         address position,
         uint256 _initialCollateral,
         uint256 _initialMint,
-        uint256 expiration
+        uint64 expiration
     ) public validPos(position) returns (address) {
         IPosition existing = IPosition(position);
         require(expiration <= IPosition(existing.original()).expiration());

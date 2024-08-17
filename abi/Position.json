@@ -32,14 +32,14 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_initPeriod",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_duration",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "internalType": "uint64",
@@ -96,13 +96,24 @@
         "type": "error"
     },
     {
-        "inputs": [],
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "available",
+                "type": "uint256"
+            }
+        ],
         "name": "LimitExceeded",
         "type": "error"
     },
     {
         "inputs": [],
         "name": "NotHub",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotOriginal",
         "type": "error"
     },
     {
@@ -346,9 +357,9 @@
         "name": "cooldown",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -377,9 +388,9 @@
         "name": "expiration",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -409,6 +420,34 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "getPositionStatsOrFailIfNotOriginal",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            },
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "uint256",
@@ -422,6 +461,19 @@
             }
         ],
         "name": "getUsableMint",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "globalLimit",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -468,9 +520,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "expirationTime",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "name": "initializeClone",
@@ -486,19 +538,6 @@
                 "internalType": "bool",
                 "name": "",
                 "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "limit",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -621,7 +660,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "notifyCloneMint",
+        "name": "notifyMint",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -634,7 +673,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "notifyCloneRepaid",
+        "name": "notifyRepaid",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -709,9 +748,9 @@
         "name": "start",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",

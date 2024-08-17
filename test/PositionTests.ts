@@ -333,7 +333,7 @@ describe("Position Tests", () => {
     it("get loan", async () => {
       await evm_increaseTime(7 * 86_400); // 14 days passed in total
 
-      fLimit = await positionContract.limit();
+      fLimit = await positionContract.globalLimit();
       limit = dec18ToFloat(fLimit);
       let amount = BigInt(1e18) * 10_000n;
       expect(amount).to.be.lessThan(fLimit);
@@ -565,10 +565,10 @@ describe("Position Tests", () => {
       await evm_increaseTime(86400 * 7);
       await positionContract.assertCloneable();
       await expect(
-        positionContract.notifyCloneMint(0)
+        positionContract.notifyMint(0)
       ).to.be.revertedWithCustomError(positionContract, "NotHub");
       await expect(
-        positionContract.notifyCloneRepaid(0)
+        positionContract.notifyRepaid(0)
       ).to.be.revertedWithCustomError(positionContract, "NotHub");
     });
     it("should revert cloning when it is expired", async () => async () => {

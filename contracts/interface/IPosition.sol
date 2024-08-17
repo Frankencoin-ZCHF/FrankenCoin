@@ -15,19 +15,23 @@ interface IPosition {
 
     function challengePeriod() external view returns (uint64);
 
-    function expiration() external view returns (uint256);
+    function expiration() external view returns (uint64);
 
     function price() external view returns (uint256);
 
+    function annualInterestPPM() external view returns (uint32);
+
     function assertCloneable() external;
 
-    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint256 expiration) external;
+    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint64 expiration) external;
 
     function deny(address[] calldata helpers, string calldata message) external;
 
     function mint(address target, uint256 amount) external;
 
     function minted() external view returns (uint256);
+
+    function getPositionStatsOrFailIfNotOriginal() external view returns (uint256 minted, uint64 expiration, uint32 interest, uint32 magic);
 
     function availableForMinting() external returns (uint256);
 

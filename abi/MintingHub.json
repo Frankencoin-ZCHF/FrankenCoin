@@ -362,9 +362,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "expiration",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "name": "clone",
@@ -420,14 +420,14 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_initPeriodSeconds",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_expirationSeconds",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "internalType": "uint64",
@@ -484,9 +484,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_expirationSeconds",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "internalType": "uint64",

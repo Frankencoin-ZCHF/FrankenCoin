@@ -46,14 +46,14 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_initPeriodSeconds",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "_duration",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "internalType": "uint64",
