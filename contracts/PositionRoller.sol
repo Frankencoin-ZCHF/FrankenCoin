@@ -8,17 +8,10 @@ import "./utils/Ownable.sol";
 import "./interface/IReserve.sol";
 
 /**
- * @title Savings
+ * @title PositionRoller
  * 
- * Module to enable savings.
- * 
- * When saving Frankencoins, a maturity date must be chosen, depending on which the interest
- * is caluclated such that the system can be sure to not pay out more than it already received
- * on the other side of the balance sheet. Savers that go in first generally have an advantage.
- * The higher the total savings, the lower the interest. Also, those who choose a short
- * duration have an advantage. This is economically unfortunate, but it is necessary to 
- * fulfill the requirement of always being sure that more interest comes in than goes out.
- * 
+ * Helper to roll over a debt from an old position to a new one.
+ * Both positions should have the same collateral. Otherwise, it does not make much sense.
  */
 contract PositionRoller {
 
