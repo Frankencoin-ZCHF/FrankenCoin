@@ -141,6 +141,11 @@ contract Position is Ownable, IPosition, MathUtil {
         _;
     }
 
+    modifier ownerOrRoller() {
+        if (msg.sender != address(IRollerProvider(hub).roller())) _requireOwner(msg.sender);
+        _;
+    }
+
     /**
      * @dev See MintingHub.openPosition
      */
@@ -330,7 +335,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * @notice Mint ZCHF as long as there is no open challenge, the position is not subject to a cooldown,
      * and there is sufficient collateral.
      */
-    function mint(address target, uint256 amount) public onlyOwner noChallenge noCooldown alive {
+    function mint(address target, uint256 amount) public ownerOrRoller noChallenge noCooldown alive {
         _mint(target, amount, _collateralBalance());
     }
 
@@ -374,10 +379,11 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * E.g. if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
      */
-    function repay(uint256 amount) public {
+    function repay(uint256 amount) public returns (uint256) {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
         uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
+        return actuallyRepaid;
     }
 
     function _notifyRepaid(uint256 amount) internal {
@@ -432,7 +438,7 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * Withdrawing collateral below the minimum collateral amount formally closes the position.
      */
-    function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge {
+    function withdrawCollateral(address target, uint256 amount) public ownerOrHub noChallenge {
         if (block.timestamp <= cooldown && !isClosed()) revert Hot();
         uint256 balance = _withdrawCollateral(target, amount);
         _checkCollateral(balance, price);
@@ -528,4 +534,8 @@ contract Position is Ownable, IPosition, MathUtil {
         return (owner, _size, repayment, reserveContribution);
     }
 
+}
+
+interface IRollerProvider {
+    function roller() external view returns(address);
 }

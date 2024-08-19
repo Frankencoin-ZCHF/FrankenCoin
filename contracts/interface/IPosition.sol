@@ -29,6 +29,8 @@ interface IPosition {
 
     function mint(address target, uint256 amount) external;
 
+    function repay(uint256 amount) external returns (uint256);
+
     function minted() external view returns (uint256);
 
     function getPositionStatsOrFailIfNotOriginal() external view returns (uint256 minted, uint64 expiration, uint32 interest, uint32 magic);
@@ -36,6 +38,8 @@ interface IPosition {
     function availableForMinting() external returns (uint256);
 
     function reserveContribution() external returns (uint32);
+
+    function withdrawCollateral(address target, uint256 amount) external;
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 

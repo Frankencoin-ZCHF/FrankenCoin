@@ -6,6 +6,7 @@ import "./interface/IReserve.sol";
 import "./interface/IFrankencoin.sol";
 import "./interface/IPosition.sol";
 import "./interface/IPositionFactory.sol";
+import "./PositionRoller.sol";
 
 /**
  * @title Minting Hub
@@ -30,6 +31,7 @@ contract MintingHub {
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
 
     IFrankencoin public immutable zchf; // currency
+    PositionRoller public immutable roller; // helper to roll positions
     Challenge[] public challenges; // list of open challenges
 
     /**
@@ -74,6 +76,7 @@ contract MintingHub {
     constructor(address _zchf, address _factory) {
         zchf = IFrankencoin(_zchf);
         POSITION_FACTORY = IPositionFactory(_factory);
+        roller = new PositionRoller(zchf);
     }
 
     function openPositionOneWeek(
