@@ -91,11 +91,6 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 public immutable override minimumCollateral;
 
     /**
-     * @notice Always pay interest for at least four weeks.
-     */
-    uint256 private constant MIN_INTEREST_DURATION = 4 weeks;
-
-    /**
      * @notice The interest in parts per million per year that is deducted when minting Frankencoins.
      * To be paid upfront.
      */
@@ -340,9 +335,12 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function calculateCurrentFee() public view returns (uint32) {
-        uint256 exp = expiration;
+        return calculateFee(expiration);
+    }
+
+    function calculateFee(uint256 exp) public view returns (uint32) {
         uint256 time = block.timestamp < start ? start : block.timestamp;
-        uint256 timePassed = time >= exp - MIN_INTEREST_DURATION ? MIN_INTEREST_DURATION : exp - time;
+        uint256 timePassed = exp - time;
         // Time resolution is in the range of minutes for typical interest rates.
         return uint32((timePassed * annualInterestPPM) / 365 days);
     }
