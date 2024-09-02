@@ -155,7 +155,6 @@ contract MintingHub {
         existing.assertCloneable();
         address pos = POSITION_FACTORY.clonePosition(position);
         zchf.registerPosition(pos);
-        IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
         existing.collateral().transferFrom(msg.sender, pos, _initialCollateral);
 
         emit PositionOpened(
@@ -165,6 +164,9 @@ contract MintingHub {
             address(IPosition(pos).collateral()),
             IPosition(pos).price()
         );
+
+        IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
+
         return address(pos);
     }
 
@@ -250,7 +252,7 @@ contract MintingHub {
             // response to an unreasonable increase of the liquidation price, such that we have to use this heuristic
             // for excess fund distribution, which make position owners that maxed out their positions slightly better
             // off in comparison to those who did not.
-            uint256 profits = reservePPM * (fundsAvailable - repayment) / 1000_000;
+            uint256 profits = (reservePPM * (fundsAvailable - repayment)) / 1000_000;
             zchf.collectProfits(address(this), profits);
             zchf.transfer(owner, fundsAvailable - repayment - profits);
         } else if (fundsAvailable < repayment) {
