@@ -5,11 +5,10 @@ import "./utils/Ownable.sol";
 import "./utils/MathUtil.sol";
 
 import "./interface/IERC20.sol";
+import "./interface/ILeadrate.sol";
 import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
 import "./interface/IFrankencoin.sol";
-
-import "hardhat/console.sol";
 
 /**
  * @title Position
@@ -47,23 +46,23 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * @notice Challenge period in seconds.
      */
-    uint64 public immutable challengePeriod;
+    uint40 public immutable challengePeriod;
 
     /**
      * @notice Timestamp when minting can start and the position no longer denied.
      */
-    uint64 public immutable start;
+    uint40 public immutable start;
 
     /**
      * @notice End of the latest cooldown. If this is in the future, minting is suspended.
      */
-    uint64 public cooldown;
+    uint40 public cooldown;
     
     /**
      * @notice Timestamp of the expiration of the position. After expiration, challenges cannot be averted
      * any more. This is also the basis for fee calculations.
      */
-    uint64 public expiration;
+    uint40 public expiration;
 
     /**
      * @notice The original position to help identifying clones.
@@ -94,12 +93,12 @@ contract Position is Ownable, IPosition, MathUtil {
      * @notice The interest in parts per million per year that is deducted when minting Frankencoins.
      * To be paid upfront.
      */
-    uint32 public immutable annualInterestPPM;
+    uint24 public immutable riskPremiumPPM;
 
     /**
      * @notice The reserve contribution in parts per million of the minted amount.
      */
-    uint32 public immutable reserveContribution;
+    uint24 public immutable reserveContribution;
 
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted);
     event PositionDenied(address indexed sender, string message); // emitted if closed by governance
@@ -142,7 +141,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     modifier ownerOrRoller() {
-        if (msg.sender != address(IRollerProvider(hub).roller())) _requireOwner(msg.sender);
+        if (msg.sender != address(IHub(hub).roller())) _requireOwner(msg.sender);
         _;
     }
 
@@ -156,12 +155,12 @@ contract Position is Ownable, IPosition, MathUtil {
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,
-        uint64 _initPeriod,
-        uint64 _duration,
-        uint64 _challengePeriod,
-        uint32 _annualInterestPPM,
+        uint40 _initPeriod,
+        uint40 _duration,
+        uint40 _challengePeriod,
+        uint24 _riskPremiumPPM,
         uint256 _liqPrice,
-        uint32 _reservePPM
+        uint24 _reservePPM
     ) {
         require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         _setOwner(_owner);
@@ -169,11 +168,11 @@ contract Position is Ownable, IPosition, MathUtil {
         hub = _hub;
         zchf = IFrankencoin(_zchf);
         collateral = IERC20(_collateral);
-        annualInterestPPM = _annualInterestPPM;
+        riskPremiumPPM = _riskPremiumPPM;
         reserveContribution = _reservePPM;
         minimumCollateral = _minCollateral;
         challengePeriod = _challengePeriod;
-        start = uint64(block.timestamp) + _initPeriod; // at least three days time to deny the position
+        start = uint40(block.timestamp) + _initPeriod; // at least three days time to deny the position
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;
@@ -189,7 +188,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 _price,
         uint256 _coll,
         uint256 _initialMint,
-        uint64 expirationTime
+        uint40 expirationTime
     ) external onlyHub {
         if (_coll < minimumCollateral) revert InsufficientCollateral();
         uint256 impliedPrice = (_initialMint * ONE_DEC18) / _coll;
@@ -218,11 +217,6 @@ contract Position is Ownable, IPosition, MathUtil {
     function notifyRepaid(uint256 repaid_) external {
         if (zchf.getPositionParent(msg.sender) != hub) revert NotHub();
         totalMinted -= repaid_;
-    }
-
-    function getPositionStatsOrFailIfNotOriginal() external view returns (uint256, uint64, uint32, uint32){
-        if (original != address(this)) revert NotOriginal();
-        return (totalMinted, expiration, annualInterestPPM, 123456789);
     }
 
     function globalLimit() external view returns (uint256) {
@@ -262,11 +256,11 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function _close() internal {
-        cooldown = type(uint64).max;
+        cooldown = type(uint40).max;
     }
 
     function isClosed() public view returns (bool) {
-        return cooldown == type(uint64).max;
+        return cooldown == type(uint40).max;
     }
 
     /**
@@ -347,6 +341,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 time = block.timestamp < start ? start : block.timestamp;
         uint256 timePassed = exp - time;
         // Time resolution is in the range of minutes for typical interest rates.
+        uint24 annualInterestPPM = IHub(hub).rate().applicableRatePPM() + riskPremiumPPM;
         return uint32((timePassed * annualInterestPPM) / 365 days);
     }
 
@@ -359,10 +354,10 @@ contract Position is Ownable, IPosition, MathUtil {
         emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
-    function _restrictMinting(uint256 period) internal {
-        uint256 horizon = block.timestamp + period;
+    function _restrictMinting(uint40 period) internal {
+        uint40 horizon = uint40(block.timestamp) + period;
         if (horizon > cooldown) {
-            cooldown = uint64(horizon);
+            cooldown = horizon;
         }
     }
 
@@ -438,7 +433,7 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * Withdrawing collateral below the minimum collateral amount formally closes the position.
      */
-    function withdrawCollateral(address target, uint256 amount) public ownerOrHub noChallenge {
+    function withdrawCollateral(address target, uint256 amount) public ownerOrRoller noChallenge {
         if (block.timestamp <= cooldown && !isClosed()) revert Hot();
         uint256 balance = _withdrawCollateral(target, amount);
         _checkCollateral(balance, price);
@@ -479,7 +474,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * Both phases are usually of equal duration, but near expiration, phase one is adjusted such that
      * it cannot last beyond the expiration date of the position.
      */
-    function challengeData() external view returns (uint256 liqPrice, uint64 phase) {
+    function challengeData() external view returns (uint256 liqPrice, uint40 phase) {
         return (price, challengePeriod);
     }
 
@@ -536,6 +531,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
 }
 
-interface IRollerProvider {
+interface IHub {
+    function rate() external view returns(ILeadrate);
     function roller() external view returns(address);
 }

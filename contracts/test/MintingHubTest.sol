@@ -122,7 +122,7 @@ contract MintingHubTest {
 
     function endChallenge(uint256 challengeNumber) public {
         uint256 equityBefore = zchf.equity();
-        (address challenger, uint64 start, IPosition p, uint256 size) = hub.challenges(challengeNumber);
+        (address challenger, uint40 start, IPosition p, uint256 size) = hub.challenges(challengeNumber);
         require(challenger != address(0x0), "challenge not found");
         // hub.end(challengeNumber, true);
         User user = challenger == address(bob) ? bob : alice;
@@ -249,11 +249,12 @@ contract User {
         col.mint(address(this), 1001);
         col.approve(address(hub), 1001);
         uint256 balanceBefore = zchf.balanceOf(address(this));
-        address pos = hub.openPositionOneWeek(
+        address pos = hub.openPosition(
             address(col),
             100,
             1001,
             1000000 ether,
+            7 days,
             100 days,
             1 days,
             25000,

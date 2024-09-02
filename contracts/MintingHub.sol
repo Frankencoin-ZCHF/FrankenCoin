@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./interface/IERC20.sol";
 import "./interface/IReserve.sol";
+import "./interface/ILeadrate.sol";
 import "./interface/IFrankencoin.sol";
 import "./interface/IPosition.sol";
 import "./interface/IPositionFactory.sol";
@@ -24,14 +25,15 @@ contract MintingHub {
      * @notice The challenger reward in parts per million (ppm) relative to the challenged amount, whereas
      * challenged amount if defined as the challenged collateral amount times the liquidation price.
      */
-    uint32 public constant CHALLENGER_REWARD = 20000; // 2%
-
-    uint32 public constant EXPIRED_PRICE_FACTOR = 10;
+    uint256 public constant CHALLENGER_REWARD = 20000; // 2%
+    uint256 public constant EXPIRED_PRICE_FACTOR = 10;
 
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
 
     IFrankencoin public immutable zchf; // currency
     PositionRoller public immutable roller; // helper to roll positions
+    ILeadrate public immutable rate; // to determine the interest rate
+    
     Challenge[] public challenges; // list of open challenges
 
     /**
@@ -42,7 +44,7 @@ contract MintingHub {
 
     struct Challenge {
         address challenger; // the address from which the challenge was initiated
-        uint64 start; // the start of the challenge
+        uint40 start; // the start of the challenge
         IPosition position; // the position that was challenged
         uint256 size; // how much collateral the challenger provided
     }
@@ -73,36 +75,11 @@ contract MintingHub {
         _;
     }
 
-    constructor(address _zchf, address _factory) {
+    constructor(address _zchf, ILeadrate leadrate_, address _factory) {
         zchf = IFrankencoin(_zchf);
+        rate = leadrate_;
         POSITION_FACTORY = IPositionFactory(_factory);
         roller = new PositionRoller(zchf);
-    }
-
-    function openPositionOneWeek(
-        address _collateralAddress,
-        uint256 _minCollateral,
-        uint256 _initialCollateral,
-        uint256 _mintingMaximum,
-        uint64 _expirationSeconds,
-        uint64 _challengeSeconds,
-        uint32 _annualInterestPPM,
-        uint256 _liqPrice,
-        uint32 _reservePPM
-    ) public returns (address) {
-        return
-            openPosition(
-                _collateralAddress,
-                _minCollateral,
-                _initialCollateral,
-                _mintingMaximum,
-                uint64(7 days),
-                _expirationSeconds,
-                _challengeSeconds,
-                _annualInterestPPM,
-                _liqPrice,
-                _reservePPM
-            );
     }
 
     /**
@@ -117,7 +94,7 @@ contract MintingHub {
      * @param _mintingMaximum    maximal amount of ZCHF that can be minted by the position owner
      * @param _expirationSeconds position tenor in unit of timestamp (seconds) from 'now'
      * @param _challengeSeconds  challenge period. Longer for less liquid collateral.
-     * @param _annualInterestPPM ppm of minted amount that is paid as fee for each year of duration
+     * @param _riskPremium       ppm of minted amount that is added to the applicible minting fee as a risk premium
      * @param _liqPrice          Liquidation price with (36 - token decimals) decimals,
      *                           e.g. 18 decimals for an 18 dec collateral, 36 decs for a 0 dec collateral.
      * @param _reservePPM        ppm of minted amount that is locked as borrower's reserve, e.g. 20%
@@ -128,18 +105,18 @@ contract MintingHub {
         uint256 _minCollateral,
         uint256 _initialCollateral,
         uint256 _mintingMaximum,
-        uint64 _initPeriodSeconds,
-        uint64 _expirationSeconds,
-        uint64 _challengeSeconds,
-        uint32 _annualInterestPPM,
+        uint40 _initPeriodSeconds,
+        uint40 _expirationSeconds,
+        uint40 _challengeSeconds,
+        uint24 _riskPremium,
         uint256 _liqPrice,
-        uint32 _reservePPM
+        uint24 _reservePPM
     ) public returns (address) {
-        require(_annualInterestPPM <= 1000000);
+        require(_riskPremium <= 1000000);
         require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);
         require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
         require(_initialCollateral >= _minCollateral, "must start with min col");
-        require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
+        require(_minCollateral * _liqPrice >= 10000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
@@ -150,7 +127,7 @@ contract MintingHub {
                 _initPeriodSeconds,
                 _expirationSeconds,
                 _challengeSeconds,
-                _annualInterestPPM,
+                _riskPremium,
                 _liqPrice,
                 _reservePPM
             )
@@ -171,7 +148,7 @@ contract MintingHub {
         address position,
         uint256 _initialCollateral,
         uint256 _initialMint,
-        uint64 expiration
+        uint40 expiration
     ) public validPos(position) returns (address) {
         IPosition existing = IPosition(position);
         require(expiration <= IPosition(existing.original()).expiration());
@@ -207,7 +184,7 @@ contract MintingHub {
         if (position.price() != expectedPrice) revert UnexpectedPrice();
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
         uint256 pos = challenges.length;
-        challenges.push(Challenge(msg.sender, uint64(block.timestamp), position, _collateralAmount));
+        challenges.push(Challenge(msg.sender, uint40(block.timestamp), position, _collateralAmount));
         position.notifyChallengeStarted(_collateralAmount);
         emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);
         return pos;
@@ -226,7 +203,7 @@ contract MintingHub {
      */
     function bid(uint32 _challengeNumber, uint256 size, bool postponeCollateralReturn) external {
         Challenge memory _challenge = challenges[_challengeNumber];
-        (uint256 liqPrice, uint64 phase) = _challenge.position.challengeData();
+        (uint256 liqPrice, uint40 phase) = _challenge.position.challengeData();
         size = _challenge.size < size ? _challenge.size : size; // cannot bid for more than the size of the challenge
 
         if (block.timestamp <= _challenge.start + phase) {
@@ -247,7 +224,7 @@ contract MintingHub {
     function _finishChallenge(
         Challenge memory _challenge,
         uint256 liqPrice,
-        uint64 phase,
+        uint40 phase,
         uint256 size
     ) internal returns (uint256, uint256) {
         // Repayments depend on what was actually minted, whereas bids depend on the available collateral
@@ -324,8 +301,8 @@ contract MintingHub {
      * @notice Calculates the current Dutch auction price.
      * @dev Starts at the full price at time 'start' and linearly goes to 0 as 'phase2' passes.
      */
-    function _calculatePrice(uint64 start, uint64 phase2, uint256 liqPrice) internal view returns (uint256) {
-        uint64 timeNow = uint64(block.timestamp);
+    function _calculatePrice(uint40 start, uint40 phase2, uint256 liqPrice) internal view returns (uint256) {
+        uint40 timeNow = uint40(block.timestamp);
         if (timeNow <= start) {
             return liqPrice;
         } else if (timeNow >= start + phase2) {
@@ -346,7 +323,7 @@ contract MintingHub {
         if (_challenge.challenger == address(0x0)) {
             return 0;
         } else {
-            (uint256 liqPrice, uint64 phase) = _challenge.position.challengeData();
+            (uint256 liqPrice, uint40 phase) = _challenge.position.challengeData();
             return _calculatePrice(_challenge.start + phase, phase, liqPrice);
         }
     }

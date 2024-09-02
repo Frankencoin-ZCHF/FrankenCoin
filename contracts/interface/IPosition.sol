@@ -13,17 +13,15 @@ interface IPosition {
 
     function minimumCollateral() external view returns (uint256);
 
-    function challengePeriod() external view returns (uint64);
+    function challengePeriod() external view returns (uint40);
 
-    function expiration() external view returns (uint64);
+    function expiration() external view returns (uint40);
 
     function price() external view returns (uint256);
 
-    function annualInterestPPM() external view returns (uint32);
-
     function assertCloneable() external;
 
-    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint64 expiration) external;
+    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint40 expiration) external;
 
     function deny(address[] calldata helpers, string calldata message) external;
 
@@ -33,17 +31,15 @@ interface IPosition {
 
     function minted() external view returns (uint256);
 
-    function getPositionStatsOrFailIfNotOriginal() external view returns (uint256 minted, uint64 expiration, uint32 interest, uint32 magic);
-
     function availableForMinting() external returns (uint256);
 
-    function reserveContribution() external returns (uint32);
+    function reserveContribution() external returns (uint24);
 
     function withdrawCollateral(address target, uint256 amount) external;
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
-    function challengeData() external view returns (uint256 liqPrice, uint64 phase);
+    function challengeData() external view returns (uint256 liqPrice, uint40 phase);
 
     function notifyChallengeStarted(uint256 size) external;
 

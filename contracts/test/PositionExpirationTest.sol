@@ -28,7 +28,7 @@ contract PositionExpirationTest {
     function openPositionFor(address owner) public returns (address) {
         col.mint(address(this), 100);
         col.approve(address(hub), 100);
-        address pos = hub.openPositionOneWeek(address(col), 10, 100, 1000000 * 10**18, 30 days, 10 hours, 50000, 1000 * 10**36, 200000);
+        address pos = hub.openPositionOneWeek(address(col), 10, 100, 1000000 * 10**18, 7 days, 30 days, 10 hours, 50000, 1000 * 10**36, 200000);
         Position(pos).transferOwnership(owner);
         return pos;
     }
