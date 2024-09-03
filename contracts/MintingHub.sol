@@ -8,6 +8,7 @@ import "./interface/IFrankencoin.sol";
 import "./interface/IPosition.sol";
 import "./interface/IPositionFactory.sol";
 import "./PositionRoller.sol";
+import "./utils/Ownable.sol";
 
 /**
  * @title Minting Hub
@@ -110,7 +111,7 @@ contract MintingHub {
         require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);
         require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
         require(_initialCollateral >= _minCollateral, "must start with min col");
-        require(_minCollateral * _liqPrice >= 10000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
+        require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
@@ -134,25 +135,23 @@ contract MintingHub {
         return address(pos);
     }
 
+    /* function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public returns (address) {
+        return clone(parent, _initialCollateral, _initialMint, IPosition(parent).price(), expiration);
+    } */
+
     /**
      * @notice Clones an existing position and immediately tries to mint the specified amount using the given collateral.
      * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
-    function clone(
-        address parent,
-        uint256 _initialCollateral,
-        uint256 _initialMint,
-        uint40 expiration
-    ) public validPos(parent) returns (address) {
-        IPosition existing = IPosition(parent);
-        require(expiration <= IPosition(existing.original()).expiration());
-        existing.assertCloneable();
-        address pos = POSITION_FACTORY.clonePosition(parent);
+    function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
+        address pos = POSITION_FACTORY.clonePosition(parent, expiration);
         zchf.registerPosition(pos);
-        IERC20 collateral = existing.collateral();
-        collateral.transferFrom(msg.sender, pos, _initialCollateral);
-        IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
+        IPosition child = IPosition(pos);
+        IERC20 collateral = child.collateral();
         emit PositionOpened(msg.sender, address(pos), parent, address(collateral));
+        collateral.transferFrom(msg.sender, pos, _initialCollateral);
+        child.mint(msg.sender, _initialMint);
+        Ownable(address(child)).transferOwnership(msg.sender);
         return address(pos);
     }
 

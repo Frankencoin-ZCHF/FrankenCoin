@@ -1,7 +1,7 @@
 [
     {
         "inputs": [],
-        "name": "applicableRatePPM",
+        "name": "currentRatePPM",
         "outputs": [
             {
                 "internalType": "uint24",

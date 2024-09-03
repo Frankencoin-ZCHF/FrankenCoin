@@ -19,15 +19,15 @@ interface IPosition {
 
     function price() external view returns (uint256);
 
-    function assertCloneable() external;
-
-    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _mint, uint40 expiration) external;
-
     function deny(address[] calldata helpers, string calldata message) external;
 
     function mint(address target, uint256 amount) external;
 
     function repay(uint256 amount) external returns (uint256);
+
+    // function transferOwnerAndMint(address newOwner, uint256 mintAmount, uint256 newPrice) external;
+
+    function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) external;
 
     function minted() external view returns (uint256);
 

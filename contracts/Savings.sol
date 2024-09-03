@@ -30,7 +30,7 @@ contract Savings is Leadrate {
     event Saved(address account, uint192 amount);
     event InterestReserved(uint256 interest);
 
-    constructor(IFrankencoin zchf_) Leadrate(IReserve(zchf_.reserve()), 40000) {
+    constructor(IFrankencoin zchf_, uint24 initialRatePPM) Leadrate(IReserve(zchf_.reserve()), initialRatePPM) {
         zchf = IERC20(zchf_);
     }
 

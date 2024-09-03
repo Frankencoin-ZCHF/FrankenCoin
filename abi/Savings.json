@@ -5,6 +5,11 @@
                 "internalType": "contract IFrankencoin",
                 "name": "zchf_",
                 "type": "address"
+            },
+            {
+                "internalType": "uint24",
+                "name": "initialRatePPM",
+                "type": "uint24"
             }
         ],
         "stateMutability": "nonpayable",

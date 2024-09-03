@@ -3,8 +3,13 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_existing",
+                "name": "_parent",
                 "type": "address"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
             }
         ],
         "name": "clonePosition",

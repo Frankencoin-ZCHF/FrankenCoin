@@ -10,6 +10,8 @@ import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
 import "./interface/IFrankencoin.sol";
 
+// import "hardhat/console.sol";
+
 /**
  * @title Position
  * @notice A collateralized minting position.
@@ -108,15 +110,16 @@ contract Position is Ownable, IPosition, MathUtil {
     error RepaidTooMuch(uint256 excess);
     error LimitExceeded(uint256 available);
     error ChallengeTooSmall();
-    error Expired();
+    error Expired(uint40 time, uint40 expiration);
     error Alive();
     error Hot();
     error Challenged();
     error NotHub();
     error NotOriginal();
+    error ExpirationAfterOriginal();
 
     modifier alive() {
-        if (block.timestamp >= expiration) revert Expired();
+        if (block.timestamp >= expiration) revert Expired(uint40(block.timestamp), expiration);
         _;
     }
 
@@ -148,20 +151,10 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * @dev See MintingHub.openPosition
      */
-    constructor(
-        address _owner,
-        address _hub,
-        address _zchf,
-        address _collateral,
-        uint256 _minCollateral,
-        uint256 _initialLimit,
-        uint40 _initPeriod,
-        uint40 _duration,
-        uint40 _challengePeriod,
-        uint24 _riskPremiumPPM,
-        uint256 _liqPrice,
-        uint24 _reservePPM
-    ) {
+    constructor(address _owner, address _hub, address _zchf, address _collateral,
+        uint256 _minCollateral, uint256 _initialLimit,
+        uint40 _initPeriod, uint40 _duration, uint40 _challengePeriod,
+        uint24 _riskPremiumPPM, uint256 _liqPrice, uint24 _reservePPM) {
         require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         _setOwner(_owner);
         original = address(this);
@@ -180,20 +173,26 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice Method to initialize a freshly created clone. It is the responsibility of the creator to make sure this is only
-     * called once and to call notifyCloned on the original position before initializing the clone.
+     * Initialization method for clones.
+     * Can only be called once. Should be called immediately after creating the clone.
      */
-    function initializeClone(address owner, uint256 _price, uint256 _coll, uint256 _initialMint, uint40 expirationTime) external onlyHub {
-        if (_coll < minimumCollateral) revert InsufficientCollateral();
-        uint256 impliedPrice = (_initialMint * ONE_DEC18) / _coll;
-        _initialMint = (impliedPrice * _coll) / ONE_DEC18; // to cancel potential rounding errors
-        if (impliedPrice > _price) revert InsufficientCollateral();
+    function initialize(address owner, Position parent, uint40 _expiration) external onlyOwner {
+        if (_expiration > Position(original).expiration()) revert ExpirationAfterOriginal(); // original might have later expiration than parent, which is ok
+        expiration = _expiration;
         _setOwner(owner);
-        expiration = expirationTime;
-        _setPrice(impliedPrice, _initialMint);
-        _mint(owner, _initialMint, _coll);
-        emit MintingUpdate(_coll, price, minted);
+        price = parent.price();
     }
+
+/*     /**
+    function transferOwnerAndMint(address newOwner, uint256 mintAmount, uint256 newPrice) external onlyOwner {
+        _setOwner(newOwner);
+        uint256 colbal = _collateralBalance();
+        _mint(newOwner, mintAmount, colbal);
+        if (newPrice != price) {
+            _adjustPrice(newPrice);
+        }
+        emit MintingUpdate(colbal, newPrice, minted);
+    } */
 
     /**
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
@@ -245,10 +244,14 @@ contract Position is Ownable, IPosition, MathUtil {
     function deny(address[] calldata helpers, string calldata message) external {
         if (block.timestamp >= start) revert TooLate();
         IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
-        _close(); // since expiration is immutable, we put it under eternal cooldown
+        _close();
         emit PositionDenied(msg.sender, message);
     }
 
+    /**
+     * Closes the position by putting it into eternal cooldown.
+     * This allows the users to still withdraw the collateral that is left, but never to mint again.
+     */
     function _close() internal {
         cooldown = type(uint40).max;
     }
@@ -293,7 +296,7 @@ contract Position is Ownable, IPosition, MathUtil {
         if (newPrice != price) {
             _adjustPrice(newPrice);
         }
-         emit MintingUpdate(newCollateral, newPrice, newMinted);
+        emit MintingUpdate(newCollateral, newPrice, newMinted);
     }
 
     /**
@@ -302,11 +305,11 @@ contract Position is Ownable, IPosition, MathUtil {
      * Increasing the liquidation price triggers a cooldown period of 3 days, during which minting is suspended.
      */
     function adjustPrice(uint256 newPrice) public onlyOwner {
-        adjustPrice(newPrice);
+        _adjustPrice(newPrice);
         emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
-    function _adjustPrice(uint256 newPrice) public noChallenge {
+    function _adjustPrice(uint256 newPrice) internal noChallenge {
         if (newPrice > price) {
             _restrictMinting(3 days);
         } else {
@@ -334,16 +337,20 @@ contract Position is Ownable, IPosition, MathUtil {
         emit MintingUpdate(collateralBalance, price, minted);
     }
 
-    function calculateCurrentFee() public view returns (uint32) {
+    function calculateCurrentFee() public view returns (uint24) {
         return calculateFee(expiration);
     }
 
-    function calculateFee(uint256 exp) public view returns (uint32) {
+    function annualInterestPPM() public view returns (uint24) {
+        return IHub(hub).rate().currentRatePPM() + riskPremiumPPM;
+    }
+
+    function calculateFee(uint256 exp) public view returns (uint24) {
         uint256 time = block.timestamp < start ? start : block.timestamp;
         uint256 timePassed = exp - time;
         // Time resolution is in the range of minutes for typical interest rates.
-        uint24 annualInterestPPM = IHub(hub).rate().applicableRatePPM() + riskPremiumPPM;
-        return uint32((timePassed * annualInterestPPM) / 365 days);
+        uint256 feePPM = (timePassed * annualInterestPPM()) / 365 days;
+        return uint24(feePPM > 1000000 ? 1000000 : feePPM); // fee cannot exceed 100%
     }
 
     function _mint(address target, uint256 amount, uint256 collateral_) internal noChallenge noCooldown alive {
