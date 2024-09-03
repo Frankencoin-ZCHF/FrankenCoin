@@ -197,7 +197,7 @@ contract Position is Ownable, IPosition, MathUtil {
         _setOwner(owner);
         expiration = expirationTime;
         _setPrice(impliedPrice, _initialMint);
-        _mint(owner, _initialMint);
+        _mint(owner, _initialMint, _coll);
     }
 
     /**
@@ -329,7 +329,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * and there is sufficient collateral.
      */
     function mint(address target, uint256 amount) public ownerOrRoller noChallenge noCooldown alive {
-        _mint(target, amount);
+        _mint(target, amount, _collateralBalance());
     }
 
     function calculateCurrentFee() public view returns (uint32) {
@@ -344,13 +344,13 @@ contract Position is Ownable, IPosition, MathUtil {
         return uint32((timePassed * annualInterestPPM) / 365 days);
     }
 
-    function _mint(address target, uint256 amount) internal {
+    function _mint(address target, uint256 amount, uint256 collateral_) internal {
         if (amount > availableForMinting()) revert LimitExceeded(availableForMinting());
         Position(original).notifyMint(amount);
         zchf.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
         minted += amount;
-        _checkCollateral(_collateralBalance(), price);
-        emit MintingUpdate(_collateralBalance(), price, minted);
+        _checkCollateral(collateral_, price);
+        emit MintingUpdate(collateral_, price, minted);
     }
 
     function _restrictMinting(uint40 period) internal {
