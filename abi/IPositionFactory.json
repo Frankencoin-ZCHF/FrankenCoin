@@ -5,6 +5,11 @@
                 "internalType": "address",
                 "name": "_existing",
                 "type": "address"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
             }
         ],
         "name": "clonePosition",
@@ -46,24 +51,24 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_initPeriodSeconds",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_duration",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_challengePeriod",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint32",
-                "name": "_annualInterestPPM",
-                "type": "uint32"
+                "internalType": "uint24",
+                "name": "_riskPremiumPPM",
+                "type": "uint24"
             },
             {
                 "internalType": "uint256",
@@ -71,9 +76,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint32",
+                "internalType": "uint24",
                 "name": "_reserve",
-                "type": "uint32"
+                "type": "uint24"
             }
         ],
         "name": "createNewPosition",

@@ -8,6 +8,7 @@ import "./interface/IFrankencoin.sol";
 import "./interface/IPosition.sol";
 import "./interface/IPositionFactory.sol";
 import "./PositionRoller.sol";
+import "./utils/Ownable.sol";
 
 /**
  * @title Minting Hub
@@ -49,13 +50,7 @@ contract MintingHub {
         uint256 size; // how much collateral the challenger provided
     }
 
-    event PositionOpened(
-        address indexed owner,
-        address indexed position,
-        address zchf,
-        address collateral,
-        uint256 price
-    );
+    event PositionOpened(address indexed owner, address indexed position, address original, address collateral);
     event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);
     event ChallengeAverted(address indexed position, uint256 number, uint256 size);
     event ChallengeSucceeded(
@@ -116,7 +111,7 @@ contract MintingHub {
         require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);
         require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
         require(_initialCollateral >= _minCollateral, "must start with min col");
-        require(_minCollateral * _liqPrice >= 10000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
+        require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
@@ -136,35 +131,27 @@ contract MintingHub {
         zchf.collectProfits(msg.sender, OPENING_FEE);
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
-        emit PositionOpened(msg.sender, address(pos), address(zchf), _collateralAddress, _liqPrice);
+        emit PositionOpened(msg.sender, address(pos), address(pos), _collateralAddress);
         return address(pos);
     }
+
+    /* function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public returns (address) {
+        return clone(parent, _initialCollateral, _initialMint, IPosition(parent).price(), expiration);
+    } */
 
     /**
      * @notice Clones an existing position and immediately tries to mint the specified amount using the given collateral.
      * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
-    function clone(
-        address position,
-        uint256 _initialCollateral,
-        uint256 _initialMint,
-        uint40 expiration
-    ) public validPos(position) returns (address) {
-        IPosition existing = IPosition(position);
-        require(expiration <= IPosition(existing.original()).expiration());
-        existing.assertCloneable();
-        address pos = POSITION_FACTORY.clonePosition(position);
+    function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
+        address pos = POSITION_FACTORY.clonePosition(parent, expiration);
         zchf.registerPosition(pos);
-        IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
-        existing.collateral().transferFrom(msg.sender, pos, _initialCollateral);
-
-        emit PositionOpened(
-            msg.sender,
-            address(pos),
-            address(zchf),
-            address(IPosition(pos).collateral()),
-            IPosition(pos).price()
-        );
+        IPosition child = IPosition(pos);
+        IERC20 collateral = child.collateral();
+        emit PositionOpened(msg.sender, address(pos), parent, address(collateral));
+        collateral.transferFrom(msg.sender, pos, _initialCollateral);
+        child.mint(msg.sender, _initialMint);
+        Ownable(address(child)).transferOwnership(msg.sender);
         return address(pos);
     }
 
@@ -250,7 +237,7 @@ contract MintingHub {
             // response to an unreasonable increase of the liquidation price, such that we have to use this heuristic
             // for excess fund distribution, which make position owners that maxed out their positions slightly better
             // off in comparison to those who did not.
-            uint256 profits = reservePPM * (fundsAvailable - repayment) / 1000_000;
+            uint256 profits = (reservePPM * (fundsAvailable - repayment)) / 1000_000;
             zchf.collectProfits(address(this), profits);
             zchf.transfer(owner, fundsAvailable - repayment - profits);
         } else if (fundsAvailable < repayment) {

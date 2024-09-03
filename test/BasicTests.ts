@@ -6,6 +6,7 @@ import {
   Equity,
   Frankencoin,
   PositionFactory,
+  Savings,
   StablecoinBridge,
   TestToken,
 } from "../typechain";
@@ -19,6 +20,7 @@ describe("Basic Tests", () => {
   let zchf: Frankencoin;
   let equity: Equity;
   let positionFactory: PositionFactory;
+  let savings: Savings;
   let mockXCHF: TestToken;
   let bridge: StablecoinBridge;
 
@@ -32,16 +34,14 @@ describe("Basic Tests", () => {
     const equityAddr = await zchf.reserve();
     equity = await ethers.getContractAt("Equity", equityAddr);
 
-    const positionFactoryFactory = await ethers.getContractFactory(
-      "PositionFactory"
-    );
+    const positionFactoryFactory = await ethers.getContractFactory("PositionFactory");
     positionFactory = await positionFactoryFactory.deploy();
 
+    const savingsFactory = await ethers.getContractFactory("Savings");
+    savings = await savingsFactory.deploy(zchf.getAddress(), 0n);
+
     const mintingHubFactory = await ethers.getContractFactory("MintingHub");
-    await mintingHubFactory.deploy(
-      await zchf.getAddress(),
-      await positionFactory.getAddress()
-    );
+    await mintingHubFactory.deploy(await zchf.getAddress(), await savings.getAddress(), await positionFactory.getAddress());
   });
 
   describe("basic initialization", () => {

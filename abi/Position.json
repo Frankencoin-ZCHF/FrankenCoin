@@ -32,24 +32,24 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_initPeriod",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_duration",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_challengePeriod",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint32",
-                "name": "_annualInterestPPM",
-                "type": "uint32"
+                "internalType": "uint24",
+                "name": "_riskPremiumPPM",
+                "type": "uint24"
             },
             {
                 "internalType": "uint256",
@@ -57,9 +57,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint32",
+                "internalType": "uint24",
                 "name": "_reservePPM",
-                "type": "uint32"
+                "type": "uint24"
             }
         ],
         "stateMutability": "nonpayable",
@@ -82,6 +82,22 @@
     },
     {
         "inputs": [],
+        "name": "ExpirationAfterOriginal",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint40",
+                "name": "time",
+                "type": "uint40"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
+            }
+        ],
         "name": "Expired",
         "type": "error"
     },
@@ -241,9 +257,9 @@
         "name": "annualInterestPPM",
         "outputs": [
             {
-                "internalType": "uint32",
+                "internalType": "uint24",
                 "name": "",
-                "type": "uint32"
+                "type": "uint24"
             }
         ],
         "stateMutability": "view",
@@ -287,9 +303,28 @@
         "name": "calculateCurrentFee",
         "outputs": [
             {
-                "internalType": "uint32",
+                "internalType": "uint24",
                 "name": "",
-                "type": "uint32"
+                "type": "uint24"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "exp",
+                "type": "uint256"
+            }
+        ],
+        "name": "calculateFee",
+        "outputs": [
+            {
+                "internalType": "uint24",
+                "name": "",
+                "type": "uint24"
             }
         ],
         "stateMutability": "view",
@@ -305,9 +340,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "phase",
-                "type": "uint64"
+                "type": "uint40"
             }
         ],
         "stateMutability": "view",
@@ -318,9 +353,9 @@
         "name": "challengePeriod",
         "outputs": [
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "",
-                "type": "uint64"
+                "type": "uint40"
             }
         ],
         "stateMutability": "view",
@@ -357,9 +392,9 @@
         "name": "cooldown",
         "outputs": [
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "",
-                "type": "uint64"
+                "type": "uint40"
             }
         ],
         "stateMutability": "view",
@@ -388,9 +423,9 @@
         "name": "expiration",
         "outputs": [
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "",
-                "type": "uint64"
+                "type": "uint40"
             }
         ],
         "stateMutability": "view",
@@ -417,34 +452,6 @@
         "name": "forceSale",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getPositionStatsOrFailIfNotOriginal",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint64",
-                "name": "",
-                "type": "uint64"
-            },
-            {
-                "internalType": "uint32",
-                "name": "",
-                "type": "uint32"
-            },
-            {
-                "internalType": "uint32",
-                "name": "",
-                "type": "uint32"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -505,27 +512,17 @@
                 "type": "address"
             },
             {
-                "internalType": "uint256",
-                "name": "_price",
-                "type": "uint256"
+                "internalType": "contract Position",
+                "name": "parent",
+                "type": "address"
             },
             {
-                "internalType": "uint256",
-                "name": "_coll",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_initialMint",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint64",
-                "name": "expirationTime",
-                "type": "uint64"
+                "internalType": "uint40",
+                "name": "_expiration",
+                "type": "uint40"
             }
         ],
-        "name": "initializeClone",
+        "name": "initialize",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -726,7 +723,13 @@
             }
         ],
         "name": "repay",
-        "outputs": [],
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -735,9 +738,22 @@
         "name": "reserveContribution",
         "outputs": [
             {
-                "internalType": "uint32",
+                "internalType": "uint24",
                 "name": "",
-                "type": "uint32"
+                "type": "uint24"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "riskPremiumPPM",
+        "outputs": [
+            {
+                "internalType": "uint24",
+                "name": "",
+                "type": "uint24"
             }
         ],
         "stateMutability": "view",
@@ -748,9 +764,9 @@
         "name": "start",
         "outputs": [
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "",
-                "type": "uint64"
+                "type": "uint40"
             }
         ],
         "stateMutability": "view",

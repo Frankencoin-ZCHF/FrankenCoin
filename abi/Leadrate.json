@@ -2,8 +2,8 @@
     {
         "inputs": [
             {
-                "internalType": "contract IFrankencoin",
-                "name": "zchf_",
+                "internalType": "contract IReserve",
+                "name": "equity_",
                 "type": "address"
             },
             {
@@ -24,19 +24,6 @@
         "inputs": [],
         "name": "NoPendingChange",
         "type": "error"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "interest",
-                "type": "uint256"
-            }
-        ],
-        "name": "InterestReserved",
-        "type": "event"
     },
     {
         "anonymous": false,
@@ -87,25 +74,6 @@
             }
         ],
         "name": "RateProposed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint192",
-                "name": "amount",
-                "type": "uint192"
-            }
-        ],
-        "name": "Saved",
         "type": "event"
     },
     {
@@ -196,130 +164,6 @@
         "name": "proposeChange",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "refreshBalance",
-        "outputs": [
-            {
-                "internalType": "uint192",
-                "name": "",
-                "type": "uint192"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "refreshBalance",
-        "outputs": [
-            {
-                "internalType": "uint192",
-                "name": "",
-                "type": "uint192"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "internalType": "uint192",
-                "name": "amount",
-                "type": "uint192"
-            }
-        ],
-        "name": "save",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint192",
-                "name": "amount",
-                "type": "uint192"
-            }
-        ],
-        "name": "save",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "savings",
-        "outputs": [
-            {
-                "internalType": "uint192",
-                "name": "saved",
-                "type": "uint192"
-            },
-            {
-                "internalType": "uint64",
-                "name": "ticks",
-                "type": "uint64"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "target",
-                "type": "address"
-            },
-            {
-                "internalType": "uint192",
-                "name": "amount",
-                "type": "uint192"
-            }
-        ],
-        "name": "withdraw",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "zchf",
-        "outputs": [
-            {
-                "internalType": "contract IERC20",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     }
 ]
