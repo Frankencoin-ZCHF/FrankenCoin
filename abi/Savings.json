@@ -5,143 +5,124 @@
                 "internalType": "contract IFrankencoin",
                 "name": "zchf_",
                 "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "legacyHub_",
-                "type": "address"
             }
         ],
         "stateMutability": "nonpayable",
         "type": "constructor"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "account",
-                "type": "uint256"
-            }
-        ],
-        "name": "AccountAlive",
+        "inputs": [],
+        "name": "ChangeNotReady",
         "type": "error"
     },
     {
         "inputs": [],
-        "name": "InsufficientVolume",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "pos",
-                "type": "address"
-            }
-        ],
-        "name": "InvalidPosition",
+        "name": "NoPendingChange",
         "type": "error"
     },
     {
         "anonymous": false,
         "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "boost",
-                "type": "address"
-            }
-        ],
-        "name": "BoostProposed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint32",
-                "name": "id",
-                "type": "uint32"
-            }
-        ],
-        "name": "Cleanup",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint192",
-                "name": "interest",
-                "type": "uint192"
-            }
-        ],
-        "name": "InterestExtracted",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint32",
-                "name": "id",
-                "type": "uint32"
-            },
             {
                 "indexed": false,
                 "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint32",
                 "name": "interest",
-                "type": "uint32"
+                "type": "uint256"
+            }
+        ],
+        "name": "InterestReserved",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "who",
+                "type": "address"
+            }
+        ],
+        "name": "RateChangeCancelled",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint24",
+                "name": "newRate",
+                "type": "uint24"
+            }
+        ],
+        "name": "RateChanged",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "who",
+                "type": "address"
             },
             {
                 "indexed": false,
-                "internalType": "uint64",
-                "name": "maturity",
-                "type": "uint64"
+                "internalType": "uint24",
+                "name": "nextRate",
+                "type": "uint24"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint40",
+                "name": "nextChange",
+                "type": "uint40"
+            }
+        ],
+        "name": "RateProposed",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint192",
+                "name": "amount",
+                "type": "uint192"
             }
         ],
         "name": "Saved",
         "type": "event"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "accounts",
+        "inputs": [],
+        "name": "currentRatePPM",
         "outputs": [
             {
-                "internalType": "uint192",
-                "name": "amount",
-                "type": "uint192"
-            },
+                "internalType": "uint24",
+                "name": "",
+                "type": "uint24"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "currentTicks",
+        "outputs": [
             {
                 "internalType": "uint64",
-                "name": "end",
+                "name": "",
                 "type": "uint64"
             }
         ],
@@ -149,48 +130,8 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "volume",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint32",
-                "name": "interest",
-                "type": "uint32"
-            },
-            {
-                "internalType": "uint64",
-                "name": "expiration",
-                "type": "uint64"
-            }
-        ],
-        "name": "boostInterest",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "internalType": "uint32",
-                "name": "id",
-                "type": "uint32"
-            }
-        ],
-        "name": "cleanup",
+        "inputs": [],
+        "name": "enactChange",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -200,12 +141,88 @@
         "name": "equity",
         "outputs": [
             {
-                "internalType": "address",
+                "internalType": "contract IReserve",
                 "name": "",
                 "type": "address"
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "nextChange",
+        "outputs": [
+            {
+                "internalType": "uint40",
+                "name": "",
+                "type": "uint40"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "nextRatePPM",
+        "outputs": [
+            {
+                "internalType": "uint24",
+                "name": "",
+                "type": "uint24"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint24",
+                "name": "newRatePPM_",
+                "type": "uint24"
+            },
+            {
+                "internalType": "address[]",
+                "name": "helpers",
+                "type": "address[]"
+            }
+        ],
+        "name": "proposeChange",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "refreshBalance",
+        "outputs": [
+            {
+                "internalType": "uint192",
+                "name": "",
+                "type": "uint192"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "refreshBalance",
+        "outputs": [
+            {
+                "internalType": "uint192",
+                "name": "",
+                "type": "uint192"
+            }
+        ],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -216,83 +233,9 @@
                 "type": "address"
             },
             {
-                "internalType": "uint32",
-                "name": "id",
-                "type": "uint32"
-            }
-        ],
-        "name": "getAccount",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "uint192",
-                        "name": "amount",
-                        "type": "uint192"
-                    },
-                    {
-                        "internalType": "uint64",
-                        "name": "end",
-                        "type": "uint64"
-                    }
-                ],
-                "internalType": "struct Savings.Account",
-                "name": "",
-                "type": "tuple"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "legacyHub",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
                 "internalType": "uint192",
                 "name": "amount",
                 "type": "uint192"
-            },
-            {
-                "internalType": "uint32",
-                "name": "id",
-                "type": "uint32"
-            },
-            {
-                "internalType": "uint32",
-                "name": "yield",
-                "type": "uint32"
-            },
-            {
-                "internalType": "uint64",
-                "name": "maturity",
-                "type": "uint64"
-            },
-            {
-                "internalType": "uint256[]",
-                "name": "cleanupIds",
-                "type": "uint256[]"
-            },
-            {
-                "internalType": "address[]",
-                "name": "interestProof",
-                "type": "address[]"
-            },
-            {
-                "internalType": "address[]",
-                "name": "legacyPositions",
-                "type": "address[]"
             }
         ],
         "name": "save",
@@ -301,47 +244,37 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "totalSaved",
-        "outputs": [
+        "inputs": [
             {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
+                "internalType": "uint192",
+                "name": "amount",
+                "type": "uint192"
             }
         ],
-        "stateMutability": "view",
+        "name": "save",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
         "inputs": [
             {
-                "internalType": "address[]",
-                "name": "interestProof",
-                "type": "address[]"
-            },
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "savings",
+        "outputs": [
             {
-                "internalType": "address[]",
-                "name": "legacyPositions",
-                "type": "address[]"
-            },
-            {
-                "internalType": "uint256",
-                "name": "volume",
-                "type": "uint256"
+                "internalType": "uint192",
+                "name": "saved",
+                "type": "uint192"
             },
             {
                 "internalType": "uint64",
-                "name": "expiration",
+                "name": "ticks",
                 "type": "uint64"
-            }
-        ],
-        "name": "yieldAt",
-        "outputs": [
-            {
-                "internalType": "uint32",
-                "name": "",
-                "type": "uint32"
             }
         ],
         "stateMutability": "view",
@@ -350,35 +283,25 @@
     {
         "inputs": [
             {
-                "internalType": "address[]",
-                "name": "interestProof",
-                "type": "address[]"
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
             },
             {
-                "internalType": "address[]",
-                "name": "legacyPositions",
-                "type": "address[]"
-            },
+                "internalType": "uint192",
+                "name": "amount",
+                "type": "uint192"
+            }
+        ],
+        "name": "withdraw",
+        "outputs": [
             {
                 "internalType": "uint256",
-                "name": "volume",
+                "name": "",
                 "type": "uint256"
             }
         ],
-        "name": "yieldCurve",
-        "outputs": [
-            {
-                "internalType": "uint32[]",
-                "name": "",
-                "type": "uint32[]"
-            },
-            {
-                "internalType": "uint64[]",
-                "name": "",
-                "type": "uint64[]"
-            }
-        ],
-        "stateMutability": "view",
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -386,7 +309,7 @@
         "name": "zchf",
         "outputs": [
             {
-                "internalType": "contract IFrankencoin",
+                "internalType": "contract IERC20",
                 "name": "",
                 "type": "address"
             }

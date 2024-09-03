@@ -49,13 +49,7 @@ contract MintingHub {
         uint256 size; // how much collateral the challenger provided
     }
 
-    event PositionOpened(
-        address indexed owner,
-        address indexed position,
-        address zchf,
-        address collateral,
-        uint256 price
-    );
+    event PositionOpened(address indexed owner, address indexed position, address original, address collateral);
     event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);
     event ChallengeAverted(address indexed position, uint256 number, uint256 size);
     event ChallengeSucceeded(
@@ -136,7 +130,7 @@ contract MintingHub {
         zchf.collectProfits(msg.sender, OPENING_FEE);
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
-        emit PositionOpened(msg.sender, address(pos), address(zchf), _collateralAddress, _liqPrice);
+        emit PositionOpened(msg.sender, address(pos), address(pos), _collateralAddress);
         return address(pos);
     }
 
@@ -145,28 +139,20 @@ contract MintingHub {
      * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
     function clone(
-        address position,
+        address parent,
         uint256 _initialCollateral,
         uint256 _initialMint,
         uint40 expiration
-    ) public validPos(position) returns (address) {
-        IPosition existing = IPosition(position);
+    ) public validPos(parent) returns (address) {
+        IPosition existing = IPosition(parent);
         require(expiration <= IPosition(existing.original()).expiration());
         existing.assertCloneable();
-        address pos = POSITION_FACTORY.clonePosition(position);
+        address pos = POSITION_FACTORY.clonePosition(parent);
         zchf.registerPosition(pos);
-        existing.collateral().transferFrom(msg.sender, pos, _initialCollateral);
-
-        emit PositionOpened(
-            msg.sender,
-            address(pos),
-            address(zchf),
-            address(IPosition(pos).collateral()),
-            IPosition(pos).price()
-        );
-
+        IERC20 collateral = existing.collateral();
+        collateral.transferFrom(msg.sender, pos, _initialCollateral);
         IPosition(pos).initializeClone(msg.sender, existing.price(), _initialCollateral, _initialMint, expiration);
-
+        emit PositionOpened(msg.sender, address(pos), parent, address(collateral));
         return address(pos);
     }
 

@@ -7,6 +7,11 @@
                 "type": "address"
             },
             {
+                "internalType": "contract ILeadrate",
+                "name": "leadrate_",
+                "type": "address"
+            },
+            {
                 "internalType": "address",
                 "name": "_factory",
                 "type": "address"
@@ -157,7 +162,7 @@
             {
                 "indexed": false,
                 "internalType": "address",
-                "name": "zchf",
+                "name": "original",
                 "type": "address"
             },
             {
@@ -165,12 +170,6 @@
                 "internalType": "address",
                 "name": "collateral",
                 "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "price",
-                "type": "uint256"
             }
         ],
         "name": "PositionOpened",
@@ -206,9 +205,9 @@
         "name": "CHALLENGER_REWARD",
         "outputs": [
             {
-                "internalType": "uint32",
+                "internalType": "uint256",
                 "name": "",
-                "type": "uint32"
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -219,9 +218,9 @@
         "name": "EXPIRED_PRICE_FACTOR",
         "outputs": [
             {
-                "internalType": "uint32",
+                "internalType": "uint256",
                 "name": "",
-                "type": "uint32"
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -326,9 +325,9 @@
                 "type": "address"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "start",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
                 "internalType": "contract IPosition",
@@ -348,7 +347,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "position",
+                "name": "parent",
                 "type": "address"
             },
             {
@@ -362,9 +361,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "expiration",
-                "type": "uint64"
+                "type": "uint40"
             }
         ],
         "name": "clone",
@@ -420,24 +419,24 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_initPeriodSeconds",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_expirationSeconds",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint64",
+                "internalType": "uint40",
                 "name": "_challengeSeconds",
-                "type": "uint64"
+                "type": "uint40"
             },
             {
-                "internalType": "uint32",
-                "name": "_annualInterestPPM",
-                "type": "uint32"
+                "internalType": "uint24",
+                "name": "_riskPremium",
+                "type": "uint24"
             },
             {
                 "internalType": "uint256",
@@ -445,71 +444,12 @@
                 "type": "uint256"
             },
             {
-                "internalType": "uint32",
+                "internalType": "uint24",
                 "name": "_reservePPM",
-                "type": "uint32"
+                "type": "uint24"
             }
         ],
         "name": "openPosition",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_collateralAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_minCollateral",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_initialCollateral",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_mintingMaximum",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint64",
-                "name": "_expirationSeconds",
-                "type": "uint64"
-            },
-            {
-                "internalType": "uint64",
-                "name": "_challengeSeconds",
-                "type": "uint64"
-            },
-            {
-                "internalType": "uint32",
-                "name": "_annualInterestPPM",
-                "type": "uint32"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_liqPrice",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint32",
-                "name": "_reservePPM",
-                "type": "uint32"
-            }
-        ],
-        "name": "openPositionOneWeek",
         "outputs": [
             {
                 "internalType": "address",
@@ -564,6 +504,19 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "rate",
+        "outputs": [
+            {
+                "internalType": "contract ILeadrate",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "address",
@@ -579,6 +532,19 @@
         "name": "returnPostponedCollateral",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "roller",
+        "outputs": [
+            {
+                "internalType": "contract PositionRoller",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {

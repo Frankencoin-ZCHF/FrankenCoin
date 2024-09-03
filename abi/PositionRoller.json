@@ -1,0 +1,73 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "contract IFrankencoin",
+                "name": "zchf_",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "c1",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "c2",
+                "type": "address"
+            }
+        ],
+        "name": "CollateralMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "pos",
+                "type": "address"
+            }
+        ],
+        "name": "NotOwner",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract IPosition",
+                "name": "source",
+                "type": "address"
+            },
+            {
+                "internalType": "contract IPosition",
+                "name": "target",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "borrowAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "repayAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "collateralTransferAmount",
+                "type": "uint256"
+            }
+        ],
+        "name": "roll",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]
