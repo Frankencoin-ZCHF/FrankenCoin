@@ -21,6 +21,17 @@
         "type": "error"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint40",
+                "name": "remainingSeconds",
+                "type": "uint40"
+            }
+        ],
+        "name": "FundsLocked",
+        "type": "error"
+    },
+    {
         "inputs": [],
         "name": "NoPendingChange",
         "type": "error"
@@ -107,6 +118,19 @@
         ],
         "name": "Saved",
         "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "INTEREST_DELAY",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     },
     {
         "inputs": [],
