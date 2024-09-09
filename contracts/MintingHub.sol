@@ -148,8 +148,8 @@ contract MintingHub {
         zchf.registerPosition(pos);
         IPosition child = IPosition(pos);
         IERC20 collateral = child.collateral();
-        emit PositionOpened(msg.sender, address(pos), parent, address(collateral));
         collateral.transferFrom(msg.sender, pos, _initialCollateral);
+        emit PositionOpened(msg.sender, address(pos), parent, address(collateral));
         child.mint(msg.sender, _initialMint);
         Ownable(address(child)).transferOwnership(msg.sender);
         return address(pos);
@@ -334,29 +334,24 @@ contract MintingHub {
         }
     }
 
-    function expiredPurchasePrice(IPosition pos) external view returns (uint256) {
-        uint256 expiration = pos.expiration();
-        if (block.timestamp <= expiration){
-            return EXPIRED_PRICE_FACTOR * pos.price();
-        } else {
-            return _expiredPurchasePrice(pos, expiration);
-        }
-    }
-
-    function _expiredPurchasePrice(IPosition pos, uint256 expiration) internal view returns (uint256) {
+    function expiredPurchasePrice(IPosition pos) public view returns (uint256) {
         uint256 liqprice = pos.price();
+        uint256 expiration = pos.expiration();
         if (block.timestamp <= expiration){
             return EXPIRED_PRICE_FACTOR * liqprice;
         } else {
             uint256 challengePeriod = pos.challengePeriod();
             uint256 timePassed = block.timestamp - expiration;
             if (timePassed <= challengePeriod){
+                // from 10x liquidation price to 1x in first phase
                 uint256 timeLeft = challengePeriod - timePassed;
                 return liqprice + (EXPIRED_PRICE_FACTOR - 1) * liqprice / challengePeriod * timeLeft;
             } else if (timePassed < 2*challengePeriod){
+                // from 1x liquidation price to 0 in second phase
                 uint256 timeLeft = 2*challengePeriod - timePassed;
                 return liqprice / challengePeriod * timeLeft;
             } else {
+                // get collateral for free after both phases passed
                 return 0;
             }
         }
@@ -365,7 +360,7 @@ contract MintingHub {
     error PositionAlive(address pos, uint256 exp, uint256 time);
 
     function buyExpiredCollateral(IPosition pos, uint256 amount) external {
-        uint256 costs = _expiredPurchasePrice(pos, pos.expiration()) * amount / 10**18;
+        uint256 costs = expiredPurchasePrice(pos) * amount / 10**18;
         pos.forceSale(msg.sender, amount, costs);
     }
 
