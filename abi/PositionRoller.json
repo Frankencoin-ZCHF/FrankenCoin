@@ -11,18 +11,7 @@
         "type": "constructor"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "c1",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "c2",
-                "type": "address"
-            }
-        ],
+        "inputs": [],
         "name": "CollateralMismatch",
         "type": "error"
     },

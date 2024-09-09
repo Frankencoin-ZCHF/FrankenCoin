@@ -7,8 +7,8 @@
                 "type": "address"
             },
             {
-                "internalType": "contract ILeadrate",
-                "name": "leadrate_",
+                "internalType": "address",
+                "name": "_leadrate",
                 "type": "address"
             },
             {

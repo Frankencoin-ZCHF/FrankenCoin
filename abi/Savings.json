@@ -33,7 +33,7 @@
     },
     {
         "inputs": [],
-        "name": "NoPendingChange",
+        "name": "NoChangeApplied",
         "type": "error"
     },
     {
@@ -54,25 +54,12 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "address",
-                "name": "who",
-                "type": "address"
-            }
-        ],
-        "name": "RateChangeCancelled",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "uint24",
                 "name": "newRate",
                 "type": "uint24"
             }
         ],
-        "name": "RateChanged",
+        "name": "RateApplied",
         "type": "event"
     },
     {
@@ -98,6 +85,25 @@
             }
         ],
         "name": "RateProposed",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "who",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint24",
+                "name": "toRate",
+                "type": "uint24"
+            }
+        ],
+        "name": "RateReverted",
         "type": "event"
     },
     {
