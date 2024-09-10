@@ -13,6 +13,7 @@ import "./interface/IReserve.sol";
  *
  **/
 contract Leadrate {
+
     IReserve public immutable equity;
 
     // the following five variables are less than 256 bit so they should be stored
@@ -26,10 +27,9 @@ contract Leadrate {
     uint64 private ticksAnchor; // in bips * seconds, uint88 allows up to
 
     event RateProposed(address who, uint24 nextRate, uint40 nextChange);
-    event RateReverted(address who, uint24 toRate);
-    event RateApplied(uint24 newRate);
+    event RateChanged(uint24 newRate);
 
-    error NoChangeApplied();
+    error NoPendingChange();
     error ChangeNotReady();
 
     constructor(IReserve equity_, uint24 initialRatePPM) {
@@ -39,7 +39,7 @@ contract Leadrate {
         nextChange = uint40(block.timestamp);
         anchorTime = nextChange;
         ticksAnchor = 0;
-        emit RateApplied(initialRatePPM); // emit for init indexing, if wanted
+        emit RateChanged(initialRatePPM); // emit for init indexing, if wanted
     }
 
     /**
@@ -48,29 +48,22 @@ contract Leadrate {
      */
     function proposeChange(uint24 newRatePPM_, address[] calldata helpers) external {
         equity.checkQualified(msg.sender, helpers);
-        if (nextRatePPM != currentRatePPM && newRatePPM_ == currentRatePPM) {
-            nextRatePPM = currentRatePPM;
-            emit RateReverted(msg.sender, nextRatePPM);
-        } else if (nextRatePPM != newRatePPM_) {
-            nextRatePPM = newRatePPM_;
-            nextChange = uint40(block.timestamp + 7 days);
-            emit RateProposed(msg.sender, nextRatePPM, nextChange);
-        } else {
-            revert NoChangeApplied();
-        }
+        nextRatePPM = newRatePPM_;
+        nextChange = uint40(block.timestamp + 7 days);
+        emit RateProposed(msg.sender, nextRatePPM, nextChange);
     }
 
     /**
      * Setting a previously proposed interest rate change into force.
      */
     function applyChange() external {
-        if (currentRatePPM == nextRatePPM) revert NoChangeApplied();
+        if (currentRatePPM == nextRatePPM) revert NoPendingChange();
         uint40 timeNow = uint40(block.timestamp);
         if (timeNow < nextChange) revert ChangeNotReady();
         ticksAnchor += (timeNow - anchorTime) * currentRatePPM;
         anchorTime = timeNow;
         currentRatePPM = nextRatePPM;
-        emit RateApplied(currentRatePPM);
+        emit RateChanged(currentRatePPM);
     }
 
     /**
@@ -83,4 +76,5 @@ contract Leadrate {
     function currentTicks() public view returns (uint64) {
         return ticksAnchor + (uint64(block.timestamp) - anchorTime) * currentRatePPM;
     }
+
 }

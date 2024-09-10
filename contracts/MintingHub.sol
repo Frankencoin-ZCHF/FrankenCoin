@@ -208,16 +208,9 @@ contract MintingHub {
         }
     }
 
-    function _finishChallenge(
-        Challenge memory _challenge,
-        uint256 liqPrice,
-        uint40 phase,
-        uint256 size
-    ) internal returns (uint256, uint256) {
+    function _finishChallenge(Challenge memory _challenge, uint256 liqPrice, uint40 phase, uint256 size) internal returns (uint256, uint256) {
         // Repayments depend on what was actually minted, whereas bids depend on the available collateral
-        (address owner, uint256 collateral, uint256 repayment, uint32 reservePPM) = _challenge
-            .position
-            .notifyChallengeSucceeded(msg.sender, size);
+        (address owner, uint256 collateral, uint256 repayment, uint32 reservePPM) = _challenge.position.notifyChallengeSucceeded(msg.sender, size);
 
         // No overflow possible thanks to invariant (col * price <= limit * 10**18)
         // enforced in Position.setPrice and knowing that collateral <= col.

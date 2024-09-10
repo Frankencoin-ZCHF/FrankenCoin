@@ -14,23 +14,16 @@ import "./interface/IReserve.sol";
  * Both positions should have the same collateral. Otherwise, it does not make much sense.
  */
 contract PositionRoller {
+    
     IFrankencoin private zchf;
 
     error NotOwner(address pos);
-    error CollateralMismatch();
 
     constructor(IFrankencoin zchf_) {
         zchf = zchf_;
     }
 
-    function roll(
-        IPosition source,
-        IPosition target,
-        uint256 borrowAmount,
-        uint256 repayAmount,
-        uint256 collateralTransferAmount
-    ) external own(source) own(target) {
-        if (source.collateral() != target.collateral()) revert CollateralMismatch();
+    function roll(IPosition source, IPosition target, uint256 borrowAmount, uint256 repayAmount, uint256 collateralTransferAmount) external own(source) own(target) {
         zchf.mint(address(this), repayAmount); // take a flash loan
         source.repay(repayAmount);
         source.withdrawCollateral(address(target), collateralTransferAmount);
