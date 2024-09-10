@@ -84,6 +84,13 @@
     },
     {
         "inputs": [],
+        "name": "applyChange",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "currentRatePPM",
         "outputs": [
             {
@@ -106,13 +113,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "enactChange",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
