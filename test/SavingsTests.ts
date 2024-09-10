@@ -10,6 +10,7 @@ import {
   Savings,
   TestToken,
 } from "../typechain";
+import { evm_increaseTime } from "./helper";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Savings Tests", () => {
@@ -54,6 +55,7 @@ describe("Savings Tests", () => {
     // jump start ecosystem
     await zchf.initialize(owner.address, "owner");
     await zchf.initialize(await mintingHub.getAddress(), "mintingHub");
+    await zchf.initialize(await savings.getAddress(), "savings");
 
     await zchf.mint(owner.address, floatToDec18(1000000));
     await zchf.transfer(alice.address, floatToDec18(100000));
@@ -69,18 +71,10 @@ describe("Savings Tests", () => {
     coin = await coinFactory.deploy("Supercoin", "XCOIN", 18);
   });
 
-  describe("Save some zchf test", () => {
-    it("no approval", async () => {
-      const amount = floatToDec18(1000);
-      const r = savings["save(uint192)"](amount);
-      await expect(r).to.be.revertedWithCustomError(
-        zchf,
-        "ERC20InsufficientAllowance"
-      );
-    });
+  const amount = floatToDec18(1000);
 
+  describe("Save some zchf test", () => {
     it("simple save", async () => {
-      const amount = floatToDec18(1000);
       await zchf.approve(savings.getAddress(), amount);
       await savings["save(uint192)"](amount);
 
@@ -90,7 +84,6 @@ describe("Savings Tests", () => {
     });
 
     it("multi save", async () => {
-      const amount = floatToDec18(1000);
       await zchf.approve(savings.getAddress(), amount * 3n);
       await savings["save(uint192)"](amount);
       await savings["save(uint192)"](amount);
@@ -101,15 +94,38 @@ describe("Savings Tests", () => {
       expect(r.saved).to.be.equal(amount * (1n + 3n));
     });
 
-    it("tries to withdraw, w/o waiting", async () => {
+    it("premature attempt to withdraw", async () => {
       const r = await savings.savings(owner.address);
       const c = await savings.currentTicks();
       console.log("owner ticks", r.ticks);
       console.log("current ticks", c);
 
-      const amount = floatToDec18(1000);
       const w = savings.withdraw(owner.address, amount);
       await expect(w).to.be.revertedWithCustomError(savings, "FundsLocked");
+    });
+
+    it("withdraw savings", async () => {
+      const account = await savings.savings(owner.address);
+      expect(account.saved).to.be.eq(4n * amount);
+      const ticks = await savings.currentTicks();
+      const timeLeft = (account.ticks - ticks) / (await savings.currentRatePPM());
+      await evm_increaseTime(timeLeft - 1n); // when executing the next transaction, timer will be increased by 1 seconds
+      const account2 = await savings.savings(owner.address);
+      expect(account2.saved).to.be.eq(4n * amount);
+      await savings.withdraw(owner.address, amount);
+      expect(await zchf.balanceOf(await zchf.reserve())).to.be.eq(20999999998942795535262n); // unfortunately already a little bit paid 
+      await savings.refreshBalance(owner.address);
+      await evm_increaseTime(1234);
+      const oldBalance = (await savings.savings(owner.address)).saved;
+      const oldReserve = await zchf.balanceOf(await zchf.reserve());
+      await savings.refreshMyBalance();
+      await savings.refreshBalance(owner.address);
+      const newBalance = (await savings.savings(owner.address)).saved;
+      const newReserve = await zchf.balanceOf(await zchf.reserve());
+      expect(newBalance - oldBalance).to.be.eq(oldReserve - newReserve);
+      expect(newBalance - oldBalance).to.be.eq(1237n * (await savings.currentRatePPM()) * oldBalance / 1000000n / 365n / 24n / 3600n);
+      const all = await savings.withdraw(owner.address, 10n * amount);
+      await expect(all).to.be.eq(newBalance);
     });
   });
 });

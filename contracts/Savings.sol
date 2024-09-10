@@ -45,7 +45,7 @@ contract Savings is Leadrate {
     /**
      * Shortcut for refreshBalance(msg.sender)
      */
-    function refreshBalance() public returns (uint192) {
+    function refreshMyBalance() public returns (uint192) {
         return refreshBalance(msg.sender);
     }
 
@@ -63,13 +63,13 @@ contract Savings is Leadrate {
         Account storage account = savings[accountOwner];
         uint64 ticks = currentTicks();
         if (ticks > account.ticks) {
-            uint192 earnedInterest = uint192((uint256(ticks - account.ticks) * account.saved) / 1000000);
+            uint192 earnedInterest = uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
             if (earnedInterest > 0 && zchf.balanceOf(address(equity)) >= earnedInterest) {
                 zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
                 account.saved += earnedInterest;
             }
+            account.ticks = ticks;
         }
-        account.ticks = ticks;
         return account;
     }
 

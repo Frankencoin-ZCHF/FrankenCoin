@@ -33,7 +33,7 @@
     },
     {
         "inputs": [],
-        "name": "NoChangeApplied",
+        "name": "NoPendingChange",
         "type": "error"
     },
     {
@@ -59,7 +59,7 @@
                 "type": "uint24"
             }
         ],
-        "name": "RateApplied",
+        "name": "RateChanged",
         "type": "event"
     },
     {
@@ -85,25 +85,6 @@
             }
         ],
         "name": "RateProposed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "who",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint24",
-                "name": "toRate",
-                "type": "uint24"
-            }
-        ],
-        "name": "RateReverted",
         "type": "event"
     },
     {
@@ -229,7 +210,13 @@
         "type": "function"
     },
     {
-        "inputs": [],
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
         "name": "refreshBalance",
         "outputs": [
             {
@@ -242,14 +229,8 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "refreshBalance",
+        "inputs": [],
+        "name": "refreshMyBalance",
         "outputs": [
             {
                 "internalType": "uint192",

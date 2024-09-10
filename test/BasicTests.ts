@@ -67,15 +67,10 @@ describe("Basic Tests", () => {
       expect(nextRatePPM).to.be.equal(20000n);
     });
     it("tries to propose no changes", async () => {
-      await expect(
-        savings.proposeChange(20000n, [])
-      ).to.be.revertedWithCustomError(savings, "NoChangeApplied");
+      await savings.proposeChange(20000n, []);
     });
     it("tries to apply no changes", async () => {
-      await expect(savings.applyChange()).to.be.revertedWithCustomError(
-        savings,
-        "NoChangeApplied"
-      );
+      await expect(savings.applyChange()).to.be.revertedWithCustomError(savings, "NoPendingChange");
     });
     it("Checks ", async () => {
       const getTimeStamp = async () => {

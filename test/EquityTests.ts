@@ -140,35 +140,31 @@ describe("Equity Tests", () => {
       await expect(r).to.be.revertedWithCustomError(equity, "NotQualified");
     });
 
-    it("Proposes and revertes rate changes", async () => {
-      const propose = await savings.proposeChange(21000n, []);
-      const nextChange = await savings.nextChange();
-
-      const revert = await savings.proposeChange(20000n, []);
+    it("Proposes and reverts rate changes", async () => {
+      await savings.proposeChange(21000n, []);
+      await savings.proposeChange(20000n, []);
       expect(await savings.nextRatePPM()).to.be.equal(20000n);
-      expect(await savings.nextChange()).to.be.equal(nextChange);
     });
 
     it("Proposes and trying to revert without votes", async () => {
-      const propose = await savings.proposeChange(21000n, []);
-      const nextChange = await savings.nextChange();
-
+      await savings.proposeChange(21000n, []);
       const r = savings.connect(alice).proposeChange(20000n, []);
       await expect(r).to.be.revertedWithCustomError(equity, "NotQualified");
     });
 
     it("Proposes and apply without waiting", async () => {
-      const propose = await savings.proposeChange(21000n, []);
-      expect(savings.applyChange()).to.be.revertedWithCustomError(
-        savings,
-        "ChangeNotReady"
-      );
+      await savings.proposeChange(21000n, []);
+      expect(savings.applyChange()).to.be.revertedWithCustomError(savings, "ChangeNotReady");
     });
 
     it("Proposes, wait and apply", async () => {
-      const propose = await savings.proposeChange(21000n, []);
+      const prevRate = await savings.currentRatePPM();
+      const newRate = BigInt(23123n);
+      await savings.proposeChange(newRate, []);
       await evm_increaseTime(7 * 86_400 + 60);
-      const apply = await savings.applyChange();
+      expect(await savings.currentRatePPM()).to.be.eq(prevRate);
+      await savings.applyChange();
+      expect(await savings.currentRatePPM()).to.be.eq(newRate);
     });
   });
 

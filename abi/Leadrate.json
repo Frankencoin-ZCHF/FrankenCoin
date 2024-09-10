@@ -22,7 +22,7 @@
     },
     {
         "inputs": [],
-        "name": "NoChangeApplied",
+        "name": "NoPendingChange",
         "type": "error"
     },
     {
@@ -35,7 +35,7 @@
                 "type": "uint24"
             }
         ],
-        "name": "RateApplied",
+        "name": "RateChanged",
         "type": "event"
     },
     {
@@ -61,25 +61,6 @@
             }
         ],
         "name": "RateProposed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "who",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint24",
-                "name": "toRate",
-                "type": "uint24"
-            }
-        ],
-        "name": "RateReverted",
         "type": "event"
     },
     {
