@@ -183,17 +183,6 @@ contract Position is Ownable, IPosition, MathUtil {
         price = parent.price();
     }
 
-/*     /**
-    function transferOwnerAndMint(address newOwner, uint256 mintAmount, uint256 newPrice) external onlyOwner {
-        _setOwner(newOwner);
-        uint256 colbal = _collateralBalance();
-        _mint(newOwner, mintAmount, colbal);
-        if (newPrice != price) {
-            _adjustPrice(newPrice);
-        }
-        emit MintingUpdate(colbal, newPrice, minted);
-    } */
-
     /**
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
      */

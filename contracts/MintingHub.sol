@@ -139,24 +139,23 @@ contract MintingHub {
         return clone(parent, _initialCollateral, _initialMint, IPosition(parent).price(), expiration);
     } */
 
+   function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
+        return clone(msg.sender, parent, _initialCollateral, _initialMint, expiration);
+   }
+
     /**
      * @notice Clones an existing position and immediately tries to mint the specified amount using the given collateral.
      * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
-    function clone(
-        address parent,
-        uint256 _initialCollateral,
-        uint256 _initialMint,
-        uint40 expiration
-    ) public validPos(parent) returns (address) {
+    function clone(address owner, address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
         address pos = POSITION_FACTORY.clonePosition(parent, expiration);
         zchf.registerPosition(pos);
         IPosition child = IPosition(pos);
         IERC20 collateral = child.collateral();
-        collateral.transferFrom(msg.sender, pos, _initialCollateral);
-        emit PositionOpened(msg.sender, address(pos), parent, address(collateral));
-        child.mint(msg.sender, _initialMint);
-        Ownable(address(child)).transferOwnership(msg.sender);
+        collateral.transferFrom(msg.sender, pos, _initialCollateral); // collateral must still come from sender for security
+        emit PositionOpened(owner, address(pos), parent, address(collateral));
+        child.mint(owner, _initialMint);
+        Ownable(address(child)).transferOwnership(owner);
         return address(pos);
     }
 

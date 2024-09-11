@@ -102,6 +102,11 @@ describe("Savings Tests", () => {
 
       const w = savings.withdraw(owner.address, amount);
       await expect(w).to.be.revertedWithCustomError(savings, "FundsLocked");
+
+      savings.connect(owner).refreshMyBalance();
+
+      const w2 = savings.withdraw(owner.address, amount);
+      await expect(w2).to.be.revertedWithCustomError(savings, "FundsLocked");
     });
 
     it("withdraw savings", async () => {
@@ -118,14 +123,18 @@ describe("Savings Tests", () => {
       await evm_increaseTime(1234);
       const oldBalance = (await savings.savings(owner.address)).saved;
       const oldReserve = await zchf.balanceOf(await zchf.reserve());
-      await savings.refreshMyBalance();
+      const oldUserTicks = (await savings.savings(owner.address)).ticks;
+      const oldSystemTicks = await savings.currentTicks();
       await savings.refreshBalance(owner.address);
       const newBalance = (await savings.savings(owner.address)).saved;
       const newReserve = await zchf.balanceOf(await zchf.reserve());
+      const newUserTicks = (await savings.savings(owner.address)).ticks;
+      const newSystemTicks = await savings.currentTicks();
+      expect(newUserTicks).to.be.eq(newSystemTicks);
       expect(newBalance - oldBalance).to.be.eq(oldReserve - newReserve);
-      expect(newBalance - oldBalance).to.be.eq(1237n * (await savings.currentRatePPM()) * oldBalance / 1000000n / 365n / 24n / 3600n);
-      const all = await savings.withdraw(owner.address, 10n * amount);
-      await expect(all).to.be.eq(newBalance);
+      expect(newBalance - oldBalance).to.be.eq((newUserTicks - oldUserTicks) * oldBalance / 1000000n / 365n / 24n / 3600n);
+      await savings.withdraw(owner.address, 10n * amount);
+      await expect((await savings.savings(owner.address)).saved).to.be.eq(0n);
     });
   });
 });

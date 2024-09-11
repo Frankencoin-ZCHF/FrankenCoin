@@ -25,6 +25,25 @@
         "inputs": [
             {
                 "internalType": "contract IPosition",
+                "name": "pos",
+                "type": "address"
+            }
+        ],
+        "name": "findRepaymentAmount",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract IPosition",
                 "name": "source",
                 "type": "address"
             },
@@ -47,9 +66,32 @@
                 "internalType": "uint256",
                 "name": "collateralTransferAmount",
                 "type": "uint256"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
             }
         ],
         "name": "roll",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract IPosition",
+                "name": "source",
+                "type": "address"
+            },
+            {
+                "internalType": "contract IPosition",
+                "name": "target",
+                "type": "address"
+            }
+        ],
+        "name": "rollFully",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
