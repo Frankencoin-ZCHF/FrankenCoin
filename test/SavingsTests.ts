@@ -12,6 +12,7 @@ import {
 } from "../typechain";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { evm_increaseTime } from "./helper";
+import { float } from "hardhat/internal/core/params/argumentTypes";
 
 describe("Savings Tests", () => {
   let owner: HardhatEthersSigner;
@@ -27,6 +28,12 @@ describe("Savings Tests", () => {
 
   let position: Position;
   let coin: TestToken;
+
+  const getTimeStamp = async () => {
+    const blockNumBefore = await ethers.provider.getBlockNumber();
+    const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+    return blockBefore?.timestamp ?? null;
+  };
 
   beforeEach(async () => {
     [owner, alice, bob] = await ethers.getSigners();
@@ -139,6 +146,139 @@ describe("Savings Tests", () => {
       */
       const i1 = await zchf.balanceOf(owner.address);
       expect(i1).to.be.greaterThan(i0);
+    });
+
+    it("correct interest after 365days (excl. 14days)", async () => {
+      const i0 = await zchf.balanceOf(owner.address);
+      const amount = floatToDec18(10_000);
+      await zchf.approve(savings.getAddress(), amount);
+      await savings["save(uint192)"](amount);
+      const t0 = await getTimeStamp();
+
+      await evm_increaseTime(365 * 86_400);
+
+      await savings.withdraw(owner.address, 2n * amount);
+      const t1 = await getTimeStamp();
+      const i1 = await zchf.balanceOf(owner.address);
+      const iDiff = i1 - i0;
+      const tDiff = t1! - t0!;
+      const toCheck =
+        (floatToDec18(10_000) * 20000n * (BigInt(tDiff) - 14n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+      expect(iDiff).to.be.equal(toCheck);
+    });
+
+    it("correct interest after 1000days (excl. 14days)", async () => {
+      const b0 = await zchf.balanceOf(owner.address);
+      const amount = floatToDec18(10_000);
+      await zchf.approve(savings.getAddress(), amount);
+      await savings["save(uint192)"](amount);
+      const t0 = await getTimeStamp();
+
+      await evm_increaseTime(1000 * 86_400);
+
+      await savings.withdraw(owner.address, 2n * amount);
+      const t1 = await getTimeStamp();
+      const b1 = await zchf.balanceOf(owner.address);
+      const bDiff = b1 - b0;
+      const tDiff = t1! - t0!;
+      const toCheck =
+        (floatToDec18(10_000) * 20000n * (BigInt(tDiff) - 14n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+      expect(bDiff).to.be.equal(toCheck);
+    });
+
+    it("approx. interest after 2x saves", async () => {
+      const b0 = await zchf.balanceOf(owner.address);
+      const amount = floatToDec18(10_000);
+      await zchf.approve(savings.getAddress(), 2n * amount);
+
+      await savings["save(uint192)"](amount);
+      const t0 = await getTimeStamp();
+      await evm_increaseTime(200 * 86_400);
+
+      await savings["save(uint192)"](amount);
+      const t1 = await getTimeStamp();
+      await evm_increaseTime(200 * 86_400);
+
+      await savings.withdraw(owner.address, 10n * amount);
+      const t2 = await getTimeStamp();
+      const b1 = await zchf.balanceOf(owner.address);
+      const bDiff = b1 - b0;
+      const tDiff0 = t1! - t0!;
+      const tDiff1 = t2! - t1!;
+      const toCheck0 =
+        (floatToDec18(10_000) * 20000n * (BigInt(tDiff0) - 14n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+      const toCheck1 =
+        ((floatToDec18(10_000) + toCheck0) *
+          20000n *
+          (BigInt(tDiff1) - 0n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+      const toCheck2 =
+        (floatToDec18(10_000) * 20000n * (BigInt(tDiff1) - 14n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+      expect(bDiff).to.be.approximately(
+        toCheck0 + toCheck1 + toCheck2,
+        1_000_000_000n
+      );
+    });
+
+    it("refresh my balance", async () => {
+      const amount = floatToDec18(10_000);
+      await zchf.approve(savings.getAddress(), amount);
+      await savings["save(uint192)"](amount);
+      const t0 = await getTimeStamp();
+
+      await evm_increaseTime(365 * 86_400);
+
+      await savings.refreshMyBalance();
+      const t1 = await getTimeStamp();
+      const tDiff = t1! - t0!;
+      const toCheck =
+        (floatToDec18(10_000) * 20000n * (BigInt(tDiff) - 14n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+
+      const r = await savings.savings(owner.address);
+      expect(r.saved).to.be.equal(amount + toCheck);
+    });
+
+    it("refresh balance", async () => {
+      const amount = floatToDec18(10_000);
+      await zchf.approve(savings.getAddress(), amount);
+      await savings["save(uint192)"](amount);
+      const t0 = await getTimeStamp();
+
+      await evm_increaseTime(365 * 86_400);
+
+      await savings.refreshBalance(owner.address);
+      const t1 = await getTimeStamp();
+      const tDiff = t1! - t0!;
+      const toCheck =
+        (floatToDec18(10_000) * 20000n * (BigInt(tDiff) - 14n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+
+      const r = await savings.savings(owner.address);
+      expect(r.saved).to.be.equal(amount + toCheck);
+    });
+
+    it("withdraw partial", async () => {
+      const amount = floatToDec18(10_000);
+      await zchf.approve(savings.getAddress(), amount);
+      await savings["save(uint192)"](amount);
+      const t0 = await getTimeStamp();
+
+      await evm_increaseTime(365 * 86_400);
+
+      await savings.withdraw(owner.address, amount / 10n);
+      const t1 = await getTimeStamp();
+      const tDiff = t1! - t0!;
+      const toCheck =
+        (floatToDec18(10_000) * 20000n * (BigInt(tDiff) - 14n * 86_400n)) /
+        (365n * 86_400n * 1_000_000n);
+
+      const r = await savings.savings(owner.address);
+      expect(r.saved).to.be.equal((amount * 9n) / 10n + toCheck);
     });
 
     it("withdraw savings", async () => {
