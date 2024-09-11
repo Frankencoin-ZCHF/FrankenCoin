@@ -124,7 +124,7 @@ describe("Equity Tests", () => {
     });
   });
 
-  describe("voting power", () => {
+  describe("voting power for savings module", () => {
     beforeEach(async () => {
       await equity.invest(floatToDec18(1000), 0);
     });
@@ -154,7 +154,10 @@ describe("Equity Tests", () => {
 
     it("Proposes and apply without waiting", async () => {
       await savings.proposeChange(21000n, []);
-      expect(savings.applyChange()).to.be.revertedWithCustomError(savings, "ChangeNotReady");
+      expect(savings.applyChange()).to.be.revertedWithCustomError(
+        savings,
+        "ChangeNotReady"
+      );
     });
 
     it("Proposes, wait and apply", async () => {

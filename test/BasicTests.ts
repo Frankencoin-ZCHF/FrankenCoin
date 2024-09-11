@@ -70,9 +70,12 @@ describe("Basic Tests", () => {
       await savings.proposeChange(20000n, []);
     });
     it("tries to apply no changes", async () => {
-      await expect(savings.applyChange()).to.be.revertedWithCustomError(savings, "NoPendingChange");
+      await expect(savings.applyChange()).to.be.revertedWithCustomError(
+        savings,
+        "NoPendingChange"
+      );
     });
-    it("Checks ", async () => {
+    it("ticks accumulation check ", async () => {
       const getTimeStamp = async () => {
         const blockNumBefore = await ethers.provider.getBlockNumber();
         const blockBefore = await ethers.provider.getBlock(blockNumBefore);
