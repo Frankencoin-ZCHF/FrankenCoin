@@ -55,6 +55,7 @@ describe("Savings Tests", () => {
     // jump start ecosystem
     await zchf.initialize(owner.address, "owner");
     await zchf.initialize(await mintingHub.getAddress(), "mintingHub");
+    await zchf.initialize(await savings.getAddress(), "savings");
 
     await zchf.mint(owner.address, floatToDec18(2_000_000));
     await zchf.transfer(alice.address, floatToDec18(100_000));
@@ -74,13 +75,18 @@ describe("Savings Tests", () => {
   const amount = floatToDec18(1000);
 
   describe("Save some zchf", () => {
-    it("no approval, reverted", async () => {
+    // it("no approval, reverted", async () => {
+    //   const amount = floatToDec18(1000);
+    //   const r = savings["save(uint192)"](amount);
+    //   await expect(r).to.be.revertedWithCustomError(
+    //     zchf,
+    //     "ERC20InsufficientAllowance"
+    //   );
+    // });
+
+    it("no approval needed, minters power", async () => {
       const amount = floatToDec18(1000);
-      const r = savings["save(uint192)"](amount);
-      await expect(r).to.be.revertedWithCustomError(
-        zchf,
-        "ERC20InsufficientAllowance"
-      );
+      await savings["save(uint192)"](amount);
     });
 
     it("simple save", async () => {
@@ -100,23 +106,20 @@ describe("Savings Tests", () => {
     });
 
     it("premature attempt to withdraw", async () => {
-      await savings.savings(owner.address);
-      await savings.currentTicks();
+      await zchf.approve(savings.getAddress(), amount);
+      await savings["save(uint192)"](amount);
       const w = savings.withdraw(owner.address, amount);
       await expect(w).to.be.revertedWithCustomError(savings, "FundsLocked");
     });
 
     it("any interests after 365days", async () => {
-      console.log("savings addr:", await savings.getAddress());
-      console.log("equity addr:", await equity.getAddress());
-
       const i0 = await zchf.balanceOf(owner.address);
       const amount = floatToDec18(10_000);
       await zchf.approve(savings.getAddress(), amount);
       await savings["save(uint192)"](amount);
       await evm_increaseTime(365 * 86_400);
       await savings.withdraw(owner.address, 2n * amount); // as much as possible, 2x amount is enough
-      /* \__ Will cause an Error. __/
+      /* \__ Will cause an Error, if not registered as minter. __/
         savings addr: 0xc351628EB244ec633d5f21fBD6621e1a683B1181
         equity addr: 0x1301d297043f564235EA41560f61681253BbD48B
 
