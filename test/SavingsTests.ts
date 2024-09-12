@@ -88,22 +88,13 @@ describe("Savings Tests", () => {
   const amount = floatToDec18(1000);
 
   describe("Save some zchf", () => {
-    // it("no approval, reverted", async () => {
-    //   const amount = floatToDec18(1000);
-    //   const r = savings["save(uint192)"](amount);
-    //   await expect(r).to.be.revertedWithCustomError(
-    //     zchf,
-    //     "ERC20InsufficientAllowance"
-    //   );
-    // });
-
     it("no approval needed, minters power", async () => {
       const amount = floatToDec18(1000);
       await savings["save(uint192)"](amount);
     });
 
     it("simple save", async () => {
-      await zchf.approve(savings.getAddress(), amount);
+      await zchf.approve(savings.getAddress(), amount); // not needed if registered as minter
       await savings["save(uint192)"](amount);
       const r = await savings.savings(owner.address);
       expect(r.saved).to.be.equal(amount);
@@ -292,7 +283,8 @@ describe("Savings Tests", () => {
       const account = await savings.savings(owner.address);
       expect(account.saved).to.be.eq(4n * amount);
       const ticks = await savings.currentTicks();
-      const timeLeft = (account.ticks - ticks) / (await savings.currentRatePPM());
+      const timeLeft =
+        (account.ticks - ticks) / (await savings.currentRatePPM());
       await evm_increaseTime(timeLeft - 1n); // when executing the next transaction, timer will be increased by 1 seconds
       const account2 = await savings.savings(owner.address);
       expect(account2.saved).to.be.eq(4n * amount);
@@ -310,7 +302,13 @@ describe("Savings Tests", () => {
       const newSystemTicks = await savings.currentTicks();
       expect(newUserTicks).to.be.eq(newSystemTicks);
       expect(newBalance - oldBalance).to.be.eq(oldReserve - newReserve);
-      expect(newBalance - oldBalance).to.be.eq((newUserTicks - oldUserTicks) * oldBalance / 1000000n / 365n / 24n / 3600n);
+      expect(newBalance - oldBalance).to.be.eq(
+        ((newUserTicks - oldUserTicks) * oldBalance) /
+          1000000n /
+          365n /
+          24n /
+          3600n
+      );
       await savings.withdraw(owner.address, 10n * amount);
       await expect((await savings.savings(owner.address)).saved).to.be.eq(0n);
     });
