@@ -7,6 +7,7 @@ import {
   MintingHub,
   Position,
   PositionFactory,
+  PositionRoller,
   Savings,
   TestToken,
 } from "../typechain";
@@ -21,6 +22,7 @@ describe("Savings Tests", () => {
 
   let zchf: Frankencoin;
   let equity: Equity;
+  let roller: PositionRoller;
   let savings: Savings;
 
   let positionFactory: PositionFactory;
@@ -52,10 +54,14 @@ describe("Savings Tests", () => {
     const savingsFactory = await ethers.getContractFactory("Savings");
     savings = await savingsFactory.deploy(zchf.getAddress(), 20000n);
 
+    const rollerFactory = await ethers.getContractFactory("PositionRoller");
+    roller = await rollerFactory.deploy(zchf.getAddress());
+
     const mintingHubFactory = await ethers.getContractFactory("MintingHub");
     mintingHub = await mintingHubFactory.deploy(
       await zchf.getAddress(),
       await savings.getAddress(),
+      await roller.getAddress(),
       await positionFactory.getAddress()
     );
 
