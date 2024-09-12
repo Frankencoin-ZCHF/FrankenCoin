@@ -19,8 +19,10 @@ contract PositionRoller {
 
     error NotOwner(address pos);
 
-    constructor(IFrankencoin zchf_) {
-        zchf = zchf_;
+    event Roll(address source, address target, uint256 movedCollateral, uint256 repaid, uint256 borrowed);
+
+    constructor(address zchf_) {
+        zchf = IFrankencoin(zchf_);
     }
 
     /**
@@ -31,8 +33,8 @@ contract PositionRoller {
         uint256 necessaryRepayment = findRepaymentAmount(source);
         uint256 collateralBalance = IERC20(source.collateral()).balanceOf(address(source));
         uint256 senderBalance = IERC20(address(zchf)).balanceOf(msg.sender);
-        uint256 necessaryBorrowing = senderBalance >= necessaryRepayment ? 0 : necessaryRepayment - senderBalance; // TODO: this does not work yet, we need to mint more
-        roll(source, target, necessaryBorrowing, necessaryRepayment, collateralBalance, target.expiration());
+        uint256 necessaryBorrowing = senderBalance >= necessaryRepayment ? 0 : necessaryRepayment - senderBalance;
+        roll(source, target, target.getMintAmount(necessaryBorrowing), necessaryRepayment, collateralBalance, target.expiration());
     }
 
     function findRepaymentAmount(IPosition pos) public returns (uint256) {
@@ -53,14 +55,17 @@ contract PositionRoller {
     // max call stack depth is 1024 in solidity. Binary search on 256 bit number takes at most 256 steps, so it should be fine.
     function binarySearch(uint256 target, uint24 reservePPM, uint256 lowerBound, uint256 lowerResult, uint256 higherBound, uint256 higherResult) internal returns (uint256) {
         uint256 middle = (lowerBound + higherBound) / 2;
-        uint256 middleResult = zchf.calculateFreedAmount(middle, reservePPM);
-        require(lowerResult < middleResult && middleResult < higherResult, "Caramba!");
-        if (middleResult == target){
-            return middle;
-        } else if (middleResult < target){
-            return binarySearch(target, reservePPM, middle, middleResult, higherBound, higherResult);
+        if (middle == lowerBound){
+            return higherBound; // we have reached max precision without exact match, return next higher result to be on the safe side
         } else {
-            return binarySearch(target, reservePPM, lowerBound, lowerResult, middle, middleResult);
+            uint256 middleResult = zchf.calculateFreedAmount(middle, reservePPM);
+            if (middleResult == target){
+                return middle;
+            } else if (middleResult < target){
+                return binarySearch(target, reservePPM, middle, middleResult, higherBound, higherResult);
+            } else {
+                return binarySearch(target, reservePPM, lowerBound, lowerResult, middle, middleResult);
+            }
         }
     }
 
@@ -77,6 +82,7 @@ contract PositionRoller {
             target.mint(msg.sender, borrowAmount);
         }
         zchf.burnFrom(msg.sender, repayAmount); // repay the flash loan
+        emit Roll(address(source), address(target), collateralTransferAmount, repayAmount, borrowAmount);
     }
 
     modifier own(IPosition pos) {

@@ -70,11 +70,11 @@ contract MintingHub {
         _;
     }
 
-    constructor(address _zchf, address _leadrate, address _factory) {
+    constructor(address _zchf, address _leadrate, address _roller, address _factory) {
         zchf = IFrankencoin(_zchf);
         rate = ILeadrate(_leadrate);
         POSITION_FACTORY = IPositionFactory(_factory);
-        roller = new PositionRoller(zchf);
+        roller = PositionRoller(_roller);
     }
 
     /**

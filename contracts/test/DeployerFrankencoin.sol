@@ -12,6 +12,7 @@ contract DeployerFrankencoin {
     Frankencoin public zchf;
     PositionFactory public factory;
     Leadrate public leadrate;
+    PositionRoller public roller;
     MintingHub public mintingHub;
 
     event Log(address sender, string message);
@@ -19,12 +20,14 @@ contract DeployerFrankencoin {
     constructor() {
         zchf = new Frankencoin(1);
         factory = new PositionFactory();
+        roller = new PositionRoller(address(zchf));
         leadrate = new Leadrate(zchf.reserve(), 20000);
-        mintingHub = new MintingHub(address(zchf), address(leadrate), address(factory));
+        mintingHub = new MintingHub(address(zchf), address(leadrate), address(roller), address(factory));
 
         zchf.initialize(msg.sender, "Developer");
         zchf.initialize(address(this), "Deployer");
         zchf.initialize(address(mintingHub), "MintingHub");
+        zchf.initialize(address(roller), "Roller");
     }
 
     function initA_Frankencoin() public {

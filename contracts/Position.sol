@@ -262,6 +262,13 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
+     * Returns the lowest 'totalMint' that yields the given 'usableMint' when entered into the 'getUsableMint' function above.
+     */
+    function getMintAmount(uint256 usableMint) external view returns (uint256) {
+        return usableMint == 0 ? 0 :(usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
+    }
+
+    /**
      * @notice "All in one" function to adjust the outstanding amount of ZCHF, the collateral amount,
      * and the price in one transaction.
      */

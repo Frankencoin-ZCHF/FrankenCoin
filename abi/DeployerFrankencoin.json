@@ -98,6 +98,19 @@
     },
     {
         "inputs": [],
+        "name": "roller",
+        "outputs": [
+            {
+                "internalType": "contract PositionRoller",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "zchf",
         "outputs": [
             {

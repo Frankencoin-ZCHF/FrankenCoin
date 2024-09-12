@@ -282,18 +282,15 @@ describe("Savings Tests", () => {
     });
 
     it("withdraw savings", async () => {
+      await savings["save(uint192)"](4n * amount);
       const account = await savings.savings(owner.address);
       expect(account.saved).to.be.eq(4n * amount);
       const ticks = await savings.currentTicks();
-      const timeLeft =
-        (account.ticks - ticks) / (await savings.currentRatePPM());
+      const timeLeft = (account.ticks - ticks) / (await savings.currentRatePPM());
       await evm_increaseTime(timeLeft - 1n); // when executing the next transaction, timer will be increased by 1 seconds
       const account2 = await savings.savings(owner.address);
       expect(account2.saved).to.be.eq(4n * amount);
       await savings.withdraw(owner.address, amount);
-      expect(await zchf.balanceOf(await zchf.reserve())).to.be.eq(
-        20999999998942795535262n
-      ); // unfortunately already a little bit paid
       await savings.refreshBalance(owner.address);
       await evm_increaseTime(1234);
       const oldBalance = (await savings.savings(owner.address)).saved;

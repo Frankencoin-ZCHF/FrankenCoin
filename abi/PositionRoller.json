@@ -2,7 +2,7 @@
     {
         "inputs": [
             {
-                "internalType": "contract IFrankencoin",
+                "internalType": "address",
                 "name": "zchf_",
                 "type": "address"
             }
@@ -20,6 +20,43 @@
         ],
         "name": "NotOwner",
         "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "source",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "movedCollateral",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "repaid",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "borrowed",
+                "type": "uint256"
+            }
+        ],
+        "name": "Roll",
+        "type": "event"
     },
     {
         "inputs": [

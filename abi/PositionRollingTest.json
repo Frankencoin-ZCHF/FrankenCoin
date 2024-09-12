@@ -13,22 +13,12 @@
     {
         "inputs": [
             {
-                "internalType": "address",
-                "name": "position",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "target",
-                "type": "address"
-            },
-            {
                 "internalType": "uint256",
                 "name": "amount",
                 "type": "uint256"
             }
         ],
-        "name": "mint",
+        "name": "mintFromFirstPosition",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -39,6 +29,11 @@
                 "internalType": "uint256",
                 "name": "collateral",
                 "type": "uint256"
+            },
+            {
+                "internalType": "uint40",
+                "name": "initializationDelay",
+                "type": "uint40"
             }
         ],
         "name": "openPosition",
@@ -53,28 +48,40 @@
         "type": "function"
     },
     {
-        "inputs": [
+        "inputs": [],
+        "name": "openTwoPositions",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "p1",
+        "outputs": [
             {
-                "internalType": "address",
-                "name": "p1",
+                "internalType": "contract IPosition",
+                "name": "",
                 "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "p2",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "borrowAmount",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "repayAmount",
-                "type": "uint256"
             }
         ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "p2",
+        "outputs": [
+            {
+                "internalType": "contract IPosition",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "roll",
         "outputs": [],
         "stateMutability": "nonpayable",

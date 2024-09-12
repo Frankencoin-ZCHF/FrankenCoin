@@ -8,10 +8,11 @@ import {
   MintingHub,
   Position,
   Savings,
+  PositionRoller,
   StablecoinBridge,
   TestToken,
 } from "../typechain";
-import { PositionExpirationTest } from "../typechain/test";
+import { PositionExpirationTest, PositionRollingTest } from "../typechain/test";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
@@ -27,6 +28,7 @@ describe("Position Tests", () => {
   let mintingHub: MintingHub;
   let bridge: StablecoinBridge;
   let savings: Savings;
+  let roller: PositionRoller;
   let equity: Equity;
   let mockVOL: TestToken;
 
@@ -45,8 +47,11 @@ describe("Position Tests", () => {
     const savingsFactory = await ethers.getContractFactory("Savings");
     savings = await savingsFactory.deploy(zchf.getAddress(), 0n);
 
+    const rollerFactory = await ethers.getContractFactory("PositionRoller");
+    roller = await rollerFactory.deploy(zchf.getAddress());
+
     const mintingHubFactory = await ethers.getContractFactory("MintingHub");
-    mintingHub = await mintingHubFactory.deploy(await zchf.getAddress(), await savings.getAddress(), await positionFactory.getAddress());
+    mintingHub = await mintingHubFactory.deploy(await zchf.getAddress(), await savings.getAddress(), await roller.getAddress(), await positionFactory.getAddress());
 
     // mocktoken
     const testTokenFactory = await ethers.getContractFactory("TestToken");
@@ -62,6 +67,8 @@ describe("Position Tests", () => {
     await zchf.initialize(await bridge.getAddress(), "XCHF Bridge");
     // create a minting hub too while we have no ZCHF supply
     await zchf.initialize(await mintingHub.getAddress(), "Minting Hub");
+    await zchf.initialize(await savings.getAddress(), "Savings");
+    await zchf.initialize(await roller.getAddress(), "Roller");
 
     // wait for 1 block
     await evm_increaseTime(60);
@@ -332,8 +339,14 @@ describe("Position Tests", () => {
       let amount = BigInt(1e18) * 10_000n;
       expect(amount).to.be.lessThan(fLimit);
       let fZCHFBefore = await zchf.balanceOf(owner.address);
-      let expectedAmount = await positionContract.getUsableMint(amount, true);
-      expect(expectedAmount).to.be.eq(BigInt(1e16) * 898548n);
+      let targetAmount = BigInt(1e16) * 898548n;
+      let totalMint = await positionContract.getMintAmount(targetAmount);
+      let expectedAmount = await positionContract.getUsableMint(totalMint, true);
+      for (let testTarget = 0n; testTarget < 100n; testTarget++){ // make sure these functions are not susceptible to rounding errors
+        let testTotal = await positionContract.getMintAmount(targetAmount + testTarget);
+        let testExpected = await positionContract.getUsableMint(testTotal, true);
+        expect(testExpected).to.be.eq(targetAmount + testTarget);
+      }
 
       expect(await positionContract.getUsableMint(amount, false)).to.be.equal(
         9000n * BigInt(1e18)
@@ -1349,4 +1362,38 @@ describe("Position Tests", () => {
         });
 
     });
+
+    describe("position rolling", () => {
+
+      let test: PositionRollingTest;
+
+      let pos1: Position;
+      let pos2: Position;
+
+      it("initialize", async () => {
+        const factory = await ethers.getContractFactory("PositionRollingTest");
+        test = await factory.deploy(await mintingHub.getAddress());
+        await zchf.transfer(await test.getAddress(), floatToDec18(2_000)); // opening fee
+        await test.openTwoPositions();
+        pos1 = await ethers.getContractAt("Position", await test.p1());
+        pos2 = await ethers.getContractAt("Position", await test.p2());
+      });
+
+      it("roll should fail before positions are ready", async () => {
+        expect(await pos1.start()).to.be.lessThan(await pos2.start());
+        await evm_increaseTimeTo(await pos1.start());
+        let tx = test.roll();
+        expect(tx).to.be.revertedWithCustomError(pos2, "Hot");
+      });
+
+      it("roll", async () => {
+        await evm_increaseTimeTo(await pos2.start());
+        await test.roll();
+      });
+
+      it("roll into clone", async () => {
+         // TODO
+      });
+
+  });
 });

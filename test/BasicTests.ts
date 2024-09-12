@@ -6,6 +6,7 @@ import {
   Equity,
   Frankencoin,
   PositionFactory,
+  PositionRoller,
   Savings,
   StablecoinBridge,
   TestToken,
@@ -21,6 +22,7 @@ describe("Basic Tests", () => {
   let equity: Equity;
   let positionFactory: PositionFactory;
   let savings: Savings;
+  let roller: PositionRoller;
   let mockXCHF: TestToken;
   let bridge: StablecoinBridge;
 
@@ -42,12 +44,6 @@ describe("Basic Tests", () => {
     const savingsFactory = await ethers.getContractFactory("Savings");
     savings = await savingsFactory.deploy(zchf.getAddress(), 20000n);
 
-    const mintingHubFactory = await ethers.getContractFactory("MintingHub");
-    await mintingHubFactory.deploy(
-      await zchf.getAddress(),
-      await savings.getAddress(),
-      await positionFactory.getAddress()
-    );
   });
 
   describe("basic initialization", () => {
