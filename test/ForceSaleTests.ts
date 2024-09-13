@@ -133,6 +133,7 @@ describe("ForceSale Tests", () => {
       await evm_increaseTime(103 * 86_400 + 100); // consider expired
       const p = await position.price();
       const eP1 = await mintingHub.expiredPurchasePrice(position);
+      expect(eP1).to.be.lessThanOrEqual(10n * p);
       expect(eP1).to.be.greaterThan(9n * p);
       const period = await position.challengePeriod();
       await evm_increaseTime(period); // post period
@@ -211,24 +212,24 @@ describe("ForceSale Tests", () => {
         bZchf1,
         bCoin1,
       });
-      expect(bZchf0).to.be.equal(bZchf1 + (expP * size) / floatToDec18(1));
-      expect(bCoin1).to.be.equal(bCoin0 + size);
+      expect(bZchf1 + (expP * size) / floatToDec18(1)).to.be.equal(bZchf0);
+      expect(bCoin0 + size).to.be.equal(bCoin1);
       /**
       somehow, the actual cost is slightly higher then the price indicates
-        {
-          expP: 59811875000000000000000n,
-          bZchf0: 90000000000000000000000n,
-          bCoin0: 1000000000000000000000n,
-          size: 1000000000000000000n,
-          bZchf1: 30188750000000000000000n,
-          bCoin1: 1001000000000000000000n
-        }
+      {
+        expP: 59811875000000000000000n,
+        bZchf0: 90000000000000000000000n,
+        bCoin0: 1000000000000000000000n,
+        size: 1000000000000000000n,
+        bZchf1: 30188750000000000000000n,
+        bCoin1: 1001000000000000000000n
+      }
 
-        AssertionError: expected 90000000000000000000000 to equal 90000625000000000000000.
-        + expected - actual
+      AssertionError: expected 90000625000000000000000 to equal 90000000000000000000000.
+      + expected - actual
 
-        -90000000000000000000000
-        +90000625000000000000000 (you pay more)
+      -90000625000000000000000
+      +90000000000000000000000 (you pay more)
       */
     });
 
@@ -254,24 +255,24 @@ describe("ForceSale Tests", () => {
         bZchf1,
         bCoin1,
       });
-      expect(bZchf0).to.be.equal(bZchf1 + (expP * size) / floatToDec18(1));
-      expect(bCoin1).to.be.equal(bCoin0 + size);
+      expect(bZchf1 + (expP * size) / floatToDec18(1)).to.be.equal(bZchf0);
+      expect(bCoin0 + size).to.be.equal(bCoin1);
       /**
-      somehow, the actual cost is slightly higher then the price indicates
-      {
-        expP: 5979097222222222183956n,
-        bZchf0: 90000000000000000000000n,
-        bCoin0: 1000000000000000000000n,
-        size: 10000000000000000000n,
-        bZchf1: 30209722222222222604880n,
-        bCoin1: 1010000000000000000000n
-      }
+        somehow, the actual cost is slightly higher then the price indicates
+        {
+          expP: 5979097222222222183956n,
+          bZchf0: 90000000000000000000000n,
+          bCoin0: 1000000000000000000000n,
+          size: 10000000000000000000n,
+          bZchf1: 30209722222222222604880n,
+          bCoin1: 1010000000000000000000n
+        }
 
-      AssertionError: expected 90000000000000000000000 to equal 90000694444444444444440.
-      + expected - actual
+        AssertionError: expected 90000694444444444444440 to equal 90000000000000000000000.
+        + expected - actual
 
-      -90000000000000000000000
-      +90000694444444444444440 <--- error gets bigger, if you take the full position size
+        -90000694444444444444440
+        +90000000000000000000000
       */
     });
   });
