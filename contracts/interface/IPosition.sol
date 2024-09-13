@@ -7,6 +7,8 @@ import "./IFrankencoin.sol";
 
 interface IPosition {
 
+    function hub() external view returns(address);
+
     function original() external view returns (address);
 
     function collateral() external view returns (IERC20);
@@ -25,8 +27,6 @@ interface IPosition {
 
     function repay(uint256 amount) external returns (uint256);
 
-    // function transferOwnerAndMint(address newOwner, uint256 mintAmount, uint256 newPrice) external;
-
     function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) external;
 
     function minted() external view returns (uint256);
@@ -38,6 +38,8 @@ interface IPosition {
     function withdrawCollateral(address target, uint256 amount) external;
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
+
+    function getMintAmount(uint256 usableMint) external view returns (uint256);
 
     function challengeData() external view returns (uint256 liqPrice, uint40 phase);
 

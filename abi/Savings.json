@@ -54,19 +54,6 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "address",
-                "name": "who",
-                "type": "address"
-            }
-        ],
-        "name": "RateChangeCancelled",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "uint24",
                 "name": "newRate",
                 "type": "uint24"
@@ -134,6 +121,13 @@
     },
     {
         "inputs": [],
+        "name": "applyChange",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "currentRatePPM",
         "outputs": [
             {
@@ -156,13 +150,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "enactChange",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -223,7 +210,13 @@
         "type": "function"
     },
     {
-        "inputs": [],
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
         "name": "refreshBalance",
         "outputs": [
             {
@@ -236,14 +229,8 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "refreshBalance",
+        "inputs": [],
+        "name": "refreshMyBalance",
         "outputs": [
             {
                 "internalType": "uint192",

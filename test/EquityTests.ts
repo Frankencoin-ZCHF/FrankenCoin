@@ -2,7 +2,13 @@ import { expect } from "chai";
 import { floatToDec18 } from "../scripts/math";
 import { ethers } from "hardhat";
 import { evm_increaseTime, evm_mine_blocks } from "./helper";
-import { Equity, Frankencoin, StablecoinBridge, TestToken } from "../typechain";
+import {
+  Equity,
+  Frankencoin,
+  Savings,
+  StablecoinBridge,
+  TestToken,
+} from "../typechain";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Equity Tests", () => {
@@ -12,6 +18,7 @@ describe("Equity Tests", () => {
 
   let equity: Equity;
   let bridge: StablecoinBridge;
+  let savings: Savings;
   let zchf: Frankencoin;
   let xchf: TestToken;
 
@@ -40,6 +47,9 @@ describe("Equity Tests", () => {
     await bridge.mint(supply);
     await zchf.transfer(bob.address, floatToDec18(5000));
     equity = await ethers.getContractAt("Equity", await zchf.reserve());
+
+    const savingsFactory = await ethers.getContractFactory("Savings");
+    savings = await savingsFactory.deploy(zchf.getAddress(), 20000n);
   });
 
   describe("basic initialization", () => {
@@ -111,6 +121,53 @@ describe("Equity Tests", () => {
         floatToDec18(2000),
         floatToDec18(0.01)
       );
+    });
+  });
+
+  describe("voting power for savings module", () => {
+    beforeEach(async () => {
+      await equity.invest(floatToDec18(1000), 0);
+    });
+
+    it("Proposes a different rate", async () => {
+      const r = await savings.proposeChange(21000n, []);
+      const nextRate = await savings.nextRatePPM();
+      expect(nextRate).to.be.equal(21000n);
+    });
+
+    it("Proposes a different rate, without votes", async () => {
+      const r = savings.connect(alice).proposeChange(21000n, []);
+      await expect(r).to.be.revertedWithCustomError(equity, "NotQualified");
+    });
+
+    it("Proposes and reverts rate changes", async () => {
+      await savings.proposeChange(21000n, []);
+      await savings.proposeChange(20000n, []);
+      expect(await savings.nextRatePPM()).to.be.equal(20000n);
+    });
+
+    it("Proposes and trying to revert without votes", async () => {
+      await savings.proposeChange(21000n, []);
+      const r = savings.connect(alice).proposeChange(20000n, []);
+      await expect(r).to.be.revertedWithCustomError(equity, "NotQualified");
+    });
+
+    it("Proposes and apply without waiting", async () => {
+      await savings.proposeChange(21000n, []);
+      expect(savings.applyChange()).to.be.revertedWithCustomError(
+        savings,
+        "ChangeNotReady"
+      );
+    });
+
+    it("Proposes, wait and apply", async () => {
+      const prevRate = await savings.currentRatePPM();
+      const newRate = BigInt(23123n);
+      await savings.proposeChange(newRate, []);
+      await evm_increaseTime(7 * 86_400 + 60);
+      expect(await savings.currentRatePPM()).to.be.eq(prevRate);
+      await savings.applyChange();
+      expect(await savings.currentRatePPM()).to.be.eq(newRate);
     });
   });
 

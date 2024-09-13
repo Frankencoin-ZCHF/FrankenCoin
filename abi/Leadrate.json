@@ -30,19 +30,6 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "address",
-                "name": "who",
-                "type": "address"
-            }
-        ],
-        "name": "RateChangeCancelled",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "uint24",
                 "name": "newRate",
                 "type": "uint24"
@@ -78,6 +65,13 @@
     },
     {
         "inputs": [],
+        "name": "applyChange",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "currentRatePPM",
         "outputs": [
             {
@@ -100,13 +94,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "enactChange",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {

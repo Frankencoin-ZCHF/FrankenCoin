@@ -34,7 +34,7 @@ contract MintingHub {
     IFrankencoin public immutable zchf; // currency
     PositionRoller public immutable roller; // helper to roll positions
     ILeadrate public immutable rate; // to determine the interest rate
-    
+
     Challenge[] public challenges; // list of open challenges
 
     /**
@@ -61,6 +61,7 @@ contract MintingHub {
         uint256 challengeSize
     );
     event PostPonedReturn(address collateral, address indexed beneficiary, uint256 amount);
+    event ForcedSale(address pos, uint256 amount, uint256 priceE36MinusDecimals);
 
     error UnexpectedPrice();
     error InvalidPos();
@@ -70,11 +71,11 @@ contract MintingHub {
         _;
     }
 
-    constructor(address _zchf, ILeadrate leadrate_, address _factory) {
+    constructor(address _zchf, address _leadrate, address _roller, address _factory) {
         zchf = IFrankencoin(_zchf);
-        rate = leadrate_;
+        rate = ILeadrate(_leadrate);
         POSITION_FACTORY = IPositionFactory(_factory);
-        roller = new PositionRoller(zchf);
+        roller = PositionRoller(_roller);
     }
 
     /**
@@ -139,19 +140,23 @@ contract MintingHub {
         return clone(parent, _initialCollateral, _initialMint, IPosition(parent).price(), expiration);
     } */
 
+   function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
+        return clone(msg.sender, parent, _initialCollateral, _initialMint, expiration);
+   }
+
     /**
      * @notice Clones an existing position and immediately tries to mint the specified amount using the given collateral.
      * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
-    function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
+    function clone(address owner, address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
         address pos = POSITION_FACTORY.clonePosition(parent, expiration);
         zchf.registerPosition(pos);
         IPosition child = IPosition(pos);
         IERC20 collateral = child.collateral();
-        collateral.transferFrom(msg.sender, pos, _initialCollateral);
-        emit PositionOpened(msg.sender, address(pos), parent, address(collateral));
-        child.mint(msg.sender, _initialMint);
-        Ownable(address(child)).transferOwnership(msg.sender);
+        collateral.transferFrom(msg.sender, pos, _initialCollateral); // collateral must still come from sender for security
+        emit PositionOpened(owner, address(pos), parent, address(collateral));
+        child.mint(owner, _initialMint);
+        Ownable(address(child)).transferOwnership(owner);
         return address(pos);
     }
 
@@ -198,26 +203,14 @@ contract MintingHub {
             emit ChallengeAverted(address(_challenge.position), _challengeNumber, size);
         } else {
             _returnChallengerCollateral(_challenge, _challengeNumber, size, postponeCollateralReturn);
-            (uint256 transferredCollateral, uint256 offer) = _finishChallenge(
-                _challenge,
-                liqPrice,
-                phase,
-                size
-            );
+            (uint256 transferredCollateral, uint256 offer) = _finishChallenge(_challenge, liqPrice, phase, size);
             emit ChallengeSucceeded(address(_challenge.position), _challengeNumber, offer, transferredCollateral, size);
         }
     }
 
-    function _finishChallenge(
-        Challenge memory _challenge,
-        uint256 liqPrice,
-        uint40 phase,
-        uint256 size
-    ) internal returns (uint256, uint256) {
+    function _finishChallenge(Challenge memory _challenge, uint256 liqPrice, uint40 phase, uint256 size) internal returns (uint256, uint256) {
         // Repayments depend on what was actually minted, whereas bids depend on the available collateral
-        (address owner, uint256 collateral, uint256 repayment, uint32 reservePPM) = _challenge
-            .position
-            .notifyChallengeSucceeded(msg.sender, size);
+        (address owner, uint256 collateral, uint256 repayment, uint32 reservePPM) = _challenge.position.notifyChallengeSucceeded(msg.sender, size);
 
         // No overflow possible thanks to invariant (col * price <= limit * 10**18)
         // enforced in Position.setPrice and knowing that collateral <= col.
@@ -337,19 +330,19 @@ contract MintingHub {
     function expiredPurchasePrice(IPosition pos) public view returns (uint256) {
         uint256 liqprice = pos.price();
         uint256 expiration = pos.expiration();
-        if (block.timestamp <= expiration){
+        if (block.timestamp <= expiration) {
             return EXPIRED_PRICE_FACTOR * liqprice;
         } else {
             uint256 challengePeriod = pos.challengePeriod();
             uint256 timePassed = block.timestamp - expiration;
-            if (timePassed <= challengePeriod){
+            if (timePassed <= challengePeriod) {
                 // from 10x liquidation price to 1x in first phase
                 uint256 timeLeft = challengePeriod - timePassed;
-                return liqprice + (EXPIRED_PRICE_FACTOR - 1) * liqprice / challengePeriod * timeLeft;
-            } else if (timePassed < 2*challengePeriod){
+                return liqprice + (((EXPIRED_PRICE_FACTOR - 1) * liqprice) / challengePeriod) * timeLeft;
+            } else if (timePassed < 2 * challengePeriod) {
                 // from 1x liquidation price to 0 in second phase
-                uint256 timeLeft = 2*challengePeriod - timePassed;
-                return liqprice / challengePeriod * timeLeft;
+                uint256 timeLeft = 2 * challengePeriod - timePassed;
+                return (liqprice / challengePeriod) * timeLeft;
             } else {
                 // get collateral for free after both phases passed
                 return 0;
@@ -357,11 +350,10 @@ contract MintingHub {
         }
     }
 
-    error PositionAlive(address pos, uint256 exp, uint256 time);
-
     function buyExpiredCollateral(IPosition pos, uint256 amount) external {
-        uint256 costs = expiredPurchasePrice(pos) * amount / 10**18;
+        uint256 forceSalePrice = expiredPurchasePrice(pos);
+        uint256 costs = (forceSalePrice * amount) / 10 ** 18;
         pos.forceSale(msg.sender, amount, costs);
+        emit ForcedSale(address(pos), amount, forceSalePrice);
     }
-
 }

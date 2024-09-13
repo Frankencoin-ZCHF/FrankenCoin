@@ -7,8 +7,13 @@
                 "type": "address"
             },
             {
-                "internalType": "contract ILeadrate",
-                "name": "leadrate_",
+                "internalType": "address",
+                "name": "_leadrate",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_roller",
                 "type": "address"
             },
             {
@@ -23,27 +28,6 @@
     {
         "inputs": [],
         "name": "InvalidPos",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "pos",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "exp",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "time",
-                "type": "uint256"
-            }
-        ],
-        "name": "PositionAlive",
         "type": "error"
     },
     {
@@ -142,6 +126,31 @@
             }
         ],
         "name": "ChallengeSucceeded",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "pos",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "priceE36MinusDecimals",
+                "type": "uint256"
+            }
+        ],
+        "name": "ForcedSale",
         "type": "event"
     },
     {
@@ -345,6 +354,45 @@
     },
     {
         "inputs": [
+            {
+                "internalType": "address",
+                "name": "parent",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_initialCollateral",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_initialMint",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
+            }
+        ],
+        "name": "clone",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
             {
                 "internalType": "address",
                 "name": "parent",

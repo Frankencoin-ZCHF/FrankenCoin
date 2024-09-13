@@ -8,9 +8,9 @@ import "./interface/IReserve.sol";
 
 /**
  * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')
- * 
+ *
  * A module that can provide other modules with the lead interest rate for the system.
- * 
+ *
  **/
 contract Leadrate {
 
@@ -19,7 +19,7 @@ contract Leadrate {
     // the following five variables are less than 256 bit so they should be stored
     // in the same slot, making them cheap to access together, right?
 
-    uint24 public currentRatePPM; // 24 bit allows rates of up to 1670% per year 
+    uint24 public currentRatePPM; // 24 bit allows rates of up to 1670% per year
     uint24 public nextRatePPM;
     uint40 public nextChange;
 
@@ -27,19 +27,19 @@ contract Leadrate {
     uint64 private ticksAnchor; // in bips * seconds, uint88 allows up to
 
     event RateProposed(address who, uint24 nextRate, uint40 nextChange);
-    event RateChangeCancelled(address who);
     event RateChanged(uint24 newRate);
 
     error NoPendingChange();
     error ChangeNotReady();
 
-    constructor(IReserve equity_, uint24 initialRatePPM){
+    constructor(IReserve equity_, uint24 initialRatePPM) {
         equity = equity_;
         nextRatePPM = initialRatePPM;
         currentRatePPM = initialRatePPM;
         nextChange = uint40(block.timestamp);
         anchorTime = nextChange;
         ticksAnchor = 0;
+        emit RateChanged(initialRatePPM); // emit for init indexing, if wanted
     }
 
     /**
@@ -50,13 +50,13 @@ contract Leadrate {
         equity.checkQualified(msg.sender, helpers);
         nextRatePPM = newRatePPM_;
         nextChange = uint40(block.timestamp + 7 days);
-        emit RateProposed(msg.sender, newRatePPM_, nextChange);
+        emit RateProposed(msg.sender, nextRatePPM, nextChange);
     }
 
     /**
      * Setting a previously proposed interest rate change into force.
      */
-    function enactChange() external {
+    function applyChange() external {
         if (currentRatePPM == nextRatePPM) revert NoPendingChange();
         uint40 timeNow = uint40(block.timestamp);
         if (timeNow < nextChange) revert ChangeNotReady();
@@ -68,7 +68,7 @@ contract Leadrate {
 
     /**
      * Total accumulated 'interest ticks' since this contract was deployed.
-     * One 'tick' is a ppm-second, so one months of 12% annual interest is 
+     * One 'tick' is a ppm-second, so one months of 12% annual interest is
      *   120000*30*24*3600 = 311040000000 ticks.
      * Two months of 6% annual interest would result in the same number of
      * ticks. For simplicity, this is linear, so there is no "interest on interest".

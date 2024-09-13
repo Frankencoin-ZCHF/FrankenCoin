@@ -2,7 +2,7 @@
     {
         "inputs": [
             {
-                "internalType": "contract IFrankencoin",
+                "internalType": "address",
                 "name": "zchf_",
                 "type": "address"
             }
@@ -14,28 +14,68 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "c1",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "c2",
-                "type": "address"
-            }
-        ],
-        "name": "CollateralMismatch",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
                 "name": "pos",
                 "type": "address"
             }
         ],
         "name": "NotOwner",
         "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "source",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "movedCollateral",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "repaid",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "borrowed",
+                "type": "uint256"
+            }
+        ],
+        "name": "Roll",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract IPosition",
+                "name": "pos",
+                "type": "address"
+            }
+        ],
+        "name": "findRepaymentAmount",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
     },
     {
         "inputs": [
@@ -63,9 +103,32 @@
                 "internalType": "uint256",
                 "name": "collateralTransferAmount",
                 "type": "uint256"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
             }
         ],
         "name": "roll",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract IPosition",
+                "name": "source",
+                "type": "address"
+            },
+            {
+                "internalType": "contract IPosition",
+                "name": "target",
+                "type": "address"
+            }
+        ],
+        "name": "rollFully",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

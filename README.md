@@ -28,6 +28,12 @@ npx hardhat test
 npx hardhat coverage
 ```
 
+With tsc-watch (auto refresh commands)
+
+```shell
+npx tsc-watch --onCompilationComplete "npx hardhat test ./test/RollerTests.ts"
+```
+
 ## Deployment
 
 Define the private key from your deployer address and etherscan api key as an environment variable in `.env` file.
