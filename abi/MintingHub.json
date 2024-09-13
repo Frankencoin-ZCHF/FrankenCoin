@@ -31,27 +31,6 @@
         "type": "error"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "pos",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "exp",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "time",
-                "type": "uint256"
-            }
-        ],
-        "name": "PositionAlive",
-        "type": "error"
-    },
-    {
         "inputs": [],
         "name": "UnexpectedPrice",
         "type": "error"
@@ -147,6 +126,31 @@
             }
         ],
         "name": "ChallengeSucceeded",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "pos",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "priceE36MinusDecimals",
+                "type": "uint256"
+            }
+        ],
+        "name": "ForcedSale",
         "type": "event"
     },
     {

@@ -61,6 +61,7 @@ contract MintingHub {
         uint256 challengeSize
     );
     event PostPonedReturn(address collateral, address indexed beneficiary, uint256 amount);
+    event ForcedSale(address pos, uint256 amount, uint256 priceE36MinusDecimals);
 
     error UnexpectedPrice();
     error InvalidPos();
@@ -349,10 +350,10 @@ contract MintingHub {
         }
     }
 
-    error PositionAlive(address pos, uint256 exp, uint256 time);
-
     function buyExpiredCollateral(IPosition pos, uint256 amount) external {
-        uint256 costs = (expiredPurchasePrice(pos) * amount) / 10 ** 18;
+        uint256 forceSalePrice = expiredPurchasePrice(pos);
+        uint256 costs = (forceSalePrice * amount) / 10 ** 18;
         pos.forceSale(msg.sender, amount, costs);
+        emit ForcedSale(address(pos), amount, forceSalePrice);
     }
 }
