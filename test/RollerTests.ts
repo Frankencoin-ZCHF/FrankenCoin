@@ -282,7 +282,7 @@ describe("Roller Tests", () => {
       );
     });
 
-    it("merge full, expiration below, create clone", async () => {
+    it("merge full, expiration below, create clone, check ownership", async () => {
       await evm_increaseTime(3 * 86_400 + 300);
       await pos1.mint(owner.address, floatToDec18(10_000));
 
@@ -313,7 +313,7 @@ describe("Roller Tests", () => {
   describe("roll tests for owner and alice", () => {
     beforeEach("give owner 1st and alice 2nd position", async () => {
       // ---------------------------------------------------------------------------
-      // give OWNER a position
+      // give OWNER 1st position
       await coin.approve(await mintingHub.getAddress(), floatToDec18(10));
       const txPos1 = await (
         await mintingHub.openPosition(
@@ -333,7 +333,7 @@ describe("Roller Tests", () => {
       pos1 = await ethers.getContractAt("Position", pos1Addr, owner);
 
       // ---------------------------------------------------------------------------
-      // give ALICE a 2nd position
+      // give ALICE 2nd position
       await coin
         .connect(alice)
         .approve(await mintingHub.getAddress(), floatToDec18(10));
@@ -412,23 +412,20 @@ describe("Roller Tests", () => {
       const cloneAddr = await getPositionAddress((await tx.wait())!);
       clone1 = await ethers.getContractAt("Position", cloneAddr, owner);
       const m2 = await clone1.minted();
+      const b2 = await zchf.balanceOf(owner.address);
 
-      const interestTimeframe = (await clone1.expiration()) - BigInt(t2!);
-      const interestRatePPM = await clone1.annualInterestPPM();
-      const interestFeeRatePPM =
-        (interestRatePPM * interestTimeframe) / (365n * 86_400n);
-      const interestAmount =
-        (floatToDec18(10_000) * interestFeeRatePPM) / 1_000_000n;
-
-      console.log({
-        m1,
-        m2,
-        interestAmount,
-      });
+      const toRepay = floatToDec18(9_000);
+      const numerator = toRepay * 1_000_000n;
+      const denominator =
+        1_000_000n -
+        ((await clone1.reserveContribution()) +
+          (await clone1.calculateCurrentFee()));
+      const toMint =
+        numerator / denominator + (numerator % denominator > 0n ? 1n : 0n);
 
       expect(m2).to.be.equal(
-        m1 + interestAmount,
-        "mint amount should be the rolled amount plus new interest"
+        toMint,
+        "minted amount of clone should be the adj. amount to cover the pay out for the flash loan plus new interest."
       );
     });
   });

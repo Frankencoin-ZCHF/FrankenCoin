@@ -184,7 +184,7 @@ describe("ForceSale Tests", () => {
       await expect(r).to.be.revertedWithCustomError(position, "NotHub");
     });
 
-    it("simple buy to expired positions", async () => {
+    it("simple buy of expired positions", async () => {
       await evm_increaseTime(103 * 86_400 + 300);
       const b = await coin.balanceOf(await position.getAddress());
       const r = await mintingHub.buyExpiredCollateral(position, b);
