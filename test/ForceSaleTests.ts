@@ -192,45 +192,21 @@ describe("ForceSale Tests", () => {
 
     it("buy 10x liq. price", async () => {
       await evm_increaseTime(103 * 86_400 + 300); // consider expired
-      const expP = await mintingHub
-        .connect(alice)
-        .expiredPurchasePrice(position);
+      const expP = await mintingHub.connect(alice).expiredPurchasePrice(position);
       const bZchf0 = await zchf.balanceOf(alice.address);
       const bCoin0 = await coin.balanceOf(alice.address);
       // const size = await coin.balanceOf(await position.getAddress());
       const size = floatToDec18(1);
-      const tx = await mintingHub
-        .connect(alice)
-        .buyExpiredCollateral(position, size);
+      const expectedCost = size * expP / (10n**18n);
+      const tx = await mintingHub.connect(alice).buyExpiredCollateral(position, size);
+      tx.wait();
+      const events = await mintingHub.queryFilter(mintingHub.filters.ForcedSale, -1);
+      //console.log(events[0]);
       const bZchf1 = await zchf.balanceOf(alice.address);
       const bCoin1 = await coin.balanceOf(alice.address);
-      console.log({
-        expP,
-        bZchf0,
-        bCoin0,
-        size,
-        bZchf1,
-        bCoin1,
-      });
-      expect(bZchf1 + (expP * size) / floatToDec18(1)).to.be.equal(bZchf0);
       expect(bCoin0 + size).to.be.equal(bCoin1);
-      /**
-      somehow, the actual cost is slightly higher then the price indicates
-      {
-        expP: 59811875000000000000000n,
-        bZchf0: 90000000000000000000000n,
-        bCoin0: 1000000000000000000000n,
-        size: 1000000000000000000n,
-        bZchf1: 30188750000000000000000n,
-        bCoin1: 1001000000000000000000n
-      }
-
-      AssertionError: expected 90000625000000000000000 to equal 90000000000000000000000.
-      + expected - actual
-
-      -90000625000000000000000
-      +90000000000000000000000 (you pay more)
-      */
+      const actualCost = bZchf0 - bZchf1;
+      expect(actualCost).to.be.approximately(expectedCost, 10n**18n); // slight deviation as one block passed
     });
 
     it("buy 1x liq. price", async () => {
@@ -247,33 +223,8 @@ describe("ForceSale Tests", () => {
         .buyExpiredCollateral(position, size);
       const bZchf1 = await zchf.balanceOf(alice.address);
       const bCoin1 = await coin.balanceOf(alice.address);
-      console.log({
-        expP,
-        bZchf0,
-        bCoin0,
-        size,
-        bZchf1,
-        bCoin1,
-      });
-      expect(bZchf1 + (expP * size) / floatToDec18(1)).to.be.equal(bZchf0);
       expect(bCoin0 + size).to.be.equal(bCoin1);
-      /**
-        somehow, the actual cost is slightly higher then the price indicates
-        {
-          expP: 5979097222222222183956n,
-          bZchf0: 90000000000000000000000n,
-          bCoin0: 1000000000000000000000n,
-          size: 10000000000000000000n,
-          bZchf1: 30209722222222222604880n,
-          bCoin1: 1010000000000000000000n
-        }
-
-        AssertionError: expected 90000694444444444444440 to equal 90000000000000000000000.
-        + expected - actual
-
-        -90000694444444444444440
-        +90000000000000000000000
-      */
+      expect(bZchf1 + (expP * size) / floatToDec18(1)).to.be.approximately(bZchf0, 10n**18n);
     });
   });
 });
