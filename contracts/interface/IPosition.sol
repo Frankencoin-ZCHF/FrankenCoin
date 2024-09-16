@@ -39,7 +39,7 @@ interface IPosition {
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
-    function getMintAmount(uint256 usableMint) external view returns (uint256);
+    function getMintAmount(uint256 usableMint) external view returns (uint256, uint256);
 
     function challengeData() external view returns (uint256 liqPrice, uint40 phase);
 

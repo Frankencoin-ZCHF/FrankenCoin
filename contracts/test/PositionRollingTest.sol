@@ -46,6 +46,7 @@ contract PositionRollingTest {
     }
 
     function roll() public {
+        col.approve(address(roller), col.balanceOf(address(p1))); // approve full balance
         roller.rollFully(p1, p2);
         require(p1.minted() == 0);
         require(zchf.balanceOf(address(this)) == 0);

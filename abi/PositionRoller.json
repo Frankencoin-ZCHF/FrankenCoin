@@ -32,6 +32,18 @@
             },
             {
                 "indexed": false,
+                "internalType": "uint256",
+                "name": "collWithdraw",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "repay",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
                 "internalType": "address",
                 "name": "target",
                 "type": "address"
@@ -39,19 +51,13 @@
             {
                 "indexed": false,
                 "internalType": "uint256",
-                "name": "movedCollateral",
+                "name": "collDeposit",
                 "type": "uint256"
             },
             {
                 "indexed": false,
                 "internalType": "uint256",
-                "name": "repaid",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "borrowed",
+                "name": "mint",
                 "type": "uint256"
             }
         ],
@@ -85,23 +91,28 @@
                 "type": "address"
             },
             {
+                "internalType": "uint256",
+                "name": "repay",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "collWithdraw",
+                "type": "uint256"
+            },
+            {
                 "internalType": "contract IPosition",
                 "name": "target",
                 "type": "address"
             },
             {
                 "internalType": "uint256",
-                "name": "borrowAmount",
+                "name": "mint",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
-                "name": "repayAmount",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "collateralTransferAmount",
+                "name": "collDeposit",
                 "type": "uint256"
             },
             {
@@ -129,6 +140,29 @@
             }
         ],
         "name": "rollFully",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract IPosition",
+                "name": "source",
+                "type": "address"
+            },
+            {
+                "internalType": "contract IPosition",
+                "name": "target",
+                "type": "address"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
+            }
+        ],
+        "name": "rollFullyWithExpiration",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

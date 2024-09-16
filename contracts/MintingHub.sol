@@ -327,6 +327,13 @@ contract MintingHub {
         }
     }
 
+    /**
+     * The applicable purchase price when forcing the sale of collateral of an expired position.
+     * 
+     * The price starts at 10x the liquidation price at the expiration time, linearly declines to
+     * 1x liquidation price over the course of one challenge period, and then linearly declines
+     * less steeply to 0 over the course of another challenge period.
+     */
     function expiredPurchasePrice(IPosition pos) public view returns (uint256) {
         uint256 liqprice = pos.price();
         uint256 expiration = pos.expiration();
@@ -350,6 +357,10 @@ contract MintingHub {
         }
     }
 
+    /**
+     * Buys the desired amount of the collateral asset from the given expired position using
+     * the applicable 'expiredPurchasePrice' in that instant.
+     */
     function buyExpiredCollateral(IPosition pos, uint256 amount) external {
         uint256 forceSalePrice = expiredPurchasePrice(pos);
         uint256 costs = (forceSalePrice * amount) / 10 ** 18;

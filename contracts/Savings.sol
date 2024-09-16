@@ -34,7 +34,8 @@ contract Savings is Leadrate {
     }
 
     event Saved(address account, uint192 amount);
-    event InterestReserved(uint256 interest);
+    event InterestReserved(address account, uint256 interest);
+    event Withdrawal(address account, uint192 amount);
 
     error FundsLocked(uint40 remainingSeconds);
 
@@ -67,6 +68,7 @@ contract Savings is Leadrate {
             if (earnedInterest > 0 && zchf.balanceOf(address(equity)) >= earnedInterest) {
                 zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
                 account.saved += earnedInterest;
+                emit InterestReserved(accountOwner, earnedInterest);
             }
             account.ticks = ticks;
         }
@@ -116,6 +118,7 @@ contract Savings is Leadrate {
             account.saved -= amount;
         }
         zchf.transfer(target, amount);
+        emit Withdrawal(msg.sender, amount);
         return amount;
     }
 }

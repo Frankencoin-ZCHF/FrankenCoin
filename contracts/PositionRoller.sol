@@ -7,6 +7,8 @@ import "./interface/IPosition.sol";
 import "./utils/Ownable.sol";
 import "./interface/IReserve.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title PositionRoller
  *
@@ -19,37 +21,61 @@ contract PositionRoller {
 
     error NotOwner(address pos);
 
-    event Roll(address source, address target, uint256 movedCollateral, uint256 repaid, uint256 borrowed);
+    event Roll(address source, uint256 collWithdraw, uint256 repay, address target, uint256 collDeposit, uint256 mint);
 
     constructor(address zchf_) {
         zchf = IFrankencoin(zchf_);
     }
 
     /**
-     * Roll the whole source position into the target position (or a clone thereof) while taking
-     * as much as possible from the caller's ZCHF balance for repayment.
+     * Convenience method to roll and old position into a new one.
+     * 
+     * Pre-condition is an allowance for the roller to spend the collateral assset on behalf of the caller,
+     * i.e. one should set collateral.approve(roller, collateral.balanceOf(sourcePosition));
+     * 
+     * The following is assumed:
+     * - If the limit of the target position permits, the user wants to roll everything
+     * - The user does not want to add additional collateral, but excess collateral is returned
+     * - If not enough can be minted in the new position, it is ok for the roller to use ZCHF from the msg.sender
      */
     function rollFully(IPosition source, IPosition target) external {
-        uint256 necessaryRepayment = findRepaymentAmount(source);
-        uint256 collateralBalance = IERC20(source.collateral()).balanceOf(address(source));
-        uint256 senderBalance = IERC20(address(zchf)).balanceOf(msg.sender);
-        uint256 necessaryBorrowing = senderBalance >= necessaryRepayment ? 0 : necessaryRepayment - senderBalance;
-        roll(source, target, target.getMintAmount(necessaryBorrowing), necessaryRepayment, collateralBalance, target.expiration());
+        rollFullyWithExpiration(source, target, target.expiration());
+    }
+
+    /**
+     * Like rollFully, but with a custom expiration date for the new position.
+     */
+    function rollFullyWithExpiration(IPosition source, IPosition target, uint40 expiration) public {
+        require(source.collateral() == target.collateral());
+        uint256 repay = findRepaymentAmount(source);
+        (uint256 mintAmount, uint256 usable) = target.getMintAmount(repay);
+        uint256 collateralToWithdraw = IERC20(source.collateral()).balanceOf(address(source));
+        if (usable < repay){
+            repay = usable; // repay as much as possible
+            uint256 mintLeft = source.minted() - zchf.calculateFreedAmount(repay, source.reserveContribution());
+            collateralToWithdraw -= mintLeft * 10**18 / source.price(); // withdraw as much as possible
+        }
+        uint256 targetPrice = target.price();
+        uint256 depositAmount = (mintAmount * 10**18 + targetPrice - 1) / targetPrice; // round up
+        if (depositAmount > collateralToWithdraw){
+            // don't deposit more than there was freed from the old position
+            depositAmount = collateralToWithdraw;
+            mintAmount = depositAmount * target.price() / 10**18; // round down, rest will be taken from caller
+        }
+        roll(source, repay, collateralToWithdraw, target, mintAmount, depositAmount, expiration);
     }
 
     function findRepaymentAmount(IPosition pos) public returns (uint256) {
         uint256 minted = pos.minted();
         uint24 reservePPM = pos.reserveContribution();
-        uint256 lowerResult = zchf.calculateFreedAmount(0, reservePPM);
-        if (lowerResult == minted){
+        if (minted == 0){
             return 0;
         }
         uint256 higherResult = zchf.calculateFreedAmount(minted, reservePPM);
         if (higherResult == minted){
             return minted;
         }
-        require(lowerResult < higherResult);
-        return binarySearch(minted, reservePPM, 0, lowerResult, minted, higherResult);
+        return binarySearch(minted, reservePPM, 0, 0, minted, higherResult);
     }
 
     // max call stack depth is 1024 in solidity. Binary search on 256 bit number takes at most 256 steps, so it should be fine.
@@ -69,20 +95,24 @@ contract PositionRoller {
         }
     }
 
-    function roll(IPosition source, IPosition target, uint256 borrowAmount, uint256 repayAmount, uint256 collateralTransferAmount, uint40 expiration) public own(source) {
-        zchf.mint(address(this), repayAmount); // take a flash loan
-        source.repay(repayAmount);
-        if (Ownable(address(target)).owner() != msg.sender || expiration < target.expiration()){
-            source.withdrawCollateral(address(this), collateralTransferAmount);
-            IERC20(source.collateral()).approve(target.hub(), collateralTransferAmount);
-            target = IPosition(IMintingHub(target.hub()).clone(msg.sender, address(target), collateralTransferAmount, borrowAmount, expiration));
-        } else {
-            // we can roll into the provided existing position
-            source.withdrawCollateral(address(target), collateralTransferAmount);
-            target.mint(msg.sender, borrowAmount);
+    function roll(IPosition source, uint256 repay, uint256 collWithdraw, IPosition target, uint256 mint, uint256 collDeposit, uint40 expiration) public own(source) {
+        zchf.mint(address(this), repay); // take a flash loan
+        source.repay(repay); // TODO: think about whether we need to verify source and target contract to make sure they are ours
+        source.withdrawCollateral(msg.sender, collWithdraw);
+        if (mint > 0){
+            IERC20 targetCollateral = IERC20(target.collateral());
+            if (Ownable(address(target)).owner() != msg.sender || expiration < target.expiration()){
+                targetCollateral.transferFrom(msg.sender, address(this), collDeposit); // get the new collateral
+                targetCollateral.approve(target.hub(), collDeposit); // approve the new collateral and clone:
+                target = IPosition(IMintingHub(target.hub()).clone(msg.sender, address(target), collDeposit, mint, expiration));
+            } else {
+                // we can roll into the provided existing position
+                targetCollateral.transferFrom(msg.sender, address(target), collDeposit);
+                target.mint(msg.sender, mint);
+            }
         }
-        zchf.burnFrom(msg.sender, repayAmount); // repay the flash loan
-        emit Roll(address(source), address(target), collateralTransferAmount, repayAmount, borrowAmount);
+        zchf.burnFrom(msg.sender, repay); // repay the flash loan
+        emit Roll(address(source), collWithdraw, repay, address(target), collDeposit, mint);
     }
 
     modifier own(IPosition pos) {

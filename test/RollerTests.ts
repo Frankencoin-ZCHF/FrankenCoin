@@ -211,12 +211,13 @@ describe("Roller Tests", () => {
       expect(bZchf2).to.be.greaterThan(bZchf1);
       expect(await pos1.minted()).to.be.greaterThan(0n);
       expect(await pos2.minted()).to.be.equal(0n);
-
+      await coin.approve(await roller.getAddress(), floatToDec18(1));
       const tx = await roller.roll(
         await pos1.getAddress(),
+        floatToDec18(1_000), //
+        floatToDec18(1),
         await pos2.getAddress(),
         floatToDec18(10_000),
-        floatToDec18(1_000), //
         floatToDec18(1),
         (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
       );
@@ -244,11 +245,13 @@ describe("Roller Tests", () => {
       await pos1.mint(owner.address, floatToDec18(10_000));
 
       const toRepay = floatToDec18(10_000 * 0.9);
+      await coin.approve(await roller.getAddress(), floatToDec18(10));
       const tx = await roller.roll(
         await pos1.getAddress(),
+        toRepay, // to pay
+        floatToDec18(10),
         await pos2.getAddress(),
         floatToDec18(10_000), // to borrow
-        toRepay, // to pay
         floatToDec18(10),
         (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
       );
@@ -276,11 +279,13 @@ describe("Roller Tests", () => {
       await pos1.mint(owner.address, floatToDec18(10_000));
 
       const toRepay = floatToDec18(10_000 * 0.9);
+      await coin.approve(await roller.getAddress(), floatToDec18(10));
       const tx = await roller.roll(
         await pos1.getAddress(),
+        toRepay, // to pay
+        floatToDec18(10),
         await pos2.getAddress(),
         floatToDec18(10_000), // to borrow
-        toRepay, // to pay
         floatToDec18(10),
         (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
       );
@@ -296,11 +301,13 @@ describe("Roller Tests", () => {
       await pos1.mint(owner.address, floatToDec18(10_000));
 
       const toRepay = floatToDec18(10_000 * 0.9);
+      await coin.approve(await roller.getAddress(), floatToDec18(10));
       const tx = await roller.roll(
         await pos1.getAddress(),
+        toRepay, // to pay
+        floatToDec18(10),
         await pos2.getAddress(),
         floatToDec18(10_000), // to borrow
-        toRepay, // to pay
         floatToDec18(10),
         (await pos2.expiration()) - 86_400n // reach SC branch below exp. -> clone
       );
@@ -377,6 +384,7 @@ describe("Roller Tests", () => {
       await pos1.mint(owner.address, floatToDec18(10_000));
 
       const m1 = await pos1.minted();
+      await coin.approve(await roller.getAddress(), await coin.balanceOf(await pos1.getAddress()));
       await roller.rollFully(await pos1.getAddress(), await pos2.getAddress());
       const m2 = await pos1.minted();
       const b2 = await zchf.balanceOf(owner.address);
@@ -391,18 +399,18 @@ describe("Roller Tests", () => {
     it("rollFully check collateral rolled amount", async () => {
       await evm_increaseTime(3 * 86_400 + 300);
       await pos1.mint(owner.address, floatToDec18(10_000));
-      const s1 = await coin.balanceOf(await pos1.getAddress());
+      const ownCoinBalance = await coin.balanceOf(owner.address);
+      const oldPositionBalance = await coin.balanceOf(await pos1.getAddress());
+      await coin.approve(await roller.getAddress(), await coin.balanceOf(await pos1.getAddress()));
       const tx = await roller.rollFully(
         await pos1.getAddress(),
         await pos2.getAddress()
       );
       const cloneAddr = await getPositionAddress((await tx.wait())!);
       clone1 = await ethers.getContractAt("Position", cloneAddr, owner);
-      const s2 = await coin.balanceOf(await clone1.getAddress());
-      expect(s2).to.be.equal(
-        s1,
-        "new clone should have the rolled collateral size amount"
-      );
+      const newPositionBalance = await coin.balanceOf(await clone1.getAddress());
+      const coinsReturns = await coin.balanceOf(owner.address) - ownCoinBalance;
+      expect(oldPositionBalance).to.be.equal(newPositionBalance + coinsReturns, "total amount of collateral should be the same");
     });
 
     it("rollFully check interests and rolled amount", async () => {
@@ -413,6 +421,7 @@ describe("Roller Tests", () => {
       await zchf.transfer(bob.address, b1); // remove all zchf for testing
 
       const m1 = await pos1.minted();
+      await coin.approve(await roller.getAddress(), await coin.balanceOf(await pos1.getAddress()));
       const tx = await roller.rollFully(
         await pos1.getAddress(),
         await pos2.getAddress()
@@ -444,13 +453,15 @@ describe("Roller Tests", () => {
     it("rollFully check interests and rolled amount, with 1000 zchf in wallet", async () => {
       await evm_increaseTime(3 * 86_400 + 300);
       await pos1.mint(owner.address, floatToDec18(10_000));
-
       const b1 = await zchf.balanceOf(owner.address);
       await zchf.transfer(bob.address, b1 - floatToDec18(1_000)); // remove all zchf for testing
       expect(await zchf.balanceOf(owner.address)).to.be.equal(
         floatToDec18(1000),
         "you should have 1000 zchf left in your wallet"
       );
+
+      await pos2.adjustPrice(1000n * 10n ** 18n);
+      await coin.approve(await roller.getAddress(), await coin.balanceOf(await pos1.getAddress()));
 
       const tx = await roller.rollFully(
         await pos1.getAddress(),
@@ -461,23 +472,11 @@ describe("Roller Tests", () => {
       clone1 = await ethers.getContractAt("Position", cloneAddr, owner);
       const m2 = await clone1.minted();
       const b2 = await zchf.balanceOf(owner.address);
-      expect(b2).to.be.equal(
-        0n,
-        "owner zchf balance of 1000 should be used to cover costs and be 0"
-      );
-
-      const toRepay = floatToDec18(8_000);
-      const numerator = toRepay * 1_000_000n;
-      const denominator =
-        1_000_000n -
-        ((await clone1.reserveContribution()) +
-          (await clone1.calculateCurrentFee()));
-      const toMint =
-        numerator / denominator + (numerator % denominator > 0n ? 1n : 0n);
+      expect(b2).to.be.equal(890420000000000000000n, "some of the owner balance should be used to cover the interest of the new position");
 
       expect(m2).to.be.equal(
-        toMint,
-        "due to repay of 1000 zchf from owners wallet, the minted amount should be adj. incl. interests"
+        floatToDec18(10_000),
+        "as interest was covered by sender, minted amount should stay the same given same liquidation price"
       );
     });
   });

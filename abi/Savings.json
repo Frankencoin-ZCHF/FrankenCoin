@@ -41,6 +41,12 @@
         "inputs": [
             {
                 "indexed": false,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "interest",
                 "type": "uint256"
@@ -104,6 +110,25 @@
             }
         ],
         "name": "Saved",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint192",
+                "name": "amount",
+                "type": "uint192"
+            }
+        ],
+        "name": "Withdrawal",
         "type": "event"
     },
     {

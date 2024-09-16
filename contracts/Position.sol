@@ -253,7 +253,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * @notice This is how much the minter can actually use when minting ZCHF, with the rest being used
      * assigned to the minter reserve or (if applicable) fees.
      */
-    function getUsableMint(uint256 totalMint, bool afterFees) external view returns (uint256) {
+    function getUsableMint(uint256 totalMint, bool afterFees) public view returns (uint256) {
         if (afterFees) {
             return (totalMint * (1000_000 - reserveContribution - calculateCurrentFee())) / 1000_000;
         } else {
@@ -262,10 +262,17 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * Returns the lowest 'totalMint' that yields the given 'usableMint' when entered into the 'getUsableMint' function above.
+     * Returns a tupel with a mint amount and the corresponding usable amount.
+     * The mint amount is capped by what is available.
      */
-    function getMintAmount(uint256 usableMint) external view returns (uint256) {
-        return usableMint == 0 ? 0 :(usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
+    function getMintAmount(uint256 usableMint) external view returns (uint256, uint256) {
+        uint256 mintAmount = usableMint == 0 ? 0 :(usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
+        uint256 available = availableForMinting();
+        if (mintAmount <= available){
+            return (mintAmount, usableMint);
+        } else {
+            return (available, getUsableMint(available, true));
+        }
     }
 
     /**

@@ -356,16 +356,14 @@ describe("Position Tests", () => {
       expect(amount).to.be.lessThan(fLimit);
       let fZCHFBefore = await zchf.balanceOf(owner.address);
       let targetAmount = BigInt(1e16) * 898548n;
-      let totalMint = await positionContract.getMintAmount(targetAmount);
+      let totalMint = (await positionContract.getMintAmount(targetAmount))[0];
       let expectedAmount = await positionContract.getUsableMint(
         totalMint,
         true
       );
       for (let testTarget = 0n; testTarget < 100n; testTarget++) {
         // make sure these functions are not susceptible to rounding errors
-        let testTotal = await positionContract.getMintAmount(
-          targetAmount + testTarget
-        );
+        let testTotal = (await positionContract.getMintAmount(targetAmount + testTarget))[0];
         let testExpected = await positionContract.getUsableMint(
           testTotal,
           true
