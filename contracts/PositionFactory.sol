@@ -47,11 +47,10 @@ contract PositionFactory {
      * @param _parent address of the position we want to clone
      * @return address of the newly created clone position
      */
-    function clonePosition(address _parent, uint40 expiration) external returns (address) {
+    function clonePosition(address _parent) external returns (address) {
         Position parent = Position(_parent);
         parent.assertCloneable();
         Position clone = Position(_createClone(parent.original()));
-        clone.initialize(msg.sender, parent, expiration);
         return address(clone);
     }
 

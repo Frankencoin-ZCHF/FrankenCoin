@@ -16,5 +16,5 @@ interface IPositionFactory {
         uint24 _reserve
     ) external returns (address);
 
-    function clonePosition(address _existing, uint40 expiration) external returns (address);
+    function clonePosition(address _existing) external returns (address);
 }

@@ -149,9 +149,10 @@ contract MintingHub {
      * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.
      */
     function clone(address owner, address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
-        address pos = POSITION_FACTORY.clonePosition(parent, expiration);
-        zchf.registerPosition(pos);
+        address pos = POSITION_FACTORY.clonePosition(parent);
         IPosition child = IPosition(pos);
+        child.initialize(parent, expiration);
+        zchf.registerPosition(pos);
         IERC20 collateral = child.collateral();
         collateral.transferFrom(msg.sender, pos, _initialCollateral); // collateral must still come from sender for security
         emit PositionOpened(owner, address(pos), parent, address(collateral));

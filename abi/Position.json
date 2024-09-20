@@ -72,6 +72,11 @@
     },
     {
         "inputs": [],
+        "name": "AlreadyInitialized",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "ChallengeTooSmall",
         "type": "error"
     },
@@ -532,11 +537,6 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "internalType": "contract Position",
                 "name": "parent",
                 "type": "address"
             },

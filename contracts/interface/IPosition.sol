@@ -7,6 +7,8 @@ import "./IFrankencoin.sol";
 
 interface IPosition {
 
+    function initialize(address parent, uint40 _expiration) external;
+
     function hub() external view returns(address);
 
     function original() external view returns (address);

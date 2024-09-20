@@ -421,10 +421,10 @@ describe("Position Tests", () => {
         "ExpirationAfterOriginal"
       );
     });
-    it("should revert cloning from non minting hub", async () => {
+    it("should revert initializing again", async () => {
       await expect(
-        positionContract.connect(bob).initialize(owner.address, positionAddr, 0)
-      ).to.be.revertedWithCustomError(positionContract, "NotOwner");
+        positionContract.initialize(positionAddr, 0)
+      ).to.be.revertedWithCustomError(positionContract, "NotHub");
     });
     it("should revert cloning position with insufficient initial collateral", async () => {
       let expiration = await positionContract.expiration();

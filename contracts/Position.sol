@@ -117,6 +117,7 @@ contract Position is Ownable, IPosition, MathUtil {
     error NotHub();
     error NotOriginal();
     error ExpirationAfterOriginal();
+    error AlreadyInitialized();
 
     modifier alive() {
         if (block.timestamp >= expiration) revert Expired(uint40(block.timestamp), expiration);
@@ -176,11 +177,12 @@ contract Position is Ownable, IPosition, MathUtil {
      * Initialization method for clones.
      * Can only be called once. Should be called immediately after creating the clone.
      */
-    function initialize(address owner, Position parent, uint40 _expiration) external onlyOwner {
+    function initialize(address parent, uint40 _expiration) external onlyHub {
+        if (expiration != 0) revert AlreadyInitialized();
         if (_expiration > Position(original).expiration()) revert ExpirationAfterOriginal(); // original might have later expiration than parent, which is ok
         expiration = _expiration;
-        _setOwner(owner);
-        price = parent.price();
+        price = Position(parent).price();
+        _setOwner(hub);
     }
 
     /**

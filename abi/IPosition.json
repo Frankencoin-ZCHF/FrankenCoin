@@ -195,6 +195,24 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "parent",
+                "type": "address"
+            },
+            {
+                "internalType": "uint40",
+                "name": "_expiration",
+                "type": "uint40"
+            }
+        ],
+        "name": "initialize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "minimumCollateral",
         "outputs": [
