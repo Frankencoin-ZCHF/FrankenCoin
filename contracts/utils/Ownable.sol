@@ -37,14 +37,14 @@ contract Ownable {
      * Internal function without access restriction.
      */
     function _setOwner(address newOwner) internal {
-        require(newOwner != address(0x0)); // ensure initialization can only done once
+        require(newOwner != address(0x0));
         address oldOwner = owner;
         owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
     }
 
     function _requireOwner(address sender) internal view {
-        if (owner != sender && owner != address(0x0)) revert NotOwner();
+        if (owner != sender) revert NotOwner();
     }
 
     modifier onlyOwner() {
