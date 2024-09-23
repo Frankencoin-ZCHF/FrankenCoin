@@ -35,14 +35,6 @@ contract FaucetTestDeployment is Ownable {
         init = true;
     }
 
-    function mintZchfTo(address to, uint256 amount) public {
-        zchf.mint(to, amount);
-        emit NewZchf(msg.sender, to, amount);
-    }
-    function mintZchf() public {
-        zchf.mint(msg.sender, 100_000 ether);
-    }
-
     function createToken(string memory name, string memory symbol, uint8 dec) public onlyOwner {
         TestToken newToken = new TestToken(name, symbol, dec);
         tokens.push(newToken);
@@ -51,7 +43,6 @@ contract FaucetTestDeployment is Ownable {
     }
 
     function mintTo(address to, uint256 amount) public {
-        mintZchf();
         for (uint256 i = 0; i < tokenCnt; i++) {
             TestToken token = TestToken(address(tokens[i]));
             token.mint(to, amount * 10 ** token.decimals());
@@ -59,7 +50,13 @@ contract FaucetTestDeployment is Ownable {
         emit NewMint(msg.sender, to, amount);
     }
 
+    function mintZchfTo(address to, uint256 amount) public {
+        zchf.mint(to, amount);
+        emit NewZchf(msg.sender, to, amount);
+    }
+
     function mint() public {
+        mintZchfTo(msg.sender, 100_000 ether);
         mintTo(msg.sender, 1000);
     }
 }

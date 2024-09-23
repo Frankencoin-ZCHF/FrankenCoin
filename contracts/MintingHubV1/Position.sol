@@ -153,7 +153,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 _liqPrice,
         uint32 _reservePPM
     ) {
-        require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
+        // require(_initPeriod >= 1); // must be at least three days, recommended to use higher values
         _setOwner(_owner);
         original = address(this);
         hub = _hub;

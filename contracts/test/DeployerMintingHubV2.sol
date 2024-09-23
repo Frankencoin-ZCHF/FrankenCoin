@@ -34,8 +34,8 @@ contract DeployerMintingHubV2 {
 
     function initV2() public {
         zchf.transferFrom(msg.sender, address(this), 3_000 ether); // needs allowance
-        zchf.suggestMinter(address(savings), 10_000, 1000 ether, "Savings");
-        zchf.suggestMinter(address(roller), 10_000, 1000 ether, "Roller");
-        zchf.suggestMinter(address(mintingHub), 10_000, 1000 ether, "MintingHubV2");
+        zchf.suggestMinter(address(savings), 1, 1000 ether, "Savings");
+        zchf.suggestMinter(address(roller), 1, 1000 ether, "Roller");
+        zchf.suggestMinter(address(mintingHub), 1, 1000 ether, "MintingHubV2");
     }
 }
