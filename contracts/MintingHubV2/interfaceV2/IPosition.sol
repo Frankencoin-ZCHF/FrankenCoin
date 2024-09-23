@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
-import "./IReserve.sol";
-import "./IFrankencoin.sol";
+import "../../interface/IERC20.sol";
+import "../../interface/IReserve.sol";
+import "../../interface/IFrankencoin.sol";
 
 interface IPosition {
-
-    function hub() external view returns(address);
+    function hub() external view returns (address);
 
     function original() external view returns (address);
 
@@ -47,8 +46,10 @@ interface IPosition {
 
     function notifyChallengeAverted(uint256 size) external;
 
-    function notifyChallengeSucceeded(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);
+    function notifyChallengeSucceeded(
+        address _bidder,
+        uint256 _size
+    ) external returns (address, uint256, uint256, uint32);
 
     function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external;
-
 }

@@ -54,7 +54,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * address, one acquired 5 days ago and one acquired 105 days ago, you cannot redeem them as the average
      * holding duration of your shares is only 55 days < 90 days.
      */
-    uint256 public constant MIN_HOLDING_DURATION = 90 days << TIME_RESOLUTION_BITS; // Set to 5 for local testing
+    uint256 public constant MIN_HOLDING_DURATION = 20000 << TIME_RESOLUTION_BITS; // Set to 5 for local testing
 
     Frankencoin public immutable zchf;
 

@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./interface/IERC20.sol";
 import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
 
 /**
@@ -13,7 +12,6 @@ import "./interface/IReserve.sol";
  *
  **/
 contract Leadrate {
-
     IReserve public immutable equity;
 
     // the following five variables are less than 256 bit so they should be stored
@@ -76,5 +74,4 @@ contract Leadrate {
     function currentTicks() public view returns (uint64) {
         return ticksAnchor + (uint64(block.timestamp) - anchorTime) * currentRatePPM;
     }
-
 }

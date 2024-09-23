@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "../Frankencoin.sol";
-import "../PositionFactory.sol";
-import "../MintingHub.sol";
+import "../MintingHubV2/PositionFactory.sol";
+import "../MintingHubV2/MintingHub.sol";
 import "../Leadrate.sol";
 import "../interface/IReserve.sol";
 

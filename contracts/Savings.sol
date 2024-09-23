@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./utils/ERC20.sol";
 import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
 import "./Leadrate.sol";
 

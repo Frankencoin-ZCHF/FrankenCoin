@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/Ownable.sol";
-import "./utils/MathUtil.sol";
+import "../utils/Ownable.sol";
+import "../utils/MathUtil.sol";
 
-import "./interface/IERC20.sol";
-import "./interface/ILeadrate.sol";
-import "./interface/IPosition.sol";
-import "./interface/IReserve.sol";
-import "./interface/IFrankencoin.sol";
+import "../interface/IERC20.sol";
+import "../interface/ILeadrate.sol";
+import "../interface/IFrankencoin.sol";
+import "../interface/IReserve.sol";
+
+import "./interfaceV2/IPosition.sol";
 
 // import "hardhat/console.sol";
 
@@ -151,11 +152,21 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * @dev See MintingHub.openPosition
      */
-    constructor(address _owner, address _hub, address _zchf, address _collateral,
-        uint256 _minCollateral, uint256 _initialLimit,
-        uint40 _initPeriod, uint40 _duration, uint40 _challengePeriod,
-        uint24 _riskPremiumPPM, uint256 _liqPrice, uint24 _reservePPM) {
-        require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
+    constructor(
+        address _owner,
+        address _hub,
+        address _zchf,
+        address _collateral,
+        uint256 _minCollateral,
+        uint256 _initialLimit,
+        uint40 _initPeriod,
+        uint40 _duration,
+        uint40 _challengePeriod,
+        uint24 _riskPremiumPPM,
+        uint256 _liqPrice,
+        uint24 _reservePPM
+    ) {
+        //require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         _setOwner(_owner);
         original = address(this);
         hub = _hub;
@@ -266,9 +277,11 @@ contract Position is Ownable, IPosition, MathUtil {
      * The mint amount is capped by what is available.
      */
     function getMintAmount(uint256 usableMint) external view returns (uint256, uint256) {
-        uint256 mintAmount = usableMint == 0 ? 0 :(usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
+        uint256 mintAmount = usableMint == 0
+            ? 0
+            : (usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
         uint256 available = availableForMinting();
-        if (mintAmount <= available){
+        if (mintAmount <= available) {
             return (mintAmount, usableMint);
         } else {
             return (available, getUsableMint(available, true));

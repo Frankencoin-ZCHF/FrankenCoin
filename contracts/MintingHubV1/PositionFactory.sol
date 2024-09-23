@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./Position.sol";
-import "./interface/IFrankencoin.sol";
+import "../interface/IFrankencoin.sol";
 
 contract PositionFactory {
     /**
@@ -15,12 +15,12 @@ contract PositionFactory {
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,
-        uint40 _initPeriod,
-        uint40 _duration,
-        uint40 _challengePeriod,
-        uint24 _riskPremiumPPM,
+        uint256 _initPeriod,
+        uint256 _duration,
+        uint64 _challengePeriod,
+        uint32 _annualInterestPPM,
         uint256 _liqPrice,
-        uint24 _reserve
+        uint32 _reserve
     ) external returns (address) {
         return
             address(
@@ -34,7 +34,7 @@ contract PositionFactory {
                     _initPeriod,
                     _duration,
                     _challengePeriod,
-                    _riskPremiumPPM,
+                    _annualInterestPPM,
                     _liqPrice,
                     _reserve
                 )
@@ -44,14 +44,12 @@ contract PositionFactory {
     /**
      * @notice clone an existing position. This can be a clone of another clone,
      * or an original position.
-     * @param _parent address of the position we want to clone
+     * @param _existing address of the position we want to clone
      * @return address of the newly created clone position
      */
-    function clonePosition(address _parent, uint40 expiration) external returns (address) {
-        Position parent = Position(_parent);
-        parent.assertCloneable();
-        Position clone = Position(_createClone(parent.original()));
-        clone.initialize(msg.sender, parent, expiration);
+    function clonePosition(address _existing) external returns (address) {
+        Position existing = Position(_existing);
+        Position clone = Position(_createClone(existing.original()));
         return address(clone);
     }
 
