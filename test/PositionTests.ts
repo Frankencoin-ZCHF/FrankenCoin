@@ -418,7 +418,7 @@ describe("Position Tests", () => {
           )
       ).to.be.revertedWithCustomError(
         positionContract,
-        "ExpirationAfterOriginal"
+        "InvalidExpiration"
       );
     });
     it("should revert initializing again", async () => {

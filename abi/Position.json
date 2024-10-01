@@ -86,11 +86,6 @@
         "type": "error"
     },
     {
-        "inputs": [],
-        "name": "ExpirationAfterOriginal",
-        "type": "error"
-    },
-    {
         "inputs": [
             {
                 "internalType": "uint40",
@@ -114,6 +109,11 @@
     {
         "inputs": [],
         "name": "InsufficientCollateral",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InvalidExpiration",
         "type": "error"
     },
     {
