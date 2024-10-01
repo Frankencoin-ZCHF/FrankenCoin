@@ -65,6 +65,7 @@ contract MintingHub {
 
     error UnexpectedPrice();
     error InvalidPos();
+    error IncompatibleCollateral();
 
     modifier validPos(address position) {
         if (zchf.getPositionParent(position) != address(this)) revert InvalidPos();
@@ -108,11 +109,20 @@ contract MintingHub {
         uint256 _liqPrice,
         uint24 _reservePPM
     ) public returns (address) {
-        require(_riskPremium <= 1000000);
-        require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);
-        require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
-        require(_initialCollateral >= _minCollateral, "must start with min col");
-        require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
+        {
+            require(_riskPremium <= 1000000);
+            require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);
+            require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
+            uint256 invalidAmount = IERC20(_collateralAddress).totalSupply() + 1;
+            try IERC20(_collateralAddress).transfer(address(0x123), invalidAmount) {
+                revert IncompatibleCollateral(); // we need a collateral that reverts on failed transfers
+            } catch Error(string memory /*reason*/) {
+            } catch Panic(uint /*errorCode*/) {
+            } catch (bytes memory /*lowLevelData*/) {
+            }
+            require(_initialCollateral >= _minCollateral, "must start with min col");
+            require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
+        }
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,

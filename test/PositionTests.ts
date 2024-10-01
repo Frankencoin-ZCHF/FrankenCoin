@@ -210,7 +210,7 @@ describe("Position Tests", () => {
         )
       ).to.be.revertedWithoutReason();
     });
-    it("should revert creating position when collateral token has +25 decimals", async () => {
+    it("should revert creating position when collateral token has more than 24 decimals", async () => {
       const testTokenFactory = await ethers.getContractFactory("TestToken");
       const testToken = await testTokenFactory.deploy("Test", "Test", 25);
       await expect(
@@ -227,6 +227,24 @@ describe("Position Tests", () => {
           fReserve
         )
       ).to.be.revertedWithoutReason();
+    });
+    it("should revert creating position when collateral token does not revert on error", async () => {
+      const testTokenFactory = await ethers.getContractFactory("FreakToken");
+      const testToken = await testTokenFactory.deploy("Test", "Test", 17);
+      await expect(
+        mintingHub.openPosition(
+          await testToken.getAddress(),
+          minCollateral,
+          fInitialCollateral,
+          initialLimit,
+          86400 * 2,
+          duration,
+          challengePeriod,
+          fFees,
+          floatToDec18(4000),
+          fReserve
+        )
+      ).to.be.revertedWithCustomError(mintingHub, "IncompatibleCollateral");
     });
     it("create position", async () => {
       let openingFeeZCHF = await mintingHub.OPENING_FEE();

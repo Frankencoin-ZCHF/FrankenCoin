@@ -27,6 +27,11 @@
     },
     {
         "inputs": [],
+        "name": "IncompatibleCollateral",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "InvalidPos",
         "type": "error"
     },
