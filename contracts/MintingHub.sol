@@ -66,6 +66,7 @@ contract MintingHub {
     error UnexpectedPrice();
     error InvalidPos();
     error IncompatibleCollateral();
+    error InsufficientCollateral();
 
     modifier validPos(address position) {
         if (zchf.getPositionParent(position) != address(this)) revert InvalidPos();
@@ -120,7 +121,7 @@ contract MintingHub {
             } catch Panic(uint /*errorCode*/) {
             } catch (bytes memory /*lowLevelData*/) {
             }
-            require(_initialCollateral >= _minCollateral, "must start with min col");
+            if (_initialCollateral < _minCollateral) revert InsufficientCollateral();
             require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
         }
         IPosition pos = IPosition(
@@ -164,6 +165,7 @@ contract MintingHub {
         child.initialize(parent, expiration);
         zchf.registerPosition(pos);
         IERC20 collateral = child.collateral();
+        if (_initialCollateral < child.minimumCollateral()) revert InsufficientCollateral();
         collateral.transferFrom(msg.sender, pos, _initialCollateral); // collateral must still come from sender for security
         emit PositionOpened(owner, address(pos), parent, address(collateral));
         child.mint(owner, _initialMint);

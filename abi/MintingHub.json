@@ -32,6 +32,11 @@
     },
     {
         "inputs": [],
+        "name": "InsufficientCollateral",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "InvalidPos",
         "type": "error"
     },

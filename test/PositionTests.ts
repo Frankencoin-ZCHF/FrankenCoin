@@ -192,7 +192,7 @@ describe("Position Tests", () => {
           fliqPrice,
           fReserve
         )
-      ).to.be.revertedWith("must start with min col");
+      ).to.be.revertedWithCustomError(mintingHub, "InsufficientCollateral");
     });
     it("should revert creating position when minimal collateral is not worth of at least 5k ZCHF", async () => {
       await expect(
@@ -449,11 +449,8 @@ describe("Position Tests", () => {
       await expect(
         mintingHub
           .connect(alice)
-          .clone(positionAddr, 0, fMintAmount, expiration)
-      ).to.be.revertedWithCustomError(
-        positionContract,
-        "InsufficientCollateral"
-      );
+          .clone(positionAddr, 0, 0, expiration)
+      ).to.be.revertedWithCustomError(mintingHub, "InsufficientCollateral");
     });
     it("clone position", async () => {
       let fInitialCollateralClone = floatToDec18(initialCollateralClone);
