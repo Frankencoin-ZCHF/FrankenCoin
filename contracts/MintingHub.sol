@@ -165,16 +165,19 @@ contract MintingHub {
      * @notice Launch a challenge (Dutch auction) on a position
      * @param _positionAddr      address of the position we want to challenge
      * @param _collateralAmount  amount of the collateral we want to challenge
-     * @param expectedPrice      position.price() to guard against the minter fruntrunning with a price change
+     * @param minimumPrice       position.price() to guard against the minter fruntrunning with a price change
      * @return index of the challenge in challenge-array
      */
     function challenge(
         address _positionAddr,
         uint256 _collateralAmount,
-        uint256 expectedPrice
+        uint256 minimumPrice
     ) external validPos(_positionAddr) returns (uint256) {
         IPosition position = IPosition(_positionAddr);
-        if (position.price() != expectedPrice) revert UnexpectedPrice();
+        // challenger should be ok if frontrun by owner with a higher price
+        // in case owner fruntruns challenger with small price decrease to prevent challenge,
+        // the challenger should set minimumPrice to market price
+        if (position.price() < minimumPrice) revert UnexpectedPrice(); 
         IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);
         uint256 pos = challenges.length;
         challenges.push(Challenge(msg.sender, uint40(block.timestamp), position, _collateralAmount));

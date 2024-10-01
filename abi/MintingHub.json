@@ -303,7 +303,7 @@
             },
             {
                 "internalType": "uint256",
-                "name": "expectedPrice",
+                "name": "minimumPrice",
                 "type": "uint256"
             }
         ],
