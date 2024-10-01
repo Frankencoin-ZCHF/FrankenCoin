@@ -91,13 +91,13 @@ contract Savings is Leadrate {
         Account storage balance = refresh(owner);
         zchf.transferFrom(msg.sender, address(this), amount);
         uint64 ticks = currentTicks();
-        uint64 oldExtraTicks = ticks >= balance.ticks ? 0 : balance.ticks - ticks;
-        uint64 newExtraTicks = uint64(currentRatePPM) * INTEREST_DELAY;
+        assert(balance.ticks >= ticks);
+        uint256 saved = balance.saved;
         uint64 weightedAverage = uint64(
-            (oldExtraTicks * balance.saved + newExtraTicks * amount) / (balance.saved + amount)
+            (saved * (balance.ticks - ticks) + uint256(amount) * currentRatePPM * INTEREST_DELAY) / (saved + amount)
         );
         balance.saved += amount;
-        balance.ticks += weightedAverage;
+        balance.ticks = ticks + weightedAverage;
     }
 
     /**
