@@ -455,7 +455,6 @@ contract Position is Ownable, IPosition, MathUtil {
         if (block.timestamp <= cooldown && !isClosed()) revert Hot();
         uint256 balance = _sendCollateral(target, amount);
         _checkCollateral(balance, price);
-        if (balance < minimumCollateral && balance > 0) revert InsufficientCollateral(); // Prevent dust amounts
         return balance;
     }
 

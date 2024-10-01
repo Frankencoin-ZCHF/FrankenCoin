@@ -1273,18 +1273,10 @@ describe("Position Tests", () => {
         positionContract.withdrawCollateral(owner.address, amount)
       ).to.be.revertedWithCustomError(positionContract, "Hot");
     });
-    it("should revert when withdrawing portion of collaterals leaving dust", async () => {
+    it("should not revert when withdrawing portion of collaterals leaving dust", async () => {
       await positionContract.deny([], "");
       const balance = await mockVOL.balanceOf(positionAddr);
-      await expect(
-        positionContract.withdrawCollateral(
-          owner.address,
-          balance - ethers.parseEther("0.5")
-        )
-      ).to.be.revertedWithCustomError(
-        positionContract,
-        "InsufficientCollateral"
-      );
+      await positionContract.withdrawCollateral(owner.address, balance - ethers.parseEther("0.5"));
     });
     it("owner should be able to withdraw collaterals after the auction is closed", async () => {
       await positionContract.deny([], "");
