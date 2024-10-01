@@ -151,7 +151,7 @@ contract MintingHub {
         return clone(parent, _initialCollateral, _initialMint, IPosition(parent).price(), expiration);
     } */
 
-   function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public validPos(parent) returns (address) {
+   function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public returns (address) {
         return clone(msg.sender, parent, _initialCollateral, _initialMint, expiration);
    }
 
