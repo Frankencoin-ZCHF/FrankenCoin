@@ -179,7 +179,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function initialize(address parent, uint40 _expiration) external onlyHub {
         if (expiration != 0) revert AlreadyInitialized();
-        if (_expiration > Position(original).expiration()) revert ExpirationAfterOriginal(); // original might have later expiration than parent, which is ok
+        if (_expiration > Position(original).expiration()) revert ExpirationAfterOriginal(); // expiration must not be later than original
         expiration = _expiration;
         price = Position(parent).price();
         _setOwner(hub);
@@ -314,7 +314,7 @@ contract Position is Ownable, IPosition, MathUtil {
         emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
-    function _adjustPrice(uint256 newPrice) internal noChallenge {
+    function _adjustPrice(uint256 newPrice) internal noChallenge alive {
         if (newPrice > price) {
             _restrictMinting(3 days);
         } else {

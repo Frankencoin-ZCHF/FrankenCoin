@@ -592,6 +592,21 @@ describe("Position Tests", () => {
         positionContract.mint(owner.address, floatToDec18(10))
       ).to.be.revertedWithCustomError(positionContract, "Expired");
     });
+    it("should revert on price adjustments when expired", async () => {
+      let currentPrice = await positionContract.price();
+      await expect(
+        positionContract.adjustPrice(currentPrice / 2n)
+      ).to.be.revertedWithCustomError(positionContract, "Expired");
+    });
+    it("should revert on price adjustments when expired", async () => {
+      let currentPrice = await positionContract.price();
+      let minted = await positionContract.minted();
+      let collateralBalance = await mockVOL.balanceOf(positionAddr);
+      await positionContract.adjust(minted, collateralBalance, currentPrice); // don't revert if price is the same
+      await expect(
+        positionContract.adjust(minted, collateralBalance, currentPrice / 2n)
+      ).to.be.revertedWithCustomError(positionContract, "Expired");
+    });
     it("should revert reducing limit from non hub", async () => {
       await mockVOL.approve(await mintingHub.getAddress(), fInitialCollateral);
       let tx = await mintingHub.openPosition(
