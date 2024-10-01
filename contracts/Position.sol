@@ -37,7 +37,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     uint256 private totalMinted;
 
-    uint256 private immutable limit;
+    uint256 public immutable limit;
 
     /**
      * @notice Amount of the collateral that is currently under a challenge.
@@ -201,14 +201,6 @@ contract Position is Ownable, IPosition, MathUtil {
     function notifyRepaid(uint256 repaid_) external {
         if (zchf.getPositionParent(msg.sender) != hub) revert NotHub();
         totalMinted -= repaid_;
-    }
-
-    function globalLimit() external view returns (uint256) {
-        if (address(this) == original) {
-            return limit;
-        } else {
-            return Position(original).globalLimit();
-        }
     }
 
     function availableForClones() external view returns (uint256) {

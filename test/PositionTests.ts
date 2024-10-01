@@ -368,7 +368,7 @@ describe("Position Tests", () => {
     it("get loan", async () => {
       await evm_increaseTime(7 * 86_400); // 14 days passed in total
 
-      fLimit = await positionContract.globalLimit();
+      fLimit = await positionContract.limit();
       limit = dec18ToFloat(fLimit);
       let amount = BigInt(1e18) * 10_000n;
       expect(amount).to.be.lessThan(fLimit);
@@ -497,8 +497,8 @@ describe("Position Tests", () => {
       expect(col).to.be.equal(floatToDec18(initialCollateralClone));
     });
     it("global mint limit V2024", async () => {
-      const pgl = await positionContract.globalLimit();
-      const cgl = await clonePositionContract.globalLimit();
+      const pgl = await positionContract.limit();
+      const cgl = await clonePositionContract.limit();
       expect(pgl).to.be.equal(cgl);
     });
 
