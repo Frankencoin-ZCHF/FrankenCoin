@@ -1,0 +1,349 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "uniswapPool_",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "zchf_",
+                "type": "address"
+            },
+            {
+                "internalType": "uint160",
+                "name": "expectedPriceQ96",
+                "type": "uint160"
+            },
+            {
+                "internalType": "uint40",
+                "name": "expiration",
+                "type": "uint40"
+            },
+            {
+                "internalType": "uint256",
+                "name": "borrowingLimit",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [],
+        "name": "AccessDenied",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "AmplifierExpired",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "requiredMinimum",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "actuallyFoundInProvidedRange",
+                "type": "uint256"
+            }
+        ],
+        "name": "InsufficientDollarsInRange",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "int24",
+                "name": "min",
+                "type": "int24"
+            },
+            {
+                "internalType": "int24",
+                "name": "found",
+                "type": "int24"
+            },
+            {
+                "internalType": "int24",
+                "name": "max",
+                "type": "int24"
+            }
+        ],
+        "name": "InvalidTick",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "newValue",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "limit",
+                "type": "uint256"
+            }
+        ],
+        "name": "LimitExceeded",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "found",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expected",
+                "type": "uint256"
+            }
+        ],
+        "name": "PriceChangedTooMuch",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "position",
+                "type": "address"
+            }
+        ],
+        "name": "AmplifiedPositionCreated",
+        "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "EXPIRATION",
+        "outputs": [
+            {
+                "internalType": "uint40",
+                "name": "",
+                "type": "uint40"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "LIMIT",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "PRICE_ANCHOR_X96",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "TICK_ANCHOR",
+        "outputs": [
+            {
+                "internalType": "int24",
+                "name": "",
+                "type": "int24"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "TOKEN0",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "UNISWAP_POOL",
+        "outputs": [
+            {
+                "internalType": "contract IUniswapV3Pool",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "USD",
+        "outputs": [
+            {
+                "internalType": "contract IERC20",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "ZCHF",
+        "outputs": [
+            {
+                "internalType": "contract IFrankencoin",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "token0Amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "token1Amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "borrowIntoPool",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "int24",
+                "name": "ticksLow",
+                "type": "int24"
+            },
+            {
+                "internalType": "int24",
+                "name": "ticksHigh",
+                "type": "int24"
+            }
+        ],
+        "name": "checkTicks",
+        "outputs": [],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "createAmplifiedPosition",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "zchfAmount",
+                "type": "uint256"
+            }
+        ],
+        "name": "getMinimumDollars",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "borrowed",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint128",
+                "name": "returnedPart",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "total",
+                "type": "uint128"
+            }
+        ],
+        "name": "repay",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalBorrowed",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
