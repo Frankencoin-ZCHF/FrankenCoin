@@ -13,12 +13,13 @@ import "./interface/IUniswapV3MintCallback.sol";
 /**
  * @title Amplifier
  *
- * Factory contract to create amplified uniswap positions for a hardcoded pool.
+ * Factory contract to create amplified uniswap positions for a hardcoded pool. Amplified positions are positions for which
+ * the ZCHF half of the trading pair is borrowed from the Frankencoin protocol and only the other token is provided by the owner.
+ * This cuts the capital costs of liquidity provisioning in half, thereby making liquidity provisioning twice as profitable.
  * 
- * The range of the amplified position must be within 20% of the pool price when the amplifier was deployed.
- * 
- * For example, if this the amplifier for the ZCHF-USDT pool and it was initialized at an exchange rate of 0.85 CHF/USD,
- * amplified positions must have prices within the range from 0.68 and 1.02 CHF / USD. Also, all provided 
+ * The range of the amplified position must be within 20% of the pool price when the amplifier was deployed. For example, if this
+ * the amplifier for the ZCHF-USDT pool and it was initialized at an exchange rate of 0.85 CHF/USD, amplified positions must have
+ * prices within the range from 0.68 and 1.02 CHF / USD.
  * 
  **/
 contract Amplifier {
