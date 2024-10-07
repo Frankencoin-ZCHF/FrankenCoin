@@ -121,13 +121,13 @@ contract Amplifier {
     */
     function createAmplifiedPosition() public returns (address){
         AmplifiedPosition amplifier = new AmplifiedPosition(this, msg.sender);
-        IFrankencoin(address(ZCHF)).registerPosition(address(amplifier));
+        ZCHF.registerPosition(address(amplifier));
         emit AmplifiedPositionCreated(address(amplifier));
         return address(amplifier);
     }
 
     modifier onlyPosition() {
-        if (IFrankencoin(address(ZCHF)).getPositionParent(msg.sender) != address(this)) revert AccessDenied();
+        if (ZCHF.getPositionParent(msg.sender) != address(this)) revert AccessDenied();
         _;
     }
 
