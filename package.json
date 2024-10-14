@@ -1,14 +1,14 @@
 {
-  "name": "frankencoin",
-  "version": "1.0.0",
+  "name": "@frankencoin/zchf",
+  "version": "0.2.0",
   "description": "It shall support a wide range of collateralized minting methods that are governed by a democratic process.",
-  "main": ".solcover.js",
+  "main": "index.ts",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "main": "nodejs ./solcover.js",
     "deploy:network": "npx hardhat deploy --network",
     "deploynotesttoken:network": "export deploymode=base && export deploymode=base && npx hardhat deploy --network",
     "redeploynotesttoken:network": "export deployoption=notesttoken && export deploymode=base && npx hardhat deploy --reset --network",
@@ -21,6 +21,7 @@
   },
   "keywords": [],
   "author": "",
+  "private": false,
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Frankencoin-ZCHF/issues"
@@ -42,7 +43,8 @@
     "hardhat-gas-reporter": "^1.0.9",
     "mocha": "^10.7.0",
     "solidity-coverage": "^0.8.4",
-    "tsc-watch": "^6.2.0"
+    "tsc-watch": "^6.2.0",
+    "viem": "^2.21.16"
   },
   "dependencies": {
     "@typechain/ethers-v6": "^0.5.0",

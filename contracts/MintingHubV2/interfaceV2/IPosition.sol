@@ -14,6 +14,8 @@ interface IPosition {
 
     function minimumCollateral() external view returns (uint256);
 
+    function riskPremiumPPM() external view returns (uint24);
+
     function challengePeriod() external view returns (uint40);
 
     function expiration() external view returns (uint40);

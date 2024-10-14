@@ -1,0 +1,3 @@
+[
+    "function onTokenTransfer(address,uint256,bytes) returns (bool)"
+]

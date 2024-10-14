@@ -1,0 +1,4 @@
+[
+    "function rate() view returns (address)",
+    "function roller() view returns (address)"
+]
