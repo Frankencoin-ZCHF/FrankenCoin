@@ -33,6 +33,11 @@
     },
     {
         "inputs": [],
+        "name": "ModuleDisabled",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "NoPendingChange",
         "type": "error"
     },

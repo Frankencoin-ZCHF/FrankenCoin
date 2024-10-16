@@ -106,7 +106,9 @@ contract PositionRoller {
                 targetCollateral.approve(target.hub(), collDeposit); // approve the new collateral and clone:
                 target = IPosition(IMintingHub(target.hub()).clone(msg.sender, address(target), collDeposit, mint, expiration));
             } else {
-                // we can roll into the provided existing position
+                // We can roll into the provided existing position
+                // We do not verify whether the target position has been created by the known minting hub in order
+                // to allow positions to be rolled into future versions of the minting hub
                 targetCollateral.transferFrom(msg.sender, address(target), collDeposit);
                 target.mint(msg.sender, mint);
             }

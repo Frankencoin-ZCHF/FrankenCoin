@@ -22,7 +22,8 @@ import "./Leadrate.sol";
  * Transactional accounts typically do not need an incentive to hold Frankencoins.
  */
 contract Savings is Leadrate {
-    uint64 public immutable INTEREST_DELAY = uint64(14 days);
+
+    uint64 public immutable INTEREST_DELAY = uint64(3 days);
 
     IERC20 public immutable zchf;
 
@@ -38,6 +39,9 @@ contract Savings is Leadrate {
     event Withdrawal(address account, uint192 amount);
 
     error FundsLocked(uint40 remainingSeconds);
+
+    // The module is considered disabled if the interest is zero or about to become zero within three days.
+    error ModuleDisabled();
 
     constructor(IFrankencoin zchf_, uint24 initialRatePPM) Leadrate(IReserve(zchf_.reserve()), initialRatePPM) {
         zchf = IERC20(zchf_);
@@ -88,6 +92,8 @@ contract Savings is Leadrate {
      * already is in there.
      */
     function save(address owner, uint192 amount) public {
+        if (currentRatePPM == 0) revert ModuleDisabled();
+        if (nextRatePPM == 0 && (nextChange <= block.timestamp + INTEREST_DELAY)) revert ModuleDisabled();
         Account storage balance = refresh(owner);
         zchf.transferFrom(msg.sender, address(this), amount);
         uint64 ticks = currentTicks();
