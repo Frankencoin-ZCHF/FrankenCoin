@@ -2,6 +2,8 @@
 export * from './exports/address.config';
 
 // abi exports
+export * as ABI from './exports/abis';
+
 export * from './exports/abis/Frankencoin';
 export * from './exports/abis/Equity';
 export * from './exports/abis/StablecoinBridge';
