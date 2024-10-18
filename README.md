@@ -60,3 +60,25 @@ hh deploy --network sepolia --tags positions
 The networks are configured in `hardhat.config.ts`.
 
 `npx hardhat verify "0x..." --network sepolia`
+
+## Publish for NPM Pkg
+
+NPM Package: [@frankencoin/zchf](https://www.npmjs.com/package/@frankencoin/zchf)
+
+Publish: You need to be logged in and execute `npm publish --access public`
+
+Edit: `index.ts` for all pkg exports.
+
+## @dev: how to transpile package into bundled apps
+
+E.g. for `NextJs` using the `next.config.js` in root of project.
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+	reactStrictMode: true,
+	transpilePackages: ['@.../core', '@.../api'],
+};
+
+module.exports = nextConfig;
+```
