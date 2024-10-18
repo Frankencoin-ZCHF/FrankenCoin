@@ -1,6 +1,6 @@
 {
 	"name": "@frankencoin/zchf",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "It shall support a wide range of collateralized minting methods that are governed by a democratic process.",
 	"main": "index.ts",
 	"directories": {
@@ -9,6 +9,7 @@
 	},
 	"scripts": {
 		"build": "tsc index.ts",
+		"publish": "npm publish --access public",
 		"main": "nodejs ./solcover.js",
 		"deploy:network": "npx hardhat deploy --network",
 		"deploynotesttoken:network": "export deploymode=base && export deploymode=base && npx hardhat deploy --network",
