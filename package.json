@@ -8,6 +8,7 @@
 		"test": "tests"
 	},
 	"scripts": {
+		"build": "tsc index.ts",
 		"main": "nodejs ./solcover.js",
 		"deploy:network": "npx hardhat deploy --network",
 		"deploynotesttoken:network": "export deploymode=base && export deploymode=base && npx hardhat deploy --network",
