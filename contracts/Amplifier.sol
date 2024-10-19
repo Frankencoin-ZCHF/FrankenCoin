@@ -179,7 +179,8 @@ contract AmplifiedPosition is Ownable, IUniswapV3MintCallback {
      * Return the provided amount of liquidity.
      * 
      * The tokens will be returned to the owner. In case additional ZCHF are required to repay the borrowed amounts, the missing
-     * ZCHF are taken from the owners address. When burning X% of the position liquidity, X% of the borrowed frankencoins must be returned.
+     * ZCHF are taken from the owner's address. When burning X% of the position liquidity, X% of the borrowed Frankencoins must be returned.
+     * At the same time, accrued fees are collected.
      * 
      * TODO: this function implicitely assumes that the liquidity of one position can be compared to that of another position.
      * If these amounts have different orders of magnitude depending on the position, we have a problem.
