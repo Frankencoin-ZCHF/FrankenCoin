@@ -122,7 +122,7 @@ contract MintingHub {
             } catch (bytes memory /*lowLevelData*/) {
             }
             if (_initialCollateral < _minCollateral) revert InsufficientCollateral();
-            require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 ZCHF worth of collateral
+            if (_minCollateral * _liqPrice < 5000 ether * 10 ** 18) revert InsufficientCollateral(); // must start with at least 5000 ZCHF worth of collateral
         }
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
@@ -146,10 +146,6 @@ contract MintingHub {
         emit PositionOpened(msg.sender, address(pos), address(pos), _collateralAddress);
         return address(pos);
     }
-
-    /* function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public returns (address) {
-        return clone(parent, _initialCollateral, _initialMint, IPosition(parent).price(), expiration);
-    } */
 
    function clone(address parent, uint256 _initialCollateral, uint256 _initialMint, uint40 expiration) public returns (address) {
         return clone(msg.sender, parent, _initialCollateral, _initialMint, expiration);

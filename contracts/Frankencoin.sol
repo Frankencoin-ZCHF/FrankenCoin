@@ -296,9 +296,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     function calculateFreedAmount(uint256 amountExcludingReserve /* 41 */, uint32 reservePPM /* 20% */) public view returns (uint256) {
         uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
         uint256 minterReserve_ = minterReserve(); // 20
-        uint256 adjustedReservePPM = currentReserve < minterReserve_
-            ? (reservePPM * currentReserve) / minterReserve_
-            : reservePPM; // 18%
+        uint256 adjustedReservePPM = currentReserve < minterReserve_ ? (reservePPM * currentReserve) / minterReserve_ : reservePPM; // 18%
         return (1000000 * amountExcludingReserve) / (1000000 - adjustedReservePPM); // 41 / (1-18%) = 50
     }
 

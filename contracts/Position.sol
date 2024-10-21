@@ -105,10 +105,10 @@ contract Position is Ownable, IPosition, MathUtil {
     event MintingUpdate(uint256 collateral, uint256 price, uint256 minted);
     event PositionDenied(address indexed sender, string message); // emitted if closed by governance
 
-    error InsufficientCollateral();
+    error InsufficientCollateral(uint256 needed, uint256 available);
     error TooLate();
     error RepaidTooMuch(uint256 excess);
-    error LimitExceeded(uint256 available);
+    error LimitExceeded(uint256 tried, uint256 available);
     error ChallengeTooSmall();
     error Expired(uint40 time, uint40 expiration);
     error Alive();
@@ -256,17 +256,10 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * Returns a tupel with a mint amount and the corresponding usable amount.
-     * The mint amount is capped by what is available.
+     * Returns the corresponding mint amount (disregarding the limit).
      */
-    function getMintAmount(uint256 usableMint) external view returns (uint256, uint256) {
-        uint256 mintAmount = usableMint == 0 ? 0 :(usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
-        uint256 available = availableForMinting();
-        if (mintAmount <= available){
-            return (mintAmount, usableMint);
-        } else {
-            return (available, getUsableMint(available, true));
-        }
+    function getMintAmount(uint256 usableMint) external view returns (uint256) {
+        return usableMint == 0 ? 0 :(usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
     }
 
     /**
@@ -334,14 +327,25 @@ contract Position is Ownable, IPosition, MathUtil {
         emit MintingUpdate(collateralBalance, price, minted);
     }
 
+    /**
+     * The applicable upfront fee in ppm when minting more Frankencoins based on the annual interest rate and
+     * the expiration of the position.
+     */
     function calculateCurrentFee() public view returns (uint24) {
         return calculateFee(expiration);
     }
 
+    /**
+     * The applicable interest rate in ppm when minting more Frankencoins.
+     * It consists on the globally valid interest plus an individual risk premium.
+     */
     function annualInterestPPM() public view returns (uint24) {
         return IHub(hub).rate().currentRatePPM() + riskPremiumPPM;
     }
 
+    /**
+     * The fee in ppm when cloning and minting with the given expiration date.
+     */
     function calculateFee(uint256 exp) public view returns (uint24) {
         uint256 time = block.timestamp < start ? start : block.timestamp;
         uint256 timePassed = exp - time;
@@ -351,7 +355,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function _mint(address target, uint256 amount, uint256 collateral_) internal noChallenge noCooldown alive {
-        if (amount > availableForMinting()) revert LimitExceeded(availableForMinting());
+        if (amount > availableForMinting()) revert LimitExceeded(amount, availableForMinting());
         Position(original).notifyMint(amount);
         zchf.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
         minted += amount;
@@ -392,21 +396,27 @@ contract Position is Ownable, IPosition, MathUtil {
         minted -= amount;
     }
 
+    /**
+     * Force the sale of some collateral after the position is expired.
+     * Can only be called by the minting hub and the minting hub is trusted to calculate the price correctly.
+     * The proceeds from the sale are first used to repay the outstanding balance and then (if anything is left)
+     * it is sent to the owner of the position.
+     */
     function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired {
         if (minted > 0) {
             uint256 availableReserve = zchf.calculateAssignedReserve(minted, reserveContribution);
             if (proceeds + availableReserve >= minted) {
-                // we can repay everything
+                // repay everything from the buyer's account
                 uint256 returnedReserve = zchf.burnFromWithReserve(buyer, minted, reserveContribution);
                 assert(returnedReserve == availableReserve);
+                // transfer the remaining purchase price from the buyer to the owner
                 zchf.transferFrom(buyer, owner, proceeds + returnedReserve - minted);
                 _notifyRepaid(minted);
             } else {
-                // we can only repay a part
+                // we can only repay a part, nothing left to pay to owner
                 zchf.transferFrom(buyer, address(this), proceeds);
                 uint256 repaid = zchf.burnWithReserve(proceeds, reserveContribution);
                 _notifyRepaid(repaid);
-                // nothing to return to the owner
             }
         } else {
             // wire funds directly to owner
@@ -475,7 +485,7 @@ contract Position is Ownable, IPosition, MathUtil {
      * variables change in an adverse way.
      */
     function _checkCollateral(uint256 collateralReserve, uint256 atPrice) internal view {
-        if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral();
+        if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral(collateralReserve * atPrice, minted * ONE_DEC18);
     }
 
     /**

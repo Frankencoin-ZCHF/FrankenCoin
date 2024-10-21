@@ -208,7 +208,7 @@ describe("Position Tests", () => {
           floatToDec18(4000),
           fReserve
         )
-      ).to.be.revertedWithoutReason();
+      ).to.be.revertedWithCustomError(mintingHub, "InsufficientCollateral");
     });
     it("should revert creating position when collateral token has more than 24 decimals", async () => {
       const testTokenFactory = await ethers.getContractFactory("TestToken");
@@ -374,14 +374,14 @@ describe("Position Tests", () => {
       expect(amount).to.be.lessThan(fLimit);
       let fZCHFBefore = await zchf.balanceOf(owner.address);
       let targetAmount = BigInt(1e16) * 898548n;
-      let totalMint = (await positionContract.getMintAmount(targetAmount))[0];
+      let totalMint = (await positionContract.getMintAmount(targetAmount));
       let expectedAmount = await positionContract.getUsableMint(
         totalMint,
         true
       );
       for (let testTarget = 0n; testTarget < 100n; testTarget++) {
         // make sure these functions are not susceptible to rounding errors
-        let testTotal = (await positionContract.getMintAmount(targetAmount + testTarget))[0];
+        let testTotal = (await positionContract.getMintAmount(targetAmount + testTarget));
         let testExpected = await positionContract.getUsableMint(
           testTotal,
           true
@@ -1438,9 +1438,7 @@ describe("Position Tests", () => {
       await evm_increaseTimeTo(await pos.start());
       let balanceBefore = await zchf.balanceOf(await alice.getAddress());
       let mintedAmount = 50000n * 10n ** 18n;
-      let tx = await pos
-        .connect(alice)
-        .mint(await alice.getAddress(), mintedAmount);
+      let tx = await pos.connect(alice).mint(await alice.getAddress(), mintedAmount);
       await tx.wait();
       let balanceAfter = await zchf.balanceOf(await alice.getAddress());
       expect(balanceAfter - balanceBefore).to.be.eq(39794550000000000000000n);
@@ -1473,7 +1471,7 @@ describe("Position Tests", () => {
     it("force sale at liquidation price should succeed in cleaning up position", async () => {
       let tx = await test.forceBuy(await pos.getAddress(), 35n);
       expect(await pos.minted()).to.be.eq(0n);
-      expect(await pos.isClosed()).to.be.false; // still collateral left
+      expect(await pos.isClosed()).to.be.false; // still more than 10 collateral left
     });
 
     it("get rest for cheap and close position", async () => {
@@ -1482,7 +1480,8 @@ describe("Position Tests", () => {
       );
       let tx = await test.forceBuy(await pos.getAddress(), 60n);
       expect(await pos.minted()).to.be.eq(0n);
-      expect(await pos.isClosed()).to.be.true; // still collateral left
+      expect(await pos.isClosed()).to.be.true;
+      expect(await mockVOL.balanceOf(await pos.getAddress())).to.be.eq(0n); // still collateral left
     });
   });
 

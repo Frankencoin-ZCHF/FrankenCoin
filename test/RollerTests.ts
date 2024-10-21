@@ -350,9 +350,7 @@ describe("Roller Tests", () => {
 
       // ---------------------------------------------------------------------------
       // give ALICE 2nd position
-      await coin
-        .connect(alice)
-        .approve(await mintingHub.getAddress(), floatToDec18(10));
+      await coin.connect(alice).approve(await mintingHub.getAddress(), floatToDec18(10));
       const txPos2 = await (
         await mintingHub.connect(alice).openPosition(
           await coin.getAddress(),

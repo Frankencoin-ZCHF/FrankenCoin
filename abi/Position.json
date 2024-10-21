@@ -107,7 +107,18 @@
         "type": "error"
     },
     {
-        "inputs": [],
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "needed",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "available",
+                "type": "uint256"
+            }
+        ],
         "name": "InsufficientCollateral",
         "type": "error"
     },
@@ -118,6 +129,11 @@
     },
     {
         "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "tried",
+                "type": "uint256"
+            },
             {
                 "internalType": "uint256",
                 "name": "available",
@@ -469,11 +485,6 @@
         ],
         "name": "getMintAmount",
         "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            },
             {
                 "internalType": "uint256",
                 "name": "",

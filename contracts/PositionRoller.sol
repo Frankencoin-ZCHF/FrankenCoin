@@ -20,6 +20,7 @@ contract PositionRoller {
     IFrankencoin private zchf;
 
     error NotOwner(address pos);
+    error Log(uint256, uint256, uint256);
 
     event Roll(address source, uint256 collWithdraw, uint256 repay, address target, uint256 collDeposit, uint256 mint);
 
@@ -48,24 +49,25 @@ contract PositionRoller {
     function rollFullyWithExpiration(IPosition source, IPosition target, uint40 expiration) public {
         require(source.collateral() == target.collateral());
         uint256 repay = findRepaymentAmount(source);
-        (uint256 mintAmount, uint256 usable) = target.getMintAmount(repay);
+        uint256 mintAmount = target.getMintAmount(repay);
         uint256 collateralToWithdraw = IERC20(source.collateral()).balanceOf(address(source));
-        if (usable < repay){
-            repay = usable; // repay as much as possible
-            uint256 mintLeft = source.minted() - zchf.calculateFreedAmount(repay, source.reserveContribution());
-            collateralToWithdraw -= mintLeft * 10**18 / source.price(); // withdraw as much as possible
-        }
         uint256 targetPrice = target.price();
         uint256 depositAmount = (mintAmount * 10**18 + targetPrice - 1) / targetPrice; // round up
         if (depositAmount > collateralToWithdraw){
-            // don't deposit more than there was freed from the old position
+            // If we need more collateral than available from the old position, we opt for taking
+            // the missing funds from the caller instead of taking additional collateral from the caller
             depositAmount = collateralToWithdraw;
             mintAmount = depositAmount * target.price() / 10**18; // round down, rest will be taken from caller
         }
         roll(source, repay, collateralToWithdraw, target, mintAmount, depositAmount, expiration);
     }
 
-    function findRepaymentAmount(IPosition pos) public returns (uint256) {
+    /**
+     * Doing a binary search is not very efficient, but guaranteed to return a valid result without rounding errors.
+     * To save gas costs, the frontend can also call this and other methods to calculate the right parameters and
+     * then call 'roll' directly.
+     */
+    function findRepaymentAmount(IPosition pos) public view returns (uint256) {
         uint256 minted = pos.minted();
         uint24 reservePPM = pos.reserveContribution();
         if (minted == 0){
@@ -79,7 +81,7 @@ contract PositionRoller {
     }
 
     // max call stack depth is 1024 in solidity. Binary search on 256 bit number takes at most 256 steps, so it should be fine.
-    function binarySearch(uint256 target, uint24 reservePPM, uint256 lowerBound, uint256 lowerResult, uint256 higherBound, uint256 higherResult) internal returns (uint256) {
+    function binarySearch(uint256 target, uint24 reservePPM, uint256 lowerBound, uint256 lowerResult, uint256 higherBound, uint256 higherResult) internal view returns (uint256) {
         uint256 middle = (lowerBound + higherBound) / 2;
         if (middle == lowerBound){
             return higherBound; // we have reached max precision without exact match, return next higher result to be on the safe side
@@ -95,9 +97,23 @@ contract PositionRoller {
         }
     }
 
+    /**
+     * Rolls the source position into the target position using a flash loan.
+     * Both the source and the target position must recognize this roller.
+     * It is the responsibility of the caller to ensure that both positions are valid contracts.
+     * 
+     * @param source The source position, must be owned by the msg.sender .
+     * @param repay The amount to flash loan in order to repay the source position and free up some or all collateral.
+     * @param collWithdraw Collateral to move from the source position to the msg.sender .
+     * @param target The target position. If not owned by msg.sender or if it does not have the desired expiration,
+     *               it is cloned to create a position owned by the msg.sender.
+     * @param mint The amount to be minted from the target position using collateral from msg.sender.
+     * @param collDeposit The amount of collateral to be send from msg.sender to the target position.
+     * @param expiration The desired expiration date for the target position.
+     */
     function roll(IPosition source, uint256 repay, uint256 collWithdraw, IPosition target, uint256 mint, uint256 collDeposit, uint40 expiration) public own(source) {
         zchf.mint(address(this), repay); // take a flash loan
-        source.repay(repay); // TODO: think about whether we need to verify source and target contract to make sure they are ours
+        source.repay(repay);
         source.withdrawCollateral(msg.sender, collWithdraw);
         if (mint > 0){
             IERC20 targetCollateral = IERC20(target.collateral());
