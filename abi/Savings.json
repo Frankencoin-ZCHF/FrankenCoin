@@ -57,7 +57,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "InterestReserved",
+        "name": "InterestCollected",
         "type": "event"
     },
     {
@@ -133,7 +133,7 @@
                 "type": "uint192"
             }
         ],
-        "name": "Withdrawal",
+        "name": "Withdrawn",
         "type": "event"
     },
     {
