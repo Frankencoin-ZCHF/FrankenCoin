@@ -27,6 +27,16 @@ export const MintingHubV2ABI = [
 	},
 	{
 		inputs: [],
+		name: 'IncompatibleCollateral',
+		type: 'error',
+	},
+	{
+		inputs: [],
+		name: 'InsufficientCollateral',
+		type: 'error',
+	},
+	{
+		inputs: [],
 		name: 'InvalidPos',
 		type: 'error',
 	},
@@ -303,7 +313,7 @@ export const MintingHubV2ABI = [
 			},
 			{
 				internalType: 'uint256',
-				name: 'expectedPrice',
+				name: 'minimumPrice',
 				type: 'uint256',
 			},
 		],

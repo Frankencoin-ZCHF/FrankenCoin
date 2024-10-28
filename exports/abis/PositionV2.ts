@@ -72,17 +72,17 @@ export const PositionV2ABI = [
 	},
 	{
 		inputs: [],
+		name: 'AlreadyInitialized',
+		type: 'error',
+	},
+	{
+		inputs: [],
 		name: 'ChallengeTooSmall',
 		type: 'error',
 	},
 	{
 		inputs: [],
 		name: 'Challenged',
-		type: 'error',
-	},
-	{
-		inputs: [],
-		name: 'ExpirationAfterOriginal',
 		type: 'error',
 	},
 	{
@@ -107,12 +107,33 @@ export const PositionV2ABI = [
 		type: 'error',
 	},
 	{
-		inputs: [],
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'needed',
+				type: 'uint256',
+			},
+			{
+				internalType: 'uint256',
+				name: 'available',
+				type: 'uint256',
+			},
+		],
 		name: 'InsufficientCollateral',
 		type: 'error',
 	},
 	{
+		inputs: [],
+		name: 'InvalidExpiration',
+		type: 'error',
+	},
+	{
 		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'tried',
+				type: 'uint256',
+			},
 			{
 				internalType: 'uint256',
 				name: 'available',
@@ -469,11 +490,6 @@ export const PositionV2ABI = [
 				name: '',
 				type: 'uint256',
 			},
-			{
-				internalType: 'uint256',
-				name: '',
-				type: 'uint256',
-			},
 		],
 		stateMutability: 'view',
 		type: 'function',
@@ -504,19 +520,6 @@ export const PositionV2ABI = [
 	},
 	{
 		inputs: [],
-		name: 'globalLimit',
-		outputs: [
-			{
-				internalType: 'uint256',
-				name: '',
-				type: 'uint256',
-			},
-		],
-		stateMutability: 'view',
-		type: 'function',
-	},
-	{
-		inputs: [],
 		name: 'hub',
 		outputs: [
 			{
@@ -532,11 +535,6 @@ export const PositionV2ABI = [
 		inputs: [
 			{
 				internalType: 'address',
-				name: 'owner',
-				type: 'address',
-			},
-			{
-				internalType: 'contract Position',
 				name: 'parent',
 				type: 'address',
 			},
@@ -559,6 +557,19 @@ export const PositionV2ABI = [
 				internalType: 'bool',
 				name: '',
 				type: 'bool',
+			},
+		],
+		stateMutability: 'view',
+		type: 'function',
+	},
+	{
+		inputs: [],
+		name: 'limit',
+		outputs: [
+			{
+				internalType: 'uint256',
+				name: '',
+				type: 'uint256',
 			},
 		],
 		stateMutability: 'view',

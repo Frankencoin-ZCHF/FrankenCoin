@@ -14,6 +14,7 @@ export * from './exports/abis/MintingHubV1';
 export * from './exports/abis/PositionV1';
 
 export * from './exports/abis/MintingHubV2';
+export * from './exports/abis/IPositionFactory';
 export * from './exports/abis/PositionV2';
 export * from './exports/abis/PositionRoller';
 export * from './exports/abis/Leadrate';

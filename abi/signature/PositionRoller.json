@@ -1,8 +1,9 @@
 [
     "constructor(address)",
+    "error Log(uint256,uint256,uint256)",
     "error NotOwner(address)",
     "event Roll(address,uint256,uint256,address,uint256,uint256)",
-    "function findRepaymentAmount(address) returns (uint256)",
+    "function findRepaymentAmount(address) view returns (uint256)",
     "function roll(address,uint256,uint256,address,uint256,uint256,uint40)",
     "function rollFully(address,address)",
     "function rollFullyWithExpiration(address,address,uint40)"

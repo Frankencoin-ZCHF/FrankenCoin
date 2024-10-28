@@ -5,11 +5,6 @@
                 "internalType": "address",
                 "name": "_parent",
                 "type": "address"
-            },
-            {
-                "internalType": "uint40",
-                "name": "expiration",
-                "type": "uint40"
             }
         ],
         "name": "clonePosition",

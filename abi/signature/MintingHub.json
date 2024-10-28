@@ -1,5 +1,7 @@
 [
     "constructor(address,address,address,address)",
+    "error IncompatibleCollateral()",
+    "error InsufficientCollateral()",
     "error InvalidPos()",
     "error UnexpectedPrice()",
     "event ChallengeAverted(address indexed,uint256,uint256)",

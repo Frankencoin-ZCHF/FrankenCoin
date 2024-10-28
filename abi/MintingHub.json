@@ -27,6 +27,16 @@
     },
     {
         "inputs": [],
+        "name": "IncompatibleCollateral",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InsufficientCollateral",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "InvalidPos",
         "type": "error"
     },
@@ -303,7 +313,7 @@
             },
             {
                 "internalType": "uint256",
-                "name": "expectedPrice",
+                "name": "minimumPrice",
                 "type": "uint256"
             }
         ],
