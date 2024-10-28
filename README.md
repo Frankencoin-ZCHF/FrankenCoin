@@ -65,6 +65,8 @@ The networks are configured in `hardhat.config.ts`.
 
 NPM Package: [@frankencoin/zchf](https://www.npmjs.com/package/@frankencoin/zchf)
 
+"build": "tsup"
+
 Publish: You need to be logged in and execute `npm publish --access public`
 
 Edit: `index.ts` for all pkg exports.
