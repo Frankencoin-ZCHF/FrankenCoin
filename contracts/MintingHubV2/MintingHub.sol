@@ -159,7 +159,7 @@ contract MintingHub {
 		IPosition child = IPosition(pos);
 		child.initialize(parent, expiration);
 		zchf.registerPosition(pos);
-		IERC20 collateral = IERC20(child.collateral());
+		IERC20 collateral = child.collateral();
 		if (_initialCollateral < child.minimumCollateral()) revert InsufficientCollateral();
 		collateral.transferFrom(msg.sender, pos, _initialCollateral); // collateral must still come from sender for security
 		emit PositionOpened(owner, address(pos), parent, address(collateral));
@@ -268,7 +268,7 @@ contract MintingHub {
 		}
 
 		_challenge.position.notifyChallengeAverted(size);
-		IERC20(_challenge.position.collateral()).transfer(msg.sender, size);
+		_challenge.position.collateral().transfer(msg.sender, size);
 		if (size < _challenge.size) {
 			challenges[number].size = _challenge.size - size;
 		} else {
@@ -281,7 +281,7 @@ contract MintingHub {
 	 * @notice Returns 'amount' of the collateral to the challenger and reduces or deletes the relevant challenge.
 	 */
 	function _returnChallengerCollateral(Challenge memory _challenge, uint32 number, uint256 amount, bool postpone) internal {
-		_returnCollateral(IERC20(_challenge.position.collateral()), _challenge.challenger, amount, postpone);
+		_returnCollateral(_challenge.position.collateral(), _challenge.challenger, amount, postpone);
 		if (_challenge.size == amount) {
 			// bid on full amount
 			delete challenges[number];
