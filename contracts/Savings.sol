@@ -22,7 +22,6 @@ import "./Leadrate.sol";
  * Transactional accounts typically do not need an incentive to hold Frankencoins.
  */
 contract Savings is Leadrate {
-
     uint64 public immutable INTEREST_DELAY = uint64(3 days);
 
     IERC20 public immutable zchf;
@@ -67,7 +66,7 @@ contract Savings is Leadrate {
     function refresh(address accountOwner) internal returns (Account storage) {
         Account storage account = savings[accountOwner];
         uint64 ticks = currentTicks();
-        if (ticks > account.ticks) {
+        if (ticks > account.ticks && account.ticks > 0) {
             uint192 earnedInterest = calculateInterest(account, ticks);
             zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
             account.saved += earnedInterest;
@@ -87,7 +86,7 @@ contract Savings is Leadrate {
     }
 
     function calculateInterest(Account memory account, uint64 ticks) public view returns (uint192) {
-        if (ticks <= account.ticks){
+        if (ticks <= account.ticks || account.ticks == 0) {
             return 0;
         } else {
             uint192 earnedInterest = uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
@@ -109,7 +108,7 @@ contract Savings is Leadrate {
 
     function adjust(uint192 targetAmount) public {
         Account storage balance = refresh(msg.sender);
-        if (balance.saved < targetAmount){
+        if (balance.saved < targetAmount) {
             save(targetAmount - balance.saved);
         } else if (balance.saved > targetAmount) {
             withdraw(msg.sender, balance.saved - targetAmount);
