@@ -74,7 +74,11 @@ contract Leadrate {
      * ticks. For simplicity, this is linear, so there is no "interest on interest".
      */
     function currentTicks() public view returns (uint64) {
-        return ticksAnchor + (uint64(block.timestamp) - anchorTime) * currentRatePPM;
+        return ticks(block.timestamp);
+    }
+
+    function ticks(uint256 timestamp) public view returns (uint64) {
+        return ticksAnchor + (uint64(timestamp) - anchorTime) * currentRatePPM;
     }
 
 }

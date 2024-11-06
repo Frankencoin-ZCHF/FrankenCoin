@@ -68,15 +68,36 @@ contract Savings is Leadrate {
         Account storage account = savings[accountOwner];
         uint64 ticks = currentTicks();
         if (ticks > account.ticks) {
-            uint192 earnedInterest = uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
-            if (earnedInterest > 0 && zchf.balanceOf(address(equity)) >= earnedInterest) {
-                zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
-                account.saved += earnedInterest;
-                emit InterestCollected(accountOwner, earnedInterest);
-            }
+            uint192 earnedInterest = calculateInterest(account, ticks);
+            zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
+            account.saved += earnedInterest;
+            emit InterestCollected(accountOwner, earnedInterest);
             account.ticks = ticks;
         }
         return account;
+    }
+
+    function accruedInterest(address accountOwner) public view returns (uint192) {
+        return accruedInterest(accountOwner, block.timestamp);
+    }
+
+    function accruedInterest(address accountOwner, uint256 timestamp) public view returns (uint192) {
+        Account memory account = savings[accountOwner];
+        return calculateInterest(account, ticks(timestamp));
+    }
+
+    function calculateInterest(Account memory account, uint64 ticks) public view returns (uint192) {
+        if (ticks <= account.ticks){
+            return 0;
+        } else {
+            uint192 earnedInterest = uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
+            uint256 equity = IFrankencoin(address(zchf)).equity();
+            if (earnedInterest > equity) {
+                return uint192(equity); // save conversion as equity is smaller than uint192 earnedInterest
+            } else {
+                return earnedInterest;
+            }
+        }
     }
 
     /**
@@ -84,6 +105,15 @@ contract Savings is Leadrate {
      */
     function save(uint192 amount) public {
         save(msg.sender, amount);
+    }
+
+    function adjust(uint192 targetAmount) public {
+        Account storage balance = refresh(msg.sender);
+        if (balance.saved < targetAmount){
+            save(targetAmount - balance.saved);
+        } else if (balance.saved > targetAmount) {
+            withdraw(msg.sender, balance.saved - targetAmount);
+        }
     }
 
     /**
@@ -114,7 +144,7 @@ contract Savings is Leadrate {
      *
      * Fails if the funds in the account have not been in the account for long enough.
      */
-    function withdraw(address target, uint192 amount) external returns (uint256) {
+    function withdraw(address target, uint192 amount) public returns (uint256) {
         Account storage account = refresh(msg.sender);
         if (account.ticks > currentTicks()) {
             revert FundsLocked(uint40(account.ticks - currentTicks() / currentRatePPM));
