@@ -10,5 +10,6 @@
     "function equity() view returns (address)",
     "function nextChange() view returns (uint40)",
     "function nextRatePPM() view returns (uint24)",
-    "function proposeChange(uint24,address[])"
+    "function proposeChange(uint24,address[])",
+    "function ticks(uint256) view returns (uint64)"
 ]
