@@ -153,4 +153,23 @@ export const LeadrateABI = [
 		stateMutability: 'nonpayable',
 		type: 'function',
 	},
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'timestamp',
+				type: 'uint256',
+			},
+		],
+		name: 'ticks',
+		outputs: [
+			{
+				internalType: 'uint64',
+				name: '',
+				type: 'uint64',
+			},
+		],
+		stateMutability: 'view',
+		type: 'function',
+	},
 ] as const;

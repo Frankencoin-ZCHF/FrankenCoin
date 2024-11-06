@@ -150,10 +150,102 @@ export const SavingsABI = [
 		type: 'function',
 	},
 	{
+		inputs: [
+			{
+				internalType: 'address',
+				name: 'accountOwner',
+				type: 'address',
+			},
+		],
+		name: 'accruedInterest',
+		outputs: [
+			{
+				internalType: 'uint192',
+				name: '',
+				type: 'uint192',
+			},
+		],
+		stateMutability: 'view',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'address',
+				name: 'accountOwner',
+				type: 'address',
+			},
+			{
+				internalType: 'uint256',
+				name: 'timestamp',
+				type: 'uint256',
+			},
+		],
+		name: 'accruedInterest',
+		outputs: [
+			{
+				internalType: 'uint192',
+				name: '',
+				type: 'uint192',
+			},
+		],
+		stateMutability: 'view',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'uint192',
+				name: 'targetAmount',
+				type: 'uint192',
+			},
+		],
+		name: 'adjust',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function',
+	},
+	{
 		inputs: [],
 		name: 'applyChange',
 		outputs: [],
 		stateMutability: 'nonpayable',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				components: [
+					{
+						internalType: 'uint192',
+						name: 'saved',
+						type: 'uint192',
+					},
+					{
+						internalType: 'uint64',
+						name: 'ticks',
+						type: 'uint64',
+					},
+				],
+				internalType: 'struct Savings.Account',
+				name: 'account',
+				type: 'tuple',
+			},
+			{
+				internalType: 'uint64',
+				name: 'ticks',
+				type: 'uint64',
+			},
+		],
+		name: 'calculateInterest',
+		outputs: [
+			{
+				internalType: 'uint192',
+				name: '',
+				type: 'uint192',
+			},
+		],
+		stateMutability: 'view',
 		type: 'function',
 	},
 	{
@@ -320,6 +412,25 @@ export const SavingsABI = [
 			{
 				internalType: 'uint64',
 				name: 'ticks',
+				type: 'uint64',
+			},
+		],
+		stateMutability: 'view',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'timestamp',
+				type: 'uint256',
+			},
+		],
+		name: 'ticks',
+		outputs: [
+			{
+				internalType: 'uint64',
+				name: '',
 				type: 'uint64',
 			},
 		],
