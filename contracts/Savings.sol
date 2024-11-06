@@ -71,8 +71,8 @@ contract Savings is Leadrate {
             zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
             account.saved += earnedInterest;
             emit InterestCollected(accountOwner, earnedInterest);
-            account.ticks = ticks;
         }
+        account.ticks = ticks;
         return account;
     }
 
