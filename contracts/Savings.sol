@@ -65,7 +65,7 @@ contract Savings is Leadrate {
 	function refresh(address accountOwner) internal returns (Account storage) {
 		Account storage account = savings[accountOwner];
 		uint64 ticks = currentTicks();
-		if (ticks > account.ticks && account.ticks > 0) {
+		if (ticks > account.ticks) {
 			uint192 earnedInterest = calculateInterest(account, ticks);
 			if (earnedInterest > 0) {
 				zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
