@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./utils/ERC20.sol";
 import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
 import "./Leadrate.sol";
 
@@ -66,13 +65,15 @@ contract Savings is Leadrate {
     function refresh(address accountOwner) internal returns (Account storage) {
         Account storage account = savings[accountOwner];
         uint64 ticks = currentTicks();
-        uint192 earnedInterest = calculateInterest(account, ticks);
-        if (earnedInterest > 0) {
-            zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
-            account.saved += earnedInterest;
-            emit InterestCollected(accountOwner, earnedInterest);
+        if (ticks > account.ticks) {
+            uint192 earnedInterest = calculateInterest(account, ticks);
+            if (earnedInterest > 0) {
+                zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
+                account.saved += earnedInterest;
+                emit InterestCollected(accountOwner, earnedInterest);
+            }
+            account.ticks = ticks;
         }
-        account.ticks = ticks;
         return account;
     }
 
