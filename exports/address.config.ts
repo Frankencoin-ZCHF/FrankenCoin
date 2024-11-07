@@ -48,14 +48,14 @@ export const ADDRESS: Record<number, ChainAddress> = {
 	},
 	[polygon.id]: {
 		// For test deployment only
-		frankenCoin: '0x65B72426102E6b8d634D8aCc61468c3cfeFa869a',
-		equity: '0x91FeC2eEA1D273d6fb195013B5c6Cf6D9AfB053b',
-		wFPS: '0x4832Cca763a20265859B35D2858df86C61fba13C',
+		frankenCoin: '0x01a3F7FeC57F907cdaFc2be49D844a8259B066c0',
+		equity: '0xc6764a90322d58B252AcCA64DBaaeF6AA7a70cDD',
+		wFPS: '0x2993F73d87cadbaa9F282408D469B4AB96e3B70F',
 		bridge: zeroAddress, // not used
 		xchf: zeroAddress, // not used
-		savings: '0x107045532E6f522BC57d0F3cc227805dC0147099',
-		roller: '0x58ec664e59d542B16957947Fb932850285842257',
-		mintingHubV1: '0x4Cd867215ec75c6C83e51E1e4cA553C98c9Ca6f3',
-		mintingHubV2: '0x9e7CabCf208d5048b573B3384A49383aa4bC5B17',
+		savings: '0x3E76D80f3531cfEb7C1b5F9a1A30Be6e9c182565',
+		roller: '0x9b128C790696b52F85CD9C6827305F8e8B6f9E9E',
+		mintingHubV1: '0x8CFd8281e03908Bfeb36DCa9bFAE95Beef6568F6',
+		mintingHubV2: '0x99742cE227C315BcAeDF032f281a9BB8B7D94d65',
 	},
 };
