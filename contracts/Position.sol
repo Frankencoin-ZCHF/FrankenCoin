@@ -127,7 +127,7 @@ contract Position is Ownable, IPosition, MathUtil {
         _;
     }
 
-    // checks if the position is backed by a minimal amount of collateral
+    // requires that the position has always been backed by a minimal amount of collateral
     modifier backed() {
         if (isClosed()) revert Closed();
         _;
