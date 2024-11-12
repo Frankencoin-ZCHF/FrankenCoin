@@ -68,7 +68,8 @@ contract Savings is Leadrate {
         if (ticks > account.ticks) {
             uint192 earnedInterest = calculateInterest(account, ticks);
             if (earnedInterest > 0) {
-                zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
+                // collect interest as you go and trigger accounting event
+                (IFrankencoin(address(zchf))).coverLoss(address(this), earnedInterest); 
                 account.saved += earnedInterest;
                 emit InterestCollected(accountOwner, earnedInterest);
             }
