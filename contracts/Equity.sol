@@ -13,7 +13,7 @@ import "./interface/IERC677Receiver.sol";
  * Like with a corporation, the owners of the equity capital are the shareholders, or in this case the holders
  * of Frankencoin Pool Shares (FPS) tokens. Anyone can mint additional FPS tokens by adding Frankencoins to the
  * reserve pool. Also, FPS tokens can be redeemed for Frankencoins again after a minimum holding period.
- * Furthermore, the FPS shares come with some voting power. Anyone that held at least 3% of the holding-period-
+ * Furthermore, the FPS shares come with some voting power. Anyone that held at least 2% of the holding-period-
  * weighted reserve pool shares gains veto power and can veto new proposals.
  */
 contract Equity is ERC20PermitLight, MathUtil, IReserve {
@@ -24,15 +24,15 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
      * In the absence of profits and losses, the variables grow as follows when FPS tokens are minted:
      *
      * |   Reserve     |   Market Cap  |     Price     |     Supply   |
-     * |          1000 |          3000 |             3 |         1000 |
-     * |       1000000 |       3000000 |           300 |        10000 |
-     * |    1000000000 |    3000000000 |         30000 |       100000 |
-     * | 1000000000000 | 3000000000000 |       3000000 |      1000000 |
+     * |          1000 |          3000 |         0.003 |      1000000 |
+     * |       1000000 |       3000000 |           0.3 |     10000000 |
+     * |    1000000000 |    3000000000 |            30 |    100000000 |
+     * | 1000000000000 | 3000000000000 |          3000 |   1000000000 |
      *
      * I.e., the supply is proporational to the cubic root of the reserve and the price is proportional to the
      * squared cubic root. When profits accumulate or losses materialize, the reserve, the market cap,
      * and the price are adjusted proportionally, with the supply staying constant. In the absence of an extreme
-     * inflation of the Swiss franc, it is unlikely that there will ever be more than ten million FPS.
+     * inflation of the Euro, it is unlikely that there will ever be more than ten million nDEPS.
      */
     uint32 public constant VALUATION_FACTOR = 3;
 
@@ -106,7 +106,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     function price() public view returns (uint256) {
         uint256 equity = zchf.equity();
         if (equity == 0 || totalSupply() == 0) {
-            return ONE_DEC18; // initial price is 1000 ZCHF for the first 1000 FPS
+            // @dev: For Price, 1 = 10^18; 0.001 = 10^15
+            return 10 ** 15; // initial price is 1000 dEURO for the first 1_000_000 nDEPS
         } else {
             return (VALUATION_FACTOR * zchf.equity() * ONE_DEC18) / totalSupply();
         }
@@ -340,7 +341,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
         uint256 investmentExFees = (investment * 997) / 1000; // remove 0.3% fee
         // Assign 1000 FPS for the initial deposit, calculate the amount otherwise
         uint256 newTotalShares = capitalBefore < MINIMUM_EQUITY || totalShares == 0
-            ? totalShares + 1000 * ONE_DEC18
+            ? totalShares + 1_000_000 * ONE_DEC18
             : _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investmentExFees, capitalBefore)));
         return newTotalShares - totalShares;
     }

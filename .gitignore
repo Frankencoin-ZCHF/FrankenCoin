@@ -17,3 +17,4 @@ scripts/deployment/deployments/hardhat
 .vscode/settings.json
 
 tst.ts
+.DS_Store
