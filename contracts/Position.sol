@@ -497,7 +497,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * variables change in an adverse way.
      */
     function _checkCollateral(uint256 collateralReserve, uint256 atPrice) internal view {
-        if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral(collateralReserve * atPrice, minted * ONE_DEC18);
+        uint256 relevantCollateral = collateralReserve < minimumCollateral ? 0 : collateralReserve;
+        if (relevantCollateral * atPrice < minted * ONE_DEC18) revert InsufficientCollateral(relevantCollateral * atPrice, minted * ONE_DEC18);
     }
 
     /**
