@@ -407,11 +407,15 @@ contract Position is Ownable, IPosition, MathUtil {
 
     /**
      * Force the sale of some collateral after the position is expired.
+     * 
      * Can only be called by the minting hub and the minting hub is trusted to calculate the price correctly.
      * The proceeds from the sale are first used to repay the outstanding balance and then (if anything is left)
      * it is sent to the owner of the position.
+     * 
+     * Do not allow a forced sale as long as there is an open challenge. Otherwise, a forced sale by the owner
+     * himself could remove any incentive to launch challenges shortly before the expiration. (CS-ZCHF2-001)
      */
-    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired {
+    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired noChallenge {
         if (minted > 0) {
             uint256 availableReserve = zchf.calculateAssignedReserve(minted, reserveContribution);
             if (proceeds + availableReserve >= minted) {
