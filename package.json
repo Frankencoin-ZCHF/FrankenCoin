@@ -1,5 +1,5 @@
 {
-  "name": "frankencoin",
+  "name": "eurocoin",
   "version": "1.0.0",
   "description": "It shall support a wide range of collateralized minting methods that are governed by a democratic process.",
   "main": ".solcover.js",
@@ -21,17 +21,18 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Frankencoin-ZCHF/issues"
   },
   "homepage": "https://github.com/Frankencoin-ZCHF#readme",
   "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
-    "@nomicfoundation/hardhat-ethers": "^3.0.4",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.9",
-    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
-    "@nomicfoundation/hardhat-verify": "^1.1.1",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.11",
+    "@openzeppelin/contracts": "^5.1.0",
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.3.6",
     "@types/mocha": "^10.0.1",
@@ -44,7 +45,7 @@
     "solidity-coverage": "^0.8.4"
   },
   "dependencies": {
-    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/ethers-v6": "^0.5.1",
     "hardhat": "^2.17.3",
     "hardhat-abi-exporter": "^2.10.0",
     "hardhat-contract-sizer": "^2.5.1",

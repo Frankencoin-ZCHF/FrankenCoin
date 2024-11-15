@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./interface/IERC20.sol";
 import "./interface/IERC677Receiver.sol";
-import "./interface/IFrankencoin.sol";
+import "./interface/IEuroCoin.sol";
 
 /**
  * @title Stable Coin Bridge
@@ -12,7 +12,7 @@ import "./interface/IFrankencoin.sol";
  */
 contract StablecoinBridge {
     IERC20 public immutable chf; // the source stablecoin
-    IFrankencoin public immutable zchf; // the Frankencoin
+    IEuroCoin public immutable zchf; // the Frankencoin
 
     /**
      * @notice The time horizon after which this bridge expires and needs to be replaced by a new contract.
@@ -31,7 +31,7 @@ contract StablecoinBridge {
 
     constructor(address other, address zchfAddress, uint256 limit_) {
         chf = IERC20(other);
-        zchf = IFrankencoin(zchfAddress);
+        zchf = IEuroCoin(zchfAddress);
         horizon = block.timestamp + 52 weeks;
         limit = limit_;
         minted = 0;

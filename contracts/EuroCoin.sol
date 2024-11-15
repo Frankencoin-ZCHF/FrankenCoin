@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/ERC20PermitLight.sol";
 import "./Equity.sol";
+import "./interface/IEuroCoin.sol";
 import "./interface/IReserve.sol";
-import "./interface/IFrankencoin.sol";
+import "./utils/ERC20.sol";
+import "./utils/ERC20PermitLight.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
- * @title FrankenCoin
- * @notice The Frankencoin (ZCHF) is an ERC-20 token that is designed to track the value of the Swiss franc.
+ * @title EuroCoin
+ * @notice The EuroCoin (ZEUR) is an ERC-20 token that is designed to track the value of the Euro.
  * It is not upgradable, but open to arbitrary minting plugins. These are automatically accepted if none of the
  * qualified pool share holders casts a veto, leading to a flexible but conservative governance.
  */
-contract Frankencoin is ERC20PermitLight, IFrankencoin {
+contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
     /**
      * @notice Minimal fee and application period when suggesting a new minter.
      */
@@ -33,7 +35,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
 
     /**
      * @notice Map of minters to approval time stamps. If the time stamp is in the past, the minter contract is allowed
-     * to mint Frankencoins.
+     * to mint EuroCoins.
      */
     mapping(address minter => uint256 validityStart) public minters;
 
@@ -59,7 +61,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
+     * @notice Initiates the EuroCoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
     constructor(uint256 _minApplicationPeriod) ERC20(18) {
@@ -68,11 +70,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     function name() external pure override returns (string memory) {
-        return "Frankencoin";
+        return "EuroCoin";
     }
 
     function symbol() external pure override returns (string memory) {
-        return "ZCHF";
+        return "ZEUR";
     }
 
     function initialize(address _minter, string calldata _message) external {
@@ -82,15 +84,15 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * @notice Publicly accessible method to suggest a new way of minting Frankencoin.
+     * @notice Publicly accessible method to suggest a new way of minting EuroCoin.
      * @dev The caller has to pay an application fee that is irrevocably lost even if the new minter is vetoed.
      * The caller must assume that someone will veto the new minter unless there is broad consensus that the new minter
-     * adds value to the Frankencoin system. Complex proposals should have application periods and applications fees
+     * adds value to the EuroCoin system. Complex proposals should have application periods and applications fees
      * above the minimum. It is assumed that over time, informal ways to coordinate on new minters emerge. The message
      * parameter might be useful for initiating further communication. Maybe it contains a link to a website describing
      * the proposed minter.
      *
-     * @param _minter              An address that is given the permission to mint Frankencoins
+     * @param _minter              An address that is given the permission to mint EuroCoins
      * @param _applicationPeriod   The time others have to veto the suggestion, at least MIN_APPLICATION_PERIOD
      * @param _applicationFee      The fee paid by the caller, at least MIN_FEE
      * @param _message             An optional human readable message to everyone watching this contract
@@ -134,7 +136,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * @notice Allows minters to register collateralized debt positions, thereby giving them the ability to mint Frankencoins.
+     * @notice Allows minters to register collateralized debt positions, thereby giving them the ability to mint EuroCoins.
      * @dev It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
      */
     function registerPosition(address _position) external override {
@@ -143,7 +145,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * @notice The amount of equity of the Frankencoin system in ZCHF, owned by the holders of Frankencoin Pool Shares.
+     * @notice The amount of equity of the EuroCoin system in ZEUR, owned by the holders of EuroCoin Pool Shares.
      * @dev Note that the equity contract technically holds both the minter reserve as well as the equity, so the minter
      * reserve must be subtracted. All fees and other kind of income is added to the Equity contract and essentially
      * constitutes profits attributable to the pool share holders.
@@ -170,7 +172,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * @notice Mints the provided amount of ZCHF to the target address, automatically forwarding
+     * @notice Mints the provided amount of ZEUR to the target address, automatically forwarding
      * the minting fee and the reserve to the right place.
      */
     function mintWithReserve(
@@ -191,14 +193,14 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * Anyone is allowed to burn their ZCHF.
+     * Anyone is allowed to burn their ZEUR.
      */
     function burn(uint256 _amount) external {
         _burn(msg.sender, _amount);
     }
 
     /**
-     * @notice Burn someone elses ZCHF.
+     * @notice Burn someone elses ZEUR.
      */
     function burnFrom(address _owner, uint256 _amount) external override minterOnly {
         _burn(_owner, _amount);
@@ -212,9 +214,9 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * Design rule: Minters calling this method are only allowed to so for tokens amounts they previously minted with
      * the same _reservePPM amount.
      *
-     * For example, if someone minted 50 ZCHF earlier with a 20% reserve requirement (200000 ppm), they got 40 ZCHF
-     * and paid 10 ZCHF into the reserve. Now they want to repay the debt by burning 50 ZCHF. When doing so using this
-     * method, 50 ZCHF get burned and on top of that, 10 ZCHF previously assigned to the minter's reserved are
+     * For example, if someone minted 50 ZEUR earlier with a 20% reserve requirement (200000 ppm), they got 40 ZEUR
+     * and paid 10 ZEUR into the reserve. Now they want to repay the debt by burning 50 ZEUR. When doing so using this
+     * method, 50 ZEUR get burned and on top of that, 10 ZEUR previously assigned to the minter's reserved are
      * reassigned to the pool share holders.
      */
     function burnWithoutReserve(uint256 amount, uint32 reservePPM) public override minterOnly {
@@ -234,10 +236,10 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * requirement. The caller is only allowed to use this method for tokens also minted through the caller with the
      * same _reservePPM amount.
      *
-     * Example: the calling contract has previously minted 100 ZCHF with a reserve ratio of 20% (i.e. 200000 ppm).
-     * Now they have 41 ZCHF that they do not need so they decide to repay that amount. Assuming the reserves are
+     * Example: the calling contract has previously minted 100 ZEUR with a reserve ratio of 20% (i.e. 200000 ppm).
+     * Now they have 41 ZEUR that they do not need so they decide to repay that amount. Assuming the reserves are
      * only 90% covered, the call to burnWithReserve will burn the 41 plus 9 from the reserve, reducing the outstanding
-     * 'debt' of the caller by 50 ZCHF in total. This total is returned by the method so the caller knows how much less
+     * 'debt' of the caller by 50 ZEUR in total. This total is returned by the method so the caller knows how much less
      * they owe.
      */
     function burnWithReserve(
@@ -255,9 +257,9 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * @notice Burns the target amount taking the tokens to be burned from the payer and the payer's reserve.
      * Only use this method for tokens also minted by the caller with the same _reservePPM.
      *
-     * Example: the calling contract has previously minted 100 ZCHF with a reserve ratio of 20% (i.e. 200000 ppm).
-     * To burn half of that again, the minter calls burnFrom with a target amount of 50 ZCHF. Assuming that reserves
-     * are only 90% covered, this call will deduct 41 ZCHF from the payer's balance and 9 from the reserve, while
+     * Example: the calling contract has previously minted 100 ZEUR with a reserve ratio of 20% (i.e. 200000 ppm).
+     * To burn half of that again, the minter calls burnFrom with a target amount of 50 ZEUR. Assuming that reserves
+     * are only 90% covered, this call will deduct 41 ZEUR from the payer's balance and 9 from the reserve, while
      * reducing the minter reserve by 10.
      */
     function burnFromWithReserve(
@@ -306,11 +308,11 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     /**
-     * @notice Notify the Frankencoin that a minter lost economic access to some coins. This does not mean that the coins are
-     * literally lost. It just means that some ZCHF will likely never be repaid and that in order to bring the system
-     * back into balance, the lost amount of ZCHF must be removed from the reserve instead.
+     * @notice Notify the EuroCoin that a minter lost economic access to some coins. This does not mean that the coins are
+     * literally lost. It just means that some ZEUR will likely never be repaid and that in order to bring the system
+     * back into balance, the lost amount of ZEUR must be removed from the reserve instead.
      *
-     * For example, if a minter printed 1 million ZCHF for a mortgage and the mortgage turned out to be unsound with
+     * For example, if a minter printed 1 million ZEUR for a mortgage and the mortgage turned out to be unsound with
      * the house only yielding 800'000 in the subsequent auction, there is a loss of 200'000 that needs to be covered
      * by the reserve.
      */
@@ -346,5 +348,15 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      */
     function getPositionParent(address _position) public view override returns (address) {
         return positions[_position];
+    }
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view override virtual returns (bool) {
+        return
+            interfaceId == type(IERC20).interfaceId ||
+            interfaceId == type(ERC20PermitLight).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }

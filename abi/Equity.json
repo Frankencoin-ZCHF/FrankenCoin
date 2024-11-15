@@ -2,8 +2,8 @@
     {
         "inputs": [
             {
-                "internalType": "contract Frankencoin",
-                "name": "zchf_",
+                "internalType": "contract EuroCoin",
+                "name": "zeur_",
                 "type": "address"
             }
         ],
@@ -657,6 +657,25 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "bytes4",
+                "name": "interfaceId",
+                "type": "bytes4"
+            }
+        ],
+        "name": "supportsInterface",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "symbol",
         "outputs": [
@@ -793,10 +812,10 @@
     },
     {
         "inputs": [],
-        "name": "zchf",
+        "name": "zeur",
         "outputs": [
             {
-                "internalType": "contract Frankencoin",
+                "internalType": "contract EuroCoin",
                 "name": "",
                 "type": "address"
             }

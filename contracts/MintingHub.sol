@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./interface/IERC20.sol";
 import "./interface/IReserve.sol";
-import "./interface/IFrankencoin.sol";
+import "./interface/IEuroCoin.sol";
 import "./interface/IPosition.sol";
 import "./interface/IPositionFactory.sol";
 
@@ -27,7 +27,7 @@ contract MintingHub {
 
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
 
-    IFrankencoin public immutable zchf; // currency
+    IEuroCoin public immutable zchf; // currency
     Challenge[] public challenges; // list of open challenges
 
     /**
@@ -70,7 +70,7 @@ contract MintingHub {
     }
 
     constructor(address _zchf, address _factory) {
-        zchf = IFrankencoin(_zchf);
+        zchf = IEuroCoin(_zchf);
         POSITION_FACTORY = IPositionFactory(_factory);
     }
 

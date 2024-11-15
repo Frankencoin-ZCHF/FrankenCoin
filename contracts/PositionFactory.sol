@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./Position.sol";
-import "./interface/IFrankencoin.sol";
+import "./interface/IEuroCoin.sol";
 
 contract PositionFactory {
     /**

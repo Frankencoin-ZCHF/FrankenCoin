@@ -10,7 +10,7 @@ import "../MintingHub.sol";
 import "../StablecoinBridge.sol";
 import "../interface/IPosition.sol";
 import "../interface/IReserve.sol";
-import "../interface/IFrankencoin.sol";
+import "../interface/IEuroCoin.sol";
 import "../interface/IERC20.sol";
 
 contract MintingHubTest {
@@ -19,7 +19,7 @@ contract MintingHubTest {
 
     IERC20 xchf;
     TestToken col;
-    IFrankencoin zchf;
+    IEuroCoin zchf;
 
     User alice;
     User bob;
@@ -223,9 +223,9 @@ contract MintingHubTest {
 }
 
 contract User {
-    IFrankencoin zchf;
+    IEuroCoin zchf;
 
-    constructor(IFrankencoin zchf_) {
+    constructor(IEuroCoin zchf_) {
         zchf = zchf_;
     }
 

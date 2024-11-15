@@ -7,7 +7,7 @@ import "./utils/MathUtil.sol";
 import "./interface/IERC20.sol";
 import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
-import "./interface/IFrankencoin.sol";
+import "./interface/IEuroCoin.sol";
 
 /**
  * @title Position
@@ -74,7 +74,7 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * @notice The Frankencoin contract.
      */
-    IFrankencoin public immutable zchf;
+    IEuroCoin public immutable zchf;
 
     /**
      * @notice The collateral token.
@@ -156,7 +156,7 @@ contract Position is Ownable, IPosition, MathUtil {
         _setOwner(_owner);
         original = address(this);
         hub = _hub;
-        zchf = IFrankencoin(_zchf);
+        zchf = IEuroCoin(_zchf);
         collateral = IERC20(_collateral);
         annualInterestPPM = _annualInterestPPM;
         reserveContribution = _reservePPM;
@@ -339,7 +339,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function repay(uint256 amount) public {
         IERC20(zchf).transferFrom(msg.sender, address(this), amount);
-        uint256 actuallyRepaid = IFrankencoin(zchf).burnWithReserve(amount, reserveContribution);
+        uint256 actuallyRepaid = IEuroCoin(zchf).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
         emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }

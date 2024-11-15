@@ -182,7 +182,7 @@
         "name": "zchf",
         "outputs": [
             {
-                "internalType": "contract IFrankencoin",
+                "internalType": "contract IEuroCoin",
                 "name": "",
                 "type": "address"
             }

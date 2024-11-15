@@ -1,8 +1,10 @@
-# FrankenCoin
+# EURO Coin
+
+This repository is a friendly fork of Frankencoin-ZCHF.
 
 This is the source code repository for the smart contracts of the oracle-free, collateralized stablecoin Frankencoin.
 
-There also is a [public frontend](https://frankencoin.com), a [documentation page](https://docs.frankencoin.com), an outdated [Frankencoin Research Paper](https://www.snb.ch/n/mmr/reference/sem_2022_06_03_maire/source/sem_2022_06_03_maire.n.pdf), and a more recent chapter of a [pending phd thesis](https://frankencoin.com/thesis-preprint-frankencoin.pdf).
+There also is a [public frontend](https://app.euro-coin.io) and a [documentation page](https://docs.euro-coin.io).
 
 ## Source Code
 
@@ -10,11 +12,11 @@ The source code can be found in the [contracts](contracts) folder. The following
 
 | Contract             | Description                                     |
 | -------------------- | ----------------------------------------------- |
-| Frankencoin.sol      | The Frankencoin (ZCHF) ERC20 token              |
-| Equity.sol           | The Frankencoin Pool Shares (FPS) ERC20 token   |
+| EuroCoin.sol         | The Euro Coin (ZEUR) ERC20 token                |
+| Equity.sol           | The Euro Coin Pool Shares (EPS) ERC20 token     |
 | MintingHub.sol       | Plugin for oracle-free collateralized minting   |
 | Position.sol         | A borrowed minting position holding collateral  |
-| StablecoinBridge.sol | Plugin for 1:1 swaps with other CHF stablecoins |
+| StablecoinBridge.sol | Plugin for 1:1 swaps with other EUR stablecoins |
 
 ## Compiling and Testing
 
