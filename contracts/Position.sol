@@ -416,6 +416,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * himself could remove any incentive to launch challenges shortly before the expiration. (CS-ZCHF2-001)
      */
     function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired noChallenge {
+        // send collateral to buyer
+        uint256 remainingCollateral = _sendCollateral(buyer, collAmount);
         if (minted > 0) {
             uint256 availableReserve = zchf.calculateAssignedReserve(minted, reserveContribution);
             if (proceeds + availableReserve >= minted) {
@@ -428,15 +430,21 @@ contract Position is Ownable, IPosition, MathUtil {
             } else {
                 // we can only repay a part, nothing left to pay to owner
                 zchf.transferFrom(buyer, address(this), proceeds);
-                uint256 repaid = zchf.burnWithReserve(proceeds, reserveContribution);
-                _notifyRepaid(repaid);
+                if (remainingCollateral == 0) {
+                    // CS-ZCHF2-002, bad debt should be properly handled. In this case, the proceeds from 
+                    // the forced sale did not suffice to repay the position and there is a loss
+                    zchf.coverLoss(address(this), minted - proceeds); // more than we need, but returned again on next line
+                    zchf.burnWithoutReserve(minted, reserveContribution);
+                    _notifyRepaid(minted);
+                } else {
+                    uint256 repaid = zchf.burnWithReserve(proceeds, reserveContribution);
+                    _notifyRepaid(repaid);
+                }
             }
         } else {
             // wire funds directly to owner
             zchf.transferFrom(buyer, owner, proceeds);
         }
-        // send collateral to buyer
-        _sendCollateral(buyer, collAmount);
         emit MintingUpdate(_collateralBalance(), price, minted);
     }
 

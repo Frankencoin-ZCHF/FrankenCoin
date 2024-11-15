@@ -113,6 +113,7 @@ describe("ForceSale Tests", () => {
     it("fully open", async () => {
       await evm_increaseTime(3 * 86_400 + 300);
       expect(await position.start()).to.be.lessThan(await getTimeStamp());
+      expect(await position.cooldown()).to.be.lessThan(await getTimeStamp());
     });
 
     it("expired", async () => {
@@ -225,6 +226,24 @@ describe("ForceSale Tests", () => {
       const bCoin1 = await coin.balanceOf(alice.address);
       expect(bCoin0 + size).to.be.equal(bCoin1);
       expect(bZchf1 + (expP * size) / floatToDec18(1)).to.be.approximately(bZchf0, 10n**18n);
+    });
+
+    it("Dispose bad debt on force sale", async () => {
+      await evm_increaseTime(3 * 86_400 + 300);
+      let col = await coin.balanceOf(await position.getAddress());
+      let max = await position.price() * col / 10n**18n;
+      await position.mint(owner, max);
+      expect(await position.minted()).to.be.eq(max);
+
+      const period = await position.challengePeriod();
+      await evm_increaseTime(100n * 86_400n + period * 3n / 2n + 300n); // consider expired
+      const expP = await mintingHub.connect(alice).expiredPurchasePrice(position);
+      const repaymentNeeded = max * 9n / 10n;
+      expect(expP * col / 10n**18n).to.be.lessThan(repaymentNeeded);
+      const equity = await zchf.equity();
+      await mintingHub.buyExpiredCollateral(position, col);
+      expect(await position.minted()).to.be.eq(0);
+      expect(await zchf.equity()).to.be.lessThan(equity);
     });
   });
 });
