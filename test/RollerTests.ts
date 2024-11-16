@@ -211,7 +211,7 @@ describe("Roller Tests", () => {
         await pos2.getAddress(),
         floatToDec18(10_000),
         floatToDec18(1),
-        (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
+        await pos2.expiration()
       );
       await expect(tx).to.be.revertedWithCustomError(roller, "NotPosition");
     });
@@ -224,7 +224,7 @@ describe("Roller Tests", () => {
         owner,
         floatToDec18(10_000),
         floatToDec18(1),
-        (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
+        await pos2.expiration()
       );
       await expect(tx).to.be.revertedWithCustomError(roller, "NotPosition");
     });
@@ -245,7 +245,7 @@ describe("Roller Tests", () => {
         await pos2.getAddress(),
         floatToDec18(10_000),
         floatToDec18(1),
-        (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
+        await pos2.expiration()
       );
 
       expect(await pos1.minted()).to.be.lessThan(
@@ -279,7 +279,7 @@ describe("Roller Tests", () => {
         await pos2.getAddress(),
         floatToDec18(10_000), // to borrow
         floatToDec18(10),
-        (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
+        await pos2.expiration()
       );
 
       expect(await pos1.minted()).to.be.equal(
@@ -313,7 +313,7 @@ describe("Roller Tests", () => {
         await pos2.getAddress(),
         floatToDec18(10_000), // to borrow
         floatToDec18(10),
-        (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
+        await pos2.expiration()
       );
 
       expect(await pos1.isClosed()).to.be.equal(

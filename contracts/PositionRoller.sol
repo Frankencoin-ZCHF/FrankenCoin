@@ -118,7 +118,7 @@ contract PositionRoller {
         source.withdrawCollateral(msg.sender, collWithdraw);
         if (mint > 0){
             IERC20 targetCollateral = IERC20(target.collateral());
-            if (Ownable(address(target)).owner() != msg.sender || expiration < target.expiration()){
+            if (Ownable(address(target)).owner() != msg.sender || expiration != target.expiration()){
                 targetCollateral.transferFrom(msg.sender, address(this), collDeposit); // get the new collateral
                 targetCollateral.approve(target.hub(), collDeposit); // approve the new collateral and clone:
                 target = IPosition(IMintingHub(target.hub()).clone(msg.sender, address(target), collDeposit, mint, expiration));
