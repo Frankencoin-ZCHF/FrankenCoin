@@ -15,7 +15,7 @@ import "./Leadrate.sol";
  * adjusted. The ticks counter serves as the basis for calculating the interest
  * due for the individual accoutns.
  *
- * The saved ZCHF are subject to a lockup of up to 14 days and only start to yield
+ * The saved ZCHF are subject to a lockup of up to 3 days and only start to yield
  * an interest after the lockup ended. The purpose of this lockup is to discourage
  * short-term holdings and to avoid paying interest to transactional accounts.
  * Transactional accounts typically do not need an incentive to hold Frankencoins.
@@ -119,8 +119,7 @@ contract Savings is Leadrate {
 
     /**
      * Send 'amount' to the account of the provided owner.
-     * The funds sent to the account are locked for up to 14 days, depending how much
-     * already is in there.
+     * The funds sent to the account are locked for a while, depending on how much already is in there.
      */
     function save(address owner, uint192 amount) public {
         if (currentRatePPM == 0) revert ModuleDisabled();
