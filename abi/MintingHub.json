@@ -290,7 +290,7 @@
             },
             {
                 "internalType": "uint256",
-                "name": "amount",
+                "name": "upToAmount",
                 "type": "uint256"
             }
         ],

@@ -373,7 +373,9 @@ contract MintingHub {
      * Buys the desired amount of the collateral asset from the given expired position using
      * the applicable 'expiredPurchasePrice' in that instant.
      */
-    function buyExpiredCollateral(IPosition pos, uint256 amount) external {
+    function buyExpiredCollateral(IPosition pos, uint256 upToAmount) external {
+        uint256 max = pos.collateral().balanceOf(address(pos));
+        uint256 amount = upToAmount > max ? max : upToAmount;
         uint256 forceSalePrice = expiredPurchasePrice(pos);
         uint256 costs = (forceSalePrice * amount) / 10 ** 18;
         pos.forceSale(msg.sender, amount, costs);

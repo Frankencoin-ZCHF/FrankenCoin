@@ -241,7 +241,7 @@ describe("ForceSale Tests", () => {
       const repaymentNeeded = max * 9n / 10n;
       expect(expP * col / 10n**18n).to.be.lessThan(repaymentNeeded);
       const equity = await zchf.equity();
-      await mintingHub.buyExpiredCollateral(position, col);
+      await mintingHub.buyExpiredCollateral(position, col * 10n); // try buying way too much
       expect(await position.minted()).to.be.eq(0);
       expect(await zchf.equity()).to.be.lessThan(equity);
     });
