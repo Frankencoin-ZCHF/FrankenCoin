@@ -203,6 +203,32 @@ describe("Roller Tests", () => {
       expect(await pos2.start()).to.be.lessThan(await getTimeStamp());
     });
 
+    it("fail with invalid source", async () => {
+      const tx = roller.roll(
+        owner,
+        floatToDec18(1_000), //
+        floatToDec18(1),
+        await pos2.getAddress(),
+        floatToDec18(10_000),
+        floatToDec18(1),
+        (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
+      );
+      await expect(tx).to.be.revertedWithCustomError(roller, "NotPosition");
+    });
+
+    it("fail with invalid target", async () => {
+      const tx = roller.roll(
+        await pos1.getAddress(),
+        floatToDec18(1_000), //
+        floatToDec18(1),
+        owner,
+        floatToDec18(10_000),
+        floatToDec18(1),
+        (await pos2.expiration()) + 1000n // high exp. for merge into existing pos
+      );
+      await expect(tx).to.be.revertedWithCustomError(roller, "NotPosition");
+    });
+
     it("create mint and merge partially into existing position", async () => {
       await evm_increaseTime(3 * 86_400 + 300);
       const bZchf1 = await zchf.balanceOf(owner.address);
