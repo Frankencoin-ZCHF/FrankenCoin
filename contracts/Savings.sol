@@ -148,7 +148,7 @@ contract Savings is Leadrate {
     function withdraw(address target, uint192 amount) public returns (uint256) {
         Account storage account = refresh(msg.sender);
         if (account.ticks > currentTicks()) {
-            revert FundsLocked(uint40(account.ticks - currentTicks() / currentRatePPM));
+            revert FundsLocked(uint40(account.ticks - currentTicks()) / currentRatePPM);
         } else if (amount >= account.saved) {
             amount = account.saved;
             delete savings[msg.sender];
