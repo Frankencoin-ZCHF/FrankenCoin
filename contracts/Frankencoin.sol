@@ -216,6 +216,8 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * and paid 10 ZCHF into the reserve. Now they want to repay the debt by burning 50 ZCHF. When doing so using this
      * method, 50 ZCHF get burned and on top of that, 10 ZCHF previously assigned to the minter's reserved are
      * reassigned to the pool share holders.
+     * 
+     * CS-ZCHF2-009: the Profit event can overstate profits in case there is no equity capital left.
      */
     function burnWithoutReserve(uint256 amount, uint32 reservePPM) public override minterOnly {
         _burn(msg.sender, amount);
