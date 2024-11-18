@@ -6,20 +6,20 @@ import "./ERC20.sol";
 import "./ERC20PermitLight.sol";
 import "../Equity.sol";
 
-contract FPSWrapper is ERC20 {
+contract DEPSWrapper is ERC20 {
 
-    Equity private immutable fps;
+    Equity private immutable nDEPS;
 
-    constructor(Equity fps_) ERC20(18){
-        fps = fps_;
+    constructor(Equity nDEPS_) ERC20(18){
+        nDEPS = nDEPS_;
     }
 
     function name() external pure override returns (string memory) {
-        return "Wrapped Frankencoin Pool Share";
+        return "Native Decentralized Euro Protocol Share";
     }
 
     function symbol() external pure override returns (string memory) {
-        return "WFPS";
+        return "nDEPS";
     }
 
     // requires allowance
@@ -32,7 +32,7 @@ contract FPSWrapper is ERC20 {
      * @dev Allow a user to deposit underlying tokens and mint the corresponding number of wrapped tokens.
      */
     function depositFor(address account, uint256 amount) public virtual returns (bool) {
-        fps.transferFrom(msg.sender, address(this), amount);
+        nDEPS.transferFrom(msg.sender, address(this), amount);
         super._mint(account, amount);
         return true;
     }
@@ -47,7 +47,7 @@ contract FPSWrapper is ERC20 {
      */
     function withdrawTo(address account, uint256 amount) public virtual returns (bool) {
         super._burn(msg.sender, amount);
-        fps.transfer(account, amount);
+        nDEPS.transfer(account, amount);
         return true;
     }
 
@@ -55,7 +55,7 @@ contract FPSWrapper is ERC20 {
      * @dev Returns the address of the underlying ERC-20 token that is being wrapped.
      */
     function underlying() public view returns (IERC20) {
-        return fps;
+        return nDEPS;
     }
 
     /**
@@ -66,27 +66,27 @@ contract FPSWrapper is ERC20 {
      * 
      * Anyone can prevent this method from being executable via the
      * halveHoldingDuration function. Also, it won't be executable in an
-     * expanding market where the number of wrapped FPS doubles every
+     * expanding market where the number of wrapped nDEPS doubles every
      * 90 days such that the average holding period of this contract stays
      * below that duration.
      */
     function unwrapAndSell(uint256 amount) public {
         super._burn(msg.sender, amount);
-        fps.redeem(msg.sender, amount);
+        nDEPS.redeem(msg.sender, amount);
     }
 
     /**
-     * Reduces the recorded holding duration of the wrapped FPS. This has two effects:
+     * Reduces the recorded holding duration of the wrapped nDEPS. This has two effects:
      * - Averts the risk of this contract accumulating too many votes over time (i.e. 98%)
      * - Can prevent "unwrapAndSell" from succeeding (which can be desired to prevent short
-     *   term arbitrage at the cost of all other FPS holders)
+     *   term arbitrage at the cost of all other nDEPS holders)
      * 
      * Anyone with 2% of the votes can call this.
      */
     function halveHoldingDuration(address[] calldata helpers) public {
-        fps.checkQualified(msg.sender, helpers);
+        nDEPS.checkQualified(msg.sender, helpers);
         // causes our votes to be cut in half
-        fps.transfer(address(this), totalSupply());
+        nDEPS.transfer(address(this), totalSupply());
     }
 
 }

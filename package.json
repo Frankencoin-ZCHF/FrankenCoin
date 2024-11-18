@@ -17,15 +17,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Frankencoin-ZCHF"
+    "url": "git+https://github.com/d-EURO"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Frankencoin-ZCHF/issues"
+    "url": "https://github.com/d-EURO/issues"
   },
-  "homepage": "https://github.com/Frankencoin-ZCHF#readme",
+  "homepage": "https://github.com/d-EURO#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
     "@nomicfoundation/hardhat-ethers": "^3.0.8",

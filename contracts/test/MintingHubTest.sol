@@ -19,7 +19,7 @@ contract MintingHubTest {
 
     IERC20 xchf;
     TestToken col;
-    IEuroCoin zchf;
+    IEuroCoin dEURO;
 
     User alice;
     User bob;
@@ -32,33 +32,33 @@ contract MintingHubTest {
         swap = StablecoinBridge(swap_);
         col = new TestToken("Some Collateral", "COL", uint8(0));
         xchf = swap.chf();
-        zchf = swap.zchf();
-        alice = new User(zchf);
-        bob = new User(zchf);
-        require(zchf.reserve().totalSupply() == 0, Strings.toString(zchf.reserve().totalSupply()));
+        dEURO = swap.dEURO();
+        alice = new User(dEURO);
+        bob = new User(dEURO);
+        require(dEURO.reserve().totalSupply() == 0, Strings.toString(dEURO.reserve().totalSupply()));
     }
 
     function initiateEquity() public {
-        require(zchf.equity() == 1003849100000000000001, Strings.toString(zchf.equity()));
-        require(zchf.reserve().totalSupply() == 0, Strings.toString(zchf.reserve().totalSupply()));
-        // ensure there is at least 25'000 ZCHF in equity
-        bob.obtainFrankencoins(swap, 10000 ether);
+        require(dEURO.equity() == 1003849100000000000001, Strings.toString(dEURO.equity()));
+        require(dEURO.reserve().totalSupply() == 0, Strings.toString(dEURO.reserve().totalSupply()));
+        // ensure there is at least 25'000 dEURO in equity
+        bob.obtainEuroCoins(swap, 10000 ether);
         bob.invest(1000 ether);
-        require(zchf.reserve().totalSupply() == 1000 ether, Strings.toString(zchf.reserve().totalSupply()));
+        require(dEURO.reserve().totalSupply() == 1000 ether, Strings.toString(dEURO.reserve().totalSupply()));
         bob.invest(9000 ether);
-        alice.obtainFrankencoins(swap, 15000 ether);
+        alice.obtainEuroCoins(swap, 15000 ether);
         alice.invest(15000 ether);
-        require(zchf.equity() > 25000 ether, Strings.toString(zchf.equity()));
+        require(dEURO.equity() > 25000 ether, Strings.toString(dEURO.equity()));
     }
 
     function initiateAndDenyPosition() public {
-        alice.obtainFrankencoins(swap, 1000 ether);
+        alice.obtainEuroCoins(swap, 1000 ether);
         address pos = alice.initiatePosition(col, hub);
         bob.deny(hub, pos);
     }
 
     function initiatePosition() public {
-        alice.obtainFrankencoins(swap, 1000 ether);
+        alice.obtainEuroCoins(swap, 1000 ether);
         latestPosition = alice.initiatePosition(col, hub);
         require(col.balanceOf(address(alice)) == 0);
     }
@@ -70,9 +70,9 @@ contract MintingHubTest {
     function letAliceMint() public {
         alice.mint(latestPosition, 1); // test small amount to provoke rounding error
         alice.transferOwnership(latestPosition, address(bob));
-        uint256 bobbalance = zchf.balanceOf(address(bob));
+        uint256 bobbalance = dEURO.balanceOf(address(bob));
         bob.mint(latestPosition, 7);
-        require(zchf.balanceOf(address(bob)) > bobbalance);
+        require(dEURO.balanceOf(address(bob)) > bobbalance);
         bob.transferOwnership(latestPosition, address(alice));
         alice.mint(latestPosition, 0);
         alice.mint(latestPosition, 100000 * (10 ** 18) - 8);
@@ -98,7 +98,7 @@ contract MintingHubTest {
 
     function letBobChallengePart2() public returns (uint256) {
         /* alice.avertChallenge(hub, swap, first);
-        bob.obtainFrankencoins(swap, 30_000 ether);
+        bob.obtainEuroCoins(swap, 30_000 ether);
         bob.bid(hub, second, 10_000 ether);
         bob.bid(hub, latestChallenge, 20_000 ether);
         (address challenger, , , , , uint256 bid) = hub.challenges(
@@ -110,18 +110,18 @@ contract MintingHubTest {
     }
 
     function endChallenges() public {
-        uint256 reservesBefore = zchf.balanceOf(address(zchf.reserve())) - zchf.equity();
+        uint256 reservesBefore = dEURO.balanceOf(address(dEURO.reserve())) - dEURO.equity();
         // revertWith("reserves before ", reservesBefore);  // 21000.000000000000000000
         endChallenge(latestChallenge); // can be absorbed with equity
-        uint256 reservesAfter = zchf.balanceOf(address(zchf.reserve())) - zchf.equity();
+        uint256 reservesAfter = dEURO.balanceOf(address(dEURO.reserve())) - dEURO.equity();
         require(reservesBefore - reservesAfter == 10000 ether); // latest challenge was 50'000 with 20% reserve
         // revertWith("reserves before ", reservesAfter);  // 11000.000000000000000000
-        // revertWith("reserves before ", zchf.equity());     //  8601.000000000000000003
+        // revertWith("reserves before ", dEURO.equity());     //  8601.000000000000000003
         // splitAndEnd(latestChallenge - 1);
     }
 
     function endChallenge(uint256 challengeNumber) public {
-        uint256 equityBefore = zchf.equity();
+        uint256 equityBefore = dEURO.equity();
         (address challenger, uint64 start, IPosition p, uint256 size) = hub.challenges(challengeNumber);
         require(challenger != address(0x0), "challenge not found");
         // hub.end(challengeNumber, true);
@@ -132,8 +132,8 @@ contract MintingHubTest {
         uint256 reserve = (borrowedAmount * p.reserveContribution()) / 1000000;
         uint256 reward = (bid * 20000) / 1000000;
         uint256 missing = borrowedAmount + reward - bid - reserve;
-        uint256 equityAfter = zchf.equity();
-        uint256 assigned = zchf.calculateAssignedReserve(
+        uint256 equityAfter = dEURO.equity();
+        uint256 assigned = dEURO.calculateAssignedReserve(
             1000000,
             uint32(200000)
         );
@@ -153,7 +153,7 @@ contract MintingHubTest {
             require(equityAfter == 0, Strings.toString(equityAfter)); // wiped out equity
             require(
                 assigned == 0 ||
-                    zchf.calculateAssignedReserve(1000000, 200000) < assigned
+                    dEURO.calculateAssignedReserve(1000000, 200000) < assigned
             );
             // theoretical minter reserve at this point: 3000.000000000000000000, actual: 0
         } */
@@ -162,7 +162,7 @@ contract MintingHubTest {
     uint256 number;
 
     function testExcessiveChallengePart1() public {
-        // revertWith("reserve ", zchf.balanceOf(address(zchf.reserve()))); // 50601000000000000000003
+        // revertWith("reserve ", dEURO.balanceOf(address(dEURO.reserve()))); // 50601000000000000000003
         Position pos = Position(latestPosition);
         //uint256 minted = pos.minted();
         //        require(minted == 10000 ether, Strings.toString(minted)); // assumes the other tests have been run before
@@ -180,22 +180,22 @@ contract MintingHubTest {
 
     function restructure() public {
         address[] memory empty = new address[](0);
-        zchf.reserve().checkQualified(address(alice), empty);
-        zchf.reserve().checkQualified(address(bob), empty);
+        dEURO.reserve().checkQualified(address(alice), empty);
+        dEURO.reserve().checkQualified(address(bob), empty);
         address[] memory list = new address[](1);
         list[0] = address(bob);
-        Equity equity = Equity(address(zchf.reserve()));
+        Equity equity = Equity(address(dEURO.reserve()));
         uint256 totalVotes = equity.totalVotes();
         uint256 supplyBefore = equity.totalSupply();
         uint256 bobBefore = equity.balanceOf(address(bob));
         alice.restructure(empty, list);
-        zchf.reserve().checkQualified(address(alice), empty);
+        dEURO.reserve().checkQualified(address(alice), empty);
         require(equity.totalVotes() < totalVotes);
         require(equity.balanceOf(address(bob)) == 0);
         uint256 supplyAfter = equity.totalSupply();
         require(supplyAfter == supplyBefore - bobBefore);
-        // revertWith("Shortfall: ", zchf.minterReserve() - zchf.balanceOf(address(zchf.reserve()))); // 1000000000000000000000
-        alice.obtainFrankencoins(swap, 4000 ether);
+        // revertWith("Shortfall: ", dEURO.minterReserve() - dEURO.balanceOf(address(dEURO.reserve()))); // 1000000000000000000000
+        alice.obtainEuroCoins(swap, 4000 ether);
         alice.invest(4000 ether);
         require(supplyAfter + 1000 ether == equity.totalSupply());
     }
@@ -212,7 +212,7 @@ contract MintingHubTest {
         uint256 size = pos.collateral().balanceOf(latestPosition);
         latestChallenge = bob.challenge(hub, latestPosition, size);
         // revertWith("col left ", size); // 100
-        bob.obtainFrankencoins(swap, 5000 ether);
+        bob.obtainEuroCoins(swap, 5000 ether);
     }
 
     function endLastChallenge() public {
@@ -223,13 +223,13 @@ contract MintingHubTest {
 }
 
 contract User {
-    IEuroCoin zchf;
+    IEuroCoin dEURO;
 
-    constructor(IEuroCoin zchf_) {
-        zchf = zchf_;
+    constructor(IEuroCoin dEURO_) {
+        dEURO = dEURO_;
     }
 
-    function obtainFrankencoins(StablecoinBridge bridge, uint256 amount) public {
+    function obtainEuroCoins(StablecoinBridge bridge, uint256 amount) public {
         TestToken xchf = TestToken(address(bridge.chf()));
         xchf.mint(address(this), amount);
         xchf.approve(address(bridge), amount);
@@ -238,7 +238,7 @@ contract User {
     }
 
     function invest(uint256 amount) public {
-        zchf.reserve().invest(amount, 0);
+        dEURO.reserve().invest(amount, 0);
     }
 
     function transfer(IERC20 token, address target, uint256 amount) public {
@@ -248,7 +248,7 @@ contract User {
     function initiatePosition(TestToken col, MintingHub hub) public returns (address) {
         col.mint(address(this), 1001);
         col.approve(address(hub), 1001);
-        uint256 balanceBefore = zchf.balanceOf(address(this));
+        uint256 balanceBefore = dEURO.balanceOf(address(this));
         address pos = hub.openPositionOneWeek(
             address(col),
             100,
@@ -260,7 +260,7 @@ contract User {
             100 * (10 ** 36),
             200000
         );
-        require((balanceBefore - hub.OPENING_FEE()) == zchf.balanceOf(address(this)));
+        require((balanceBefore - hub.OPENING_FEE()) == dEURO.balanceOf(address(this)));
         Position(pos).adjust(0, 1001, 200 * (10 ** 36));
         Position(pos).adjustPrice(100 * (10 ** 36));
         return pos;
@@ -289,27 +289,27 @@ contract User {
     }
 
     function repay(Position pos, uint256 amount) public {
-        uint256 balanceBefore = zchf.balanceOf(address(this));
+        uint256 balanceBefore = dEURO.balanceOf(address(this));
         require(balanceBefore >= amount);
         pos.repay(amount);
-        require(zchf.balanceOf(address(this)) + amount == balanceBefore);
+        require(dEURO.balanceOf(address(this)) + amount == balanceBefore);
     }
 
     function testWithdraw(StablecoinBridge bridge, Position pos) public {
         IERC20 col = pos.collateral();
-        obtainFrankencoins(bridge, 1);
-        bridge.zchf().transfer(address(pos), 1);
+        obtainEuroCoins(bridge, 1);
+        bridge.dEURO().transfer(address(pos), 1);
         uint256 initialBalance = col.balanceOf(address(pos));
-        pos.withdraw(address(bridge.zchf()), address(this), 1);
+        pos.withdraw(address(bridge.dEURO()), address(this), 1);
         Position(pos).withdraw(address(col), address(this), 1);
         require(col.balanceOf(address(pos)) == initialBalance - 1);
         require(col.balanceOf(address(this)) == 1);
     }
 
     function mint(address pos, uint256 amount) public {
-        uint256 balanceBefore = zchf.balanceOf(address(this));
+        uint256 balanceBefore = dEURO.balanceOf(address(this));
         IPosition(pos).mint(address(this), amount);
-        uint256 obtained = zchf.balanceOf(address(this)) - balanceBefore;
+        uint256 obtained = dEURO.balanceOf(address(this)) - balanceBefore;
         uint256 usable = IPosition(pos).getUsableMint(amount, true);
         require(
             obtained == usable,
@@ -334,7 +334,7 @@ contract User {
         /* {
             (, IPosition p, uint256 size, , , ) = hub.challenges(first);
             uint256 amount = (size * p.price()) / 10 ** 18;
-            obtainFrankencoins(swap, amount);
+            obtainEuroCoins(swap, amount);
             hub.bid(first, amount, size); // avert challenge
         }
         (address challenger, , , , , ) = hub.challenges(first);
@@ -356,6 +356,6 @@ contract User {
     }
 
     function restructure(address[] calldata helpers, address[] calldata addressesToWipe) public {
-        Equity(address(zchf.reserve())).restructureCapTable(helpers, addressesToWipe);
+        Equity(address(dEURO.reserve())).restructureCapTable(helpers, addressesToWipe);
     }
 }

@@ -44,17 +44,17 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     xchfAddress = "0xb4272071ecadd69d933adcd19ca99fe80664fc08";
     applicationMsg = "XCHF Bridge";
   }
-  const ZCHFDeployment = await get("Frankencoin");
-  let zchfContract = await ethers.getContractAt(
+  const dEURODeployment = await get("Frankencoin");
+  let dEUROContract = await ethers.getContractAt(
     "Frankencoin",
-    ZCHFDeployment.address
+    dEURODeployment.address
   );
 
   let dLimit = floatToDec18(limit);
   console.log("\nDeploying StablecoinBridge with limit = ", limit, "CHF");
   await deployContract(hre, "StablecoinBridge", [
     xchfAddress,
-    ZCHFDeployment.address,
+    dEURODeployment.address,
     dLimit,
   ]);
 
@@ -63,10 +63,10 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let bridgeAddr: string = bridgeDeployment.address;
 
   console.log(
-    `Verify StablecoinBridge:\nnpx hardhat verify --network sepolia ${bridgeAddr} ${xchfAddress} ${ZCHFDeployment.address} ${dLimit}\n`
+    `Verify StablecoinBridge:\nnpx hardhat verify --network sepolia ${bridgeAddr} ${xchfAddress} ${dEURODeployment.address} ${dLimit}\n`
   );
 
-  let isAlreadyMinter = await zchfContract.isMinter(bridgeAddr);
+  let isAlreadyMinter = await dEUROContract.isMinter(bridgeAddr);
   if (isAlreadyMinter) {
     console.log(bridgeDeployment.address, "already is a minter");
   } else {
@@ -74,9 +74,9 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log(
       "Apply for the bridge ",
       bridgeDeployment.address,
-      "to be minter via zchf.suggestMinter"
+      "to be minter via dEURO.suggestMinter"
     );
-    let tx = await zchfContract.initialize(bridgeDeployment.address, msg);
+    let tx = await dEUROContract.initialize(bridgeDeployment.address, msg);
     console.log("tx hash = ", tx.hash);
     await tx.wait();
     let isMinter = false;
@@ -84,7 +84,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     while (!isMinter && trial < 5) {
       console.log("Waiting 20s...");
       await sleep(20 * 1000);
-      isMinter = await zchfContract.isMinter(bridgeAddr, {
+      isMinter = await dEUROContract.isMinter(bridgeAddr, {
         gasLimit: 1_000_000,
       });
       console.log("Is minter? ", isMinter);

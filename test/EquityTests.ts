@@ -12,40 +12,40 @@ describe("Equity Tests", () => {
 
   let equity: Equity;
   let bridge: StablecoinBridge;
-  let zeur: EuroCoin;
-  let xchf: TestToken;
+  let dEURO: EuroCoin;
+  let s: TestToken;
 
   before(async () => {
     [owner, alice, bob] = await ethers.getSigners();
 
-    const xchfFactory = await ethers.getContractFactory("TestToken");
-    xchf = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
+    const XEURFactory = await ethers.getContractFactory("TestToken");
+    XEUR = await XEURFactory.deploy("CryptoFranc", "XEUR", 18);
   });
 
   beforeEach(async () => {
     const euroCoinFactory = await ethers.getContractFactory("EuroCoin");
-    zeur = await euroCoinFactory.deploy(10 * 86400);
+    dEURO = await euroCoinFactory.deploy(10 * 86400);
 
     let supply = floatToDec18(1000_000);
     const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
     bridge = await bridgeFactory.deploy(
-      await xchf.getAddress(),
-      await zeur.getAddress(),
+      await XEUR.getAddress(),
+      await dEURO.getAddress(),
       floatToDec18(100_000_000_000)
     );
-    await zeur.initialize(await bridge.getAddress(), "");
+    await dEURO.initialize(await bridge.getAddress(), "");
 
-    await xchf.mint(owner.address, supply);
-    await xchf.approve(await bridge.getAddress(), supply);
+    await XEUR.mint(owner.address, supply);
+    await XEUR.approve(await bridge.getAddress(), supply);
     await bridge.mint(supply);
-    await zeur.transfer(bob.address, floatToDec18(5000));
-    equity = await ethers.getContractAt("Equity", await zeur.reserve());
+    await dEURO.transfer(bob.address, floatToDec18(5000));
+    equity = await ethers.getContractAt("Equity", await dEURO.reserve());
   });
 
   describe("basic initialization", () => {
-    it("should have symbol ZEUR", async () => {
-      let symbol = await zeur.symbol();
-      expect(symbol).to.be.equal("ZEUR");
+    it("should have symbol dEURO", async () => {
+      let symbol = await dEURO.symbol();
+      expect(symbol).to.be.equal("dEURO");
     });
 
     it("should have symbol EPS", async () => {
@@ -63,13 +63,13 @@ describe("Equity Tests", () => {
       expect(symbol).to.be.equal("EuroCoin Pool Share");
     });
 
-    it("should have initial price 1 ZEUR / EPS", async () => {
+    it("should have initial price 1 dEURO / EPS", async () => {
       let price = await equity.price();
       expect(price).to.be.equal(BigInt(1e18));
     });
 
     it("should have some coins", async () => {
-      let balance = await zeur.balanceOf(owner.address);
+      let balance = await dEURO.balanceOf(owner.address);
       expect(balance).to.be.equal(floatToDec18(1000_000 - 5000));
     });
   });
@@ -90,8 +90,8 @@ describe("Equity Tests", () => {
     // it("should revert minting when total supply exceeds max of uint96", async () => {
     //   await equity.invest(floatToDec18(1000), 0);
     //   const amount = floatToDec18(80_000_000_000);
-    //   await xchf.mint(owner.address, amount);
-    //   await xchf.approve(await bridge.getAddress(), amount);
+    //   await XEUR.mint(owner.address, amount);
+    //   await XEUR.approve(await bridge.getAddress(), amount);
     //   await bridge.mint(amount);
     //   await equity.invest(amount, 0);
     //   await expect(equity.invest(amount, 0)).to.be.revertedWith(
@@ -101,7 +101,7 @@ describe("Equity Tests", () => {
 
     it("should create an initial share", async () => {
       const expected = await equity.calculateShares(floatToDec18(1000));
-      await zeur.transfer(await equity.getAddress(), 1);
+      await dEURO.transfer(await equity.getAddress(), 1);
       const price = await equity.price();
       expect(price).to.be.equal(floatToDec18(1));
       await equity.calculateShares(floatToDec18(1000));
@@ -151,7 +151,7 @@ describe("Equity Tests", () => {
 
       const redemptionAmount =
         (await equity.balanceOf(owner.address)) - floatToDec18(1000.0);
-      const equityCapital = await zeur.balanceOf(await equity.getAddress());
+      const equityCapital = await dEURO.balanceOf(await equity.getAddress());
       const proceeds = await equity.calculateProceeds(redemptionAmount);
       expect(proceeds).to.be.approximately(
         (equityCapital * 7n) / 8n,
@@ -171,11 +171,11 @@ describe("Equity Tests", () => {
         equity.redeemExpected(owner.address, redemptionAmount, proceeds * 2n)
       ).to.be.revertedWithoutReason();
 
-      const beforeBal = await zeur.balanceOf(alice.address);
+      const beforeBal = await dEURO.balanceOf(alice.address);
       await expect(
         equity.redeemExpected(alice.address, redemptionAmount, proceeds)
       ).to.be.emit(equity, "Trade");
-      const afterBal = await zeur.balanceOf(alice.address);
+      const afterBal = await dEURO.balanceOf(alice.address);
       expect(afterBal - beforeBal).to.be.equal(proceeds);
     });
 
@@ -187,7 +187,7 @@ describe("Equity Tests", () => {
       await equity.approve(alice.address, redemptionAmount);
 
       const proceeds = await equity.calculateProceeds(redemptionAmount);
-      const beforeBal = await zeur.balanceOf(bob.address);
+      const beforeBal = await dEURO.balanceOf(bob.address);
       await expect(
         equity
           .connect(alice)
@@ -201,7 +201,7 @@ describe("Equity Tests", () => {
       await equity
         .connect(alice)
         .redeemFrom(owner.address, bob.address, redemptionAmount, proceeds);
-      const afterBal = await zeur.balanceOf(bob.address);
+      const afterBal = await dEURO.balanceOf(bob.address);
       expect(afterBal - beforeBal).to.be.equal(proceeds);
     });
   });
@@ -335,7 +335,7 @@ describe("Equity Tests", () => {
     });
 
     it("should revert qualified check when not meet quorum", async () => {
-      await zeur.transfer(alice.address, 1);
+      await dEURO.transfer(alice.address, 1);
       await equity.connect(alice).invest(1, 0);
       await expect(
         equity.checkQualified(alice.address, [])
@@ -344,14 +344,14 @@ describe("Equity Tests", () => {
   });
   describe("restructure cap table", () => {
     it("should revert restructure when have enough equity", async () => {
-      await zeur.transfer(await equity.getAddress(), floatToDec18(1000));
+      await dEURO.transfer(await equity.getAddress(), floatToDec18(1000));
       await expect(
         equity.restructureCapTable([], [])
       ).to.be.revertedWithoutReason();
     });
 
     it("should burn equity balances of given users", async () => {
-      await zeur.transfer(await equity.getAddress(), floatToDec18(100));
+      await dEURO.transfer(await equity.getAddress(), floatToDec18(100));
       await equity.restructureCapTable([], [alice.address, bob.address]);
     });
   });

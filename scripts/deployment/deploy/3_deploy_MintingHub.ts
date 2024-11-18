@@ -13,14 +13,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "PositionFactory",
     positionFactoryDeployment.address
   );
-  const zchfDeployment = await get("Frankencoin");
-  let zchfContract = await ethers.getContractAt(
+  const dEURODeployment = await get("Frankencoin");
+  let dEUROContract = await ethers.getContractAt(
     "Frankencoin",
-    zchfDeployment.address
+    dEURODeployment.address
   );
 
   let mintingHubContract = await deployContract(hre, "MintingHub", [
-    zchfDeployment.address,
+    dEURODeployment.address,
     positionFactoryDeployment.address,
   ]);
 
@@ -28,13 +28,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   console.log(`Verify mintingHubContract:
 npx hardhat verify --network sepolia ${await mintingHubContract.getAddress()} ${
-    zchfDeployment.address
+    dEURODeployment.address
   } ${positionFactoryDeployment.address}
 `);
 
-  // create a minting hub too while we have no ZCHF supply
+  // create a minting hub too while we have no dEURO supply
   try {
-    let tx = await zchfContract.initialize(
+    let tx = await dEUROContract.initialize(
       await mintingHubContract.getAddress(),
       "Minting Hub"
     );

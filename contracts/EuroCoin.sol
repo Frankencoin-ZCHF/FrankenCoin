@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
  * @title EuroCoin
- * @notice The EuroCoin (ZEUR) is an ERC-20 token that is designed to track the value of the Euro.
+ * @notice The EuroCoin (dEURO) is an ERC-20 token that is designed to track the value of the Euro.
  * It is not upgradable, but open to arbitrary minting plugins. These are automatically accepted if none of the
  * qualified pool share holders casts a veto, leading to a flexible but conservative governance.
  */
@@ -74,7 +74,7 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
     }
 
     function symbol() external pure override returns (string memory) {
-        return "ZEUR";
+        return "dEURO";
     }
 
     function initialize(address _minter, string calldata _message) external {
@@ -145,7 +145,7 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
     }
 
     /**
-     * @notice The amount of equity of the EuroCoin system in ZEUR, owned by the holders of EuroCoin Pool Shares.
+     * @notice The amount of equity of the EuroCoin system in dEURO, owned by the holders of Native Decentralized Euro Protocol Shares.
      * @dev Note that the equity contract technically holds both the minter reserve as well as the equity, so the minter
      * reserve must be subtracted. All fees and other kind of income is added to the Equity contract and essentially
      * constitutes profits attributable to the pool share holders.
@@ -172,7 +172,7 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
     }
 
     /**
-     * @notice Mints the provided amount of ZEUR to the target address, automatically forwarding
+     * @notice Mints the provided amount of dEURO to the target address, automatically forwarding
      * the minting fee and the reserve to the right place.
      */
     function mintWithReserve(
@@ -193,14 +193,14 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
     }
 
     /**
-     * Anyone is allowed to burn their ZEUR.
+     * Anyone is allowed to burn their dEURO.
      */
     function burn(uint256 _amount) external {
         _burn(msg.sender, _amount);
     }
 
     /**
-     * @notice Burn someone elses ZEUR.
+     * @notice Burn someone elses dEURO.
      */
     function burnFrom(address _owner, uint256 _amount) external override minterOnly {
         _burn(_owner, _amount);
@@ -214,9 +214,9 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
      * Design rule: Minters calling this method are only allowed to so for tokens amounts they previously minted with
      * the same _reservePPM amount.
      *
-     * For example, if someone minted 50 ZEUR earlier with a 20% reserve requirement (200000 ppm), they got 40 ZEUR
-     * and paid 10 ZEUR into the reserve. Now they want to repay the debt by burning 50 ZEUR. When doing so using this
-     * method, 50 ZEUR get burned and on top of that, 10 ZEUR previously assigned to the minter's reserved are
+     * For example, if someone minted 50 dEURO earlier with a 20% reserve requirement (200000 ppm), they got 40 dEURO
+     * and paid 10 dEURO into the reserve. Now they want to repay the debt by burning 50 dEURO. When doing so using this
+     * method, 50 dEURO get burned and on top of that, 10 dEURO previously assigned to the minter's reserved are
      * reassigned to the pool share holders.
      */
     function burnWithoutReserve(uint256 amount, uint32 reservePPM) public override minterOnly {
@@ -236,10 +236,10 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
      * requirement. The caller is only allowed to use this method for tokens also minted through the caller with the
      * same _reservePPM amount.
      *
-     * Example: the calling contract has previously minted 100 ZEUR with a reserve ratio of 20% (i.e. 200000 ppm).
-     * Now they have 41 ZEUR that they do not need so they decide to repay that amount. Assuming the reserves are
+     * Example: the calling contract has previously minted 100 dEURO with a reserve ratio of 20% (i.e. 200000 ppm).
+     * Now they have 41 dEURO that they do not need so they decide to repay that amount. Assuming the reserves are
      * only 90% covered, the call to burnWithReserve will burn the 41 plus 9 from the reserve, reducing the outstanding
-     * 'debt' of the caller by 50 ZEUR in total. This total is returned by the method so the caller knows how much less
+     * 'debt' of the caller by 50 dEURO in total. This total is returned by the method so the caller knows how much less
      * they owe.
      */
     function burnWithReserve(
@@ -257,9 +257,9 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
      * @notice Burns the target amount taking the tokens to be burned from the payer and the payer's reserve.
      * Only use this method for tokens also minted by the caller with the same _reservePPM.
      *
-     * Example: the calling contract has previously minted 100 ZEUR with a reserve ratio of 20% (i.e. 200000 ppm).
-     * To burn half of that again, the minter calls burnFrom with a target amount of 50 ZEUR. Assuming that reserves
-     * are only 90% covered, this call will deduct 41 ZEUR from the payer's balance and 9 from the reserve, while
+     * Example: the calling contract has previously minted 100 dEURO with a reserve ratio of 20% (i.e. 200000 ppm).
+     * To burn half of that again, the minter calls burnFrom with a target amount of 50 dEURO. Assuming that reserves
+     * are only 90% covered, this call will deduct 41 dEURO from the payer's balance and 9 from the reserve, while
      * reducing the minter reserve by 10.
      */
     function burnFromWithReserve(
@@ -309,10 +309,10 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
 
     /**
      * @notice Notify the EuroCoin that a minter lost economic access to some coins. This does not mean that the coins are
-     * literally lost. It just means that some ZEUR will likely never be repaid and that in order to bring the system
-     * back into balance, the lost amount of ZEUR must be removed from the reserve instead.
+     * literally lost. It just means that some dEURO will likely never be repaid and that in order to bring the system
+     * back into balance, the lost amount of dEURO must be removed from the reserve instead.
      *
-     * For example, if a minter printed 1 million ZEUR for a mortgage and the mortgage turned out to be unsound with
+     * For example, if a minter printed 1 million dEURO for a mortgage and the mortgage turned out to be unsound with
      * the house only yielding 800'000 in the subsequent auction, there is a loss of 200'000 that needs to be covered
      * by the reserve.
      */

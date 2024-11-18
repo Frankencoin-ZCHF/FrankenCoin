@@ -8,7 +8,7 @@
             },
             {
                 "internalType": "address",
-                "name": "zchfAddress",
+                "name": "dEUROAddress",
                 "type": "address"
             },
             {
@@ -179,7 +179,7 @@
     },
     {
         "inputs": [],
-        "name": "zchf",
+        "name": "dEURO",
         "outputs": [
             {
                 "internalType": "contract IEuroCoin",

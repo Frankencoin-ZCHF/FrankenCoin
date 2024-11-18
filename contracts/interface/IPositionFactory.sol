@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 interface IPositionFactory {
     function createNewPosition(
         address _owner,
-        address _zchf,
+        address _dEURO,
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,

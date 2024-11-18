@@ -3,7 +3,7 @@
         "inputs": [
             {
                 "internalType": "contract IEuroCoin",
-                "name": "zchf_",
+                "name": "dEURO_",
                 "type": "address"
             }
         ],
@@ -184,7 +184,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "obtainFrankencoins",
+        "name": "obtainEuroCoins",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

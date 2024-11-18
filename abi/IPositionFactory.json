@@ -27,7 +27,7 @@
             },
             {
                 "internalType": "address",
-                "name": "_zchf",
+                "name": "_dEURO",
                 "type": "address"
             },
             {

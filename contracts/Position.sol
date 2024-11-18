@@ -20,7 +20,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
 
     /**
-     * @notice The zchf price per unit of the collateral below which challenges succeed, (36 - collateral.decimals) decimals
+     * @notice The dEURO price per unit of the collateral below which challenges succeed, (36 - collateral.decimals) decimals
      */
     uint256 public price;
 
@@ -72,9 +72,9 @@ contract Position is Ownable, IPosition, MathUtil {
     address public immutable hub;
 
     /**
-     * @notice The Frankencoin contract.
+     * @notice The EuroCoin contract.
      */
-    IEuroCoin public immutable zchf;
+    IEuroCoin public immutable dEURO;
 
     /**
      * @notice The collateral token.
@@ -92,7 +92,7 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 private constant MIN_INTEREST_DURATION = 4 weeks;
 
     /**
-     * @notice The interest in parts per million per year that is deducted when minting Frankencoins.
+     * @notice The interest in parts per million per year that is deducted when minting EuroCoins.
      * To be paid upfront.
      */
     uint32 public immutable annualInterestPPM;
@@ -141,7 +141,7 @@ contract Position is Ownable, IPosition, MathUtil {
     constructor(
         address _owner,
         address _hub,
-        address _zchf,
+        address _dEURO,
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,
@@ -156,7 +156,7 @@ contract Position is Ownable, IPosition, MathUtil {
         _setOwner(_owner);
         original = address(this);
         hub = _hub;
-        zchf = IEuroCoin(_zchf);
+        dEURO = IEuroCoin(_dEURO);
         collateral = IERC20(_collateral);
         annualInterestPPM = _annualInterestPPM;
         reserveContribution = _reservePPM;
@@ -202,7 +202,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice Adjust this position's limit to allow a clone to mint its own Frankencoins.
+     * @notice Adjust this position's limit to allow a clone to mint its own EuroCoins.
      * Invariant: global limit stays the same.
      *
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
@@ -217,7 +217,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function deny(address[] calldata helpers, string calldata message) external {
         if (block.timestamp >= start) revert TooLate();
-        IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
+        IReserve(dEURO.reserve()).checkQualified(msg.sender, helpers);
         _close(); // since expiration is immutable, we put it under eternal cooldown
         emit PositionDenied(msg.sender, message);
     }
@@ -231,7 +231,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice This is how much the minter can actually use when minting ZCHF, with the rest being used
+     * @notice This is how much the minter can actually use when minting dEURO, with the rest being used
      * assigned to the minter reserve or (if applicable) fees.
      */
     function getUsableMint(uint256 totalMint, bool afterFees) external view returns (uint256) {
@@ -243,7 +243,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice "All in one" function to adjust the outstanding amount of ZCHF, the collateral amount,
+     * @notice "All in one" function to adjust the outstanding amount of dEURO, the collateral amount,
      * and the price in one transaction.
      */
     function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) external onlyOwner {
@@ -253,7 +253,7 @@ contract Position is Ownable, IPosition, MathUtil {
         }
         // Must be called after collateral deposit, but before withdrawal
         if (newMinted < minted) {
-            zchf.burnFromWithReserve(msg.sender, minted - newMinted, reserveContribution);
+            dEURO.burnFromWithReserve(msg.sender, minted - newMinted, reserveContribution);
             minted = newMinted;
         }
         if (newCollateral < colbal) {
@@ -293,7 +293,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice Mint ZCHF as long as there is no open challenge, the position is not subject to a cooldown,
+     * @notice Mint dEURO as long as there is no open challenge, the position is not subject to a cooldown,
      * and there is sufficient collateral.
      */
     function mint(address target, uint256 amount) public onlyOwner noChallenge noCooldown alive {
@@ -310,7 +310,7 @@ contract Position is Ownable, IPosition, MathUtil {
 
     function _mint(address target, uint256 amount, uint256 collateral_) internal {
         if (minted + amount > limit) revert LimitExceeded();
-        zchf.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
+        dEURO.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
         minted += amount;
 
         _checkCollateral(collateral_, price);
@@ -325,12 +325,12 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice Repay some ZCHF. If too much is repaid, the call fails.
+     * @notice Repay some dEURO. If too much is repaid, the call fails.
      * It is possible to repay while there are challenges, but the collateral is locked until all is clear again.
      *
      * The repaid amount should fulfill the following equation in order to close the position,
      * i.e. bring the minted amount to 0:
-     * minted = amount + zchf.calculateAssignedReserve(amount, reservePPM)
+     * minted = amount + dEURO.calculateAssignedReserve(amount, reservePPM)
      *
      * Under normal circumstances, this implies:
      * amount = minted * (1000000 - reservePPM)
@@ -338,8 +338,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * E.g. if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
      */
     function repay(uint256 amount) public {
-        IERC20(zchf).transferFrom(msg.sender, address(this), amount);
-        uint256 actuallyRepaid = IEuroCoin(zchf).burnWithReserve(amount, reserveContribution);
+        IERC20(dEURO).transferFrom(msg.sender, address(this), amount);
+        uint256 actuallyRepaid = IEuroCoin(dEURO).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
         emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }
@@ -443,7 +443,7 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * @param _bidder   address of the bidder that receives the collateral
      * @param _size     amount of the collateral bid for
-     * @return (position owner, effective challenge size in ZCHF, amount to be repaid, reserve ppm)
+     * @return (position owner, effective challenge size in dEURO, amount to be repaid, reserve ppm)
      */
     function notifyChallengeSucceeded(
         address _bidder,

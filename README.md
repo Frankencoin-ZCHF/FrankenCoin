@@ -1,22 +1,22 @@
-# EURO Coin
+# dEURO
 
 This repository is a friendly fork of Frankencoin-ZCHF.
 
-This is the source code repository for the smart contracts of the oracle-free, collateralized stablecoin Frankencoin.
+This is the source code repository for the smart contracts of the oracle-free, collateralized stablecoin dEURO.
 
-There also is a [public frontend](https://app.euro-coin.io) and a [documentation page](https://docs.euro-coin.io).
+There also is a [public frontend](https://app.dEURO.com) and a [documentation page](https://docs.dEURO.com).
 
 ## Source Code
 
 The source code can be found in the [contracts](contracts) folder. The following are the most important contracts.
 
-| Contract             | Description                                     |
-| -------------------- | ----------------------------------------------- |
-| EuroCoin.sol         | The Euro Coin (ZEUR) ERC20 token                |
-| Equity.sol           | The Euro Coin Pool Shares (EPS) ERC20 token     |
-| MintingHub.sol       | Plugin for oracle-free collateralized minting   |
-| Position.sol         | A borrowed minting position holding collateral  |
-| StablecoinBridge.sol | Plugin for 1:1 swaps with other EUR stablecoins |
+| Contract             | Description                                                      |
+| -------------------- | ---------------------------------------------------------------- |
+| EuroCoin.sol         | The Euro Coin (dEURO) ERC20 token                                |
+| Equity.sol           | The Native Decentralized Euro Protocol Share (nDEPS) ERC20 token |
+| MintingHub.sol       | Plugin for oracle-free collateralized minting                    |
+| Position.sol         | A borrowed minting position holding collateral                   |
+| StablecoinBridge.sol | Plugin for 1:1 swaps with other EUR stablecoins                  |
 
 ## Compiling and Testing
 

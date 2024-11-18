@@ -3,7 +3,7 @@
         "inputs": [
             {
                 "internalType": "contract EuroCoin",
-                "name": "zeur_",
+                "name": "dEURO_",
                 "type": "address"
             }
         ],
@@ -812,7 +812,7 @@
     },
     {
         "inputs": [],
-        "name": "zeur",
+        "name": "dEURO",
         "outputs": [
             {
                 "internalType": "contract EuroCoin",

@@ -7,7 +7,7 @@ import { deployContract } from "../deployUtils";
     export PK=12...
     // deploy according to config (see package.json), e.g., 
     npm run redeploynotesttoken:network sepolia
-    // mint ZCHF via scripts/maintenance/mintCHF.ts (adjust StableCoinBridge address in mintCHF.ts header) 
+    // mint dEURO via scripts/maintenance/mintCHF.ts (adjust StableCoinBridge address in mintCHF.ts header) 
     ts-node scripts/maintenance/mintCHF.ts
     // verify on https://sepolia.etherscan.io/
     // deploy positions (inspect script A_deploy_...)

@@ -18,7 +18,7 @@ contract MathUtil {
      * @return returns _v**(1/3)
      */
     function _cubicRoot(uint256 _v) internal pure returns (uint256) {
-        // Good first guess for _v slightly above 1.0, which is often the case in the Frankencoin system
+        // Good first guess for _v slightly above 1.0, which is often the case in the dEURO system
         uint256 x = _v > ONE_DEC18 && _v < 10 ** 19 ? (_v - ONE_DEC18) / 3 + ONE_DEC18 : ONE_DEC18;
         uint256 diff;
         do {
