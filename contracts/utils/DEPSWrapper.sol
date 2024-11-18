@@ -15,11 +15,11 @@ contract DEPSWrapper is ERC20 {
     }
 
     function name() external pure override returns (string memory) {
-        return "Native Decentralized Euro Protocol Share";
+        return "Decentralized Euro Protocol Share";
     }
 
     function symbol() external pure override returns (string memory) {
-        return "nDEPS";
+        return "DEPS";
     }
 
     // requires allowance
