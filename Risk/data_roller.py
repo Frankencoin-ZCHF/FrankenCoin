@@ -1,5 +1,5 @@
 # Taps into API of bitpanda and analyses data
-# Conclusion: data not useful (cumulative log return are far from the overall return of the BTCHF price levels)
+# Conclusion: data not useful (cumulative log return are far from the overall return of the BTEUR price levels)
 import datetime
 from math import dist
 from socketserver import ForkingUDPServer
@@ -15,15 +15,15 @@ from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.formula.api import ols
 from statsmodels.stats.stattools import durbin_watson
 
-#https://api.kraken.com/0/public/OHLC?interval=60&since=1589281199&pair=XBTCHF <-- too short
-#https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04%3A59%3A59.999Z&to=2020-12-03T07%3A59%3A59.999Z
-#https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1&from=2020-10-03T04:59:59.999Z&to=2020-12-03T07:59:59.999Z
+#https://api.kraken.com/0/public/OHLC?interval=60&since=1589281199&pair=XBTEUR <-- too short
+#https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_EUR?unit=HOURS&period=1&from=2020-10-03T04%3A59%3A59.999Z&to=2020-12-03T07%3A59%3A59.999Z
+#https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_EUR?unit=HOURS&period=1&from=2020-10-03T04:59:59.999Z&to=2020-12-03T07:59:59.999Z
 def minutes_between(d1, d2):
     delta = d2 - d1
     return delta.total_seconds() / 60
 
 def construct_query(t0, t1):
-    base = "https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_CHF?unit=HOURS&period=1"
+    base = "https://api.exchange.bitpanda.com/public/v1/candlesticks/BTC_EUR?unit=HOURS&period=1"
     sT0 = "&from="+t0.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     sT1 = "&to="+t1.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     return base+sT0+sT1
@@ -79,7 +79,7 @@ def timeseries_plot(DF, plot_cumulative=False):
         plt.plot(df['datetime'], df['logRetCum'], color='r', label="Cumulative Return")
         plt.legend()
     plt.title("time series")
-    plt.ylabel("BTCCHF")
+    plt.ylabel("BTCEUR")
     plt.grid()
     
     plt.show()

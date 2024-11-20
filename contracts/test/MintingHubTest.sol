@@ -17,7 +17,7 @@ contract MintingHubTest {
     MintingHub hub;
     StablecoinBridge swap;
 
-    IERC20 xchf;
+    IERC20 xeur;
     TestToken col;
     IEuroCoin dEURO;
 
@@ -31,7 +31,7 @@ contract MintingHubTest {
         hub = MintingHub(hub_);
         swap = StablecoinBridge(swap_);
         col = new TestToken("Some Collateral", "COL", uint8(0));
-        xchf = swap.chf();
+        xeur = swap.eur();
         dEURO = swap.dEURO();
         alice = new User(dEURO);
         bob = new User(dEURO);
@@ -230,10 +230,10 @@ contract User {
     }
 
     function obtainEuroCoins(StablecoinBridge bridge, uint256 amount) public {
-        TestToken xchf = TestToken(address(bridge.chf()));
-        xchf.mint(address(this), amount);
-        xchf.approve(address(bridge), amount);
-        require(xchf.allowance(address(this), address(bridge)) == amount);
+        TestToken xeur = TestToken(address(bridge.eur()));
+        xeur.mint(address(this), amount);
+        xeur.approve(address(bridge), amount);
+        require(xeur.allowance(address(this), address(bridge)) == amount);
         bridge.mint(amount);
     }
 

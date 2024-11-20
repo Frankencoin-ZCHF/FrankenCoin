@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # candle time for the data (minutes)
     TauIn = 1440#60
 
-    DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v3.pkl")
+    DF = pd.read_pickle("./Risk/XBTEUR_"+str(TauIn)+"_Processed_v3.pkl")
 
     r = DF["logRet"].to_numpy()
     r_max = DF["maxRet"].to_numpy()

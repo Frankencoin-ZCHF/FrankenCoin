@@ -7,14 +7,14 @@ import { deployContract } from "../deployUtils";
     export PK=12...
     // deploy according to config (see package.json), e.g., 
     npm run redeploynotesttoken:network sepolia
-    // mint dEURO via scripts/maintenance/mintCHF.ts (adjust StableCoinBridge address in mintCHF.ts header) 
-    ts-node scripts/maintenance/mintCHF.ts
+    // mint dEURO via scripts/maintenance/mintEUR.ts (adjust StableCoinBridge address in mintEUR.ts header) 
+    ts-node scripts/maintenance/mintEUR.ts
     // verify on https://sepolia.etherscan.io/
     // deploy positions (inspect script A_deploy_...)
     npm run-script deployPositions:network sepolia
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const paramFile = "paramsFrankencoin.json";
+  const paramFile = "paramsEuroCoin.json";
   let chainId = hre.network.config["chainId"];
   let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
 
@@ -28,15 +28,15 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let minApplicationPeriod = params["minApplicationPeriod"];
   console.log("\nMin application period =", minApplicationPeriod);
 
-  let FC = await deployContract(hre, "Frankencoin", [minApplicationPeriod]);
+  let EC = await deployContract(hre, "EuroCoin", [minApplicationPeriod]);
   console.log(
-    `Verify Frankencoin:\nnpx hardhat verify --network sepolia ${await FC.getAddress()} ${minApplicationPeriod}`
+    `Verify EuroCoin:\nnpx hardhat verify --network sepolia ${await EC.getAddress()} ${minApplicationPeriod}`
   );
 
-  let reserve = await FC.reserve();
+  let reserve = await EC.reserve();
   console.log(
-    `Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${await FC.getAddress()}\n`
+    `Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${await EC.getAddress()}\n`
   );
 };
 export default deploy;
-deploy.tags = ["main", "Frankencoin"];
+deploy.tags = ["main", "EuroCoin"];

@@ -11,7 +11,7 @@ import "./interface/IEuroCoin.sol";
  * @author dEURO
  */
 contract StablecoinBridge {
-    IERC20 public immutable chf; // the source stablecoin
+    IERC20 public immutable eur; // the source stablecoin
     IEuroCoin public immutable dEURO; // the dEURO
 
     /**
@@ -30,7 +30,7 @@ contract StablecoinBridge {
     error UnsupportedToken(address token);
 
     constructor(address other, address dEUROAddress, uint256 limit_) {
-        chf = IERC20(other);
+        eur = IERC20(other);
         dEURO = IEuroCoin(dEUROAddress);
         horizon = block.timestamp + 52 weeks;
         limit = limit_;
@@ -49,7 +49,7 @@ contract StablecoinBridge {
      * @dev This only works if an allowance for the source coins has been set and the caller has enough of them.
      */
     function mintTo(address target, uint256 amount) public {
-        chf.transferFrom(msg.sender, address(this), amount);
+        eur.transferFrom(msg.sender, address(this), amount);
         _mint(target, amount);
     }
 
@@ -76,7 +76,7 @@ contract StablecoinBridge {
 
     function _burn(address dEUROHolder, address target, uint256 amount) internal {
         dEURO.burnFrom(dEUROHolder, amount);
-        chf.transfer(target, amount);
+        eur.transfer(target, amount);
         minted -= amount;
     }
 }

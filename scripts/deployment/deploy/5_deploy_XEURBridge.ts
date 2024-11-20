@@ -9,7 +9,7 @@ async function getAddress() {
   // local node address
   let addr = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707";
 
-  console.log("Is this address for MOCKCHF ok? [y,N]", addr);
+  console.log("Is this address for MOCKEUR ok? [y,N]", addr);
   prompt.start();
   const { isOk } = await prompt.get(["isOk"]);
   if (isOk != "y" && isOk != "Y") {
@@ -24,36 +24,36 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployments: { get },
     ethers,
   } = hre;
-  let xchfAddress;
+  let xeurAddress;
   let applicationMsg;
   if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
-    console.log("Setting Mock-XCHF-Token Bridge");
+    console.log("Setting Mock-XEUR-Token Bridge");
     try {
-      const xchfDeployment = await get("TestToken");
-      xchfAddress = xchfDeployment.address;
+      const xeurDeployment = await get("TestToken");
+      xeurAddress = xeurDeployment.address;
     } catch (err: unknown) {
-      xchfAddress = await getAddress();
-      if (xchfAddress == "") {
+      xeurAddress = await getAddress();
+      if (xeurAddress == "") {
         throw err;
       }
     }
 
-    applicationMsg = "MockXCHF Token Bridge";
+    applicationMsg = "MockXEUR Token Bridge";
   } else {
-    console.log("Deploying XCHF-Token Bridge");
-    xchfAddress = "0xb4272071ecadd69d933adcd19ca99fe80664fc08";
-    applicationMsg = "XCHF Bridge";
+    console.log("Deploying XEUR-Token Bridge");
+    xeurAddress = "0xb4272071ecadd69d933adcd19ca99fe80664fc08";
+    applicationMsg = "XEUR Bridge";
   }
-  const dEURODeployment = await get("Frankencoin");
+  const dEURODeployment = await get("EuroCoin");
   let dEUROContract = await ethers.getContractAt(
-    "Frankencoin",
+    "EuroCoin",
     dEURODeployment.address
   );
 
   let dLimit = floatToDec18(limit);
-  console.log("\nDeploying StablecoinBridge with limit = ", limit, "CHF");
+  console.log("\nDeploying StablecoinBridge with limit = ", limit, "EUR");
   await deployContract(hre, "StablecoinBridge", [
-    xchfAddress,
+    xeurAddress,
     dEURODeployment.address,
     dLimit,
   ]);
@@ -63,14 +63,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let bridgeAddr: string = bridgeDeployment.address;
 
   console.log(
-    `Verify StablecoinBridge:\nnpx hardhat verify --network sepolia ${bridgeAddr} ${xchfAddress} ${dEURODeployment.address} ${dLimit}\n`
+    `Verify StablecoinBridge:\nnpx hardhat verify --network sepolia ${bridgeAddr} ${xeurAddress} ${dEURODeployment.address} ${dLimit}\n`
   );
 
   let isAlreadyMinter = await dEUROContract.isMinter(bridgeAddr);
   if (isAlreadyMinter) {
     console.log(bridgeDeployment.address, "already is a minter");
   } else {
-    let msg = "XCHF Bridge";
+    let msg = "XEUR Bridge";
     console.log(
       "Apply for the bridge ",
       bridgeDeployment.address,
@@ -94,11 +94,11 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
     let amount = floatToDec18(20_000);
-    const mockXCHF = await ethers.getContractAt("TestToken", xchfAddress);
-    await mockXCHF.approve(bridgeAddr, amount);
+    const mockXEUR = await ethers.getContractAt("TestToken", xeurAddress);
+    await mockXEUR.approve(bridgeAddr, amount);
     const bridge = await ethers.getContractAt("StablecoinBridge", bridgeAddr);
     await bridge.mint(amount);
   }
 };
 export default deploy;
-deploy.tags = ["main", "XCHFBridge"];
+deploy.tags = ["main", "XEURBridge"];

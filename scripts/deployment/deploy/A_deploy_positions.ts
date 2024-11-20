@@ -21,7 +21,7 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
     ethers,
   } = hre;
   const mintingHubDeployment = await get("MintingHub");
-  const fcDeployment = await get("Frankencoin");
+  const fcDeployment = await get("EuroCoin");
 
   let mintingHubContract = await ethers.getContractAt(
     "MintingHub",
@@ -34,7 +34,7 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
   let duration = BigInt(params.durationDays) * 86_400n;
   let challengePeriod = BigInt(params.challengePeriodSeconds);
   let feesPPM = BigInt(params.feesPercent * 1e4);
-  let fliqPrice = floatToDec18(params.liqPriceCHF);
+  let fliqPrice = floatToDec18(params.liqPriceEUR);
   let fReservePPM = BigInt(params.reservePercent * 1e4);
   let fOpeningFeedEURO = 1000n * BigInt(1e18);
 

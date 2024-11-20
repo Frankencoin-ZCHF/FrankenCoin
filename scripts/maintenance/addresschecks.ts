@@ -1,5 +1,5 @@
 /*
-    Script to check Frankencoin address consistency
+    Script to check EuroCoin address consistency
     1) set private key in terminal without 0x, via export PK="123cafefefefefeCACe..."
         minting will be done for that wallet
     2) edit script: add minting hub address
@@ -9,7 +9,7 @@ const ethers = require("ethers");
 import { SigningKey } from "@ethersproject/signing-key";
 import {getSigningManagerFromPK} from "../utils";
 
-const FC_ABI = require('../../abi/Frankencoin.json');
+const FC_ABI = require('../../abi/EuroCoin.json');
 const MH_ABI = require('../../abi/MintingHub.json');
 
 //const NODE_URL = "https://rpc.sepolia.org";
@@ -22,14 +22,14 @@ let mintingHubAddr = "0x5F8a6244ca00466a38b6d2891685bBB6400e7f5a";
 async function run() {
     //const wallet = new ethers.Wallet(pk);
     let mintingHubContract = await getSigningManagerFromPK(mintingHubAddr, MH_ABI, NODE_URL, pk);
-    let zchfAddr = await mintingHubContract.zchf();
-    let zchfContract = await getSigningManagerFromPK(zchfAddr, FC_ABI, NODE_URL, pk);
+    let dEuroAddr = await mintingHubContract.dEURO();
+    let dEuroContract = await getSigningManagerFromPK(dEuroAddr, FC_ABI, NODE_URL, pk);
     console.log("Minting Hub     : \t", mintingHubAddr);
-    console.log("Frankencoin ZCHF: \t", zchfAddr);
-    let reserve = await zchfContract.reserve();
+    console.log("EuroCoin dEURO: \t", dEuroAddr);
+    let reserve = await dEuroContract.reserve();
     console.log("Reserve (=Equity): \t", reserve);
     
-    //console.log(`Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${zchfContract.address}`)
+    //console.log(`Verify Equity:\nnpx hardhat verify --network sepolia ${reserve} ${dEuroContract.address}`)
 }
 
 run();

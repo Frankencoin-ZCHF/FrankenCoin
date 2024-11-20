@@ -9,12 +9,12 @@ const ethers = require("ethers");
 import { SigningKey } from "@ethersproject/signing-key";
 import { floatToDec18, dec18ToFloat } from "../math";
 const NODE_URL = "https://rpc.sepolia.org";
-const ZCHF_ABI = require('../../abi/Frankencoin.json');
+const dEURO_ABI = require('../../abi/EuroCoin.json');
 const EQUITY_ABI = require('../../abi/Equity.json');
 
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');
-const mockXCHFAddr = "0xB6d3b7d819cDFf7dC6838349314D8d40C284B117";
-const ZCHFAddr = "0x079909c5191fffF4AB4Ad7889B34821D4CE35f6b";
+const mockXEURAddr = "0xB6d3b7d819cDFf7dC6838349314D8d40C284B117";
+const dEUROAddr = "0x079909c5191fffF4AB4Ad7889B34821D4CE35f6b";
 
 let pk: string | SigningKey = <string>process.env.PK;
 
@@ -28,76 +28,76 @@ export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
 
 // Total supply of pool share tokens
 async function queryReservePoolShareSupply() {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveAddress = await ZCHFContract.reserve();
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
     let fBalancePoolShareTokens = await equityContract.totalSupply();
     let supply = dec18ToFloat(fBalancePoolShareTokens);
     return supply;
 }
 
-// reserve pool size in ZCHF
+// reserve pool size in dEURO
 async function queryTotalReserve() {
     //TODO
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveAddress = await ZCHFContract.reserve();
-    let fReserveZCHF = await ZCHFContract.balanceOf(reserveAddress);
-    let res = dec18ToFloat(fReserveZCHF);
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reserveAddress = await dEUROContract.reserve();
+    let fReservedEURO = await dEUROContract.balanceOf(reserveAddress);
+    let res = dec18ToFloat(fReservedEURO);
     return res;
 }
 
-// reserve pool size in ZCHF relative to total supply
+// reserve pool size in dEURO relative to total supply
 async function queryReserveRatio() {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveZCHF = await queryTotalReserve();
-    let fTotalSupplyZCHF = await ZCHFContract.totalSupply();
-    let totalSupplyZCHF = dec18ToFloat(fTotalSupplyZCHF)
-    let res = (reserveZCHF)/totalSupplyZCHF;
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reservedEURO = await queryTotalReserve();
+    let fTotalSupplydEURO = await dEUROContract.totalSupply();
+    let totalSupplydEURO = dec18ToFloat(fTotalSupplydEURO)
+    let res = (reservedEURO)/totalSupplydEURO;
     return res;
 }
 
 async function queryReserveAddress() {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveAddress = await ZCHFContract.reserve();
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reserveAddress = await dEUROContract.reserve();
    
     return reserveAddress;
 }
 
 async function queryBorrowerReserve() {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let fReserve = await ZCHFContract.minterReserve();
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let fReserve = await dEUROContract.minterReserve();
     let res = dec18ToFloat(fReserve);
     return res;
 }
 
 async function queryShareholderReserve() {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let fReserve = await ZCHFContract.equity();
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let fReserve = await dEUROContract.equity();
     let res = dec18ToFloat(fReserve);
     return res;
 }
 
-async function querySwapShareToZCHF(numShares) {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveAddress = await ZCHFContract.reserve();
+async function querySwapShareTodEURO(numShares) {
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
-    let fZCHF = await equityContract.calculateProceeds(floatToDec18(numShares));
-    let ZCHF = dec18ToFloat(fZCHF);
-    return ZCHF;
+    let fdEURO = await equityContract.calculateProceeds(floatToDec18(numShares));
+    let dEURO = dec18ToFloat(fdEURO);
+    return dEURO;
 }
 
-async function querySwapZCHFToShares(numZCHF) {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveAddress = await ZCHFContract.reserve();
+async function querySwapdEUROToShares(numdEURO) {
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
-    let fShares = await equityContract.calculateShares(floatToDec18(numZCHF));
+    let fShares = await equityContract.calculateShares(floatToDec18(numdEURO));
     let shares = dec18ToFloat(fShares);
     return shares;
 }
 
 async function queryPrice() {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveAddress = await ZCHFContract.reserve();
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
     let fprice = await equityContract.price();
     let price = dec18ToFloat(fprice);
@@ -105,8 +105,8 @@ async function queryPrice() {
 }
 
 async function queryMarketCap() {
-    let ZCHFContract = await getSigningManagerFromPK(ZCHFAddr, ZCHF_ABI, NODE_URL, pk);
-    let reserveAddress = await ZCHFContract.reserve();
+    let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
+    let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
     let fprice = await equityContract.price();
     let price = Number((fprice).toString());
@@ -123,7 +123,7 @@ async function start() {
     console.log("Reserve (=Equity) address = ", resAddr);
 
     let totalReserve = await queryTotalReserve();
-    console.log("Total outstanding ZCHF = ", totalReserve, "ZCHF");
+    console.log("Total outstanding dEURO = ", totalReserve, "dEURO");
 
     let borrowerReserve = await queryBorrowerReserve();
     console.log("Borrower reserve (=Equity) = ", borrowerReserve);
@@ -134,17 +134,17 @@ async function start() {
     let reserveRatio = await queryReserveRatio();
     console.log("reserveRatio = ", reserveRatio * 100, "%");
 
-    let price = await querySwapShareToZCHF(1);
-    console.log("price sell 1 share = ZCHF ", price , "(1/x =", 1/price, ")");
+    let price = await querySwapShareTodEURO(1);
+    console.log("price sell 1 share = dEURO ", price , "(1/x =", 1/price, ")");
 
-    let numShares = await querySwapZCHFToShares(1);
-    console.log("price sell 1 ZCHF = RPS ", numShares, "(1/x =", 1/numShares, ")" );
+    let numShares = await querySwapdEUROToShares(1);
+    console.log("price sell 1 dEURO = RPS ", numShares, "(1/x =", 1/numShares, ")" );
 
     let price0 = await queryPrice();
-    console.log("price RPS = ZCHF ", price0);
+    console.log("price RPS = dEURO ", price0);
 
     let mktCap = await queryMarketCap();
-    console.log("Market Cap ZCHF ", mktCap);
+    console.log("Market Cap dEURO ", mktCap);
 
 }
 start();

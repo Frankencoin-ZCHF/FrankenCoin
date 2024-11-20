@@ -96,7 +96,7 @@
     },
     {
         "inputs": [],
-        "name": "chf",
+        "name": "eur",
         "outputs": [
             {
                 "internalType": "contract IERC20",

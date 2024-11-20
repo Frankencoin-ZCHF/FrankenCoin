@@ -21,7 +21,7 @@ def test_roll_window():
 if __name__ == "__main__":
 
     TauIn = 1440#60
-    DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v3.pkl")
+    DF = pd.read_pickle("./Risk/XBTEUR_"+str(TauIn)+"_Processed_v3.pkl")
     r_raw = DF["logRet"].to_numpy()
     # calculate rolling window 5 day returns
     num_days = 5

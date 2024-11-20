@@ -13,15 +13,15 @@ import data_roller
 
 def load_from_file(tau="60"):
     col_names = ["timestamp", "open", "high", "low", "close", "volume", "trades"]
-    DF = pd.read_csv("./Risk/XBTCHF_"+str(tau)+".csv", header=0, names = col_names)
+    DF = pd.read_csv("./Risk/XBTEUR_"+str(tau)+".csv", header=0, names = col_names)
     return DF
 
 def load_from_api(since: int, interval=1440):
-    s_query = f"https://api.kraken.com/0/public/OHLC?pair=XBTCHF&interval={interval}&since={since}"
+    s_query = f"https://api.kraken.com/0/public/OHLC?pair=XBTEUR&interval={interval}&since={since}"
     response = requests.get(s_query)
     response._content
     a_json = json.loads(response._content)
-    df = pd.DataFrame.from_dict(a_json["result"]["XBTCHF"])
+    df = pd.DataFrame.from_dict(a_json["result"]["XBTEUR"])
     col_names = ["timestamp", "open", "high", "low", "close", "vwap", "volume", "trades"]
     df.columns = col_names
     df.drop(["vwap"], axis = 1, inplace=True)
@@ -49,4 +49,4 @@ DFmerged = merge_data(DF, DF2)
 #data_roller.timeseries_plot(DFmerged)
 # first version was without maxRet
 # third version has data up to May (before end of Jan)
-DFmerged.to_pickle("XBTCHF_"+str(tau)+"_Processed_v3.pkl")
+DFmerged.to_pickle("XBTEUR_"+str(tau)+"_Processed_v3.pkl")

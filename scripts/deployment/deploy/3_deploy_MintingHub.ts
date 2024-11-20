@@ -13,14 +13,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "PositionFactory",
     positionFactoryDeployment.address
   );
-  const dEURODeployment = await get("Frankencoin");
+  const dEuroDeployment = await get("EuroCoin");
   let dEUROContract = await ethers.getContractAt(
-    "Frankencoin",
-    dEURODeployment.address
+    "EuroCoin",
+    dEuroDeployment.address
   );
 
   let mintingHubContract = await deployContract(hre, "MintingHub", [
-    dEURODeployment.address,
+    dEuroDeployment.address,
     positionFactoryDeployment.address,
   ]);
 
@@ -28,7 +28,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   console.log(`Verify mintingHubContract:
 npx hardhat verify --network sepolia ${await mintingHubContract.getAddress()} ${
-    dEURODeployment.address
+    dEuroDeployment.address
   } ${positionFactoryDeployment.address}
 `);
 
