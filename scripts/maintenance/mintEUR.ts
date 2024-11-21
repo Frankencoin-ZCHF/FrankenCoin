@@ -16,7 +16,7 @@ const mockVOLTknAddr = "0xC5Bdf340EE520965b0B8BeAA85B6bDbf90d5b277";
 const bridgeAddr = "0x85DbAfAc987B1e8D58058680976E1c6D609b3C37";
 let pk: string | SigningKey = <string>process.env.PK;
 
-export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
+export async function getSigningManagerFromPK(ctrAddr: string, ctrAbi: string, nodeUrl: string, pk: any) {
     const provider = new ethers.providers.JsonRpcProvider(nodeUrl);
     const wallet = new ethers.Wallet(pk);
     const signer = wallet.connect(provider);

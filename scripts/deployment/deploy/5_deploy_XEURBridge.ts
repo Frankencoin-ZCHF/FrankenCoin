@@ -2,7 +2,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 import { deployContract, sleep } from "../deployUtils";
 import { floatToDec18 } from "../../math";
-import { StablecoinBridge } from "../../../typechain";
+// import { StablecoinBridge } from "../../../typechain";
+
 var prompt = require("prompt");
 
 async function getAddress() {

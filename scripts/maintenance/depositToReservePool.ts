@@ -19,7 +19,7 @@ const dEUROAddr = "0x079909c5191fffF4AB4Ad7889B34821D4CE35f6b";
 
 let pk: string | SigningKey = <string>process.env.PK;
 
-export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
+export async function getSigningManagerFromPK(ctrAddr: string, ctrAbi: string, nodeUrl: string, pk: any) {
     const provider = new ethers.providers.JsonRpcProvider(nodeUrl);
     const wallet = new ethers.Wallet(pk);
     const signer = wallet.connect(provider);

@@ -127,7 +127,8 @@ contract MintingHubTest {
         User user = challenger == address(bob) ? bob : alice;
         user.reclaimCollateral(hub, p.collateral(), size);
 
-        /*         uint256 borrowedAmount = 50000 * (10 ** 18);
+        /*         
+        uint256 borrowedAmount = 50000 * (10 ** 18);
         uint256 reserve = (borrowedAmount * p.reserveContribution()) / 1000000;
         uint256 reward = (bid * 20000) / 1000000;
         uint256 missing = borrowedAmount + reward - bid - reserve;
@@ -155,7 +156,8 @@ contract MintingHubTest {
                     dEURO.calculateAssignedReserve(1000000, 200000) < assigned
             );
             // theoretical minter reserve at this point: 3000.000000000000000000, actual: 0
-        } */
+        } 
+        */
     }
 
     uint256 number;
@@ -214,7 +216,7 @@ contract MintingHubTest {
         bob.obtainEuroCoins(swap, 5000 ether);
     }
 
-    function endLastChallenge() public {
+    function endLastChallenge() public view {
         Position pos = Position(latestPosition);
         // hub.end(latestChallenge, false);
         require(pos.collateral().balanceOf(latestPosition) == 0);

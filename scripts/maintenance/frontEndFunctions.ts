@@ -18,7 +18,7 @@ const dEUROAddr = "0x079909c5191fffF4AB4Ad7889B34821D4CE35f6b";
 
 let pk: string | SigningKey = <string>process.env.PK;
 
-export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
+export async function getSigningManagerFromPK(ctrAddr: string, ctrAbi: string, nodeUrl: string, pk: any) {
     const provider = new ethers.providers.JsonRpcProvider(nodeUrl);
     const wallet = new ethers.Wallet(pk);
     const signer = wallet.connect(provider);
@@ -27,7 +27,7 @@ export async function getSigningManagerFromPK(ctrAddr, ctrAbi, nodeUrl, pk) {
 }
 
 // Total supply of pool share tokens
-async function queryReservePoolShareSupply() {
+async function queryReservePoolShareSupply(): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
@@ -37,7 +37,7 @@ async function queryReservePoolShareSupply() {
 }
 
 // reserve pool size in dEURO
-async function queryTotalReserve() {
+async function queryTotalReserve(): Promise<bigint> {
     //TODO
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reserveAddress = await dEUROContract.reserve();
@@ -47,7 +47,7 @@ async function queryTotalReserve() {
 }
 
 // reserve pool size in dEURO relative to total supply
-async function queryReserveRatio() {
+async function queryReserveRatio(): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reservedEURO = await queryTotalReserve();
     let fTotalSupplydEURO = await dEUROContract.totalSupply();
@@ -56,28 +56,28 @@ async function queryReserveRatio() {
     return res;
 }
 
-async function queryReserveAddress() {
+async function queryReserveAddress(): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reserveAddress = await dEUROContract.reserve();
    
     return reserveAddress;
 }
 
-async function queryBorrowerReserve() {
+async function queryBorrowerReserve(): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let fReserve = await dEUROContract.minterReserve();
     let res = dec18ToFloat(fReserve);
     return res;
 }
 
-async function queryShareholderReserve() {
+async function queryShareholderReserve(): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let fReserve = await dEUROContract.equity();
     let res = dec18ToFloat(fReserve);
     return res;
 }
 
-async function querySwapShareTodEURO(numShares) {
+async function querySwapShareTodEURO(numShares: number): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
@@ -86,7 +86,7 @@ async function querySwapShareTodEURO(numShares) {
     return dEURO;
 }
 
-async function querySwapdEUROToShares(numdEURO) {
+async function querySwapdEUROToShares(numdEURO: number): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
@@ -95,7 +95,7 @@ async function querySwapdEUROToShares(numdEURO) {
     return shares;
 }
 
-async function queryPrice() {
+async function queryPrice(): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
@@ -104,14 +104,14 @@ async function queryPrice() {
     return price;
 }
 
-async function queryMarketCap() {
+async function queryMarketCap(): Promise<bigint> {
     let dEUROContract = await getSigningManagerFromPK(dEUROAddr, dEURO_ABI, NODE_URL, pk);
     let reserveAddress = await dEUROContract.reserve();
     let equityContract = await getSigningManagerFromPK(reserveAddress, EQUITY_ABI, NODE_URL, pk);
     let fprice = await equityContract.price();
     let price = Number((fprice).toString());
     let fTotalSupply = await equityContract.totalSupply();
-    let res = dec18ToFloat(fTotalSupply) * price;
+    let res = dec18ToFloat(fTotalSupply) * BigInt(price);
     return res;
 }
 
@@ -132,13 +132,13 @@ async function start() {
     console.log("Shareholder reserve (=Equity) = ", shareholderReserve);
 
     let reserveRatio = await queryReserveRatio();
-    console.log("reserveRatio = ", reserveRatio * 100, "%");
+    console.log("reserveRatio = ", reserveRatio * 100n, "%");
 
     let price = await querySwapShareTodEURO(1);
-    console.log("price sell 1 share = dEURO ", price , "(1/x =", 1/price, ")");
+    console.log("price sell 1 share = dEURO ", price , "(1/x =", 1n/price, ")");
 
     let numShares = await querySwapdEUROToShares(1);
-    console.log("price sell 1 dEURO = RPS ", numShares, "(1/x =", 1/numShares, ")" );
+    console.log("price sell 1 dEURO = RPS ", numShares, "(1/x =", 1n/numShares, ")" );
 
     let price0 = await queryPrice();
     console.log("price RPS = dEURO ", price0);

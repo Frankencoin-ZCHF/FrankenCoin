@@ -46,7 +46,7 @@
         "inputs": [],
         "name": "endLastChallenge",
         "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
         "type": "function"
     },
     {
