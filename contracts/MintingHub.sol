@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC20.sol";
-import "./interface/IReserve.sol";
 import "./interface/IEuroCoin.sol";
 import "./interface/IPosition.sol";
 import "./interface/IPositionFactory.sol";
+import "./interface/IReserve.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /**
  * @title Minting Hub
@@ -132,7 +132,7 @@ contract MintingHub {
     ) public returns (address) {
         require(_annualInterestPPM <= 1000000);
         require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);
-        require(IERC20(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
+        require(IERC20Metadata(_collateralAddress).decimals() <= 24); // leaves 12 digits for price
         require(_initialCollateral >= _minCollateral, "must start with min col");
         require(_minCollateral * _liqPrice >= 5000 ether * 10 ** 18); // must start with at least 5000 dEURO worth of collateral
         IPosition pos = IPosition(

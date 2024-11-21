@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
-import "../contracts/test/Strings.sol";
 import "../contracts/test/TestToken.sol";
 import "../contracts/Equity.sol";
 import "../contracts/StablecoinBridge.sol";
 import "../contracts/Equity.sol";
 import "../contracts/EuroCoin.sol";
-import "../contracts/utils/nDEPSwrapper.sol";
+import "../contracts/utils/DEPSwrapper.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract nDEPSWrapperTest is Test {
     

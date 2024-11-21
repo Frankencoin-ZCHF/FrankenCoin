@@ -4,8 +4,7 @@ pragma solidity ^0.8.0;
 import "./Equity.sol";
 import "./interface/IEuroCoin.sol";
 import "./interface/IReserve.sol";
-import "./utils/ERC20.sol";
-import "./utils/ERC20PermitLight.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
@@ -14,7 +13,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * It is not upgradable, but open to arbitrary minting plugins. These are automatically accepted if none of the
  * qualified pool share holders casts a veto, leading to a flexible but conservative governance.
  */
-contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
+contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
     /**
      * @notice Minimal fee and application period when suggesting a new minter.
      */
@@ -64,17 +63,9 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
      * @notice Initiates the EuroCoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(uint256 _minApplicationPeriod) ERC20(18) {
+    constructor(uint256 _minApplicationPeriod) ERC20Permit("EuroCoin") ERC20("EuroCoin", "dEURO") {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = new Equity(this);
-    }
-
-    function name() external pure override returns (string memory) {
-        return "EuroCoin";
-    }
-
-    function symbol() external pure override returns (string memory) {
-        return "dEURO";
     }
 
     function initialize(address _minter, string calldata _message) external {
@@ -116,12 +107,12 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
      * @dev We trust minters and the positions they have created to mint and burn as they please, so
      * giving them arbitrary allowances does not pose an additional risk.
      */
-    function _allowance(address owner, address spender) internal view override returns (uint256) {
-        uint256 explicit = super._allowance(owner, spender);
+    function allowance(address owner, address spender) public view override(IERC20, ERC20) returns (uint256) {
+        uint256 explicit = super.allowance(owner, spender);
         if (explicit > 0) {
             return explicit; // don't waste gas checking minter
         } else if (isMinter(spender) || isMinter(getPositionParent(spender)) || spender == address(reserve)) {
-            return INFINITY;
+            return 1 << 255;
         } else {
             return 0;
         }
@@ -356,7 +347,7 @@ contract EuroCoin is ERC20PermitLight, IEuroCoin, ERC165 {
     function supportsInterface(bytes4 interfaceId) public view override virtual returns (bool) {
         return
             interfaceId == type(IERC20).interfaceId ||
-            interfaceId == type(ERC20PermitLight).interfaceId ||
+            interfaceId == type(ERC20Permit).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

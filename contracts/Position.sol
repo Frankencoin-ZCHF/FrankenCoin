@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/Ownable.sol";
 import "./utils/MathUtil.sol";
 
-import "./interface/IERC20.sol";
 import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
 import "./interface/IEuroCoin.sol";
+
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Position
@@ -151,9 +151,8 @@ contract Position is Ownable, IPosition, MathUtil {
         uint32 _annualInterestPPM,
         uint256 _liqPrice,
         uint32 _reservePPM
-    ) {
+    ) Ownable(_owner) {
         require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
-        _setOwner(_owner);
         original = address(this);
         hub = _hub;
         dEURO = IEuroCoin(_dEURO);
@@ -184,7 +183,7 @@ contract Position is Ownable, IPosition, MathUtil {
         uint256 impliedPrice = (_initialMint * ONE_DEC18) / _coll;
         _initialMint = (impliedPrice * _coll) / ONE_DEC18; // to cancel potential rounding errors
         if (impliedPrice > _price) revert InsufficientCollateral();
-        _setOwner(owner);
+        _transferOwnership(owner);
         limit = _initialMint;
         expiration = expirationTime;
         _setPrice(impliedPrice);
@@ -460,9 +459,9 @@ contract Position is Ownable, IPosition, MathUtil {
         // Give time for additional challenges before the owner can mint again. In particular,
         // the owner might have added collateral only seconds before the challenge ended, preventing a close.
         _restrictMinting(3 days);
-        
+
         _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
 
-        return (owner, _size, repayment, reserveContribution);
+        return (owner(), _size, repayment, reserveContribution);
     }
 }

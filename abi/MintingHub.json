@@ -327,6 +327,19 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "dEURO",
+        "outputs": [
+            {
+                "internalType": "contract IEuroCoin",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "address",
@@ -508,19 +521,6 @@
         "name": "returnPostponedCollateral",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "dEURO",
-        "outputs": [
-            {
-                "internalType": "contract IEuroCoin",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     }
 ]

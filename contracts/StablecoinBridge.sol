@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC20.sol";
 import "./interface/IERC677Receiver.sol";
 import "./interface/IEuroCoin.sol";
 

@@ -192,8 +192,8 @@ describe("Basic Tests", () => {
       if (!isPoolShareAmountCorrect || !isSenderBalanceCorrect) {
         console.log("Pool token shares received = ", poolTokenShares);
         console.log("dEURO tokens deposited = ", -dEUROReceived);
-        expect(isPoolShareAmountCorrect).to.be.true;
         expect(isSenderBalanceCorrect).to.be.true;
+        expect(isPoolShareAmountCorrect).to.be.true;
       }
     });
     it("cannot redeem shares immediately", async () => {

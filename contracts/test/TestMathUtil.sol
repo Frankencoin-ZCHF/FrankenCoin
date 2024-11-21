@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../utils/MathUtil.sol";
+import {MathUtil} from "../utils/MathUtil.sol";
 
 contract TestMathUtil is MathUtil {
 

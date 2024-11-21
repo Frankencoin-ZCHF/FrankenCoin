@@ -12,8 +12,6 @@ import {
 } from "../typechain";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
-let mockX;
-
 describe("Position Tests", () => {
   let owner: HardhatEthersSigner;
   let alice: HardhatEthersSigner;
@@ -25,6 +23,7 @@ describe("Position Tests", () => {
   let bridge: StablecoinBridge;
   let equity: Equity;
   let mockVOL: TestToken;
+  let mockXEUR: TestToken;
 
   let limit: bigint;
 
@@ -255,7 +254,7 @@ describe("Position Tests", () => {
     it("should revert minting from non owner", async () => {
       await expect(
         positionContract.connect(alice).mint(owner.address, 100)
-      ).to.be.revertedWithCustomError(positionContract, "NotOwner");
+      ).to.be.revertedWithCustomError(positionContract, "OwnableUnauthorizedAccount");
     });
     it("should revert minting when there is a challange", async () => {
       await mockVOL.approve(await mintingHub.getAddress(), fInitialCollateral);
@@ -980,7 +979,7 @@ describe("Position Tests", () => {
     it("should revert adjusting price from non position owner", async () => {
       await expect(
         positionContract.connect(alice).adjustPrice(floatToDec18(1500))
-      ).to.be.revertedWithCustomError(positionContract, "NotOwner");
+      ).to.be.revertedWithCustomError(positionContract, "OwnableUnauthorizedAccount");
     });
     it("should revert adjusting price when there is pending challenge", async () => {
       challengeAmount = initialCollateralClone / 2;
@@ -1062,7 +1061,7 @@ describe("Position Tests", () => {
     it("should revert adjusting position from non position owner", async () => {
       await expect(
         positionContract.connect(alice).adjust(0, 0, 0)
-      ).to.be.revertedWithCustomError(positionContract, "NotOwner");
+      ).to.be.revertedWithCustomError(positionContract, "OwnableUnauthorizedAccount");
     });
     it("owner can provide more collaterals to the position", async () => {
       const colBalance = await mockVOL.balanceOf(positionAddr);
@@ -1158,7 +1157,7 @@ describe("Position Tests", () => {
         positionContract
           .connect(alice)
           .withdrawCollateral(owner.address, amount)
-      ).to.be.revertedWithCustomError(positionContract, "NotOwner");
+      ).to.be.revertedWithCustomError(positionContract, "OwnableUnauthorizedAccount");
     });
     it("should revert withdrawing when it is in hot auctions", async () => {
       await expect(
@@ -1197,7 +1196,7 @@ describe("Position Tests", () => {
         positionContract
           .connect(alice)
           .withdraw(await dEURO.getAddress(), owner.address, amount)
-      ).to.be.revertedWithCustomError(positionContract, "NotOwner");
+      ).to.be.revertedWithCustomError(positionContract, "OwnableUnauthorizedAccount");
     });
     it("owner can withdraw any erc20 tokens locked on position contract", async () => {
       await evm_increaseTime(86400 * 8);

@@ -3,9 +3,11 @@
 pragma solidity ^0.8.0;
 
 import "./EuroCoin.sol";
-import "./utils/MathUtil.sol";
 import "./interface/IReserve.sol";
-import "./interface/IERC677Receiver.sol";
+import "./utils/MathUtil.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
@@ -17,7 +19,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * Furthermore, the nDEPS shares come with some voting power. Anyone that held at least 2% of the holding-period-
  * weighted reserve pool shares gains veto power and can veto new proposals.
  */
-contract Equity is ERC20PermitLight, MathUtil, IReserve, ERC165 {
+contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
     /**
      * The VALUATION_FACTOR determines the market cap of the reserve pool shares relative to the equity reserves.
      * The following always holds: Market Cap = Valuation Factor * Equity Reserve = Price * Supply
@@ -89,16 +91,8 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve, ERC165 {
     event Delegation(address indexed from, address indexed to); // indicates a delegation
     event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
 
-    constructor(EuroCoin dEURO_) ERC20(18) {
+    constructor(EuroCoin dEURO_) ERC20Permit("Native Decentralized Euro Protocol Share") ERC20("Native Decentralized Euro Protocol Share", "nDEPS") {
         dEURO = dEURO_;
-    }
-
-    function name() external pure override returns (string memory) {
-        return "Native Decentralized Euro Protocol Share";
-    }
-
-    function symbol() external pure override returns (string memory) {
-        return "EPS";
     }
 
     /**
@@ -114,16 +108,16 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve, ERC165 {
         }
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
-        super._beforeTokenTransfer(from, to, amount);
-        if (amount > 0) {
+    function _update(address from, address to, uint256 value) internal override {
+        if (value > 0) {
             // No need to adjust the sender votes. When they send out 10% of their shares, they also lose 10% of
             // their votes so everything falls nicely into place. Recipient votes should stay the same, but grow
             // faster in the future, requiring an adjustment of the anchor.
-            uint256 roundingLoss = _adjustRecipientVoteAnchor(to, amount);
+            uint256 roundingLoss = _adjustRecipientVoteAnchor(to, value);
             // The total also must be adjusted and kept accurate by taking into account the rounding error.
-            _adjustTotalVotes(from, amount, roundingLoss);
+            _adjustTotalVotes(from, value, roundingLoss);
         }
+        super._update(from, to, value);
     }
 
     /**
@@ -375,7 +369,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve, ERC165 {
         uint256 shares,
         uint256 expectedProceeds
     ) external returns (uint256) {
-        _useAllowance(owner, msg.sender, shares);
+        _spendAllowance(owner, msg.sender, shares);
         uint256 proceeds = _redeemFrom(owner, target, shares);
         require(proceeds >= expectedProceeds);
         return proceeds;
@@ -386,7 +380,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve, ERC165 {
         uint256 proceeds = calculateProceeds(shares);
         _burn(owner, shares);
         dEURO.transfer(target, proceeds);
-        emit Trade(owner, -int(shares), proceeds, price());
+        emit Trade(owner, - int(shares), proceeds, price());
         return proceeds;
     }
 
@@ -433,7 +427,7 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve, ERC165 {
     function supportsInterface(bytes4 interfaceId) public view override virtual returns (bool) {
         return
             interfaceId == type(IERC20).interfaceId ||
-            interfaceId == type(ERC20PermitLight).interfaceId ||
+            interfaceId == type(ERC20Permit).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

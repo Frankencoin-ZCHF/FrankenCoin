@@ -96,6 +96,19 @@
     },
     {
         "inputs": [],
+        "name": "dEURO",
+        "outputs": [
+            {
+                "internalType": "contract IEuroCoin",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "eur",
         "outputs": [
             {
@@ -172,19 +185,6 @@
                 "internalType": "uint256",
                 "name": "",
                 "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "dEURO",
-        "outputs": [
-            {
-                "internalType": "contract IEuroCoin",
-                "name": "",
-                "type": "address"
             }
         ],
         "stateMutability": "view",

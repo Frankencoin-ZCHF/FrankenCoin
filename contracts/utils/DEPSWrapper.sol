@@ -2,24 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import "./ERC20.sol";
-import "./ERC20PermitLight.sol";
-import "../Equity.sol";
+import {Equity} from "../Equity.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import {ERC20Wrapper} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
 
-contract DEPSWrapper is ERC20 {
+contract DEPSWrapper is ERC20Permit, ERC20Wrapper {
 
     Equity private immutable nDEPS;
 
-    constructor(Equity nDEPS_) ERC20(18){
+    constructor(Equity nDEPS_) ERC20Permit("Decentralized Euro Protocol Share") ERC20("Decentralized Euro Protocol Share", "DEPS") ERC20Wrapper(nDEPS_) {
         nDEPS = nDEPS_;
-    }
-
-    function name() external pure override returns (string memory) {
-        return "Decentralized Euro Protocol Share";
-    }
-
-    function symbol() external pure override returns (string memory) {
-        return "DEPS";
     }
 
     // requires allowance
@@ -27,35 +20,12 @@ contract DEPSWrapper is ERC20 {
         depositFor(msg.sender, amount);
     }
 
-    /**
-     * Same function as in openzeppelin ERC20Wrapper
-     * @dev Allow a user to deposit underlying tokens and mint the corresponding number of wrapped tokens.
-     */
-    function depositFor(address account, uint256 amount) public virtual returns (bool) {
-        nDEPS.transferFrom(msg.sender, address(this), amount);
-        super._mint(account, amount);
-        return true;
-    }
-
     function unwrap(uint256 amount) public {
         withdrawTo(msg.sender, amount);
     }
 
-    /**
-     * Same function as in openzeppelin ERC20Wrapper
-     * @dev Allow a user to burn a number of wrapped tokens and withdraw the corresponding number of underlying tokens.
-     */
-    function withdrawTo(address account, uint256 amount) public virtual returns (bool) {
-        super._burn(msg.sender, amount);
-        nDEPS.transfer(account, amount);
-        return true;
-    }
-
-    /**
-     * @dev Returns the address of the underlying ERC-20 token that is being wrapped.
-     */
-    function underlying() public view returns (IERC20) {
-        return nDEPS;
+    function decimals() public view override(ERC20, ERC20Wrapper) returns (uint8) {
+        return ERC20Wrapper.decimals();
     }
 
     /**
@@ -88,5 +58,4 @@ contract DEPSWrapper is ERC20 {
         // causes our votes to be cut in half
         nDEPS.transfer(address(this), totalSupply());
     }
-
 }
