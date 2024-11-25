@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./Equity.sol";
-import "./interface/IEuroCoin.sol";
-import "./interface/IReserve.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {Equity} from "./Equity.sol";
+import {IEuroCoin} from "./interface/IEuroCoin.sol";
+import {IReserve} from "./interface/IReserve.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
  * @title EuroCoin
