@@ -32,9 +32,9 @@ contract Savings is Leadrate {
         uint64 ticks;
     }
 
-    event Saved(address account, uint192 amount);
-    event InterestCollected(address account, uint256 interest);
-    event Withdrawn(address account, uint192 amount);
+    event Saved(address indexed account , uint192 amount);
+    event InterestCollected(address indexed account, uint256 interest);
+    event Withdrawn(address indexed account, uint192 amount);
 
     error FundsLocked(uint40 remainingSeconds);
 
