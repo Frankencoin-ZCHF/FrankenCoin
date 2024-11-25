@@ -24,11 +24,12 @@ const deployMockTokens: DeployFunction = async function (
       const contractName = paramsArr[k].name;
       let mockVOLTokenContract = await deployContract(hre, contractName);
       const decimals = await mockVOLTokenContract.decimals();
+
       console.log(
         `Mocktoken ${contractName}(${decimals}) deployed at ${mockVOLTokenContract.address}\n`
       );
       // store address to params
-      paramsArr[k].collateralTknAddr = mockVOLTokenContract.address;
+      paramsArr[k].collateralTknAddr = mockVOLTokenContract.target;
     }
   }
   // write param-file

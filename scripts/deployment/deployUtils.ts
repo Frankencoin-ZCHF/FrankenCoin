@@ -19,7 +19,8 @@ export const deployContract = async (
     args: args,
     log: true,
   });
-  return await ethers.getContractAt(contractName, deployment.address);
+
+  return ethers.getContractAt(contractName, deployment.address);
 };
 
 export function sleep(ms: number) {
