@@ -55,6 +55,7 @@ describe("Basic Tests", () => {
 
   describe("mock bridge", () => {
     const limit = 100_000n * DECIMALS;
+    const weeks = 30;
     let bridgeAddr: string;
 
     before(async () => {
@@ -64,7 +65,8 @@ describe("Basic Tests", () => {
       bridge = await bridgeFactory.deploy(
         await mockXEUR.getAddress(),
         await dEURO.getAddress(),
-        limit
+        limit,
+        weeks
       );
       bridgeAddr = await bridge.getAddress();
     });

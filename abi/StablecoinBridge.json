@@ -15,6 +15,11 @@
                 "internalType": "uint256",
                 "name": "limit_",
                 "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "weeks_",
+                "type": "uint256"
             }
         ],
         "stateMutability": "nonpayable",

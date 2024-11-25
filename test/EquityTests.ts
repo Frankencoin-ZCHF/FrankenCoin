@@ -31,7 +31,8 @@ describe("Equity Tests", () => {
     bridge = await bridgeFactory.deploy(
       await XEUR.getAddress(),
       await dEURO.getAddress(),
-      floatToDec18(100_000_000_000)
+      floatToDec18(100_000_000_000),
+      30
     );
     await dEURO.initialize(await bridge.getAddress(), "");
 

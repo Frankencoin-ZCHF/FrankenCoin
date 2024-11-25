@@ -26,6 +26,7 @@ describe("Position Tests", () => {
   let mockXEUR: TestToken;
 
   let limit: bigint;
+  let weeks: number;
 
   before(async () => {
     [owner, alice, bob, charles] = await ethers.getSigners();
@@ -49,11 +50,13 @@ describe("Position Tests", () => {
     mockXEUR = await testTokenFactory.deploy("CryptoFranc", "XEUR", 18);
     // mocktoken bridge to bootstrap
     limit = floatToDec18(1_000_000);
+    weeks = 30;
     const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
     bridge = await bridgeFactory.deploy(
       await mockXEUR.getAddress(),
       await dEURO.getAddress(),
-      limit
+      limit,
+      weeks
     );
     await dEURO.initialize(await bridge.getAddress(), "XEUR Bridge");
     // create a minting hub too while we have no dEURO supply

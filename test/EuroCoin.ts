@@ -6,6 +6,7 @@ import { evm_increaseTime } from "./helper";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 const limit = floatToDec18(100_000);
+const weeks = 30;
 describe("EuroCoin", () => {
   let owner: HardhatEthersSigner;
   let alice: HardhatEthersSigner;
@@ -51,7 +52,8 @@ describe("EuroCoin", () => {
       bridge = await bridgeFactory.deploy(
         await mockXEUR.getAddress(),
         await dEURO.getAddress(),
-        limit
+        limit,
+        weeks
       );
     });
 
@@ -122,7 +124,8 @@ describe("EuroCoin", () => {
       bridge = await bridgeFactory.deploy(
         await mockXEUR.getAddress(),
         await dEURO.getAddress(),
-        limit
+        limit,
+        weeks
       );
     });
 
@@ -282,7 +285,8 @@ describe("EuroCoin", () => {
       bridge = await bridgeFactory.deploy(
         await mockXEUR.getAddress(),
         await dEURO.getAddress(),
-        limit
+        limit,
+        weeks,
       );
     });
     it("calculateAssignedReserve", async () => {});

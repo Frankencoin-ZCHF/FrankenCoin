@@ -28,10 +28,10 @@ contract StablecoinBridge {
     error Expired(uint256 time, uint256 expiration);
     error UnsupportedToken(address token);
 
-    constructor(address other, address dEUROAddress, uint256 limit_) {
+    constructor(address other, address dEUROAddress, uint256 limit_, uint256 weeks_) {
         eur = IERC20(other);
         dEURO = IEuroCoin(dEUROAddress);
-        horizon = block.timestamp + 52 weeks;
+        horizon = block.timestamp + weeks_ * 1 weeks;
         limit = limit_;
         minted = 0;
     }
