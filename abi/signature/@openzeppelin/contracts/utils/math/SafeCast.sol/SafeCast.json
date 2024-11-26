@@ -1,0 +1,6 @@
+[
+    "error SafeCastOverflowedIntDowncast(uint8,int256)",
+    "error SafeCastOverflowedIntToUint(int256)",
+    "error SafeCastOverflowedUintDowncast(uint8,uint256)",
+    "error SafeCastOverflowedUintToInt(uint256)"
+]
