@@ -20,7 +20,7 @@ let etherscanapikey: string = <string>process.env.APIKEY == null ? DEFAULT_API_K
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.26",
     settings: {
       optimizer: {
         enabled: true,
@@ -43,7 +43,7 @@ const config: HardhatUserConfig = {
       timeout: 50_000,
     },
     mainnet: {
-      url: "https://mainnet.infura.io/v3/2920e698d02f40ca8724daa8a19a91e7",
+      url: "https://eth.llamarpc.com",
       chainId: 1,
       gas: "auto",
       gasPrice: "auto",
