@@ -23,7 +23,7 @@ contract MathUtil {
         uint256 diff;
         do {
             uint256 powX3 = _mulD18(_mulD18(x, x), x);
-            uint256 xnew = x * (powX3 + 2 * _v) / (2 * powX3 + _v);
+            uint256 xnew = (x * (powX3 + 2 * _v)) / (2 * powX3 + _v);
             diff = xnew > x ? xnew - x : x - xnew;
             x = xnew;
         } while (diff > THRESH_DEC18);

@@ -8,10 +8,15 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 import {ERC20Wrapper} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
 
 contract DEPSWrapper is ERC20Permit, ERC20Wrapper {
-
     Equity private immutable nDEPS;
 
-    constructor(Equity nDEPS_) ERC20Permit("Decentralized Euro Protocol Share") ERC20("Decentralized Euro Protocol Share", "DEPS") ERC20Wrapper(nDEPS_) {
+    constructor(
+        Equity nDEPS_
+    )
+        ERC20Permit("Decentralized Euro Protocol Share")
+        ERC20("Decentralized Euro Protocol Share", "DEPS")
+        ERC20Wrapper(nDEPS_)
+    {
         nDEPS = nDEPS_;
     }
 
@@ -33,7 +38,7 @@ contract DEPSWrapper is ERC20Permit, ERC20Wrapper {
      * average wrapped token has been around for long enough and no one
      * cancelled the votes of this contract. Can help with market making
      * between chains when this token is bridged.
-     * 
+     *
      * Anyone can prevent this method from being executable via the
      * halveHoldingDuration function. Also, it won't be executable in an
      * expanding market where the number of wrapped nDEPS doubles every
@@ -50,7 +55,7 @@ contract DEPSWrapper is ERC20Permit, ERC20Wrapper {
      * - Averts the risk of this contract accumulating too many votes over time (i.e. 98%)
      * - Can prevent "unwrapAndSell" from succeeding (which can be desired to prevent short
      *   term arbitrage at the cost of all other nDEPS holders)
-     * 
+     *
      * Anyone with 2% of the votes can call this.
      */
     function halveHoldingDuration(address[] calldata helpers) public {

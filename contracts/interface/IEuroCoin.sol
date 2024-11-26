@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IReserve} from  "./IReserve.sol";
+import {IReserve} from "./IReserve.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IEuroCoin is IERC20 {
-    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) external;
+    function suggestMinter(
+        address _minter,
+        uint256 _applicationPeriod,
+        uint256 _applicationFee,
+        string calldata _message
+    ) external;
 
     function registerPosition(address position) external;
 
@@ -31,7 +36,11 @@ interface IEuroCoin is IERC20 {
 
     function burnWithoutReserve(uint256 amountIncludingReserve, uint32 reservePPM) external;
 
-    function burnFromWithReserve(address payer, uint256 targetTotalBurnAmount, uint32 _reservePPM) external returns (uint256);
+    function burnFromWithReserve(
+        address payer,
+        uint256 targetTotalBurnAmount,
+        uint32 _reservePPM
+    ) external returns (uint256);
 
     function burnWithReserve(uint256 amountExcludingReserve, uint32 reservePPM) external returns (uint256);
 

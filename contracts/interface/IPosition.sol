@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IPosition {
-
     function original() external returns (address);
 
     function collateral() external returns (IERC20);
@@ -31,12 +30,16 @@ interface IPosition {
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
-    function challengeData(uint256 challengeStart) external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2);
+    function challengeData(
+        uint256 challengeStart
+    ) external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2);
 
     function notifyChallengeStarted(uint256 size) external;
 
     function notifyChallengeAverted(uint256 size) external;
 
-    function notifyChallengeSucceeded(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);
-
+    function notifyChallengeSucceeded(
+        address _bidder,
+        uint256 _size
+    ) external returns (address, uint256, uint256, uint32);
 }
