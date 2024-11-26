@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./Position.sol";
-import "./interface/IDecentralizedEURO.sol";
+import "../interface/IDecentralizedEURO.sol";
 
 contract PositionFactory {
     /**
@@ -11,30 +11,30 @@ contract PositionFactory {
      */
     function createNewPosition(
         address _owner,
-        address _dEURO,
+        address _zchf,
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,
-        uint256 _initPeriod,
-        uint256 _duration,
-        uint64 _challengePeriod,
-        uint32 _annualInterestPPM,
+        uint40 _initPeriod,
+        uint40 _duration,
+        uint40 _challengePeriod,
+        uint24 _riskPremiumPPM,
         uint256 _liqPrice,
-        uint32 _reserve
+        uint24 _reserve
     ) external returns (address) {
         return
             address(
                 new Position(
                     _owner,
                     msg.sender,
-                    _dEURO,
+                    _zchf,
                     _collateral,
                     _minCollateral,
                     _initialLimit,
                     _initPeriod,
                     _duration,
                     _challengePeriod,
-                    _annualInterestPPM,
+                    _riskPremiumPPM,
                     _liqPrice,
                     _reserve
                 )
@@ -44,12 +44,13 @@ contract PositionFactory {
     /**
      * @notice clone an existing position. This can be a clone of another clone,
      * or an original position.
-     * @param _existing address of the position we want to clone
+     * @param _parent address of the position we want to clone
      * @return address of the newly created clone position
      */
-    function clonePosition(address _existing) external returns (address) {
-        Position existing = Position(_existing);
-        Position clone = Position(_createClone(existing.original()));
+    function clonePosition(address _parent) external returns (address) {
+        Position parent = Position(_parent);
+        parent.assertCloneable();
+        Position clone = Position(_createClone(parent.original()));
         return address(clone);
     }
 

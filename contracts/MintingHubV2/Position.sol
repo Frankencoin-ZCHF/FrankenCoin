@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/MathUtil.sol";
+import {MathUtil} from "../utils/MathUtil.sol";
 
-import "./interface/IPosition.sol";
-import "./interface/IReserve.sol";
-import "./interface/IDecentralizedEURO.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {IDecentralizedEURO} from "../interface/IDecentralizedEURO.sol";
+import {IReserve} from "../interface/IReserve.sol";
+import {ILeadrate} from "../interface/ILeadrate.sol";
+
+import {IPosition} from "./interface/IPosition.sol";
 
 /**
  * @title Position
@@ -20,7 +23,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
 
     /**
-     * @notice The dEURO price per unit of the collateral below which challenges succeed, (36 - collateral.decimals) decimals
+     * @notice The deuro price per unit of the collateral below which challenges succeed, (36 - collateral.decimals) decimals
      */
     uint256 public price;
 
@@ -28,6 +31,13 @@ contract Position is Ownable, IPosition, MathUtil {
      * @notice Net minted amount, including reserve.
      */
     uint256 public minted;
+
+    /**
+     * @notice How much has been minted in total. This variable is only used in the parent position.
+     */
+    uint256 private totalMinted;
+
+    uint256 public immutable limit;
 
     /**
      * @notice Amount of the collateral that is currently under a challenge.
@@ -38,28 +48,23 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * @notice Challenge period in seconds.
      */
-    uint64 public immutable challengePeriod;
-
-    /**
-     * @notice End of the latest cooldown. If this is in the future, minting is suspended.
-     */
-    uint256 public cooldown;
-
-    /**
-     * @notice How much can be minted at most.
-     */
-    uint256 public limit;
+    uint40 public immutable challengePeriod;
 
     /**
      * @notice Timestamp when minting can start and the position no longer denied.
      */
-    uint256 public immutable start;
+    uint40 public immutable start;
+
+    /**
+     * @notice End of the latest cooldown. If this is in the future, minting is suspended.
+     */
+    uint40 public cooldown;
 
     /**
      * @notice Timestamp of the expiration of the position. After expiration, challenges cannot be averted
      * any more. This is also the basis for fee calculations.
      */
-    uint256 public expiration;
+    uint40 public expiration;
 
     /**
      * @notice The original position to help identifying clones.
@@ -72,9 +77,9 @@ contract Position is Ownable, IPosition, MathUtil {
     address public immutable hub;
 
     /**
-     * @notice The DecentralizedEURO contract.
+     * @notice The Eurocoin contract.
      */
-    IDecentralizedEURO public immutable dEURO;
+    IDecentralizedEURO public immutable deuro;
 
     /**
      * @notice The collateral token.
@@ -87,36 +92,40 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 public immutable override minimumCollateral;
 
     /**
-     * @notice Always pay interest for at least four weeks.
-     */
-    uint256 private constant MIN_INTEREST_DURATION = 4 weeks;
-
-    /**
-     * @notice The interest in parts per million per year that is deducted when minting DecentralizedEUROs.
+     * @notice The interest in parts per million per year that is deducted when minting Frankencoins.
      * To be paid upfront.
      */
-    uint32 public immutable annualInterestPPM;
+    uint24 public immutable riskPremiumPPM;
 
     /**
      * @notice The reserve contribution in parts per million of the minted amount.
      */
-    uint32 public immutable reserveContribution;
+    uint24 public immutable reserveContribution;
 
-    event MintingUpdate(uint256 collateral, uint256 price, uint256 minted, uint256 limit);
+    event MintingUpdate(uint256 collateral, uint256 price, uint256 minted);
     event PositionDenied(address indexed sender, string message); // emitted if closed by governance
 
-    error InsufficientCollateral();
+    error InsufficientCollateral(uint256 needed, uint256 available);
     error TooLate();
     error RepaidTooMuch(uint256 excess);
-    error LimitExceeded();
+    error LimitExceeded(uint256 tried, uint256 available);
     error ChallengeTooSmall();
-    error Expired();
+    error Expired(uint40 time, uint40 expiration);
+    error Alive();
     error Hot();
     error Challenged();
     error NotHub();
+    error NotOriginal();
+    error InvalidExpiration();
+    error AlreadyInitialized();
 
     modifier alive() {
-        if (block.timestamp >= expiration) revert Expired();
+        if (block.timestamp >= expiration) revert Expired(uint40(block.timestamp), expiration);
+        _;
+    }
+
+    modifier expired() {
+        if (block.timestamp < expiration) revert Alive();
         _;
     }
 
@@ -135,80 +144,90 @@ contract Position is Ownable, IPosition, MathUtil {
         _;
     }
 
+    modifier ownerOrRoller() {
+        if (msg.sender != address(IHub(hub).roller())) _checkOwner();
+        _;
+    }
+
     /**
      * @dev See MintingHub.openPosition
      */
     constructor(
         address _owner,
         address _hub,
-        address _dEURO,
+        address _deuro,
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,
-        uint256 _initPeriod,
-        uint256 _duration,
-        uint64 _challengePeriod,
-        uint32 _annualInterestPPM,
+        uint40 _initPeriod,
+        uint40 _duration,
+        uint40 _challengePeriod,
+        uint24 _riskPremiumPPM,
         uint256 _liqPrice,
-        uint32 _reservePPM
+        uint24 _reservePPM
     ) Ownable(_owner) {
         require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         original = address(this);
         hub = _hub;
-        dEURO = IDecentralizedEURO(_dEURO);
+        deuro = IDecentralizedEURO(_deuro);
         collateral = IERC20(_collateral);
-        annualInterestPPM = _annualInterestPPM;
+        riskPremiumPPM = _riskPremiumPPM;
         reserveContribution = _reservePPM;
         minimumCollateral = _minCollateral;
         challengePeriod = _challengePeriod;
-        start = block.timestamp + _initPeriod; // at least three days time to deny the position
+        start = uint40(block.timestamp) + _initPeriod; // at least three days time to deny the position
         cooldown = start;
         expiration = start + _duration;
         limit = _initialLimit;
-        _setPrice(_liqPrice);
+        _setPrice(_liqPrice, _initialLimit);
     }
 
     /**
-     * @notice Method to initialize a freshly created clone. It is the responsibility of the creator to make sure this is only
-     * called once and to call reduceLimitForClone on the original position before initializing the clone.
+     * Initialization method for clones.
+     * Can only be called once. Should be called immediately after creating the clone.
      */
-    function initializeClone(
-        address owner,
-        uint256 _price,
-        uint256 _coll,
-        uint256 _initialMint,
-        uint256 expirationTime
-    ) external onlyHub {
-        if (_coll < minimumCollateral) revert InsufficientCollateral();
-        uint256 impliedPrice = (_initialMint * ONE_DEC18) / _coll;
-        _initialMint = (impliedPrice * _coll) / ONE_DEC18; // to cancel potential rounding errors
-        if (impliedPrice > _price) revert InsufficientCollateral();
-        _transferOwnership(owner);
-        limit = _initialMint;
-        expiration = expirationTime;
-        _setPrice(impliedPrice);
-        _mint(owner, _initialMint, _coll);
+    function initialize(address parent, uint40 _expiration) external onlyHub {
+        if (expiration != 0) revert AlreadyInitialized();
+        if (_expiration < block.timestamp || _expiration > Position(original).expiration()) revert InvalidExpiration(); // expiration must not be later than original
+        expiration = _expiration;
+        price = Position(parent).price();
+        _transferOwnership(hub);
     }
 
-    function limitForClones() public view returns (uint256) {
-        uint256 backedLimit = (_collateralBalance() * price) / ONE_DEC18;
-        if (backedLimit >= limit) {
+    /**
+     * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
+     */
+    function assertCloneable() external noChallenge noCooldown alive {}
+
+    /**
+     * Notify the original that some amount has been minted.
+     */
+    function notifyMint(uint256 mint_) external {
+        if (deuro.getPositionParent(msg.sender) != hub) revert NotHub();
+        totalMinted += mint_;
+    }
+
+    function notifyRepaid(uint256 repaid_) external {
+        if (deuro.getPositionParent(msg.sender) != hub) revert NotHub();
+        totalMinted -= repaid_;
+    }
+
+    function availableForClones() external view returns (uint256) {
+        // reserve capacity for the original to the extent the owner provided collateral
+        uint256 unusedPotential = (_collateralBalance() * price) / ONE_DEC18 - minted;
+        if (totalMinted + unusedPotential >= limit) {
             return 0;
         } else {
-            // due to invariants, this is always below (limit - minted)
-            return limit - backedLimit;
+            return limit - totalMinted - unusedPotential;
         }
     }
 
-    /**
-     * @notice Adjust this position's limit to allow a clone to mint its own DecentralizedEUROs.
-     * Invariant: global limit stays the same.
-     *
-     * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
-     */
-    function reduceLimitForClone(uint256 mint_) external noChallenge noCooldown alive onlyHub {
-        if (mint_ > limitForClones()) revert LimitExceeded();
-        limit -= mint_;
+    function availableForMinting() public view returns (uint256) {
+        if (address(this) == original) {
+            return limit - totalMinted;
+        } else {
+            return Position(original).availableForClones();
+        }
     }
 
     /**
@@ -216,24 +235,28 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function deny(address[] calldata helpers, string calldata message) external {
         if (block.timestamp >= start) revert TooLate();
-        IReserve(dEURO.reserve()).checkQualified(msg.sender, helpers);
-        _close(); // since expiration is immutable, we put it under eternal cooldown
+        IReserve(deuro.reserve()).checkQualified(msg.sender, helpers);
+        _close();
         emit PositionDenied(msg.sender, message);
     }
 
+    /**
+     * Closes the position by putting it into eternal cooldown.
+     * This allows the users to still withdraw the collateral that is left, but never to mint again.
+     */
     function _close() internal {
-        cooldown = type(uint256).max;
+        cooldown = type(uint40).max;
     }
 
     function isClosed() public view returns (bool) {
-        return cooldown == type(uint256).max;
+        return cooldown == type(uint40).max;
     }
 
     /**
-     * @notice This is how much the minter can actually use when minting dEURO, with the rest being used
+     * @notice This is how much the minter can actually use when minting deuro, with the rest being used
      * assigned to the minter reserve or (if applicable) fees.
      */
-    function getUsableMint(uint256 totalMint, bool afterFees) external view returns (uint256) {
+    function getUsableMint(uint256 totalMint, bool afterFees) public view returns (uint256) {
         if (afterFees) {
             return (totalMint * (1000_000 - reserveContribution - calculateCurrentFee())) / 1000_000;
         } else {
@@ -242,7 +265,17 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice "All in one" function to adjust the outstanding amount of dEURO, the collateral amount,
+     * Returns the corresponding mint amount (disregarding the limit).
+     */
+    function getMintAmount(uint256 usableMint) external view returns (uint256) {
+        return
+            usableMint == 0
+                ? 0
+                : (usableMint * 1000_000 - 1) / (1000_000 - reserveContribution - calculateCurrentFee()) + 1;
+    }
+
+    /**
+     * @notice "All in one" function to adjust the outstanding amount of deuro, the collateral amount,
      * and the price in one transaction.
      */
     function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) external onlyOwner {
@@ -252,19 +285,20 @@ contract Position is Ownable, IPosition, MathUtil {
         }
         // Must be called after collateral deposit, but before withdrawal
         if (newMinted < minted) {
-            dEURO.burnFromWithReserve(msg.sender, minted - newMinted, reserveContribution);
-            minted = newMinted;
+            deuro.burnFromWithReserve(msg.sender, minted - newMinted, reserveContribution);
+            _notifyRepaid(minted - newMinted);
         }
         if (newCollateral < colbal) {
-            withdrawCollateral(msg.sender, colbal - newCollateral);
+            _withdrawCollateral(msg.sender, colbal - newCollateral);
         }
         // Must be called after collateral withdrawal
         if (newMinted > minted) {
-            mint(msg.sender, newMinted - minted);
+            _mint(msg.sender, newMinted - minted, newCollateral);
         }
         if (newPrice != price) {
-            adjustPrice(newPrice);
+            _adjustPrice(newPrice);
         }
+        emit MintingUpdate(newCollateral, newPrice, newMinted);
     }
 
     /**
@@ -272,18 +306,22 @@ contract Position is Ownable, IPosition, MathUtil {
      * Lowering the liquidation price can be done with immediate effect, given that there is enough collateral.
      * Increasing the liquidation price triggers a cooldown period of 3 days, during which minting is suspended.
      */
-    function adjustPrice(uint256 newPrice) public onlyOwner noChallenge {
+    function adjustPrice(uint256 newPrice) public onlyOwner {
+        _adjustPrice(newPrice);
+        emit MintingUpdate(_collateralBalance(), price, minted);
+    }
+
+    function _adjustPrice(uint256 newPrice) internal noChallenge alive {
         if (newPrice > price) {
             _restrictMinting(3 days);
         } else {
             _checkCollateral(_collateralBalance(), newPrice);
         }
-        _setPrice(newPrice);
-        emit MintingUpdate(_collateralBalance(), price, minted, limit);
+        _setPrice(newPrice, minted + availableForMinting());
     }
 
-    function _setPrice(uint256 newPrice) internal {
-        require(newPrice * minimumCollateral <= limit * ONE_DEC18); // sanity check
+    function _setPrice(uint256 newPrice, uint256 bounds) internal {
+        require(newPrice * minimumCollateral <= bounds * ONE_DEC18); // sanity check
         price = newPrice;
     }
 
@@ -292,60 +330,114 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice Mint dEURO as long as there is no open challenge, the position is not subject to a cooldown,
+     * @notice Mint deuro as long as there is no open challenge, the position is not subject to a cooldown,
      * and there is sufficient collateral.
      */
-    function mint(address target, uint256 amount) public onlyOwner noChallenge noCooldown alive {
-        _mint(target, amount, _collateralBalance());
+    function mint(address target, uint256 amount) public ownerOrRoller {
+        uint256 collateralBalance = _collateralBalance();
+        _mint(target, amount, collateralBalance);
+        emit MintingUpdate(collateralBalance, price, minted);
     }
 
-    function calculateCurrentFee() public view returns (uint32) {
-        uint256 exp = expiration;
+    /**
+     * The applicable upfront fee in ppm when minting more Frankencoins based on the annual interest rate and
+     * the expiration of the position.
+     */
+    function calculateCurrentFee() public view returns (uint24) {
+        return calculateFee(expiration);
+    }
+
+    /**
+     * The applicable interest rate in ppm when minting more Frankencoins.
+     * It consists on the globally valid interest plus an individual risk premium.
+     */
+    function annualInterestPPM() public view returns (uint24) {
+        return IHub(hub).rate().currentRatePPM() + riskPremiumPPM;
+    }
+
+    /**
+     * The fee in ppm when cloning and minting with the given expiration date.
+     */
+    function calculateFee(uint256 exp) public view returns (uint24) {
         uint256 time = block.timestamp < start ? start : block.timestamp;
-        uint256 timePassed = time >= exp - MIN_INTEREST_DURATION ? MIN_INTEREST_DURATION : exp - time;
+        uint256 timePassed = exp - time;
         // Time resolution is in the range of minutes for typical interest rates.
-        return uint32((timePassed * annualInterestPPM) / 365 days);
+        uint256 feePPM = (timePassed * annualInterestPPM()) / 365 days;
+        return uint24(feePPM > 1000000 ? 1000000 : feePPM); // fee cannot exceed 100%
     }
 
-    function _mint(address target, uint256 amount, uint256 collateral_) internal {
-        if (minted + amount > limit) revert LimitExceeded();
-        dEURO.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
+    function _mint(address target, uint256 amount, uint256 collateral_) internal noChallenge noCooldown alive {
+        if (amount > availableForMinting()) revert LimitExceeded(amount, availableForMinting());
+        Position(original).notifyMint(amount);
+        deuro.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
         minted += amount;
-
         _checkCollateral(collateral_, price);
-        emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }
 
-    function _restrictMinting(uint256 period) internal {
-        uint256 horizon = block.timestamp + period;
+    function _restrictMinting(uint40 period) internal {
+        uint40 horizon = uint40(block.timestamp) + period;
         if (horizon > cooldown) {
             cooldown = horizon;
         }
     }
 
     /**
-     * @notice Repay some dEURO. If too much is repaid, the call fails.
+     * @notice Repay some deuro. If too much is repaid, the call fails.
      * It is possible to repay while there are challenges, but the collateral is locked until all is clear again.
      *
      * The repaid amount should fulfill the following equation in order to close the position,
      * i.e. bring the minted amount to 0:
-     * minted = amount + dEURO.calculateAssignedReserve(amount, reservePPM)
+     * minted = amount + deuro.calculateAssignedReserve(amount, reservePPM)
      *
      * Under normal circumstances, this implies:
      * amount = minted * (1000000 - reservePPM)
      *
      * E.g. if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
      */
-    function repay(uint256 amount) public {
-        IERC20(dEURO).transferFrom(msg.sender, address(this), amount);
-        uint256 actuallyRepaid = IDecentralizedEURO(dEURO).burnWithReserve(amount, reserveContribution);
+    function repay(uint256 amount) public returns (uint256) {
+        IERC20(deuro).transferFrom(msg.sender, address(this), amount);
+        uint256 actuallyRepaid = IDecentralizedEURO(deuro).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
-        emit MintingUpdate(_collateralBalance(), price, minted, limit);
+        emit MintingUpdate(_collateralBalance(), price, minted);
+        return actuallyRepaid;
     }
 
     function _notifyRepaid(uint256 amount) internal {
         if (amount > minted) revert RepaidTooMuch(amount - minted);
+        Position(original).notifyRepaid(amount);
         minted -= amount;
+    }
+
+    /**
+     * Force the sale of some collateral after the position is expired.
+     * Can only be called by the minting hub and the minting hub is trusted to calculate the price correctly.
+     * The proceeds from the sale are first used to repay the outstanding balance and then (if anything is left)
+     * it is sent to the owner of the position.
+     */
+    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired {
+        if (minted > 0) {
+            uint256 availableReserve = deuro.calculateAssignedReserve(minted, reserveContribution);
+            if (proceeds + availableReserve >= minted) {
+                // repay everything from the buyer's account
+                uint256 returnedReserve = deuro.burnFromWithReserve(buyer, minted, reserveContribution);
+                assert(returnedReserve == availableReserve);
+                // transfer the remaining purchase price from the buyer to the owner
+                deuro.transferFrom(buyer, owner(), proceeds + returnedReserve - minted);
+                _notifyRepaid(minted);
+            } else {
+                // we can only repay a part, nothing left to pay to owner
+                deuro.transferFrom(buyer, address(this), proceeds);
+                uint256 repaid = deuro.burnWithReserve(proceeds, reserveContribution);
+                _notifyRepaid(repaid);
+            }
+        } else {
+            // wire funds directly to owner
+            deuro.transferFrom(buyer, owner(), proceeds);
+        }
+        // send collateral to buyer
+        collateral.transfer(buyer, collAmount);
+        _considerClose(_collateralBalance());
+        emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
     /**
@@ -368,21 +460,25 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * Withdrawing collateral below the minimum collateral amount formally closes the position.
      */
-    function withdrawCollateral(address target, uint256 amount) public onlyOwner noChallenge {
-        if (block.timestamp <= cooldown && !isClosed()) revert Hot();
+    function withdrawCollateral(address target, uint256 amount) public ownerOrRoller {
         uint256 balance = _withdrawCollateral(target, amount);
-        _checkCollateral(balance, price);
-        if (balance < minimumCollateral && balance > 0) revert InsufficientCollateral(); // Prevent dust amounts
+        emit MintingUpdate(balance, price, minted);
     }
 
-    function _withdrawCollateral(address target, uint256 amount) internal returns (uint256) {
+    function _withdrawCollateral(address target, uint256 amount) internal noChallenge returns (uint256) {
+        if (block.timestamp <= cooldown && !isClosed()) revert Hot();
+        uint256 balance = _sendCollateral(target, amount);
+        _checkCollateral(balance, price);
+        return balance;
+    }
+
+    function _sendCollateral(address target, uint256 amount) internal returns (uint256) {
         if (amount > 0) {
             // Some weird tokens fail when trying to transfer 0 amounts
             IERC20(collateral).transfer(target, amount);
         }
         uint256 balance = _collateralBalance();
         _considerClose(balance);
-        emit MintingUpdate(balance, price, minted, limit);
         return balance;
     }
 
@@ -401,7 +497,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * variables change in an adverse way.
      */
     function _checkCollateral(uint256 collateralReserve, uint256 atPrice) internal view {
-        if (collateralReserve * atPrice < minted * ONE_DEC18) revert InsufficientCollateral();
+        if (collateralReserve * atPrice < minted * ONE_DEC18)
+            revert InsufficientCollateral(collateralReserve * atPrice, minted * ONE_DEC18);
     }
 
     /**
@@ -409,9 +506,8 @@ contract Position is Ownable, IPosition, MathUtil {
      * Both phases are usually of equal duration, but near expiration, phase one is adjusted such that
      * it cannot last beyond the expiration date of the position.
      */
-    function challengeData(uint256 challengeStart) external view returns (uint256 liqPrice, uint64 phase1, uint64 phase2) {
-        uint256 timeToExpiration = challengeStart >= expiration ? 0 : expiration - challengeStart;
-        return (price, uint64(_min(timeToExpiration, challengePeriod)), challengePeriod);
+    function challengeData() external view returns (uint256 liqPrice, uint40 phase) {
+        return (price, challengePeriod);
     }
 
     function notifyChallengeStarted(uint256 size) external onlyHub {
@@ -442,7 +538,7 @@ contract Position is Ownable, IPosition, MathUtil {
      *
      * @param _bidder   address of the bidder that receives the collateral
      * @param _size     amount of the collateral bid for
-     * @return (position owner, effective challenge size in dEURO, amount to be repaid, reserve ppm)
+     * @return (position owner, effective challenge size in deuro, amount to be repaid, reserve ppm)
      */
     function notifyChallengeSucceeded(
         address _bidder,
@@ -453,15 +549,23 @@ contract Position is Ownable, IPosition, MathUtil {
         if (colBal < _size) {
             _size = colBal;
         }
-        uint256 repayment = colBal == 0 ? 0 : minted * _size / colBal; // for enormous colBal, this could be rounded to 0, which is ok
+        uint256 repayment = colBal == 0 ? 0 : (minted * _size) / colBal; // for enormous colBal, this could be rounded to 0, which is ok
         _notifyRepaid(repayment); // we assume the caller takes care of the actual repayment
 
         // Give time for additional challenges before the owner can mint again. In particular,
         // the owner might have added collateral only seconds before the challenge ended, preventing a close.
         _restrictMinting(3 days);
 
-        _withdrawCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
+        uint256 newBalance = _sendCollateral(_bidder, _size); // transfer collateral to the bidder and emit update
+
+        emit MintingUpdate(newBalance, price, minted);
 
         return (owner(), _size, repayment, reserveContribution);
     }
+}
+
+interface IHub {
+    function rate() external view returns (ILeadrate);
+
+    function roller() external view returns (address);
 }

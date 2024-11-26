@@ -22,6 +22,8 @@ interface IDecentralizedEURO is IERC20 {
 
     function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) external view returns (uint256);
 
+    function calculateFreedAmount(uint256 amountExcludingReserve, uint32 reservePPM) external view returns (uint256);
+
     function equity() external view returns (uint256);
 
     function isMinter(address minter) external view returns (bool);
