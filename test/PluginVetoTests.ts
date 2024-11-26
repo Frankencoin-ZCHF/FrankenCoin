@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { floatToDec18 } from "../scripts/math";
 import { ethers } from "hardhat";
-import { EuroCoin, StablecoinBridge, TestToken } from "../typechain";
+import { DecentralizedEURO, StablecoinBridge, TestToken } from "../typechain";
 import { evm_increaseTime } from "./helper";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
@@ -11,15 +11,15 @@ describe("Plugin Veto Tests", () => {
 
   let bridge: StablecoinBridge;
   let secondBridge: StablecoinBridge;
-  let dEURO: EuroCoin;
+  let dEURO: DecentralizedEURO;
   let mockXEUR: TestToken;
   let mockAEUR: TestToken;
 
   before(async () => {
     [owner, alice] = await ethers.getSigners();
     // create contracts
-    const EuroCoinFactory = await ethers.getContractFactory("EuroCoin");
-    dEURO = await EuroCoinFactory.deploy(10 * 86400);
+    const DecentralizedEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+    dEURO = await DecentralizedEUROFactory.deploy(10 * 86400);
 
     // mocktoken
     const XEURFactory = await ethers.getContractFactory("TestToken");

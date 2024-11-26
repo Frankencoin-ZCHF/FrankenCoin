@@ -2,18 +2,18 @@
 pragma solidity ^0.8.0;
 
 import "./Equity.sol";
-import "./interface/IEuroCoin.sol";
+import "./interface/IDecentralizedEURO.sol";
 import "./interface/IReserve.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
- * @title EuroCoin
- * @notice The EuroCoin (dEURO) is an ERC-20 token that is designed to track the value of the Euro.
+ * @title DecentralizedEURO
+ * @notice The DecentralizedEURO (dEURO) is an ERC-20 token that is designed to track the value of the Euro.
  * It is not upgradable, but open to arbitrary minting plugins. These are automatically accepted if none of the
  * qualified pool share holders casts a veto, leading to a flexible but conservative governance.
  */
-contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
+contract DecentralizedEURO is ERC20Permit, IDecentralizedEURO, ERC165 {
     /**
      * @notice Minimal fee and application period when suggesting a new minter.
      */
@@ -34,7 +34,7 @@ contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
 
     /**
      * @notice Map of minters to approval time stamps. If the time stamp is in the past, the minter contract is allowed
-     * to mint EuroCoins.
+     * to mint DecentralizedEUROs.
      */
     mapping(address minter => uint256 validityStart) public minters;
 
@@ -60,10 +60,10 @@ contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
     }
 
     /**
-     * @notice Initiates the EuroCoin with the provided minimum application period for new plugins
+     * @notice Initiates the DecentralizedEURO with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(uint256 _minApplicationPeriod) ERC20Permit("EuroCoin") ERC20("EuroCoin", "dEURO") {
+    constructor(uint256 _minApplicationPeriod) ERC20Permit("DecentralizedEURO") ERC20("DecentralizedEURO", "dEURO") {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = new Equity(this);
     }
@@ -75,15 +75,15 @@ contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
     }
 
     /**
-     * @notice Publicly accessible method to suggest a new way of minting EuroCoin.
+     * @notice Publicly accessible method to suggest a new way of minting DecentralizedEURO.
      * @dev The caller has to pay an application fee that is irrevocably lost even if the new minter is vetoed.
      * The caller must assume that someone will veto the new minter unless there is broad consensus that the new minter
-     * adds value to the EuroCoin system. Complex proposals should have application periods and applications fees
+     * adds value to the DecentralizedEURO system. Complex proposals should have application periods and applications fees
      * above the minimum. It is assumed that over time, informal ways to coordinate on new minters emerge. The message
      * parameter might be useful for initiating further communication. Maybe it contains a link to a website describing
      * the proposed minter.
      *
-     * @param _minter              An address that is given the permission to mint EuroCoins
+     * @param _minter              An address that is given the permission to mint DecentralizedEUROs
      * @param _applicationPeriod   The time others have to veto the suggestion, at least MIN_APPLICATION_PERIOD
      * @param _applicationFee      The fee paid by the caller, at least MIN_FEE
      * @param _message             An optional human readable message to everyone watching this contract
@@ -127,7 +127,7 @@ contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
     }
 
     /**
-     * @notice Allows minters to register collateralized debt positions, thereby giving them the ability to mint EuroCoins.
+     * @notice Allows minters to register collateralized debt positions, thereby giving them the ability to mint DecentralizedEUROs.
      * @dev It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
      */
     function registerPosition(address _position) external override {
@@ -136,7 +136,7 @@ contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
     }
 
     /**
-     * @notice The amount of equity of the EuroCoin system in dEURO, owned by the holders of Native Decentralized Euro Protocol Shares.
+     * @notice The amount of equity of the DecentralizedEURO system in dEURO, owned by the holders of Native Decentralized Euro Protocol Shares.
      * @dev Note that the equity contract technically holds both the minter reserve as well as the equity, so the minter
      * reserve must be subtracted. All fees and other kind of income is added to the Equity contract and essentially
      * constitutes profits attributable to the pool share holders.
@@ -299,7 +299,7 @@ contract EuroCoin is ERC20Permit, IEuroCoin, ERC165 {
     }
 
     /**
-     * @notice Notify the EuroCoin that a minter lost economic access to some coins. This does not mean that the coins are
+     * @notice Notify the DecentralizedEURO that a minter lost economic access to some coins. This does not mean that the coins are
      * literally lost. It just means that some dEURO will likely never be repaid and that in order to bring the system
      * back into balance, the lost amount of dEURO must be removed from the reserve instead.
      *

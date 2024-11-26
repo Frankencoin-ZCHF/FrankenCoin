@@ -1,5 +1,5 @@
 /*
-    Script to check EuroCoin address consistency
+    Script to check DecentralizedEURO address consistency
     1) set private key in terminal without 0x, via export PK="123cafefefefefeCACe..."
         minting will be done for that wallet
     2) edit script: add minting hub address
@@ -9,7 +9,7 @@ const ethers = require("ethers");
 import { SigningKey } from "@ethersproject/signing-key";
 import {getSigningManagerFromPK} from "../utils";
 
-const FC_ABI = require('../../abi/EuroCoin.json');
+const FC_ABI = require('../../abi/DecentralizedEURO.json');
 const MH_ABI = require('../../abi/MintingHub.json');
 
 //const NODE_URL = "https://rpc.sepolia.org";
@@ -25,7 +25,7 @@ async function run() {
     let dEuroAddr = await mintingHubContract.dEURO();
     let dEuroContract = await getSigningManagerFromPK(dEuroAddr, FC_ABI, NODE_URL, pk);
     console.log("Minting Hub     : \t", mintingHubAddr);
-    console.log("EuroCoin dEURO: \t", dEuroAddr);
+    console.log("DecentralizedEURO dEURO: \t", dEuroAddr);
     let reserve = await dEuroContract.reserve();
     console.log("Reserve (=Equity): \t", reserve);
     

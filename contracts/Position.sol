@@ -5,7 +5,7 @@ import "./utils/MathUtil.sol";
 
 import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
-import "./interface/IEuroCoin.sol";
+import "./interface/IDecentralizedEURO.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -72,9 +72,9 @@ contract Position is Ownable, IPosition, MathUtil {
     address public immutable hub;
 
     /**
-     * @notice The EuroCoin contract.
+     * @notice The DecentralizedEURO contract.
      */
-    IEuroCoin public immutable dEURO;
+    IDecentralizedEURO public immutable dEURO;
 
     /**
      * @notice The collateral token.
@@ -92,7 +92,7 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 private constant MIN_INTEREST_DURATION = 4 weeks;
 
     /**
-     * @notice The interest in parts per million per year that is deducted when minting EuroCoins.
+     * @notice The interest in parts per million per year that is deducted when minting DecentralizedEUROs.
      * To be paid upfront.
      */
     uint32 public immutable annualInterestPPM;
@@ -155,7 +155,7 @@ contract Position is Ownable, IPosition, MathUtil {
         require(_initPeriod >= 3 days); // must be at least three days, recommended to use higher values
         original = address(this);
         hub = _hub;
-        dEURO = IEuroCoin(_dEURO);
+        dEURO = IDecentralizedEURO(_dEURO);
         collateral = IERC20(_collateral);
         annualInterestPPM = _annualInterestPPM;
         reserveContribution = _reservePPM;
@@ -201,7 +201,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * @notice Adjust this position's limit to allow a clone to mint its own EuroCoins.
+     * @notice Adjust this position's limit to allow a clone to mint its own DecentralizedEUROs.
      * Invariant: global limit stays the same.
      *
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
@@ -338,7 +338,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function repay(uint256 amount) public {
         IERC20(dEURO).transferFrom(msg.sender, address(this), amount);
-        uint256 actuallyRepaid = IEuroCoin(dEURO).burnWithReserve(amount, reserveContribution);
+        uint256 actuallyRepaid = IDecentralizedEURO(dEURO).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
         emit MintingUpdate(_collateralBalance(), price, minted, limit);
     }

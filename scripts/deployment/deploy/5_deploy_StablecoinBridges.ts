@@ -51,7 +51,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     
     console.log(`\nDeploying ${otherToken} StablecoinBridge with other = ${otherAddress}, limit = ${limit} EUR and weeks = ${weeks}`);
 
-    const dEURODeployment = await get("EuroCoin");
+    const dEURODeployment = await get("DecentralizedEURO");
     let dLimit = floatToDec18(limit);
     
     await deployContract(hre, "StablecoinBridge", [

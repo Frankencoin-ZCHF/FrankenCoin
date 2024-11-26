@@ -1,5 +1,5 @@
 {
-  "name": "eurocoin",
+  "name": "decentralized-euro",
   "version": "1.0.0",
   "description": "It shall support a wide range of collateralized minting methods that are governed by a democratic process.",
   "main": ".solcover.js",

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./IReserve.sol";
-import "./IEuroCoin.sol";
+import "./IDecentralizedEURO.sol";
 
 interface IPosition {
 

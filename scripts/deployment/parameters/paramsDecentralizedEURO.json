@@ -1,18 +1,18 @@
 [
     {
-        "name": "EuroCoin",
+        "name": "DecentralizedEURO",
         "chainId": 31337,
         "chainName" : "Local",
         "minApplicationPeriod" : 900
     },
     {
-        "name": "EuroCoin",
+        "name": "DecentralizedEURO",
         "chainId": 11155111,
         "chainName" : "Sepolia",
         "minApplicationPeriod" : 900
     },
     {
-        "name": "EuroCoin",
+        "name": "DecentralizedEURO",
         "chainId": 1,
         "chainName" : "Ethereum",
         "minApplicationPeriod" : 1209600

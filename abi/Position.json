@@ -355,7 +355,7 @@
         "name": "dEURO",
         "outputs": [
             {
-                "internalType": "contract IEuroCoin",
+                "internalType": "contract IDecentralizedEURO",
                 "name": "",
                 "type": "address"
             }

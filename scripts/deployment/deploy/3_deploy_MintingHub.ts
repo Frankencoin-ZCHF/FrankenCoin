@@ -13,9 +13,9 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "PositionFactory",
     positionFactoryDeployment.address
   );
-  const dEuroDeployment = await get("EuroCoin");
+  const dEuroDeployment = await get("DecentralizedEURO");
   let dEUROContract = await ethers.getContractAt(
-    "EuroCoin",
+    "DecentralizedEURO",
     dEuroDeployment.address
   );
 

@@ -13,7 +13,7 @@
     "durationDays": 180,
     "challengePeriodSeconds": 901,
     "minApplicationPeriodSeconds": 900,
-    "collateralTknAddr": "0xFA67d47B9Fc66479D1fd020F95f4B1E99ff2B2b4"
+    "collateralTknAddr": "0xA719b0D3f447118632fECc48c3273224D1319099"
   },
   {
     "name": "MockVOLToken",

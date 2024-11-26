@@ -7,13 +7,13 @@ import "../contracts/test/TestToken.sol";
 import "../contracts/Equity.sol";
 import "../contracts/StablecoinBridge.sol";
 import "../contracts/Equity.sol";
-import "../contracts/EuroCoin.sol";
+import "../contracts/DecentralizedEURO.sol";
 import "../contracts/utils/DEPSwrapper.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract nDEPSWrapperTest is Test {
     
-    EuroCoin dEURO;
+    DecentralizedEURO dEURO;
     Equity nDEPS;
     StablecoinBridge swap;
     TestToken XEUR;
@@ -22,7 +22,7 @@ contract nDEPSWrapperTest is Test {
     error General(uint256 val);
 
     constructor() {
-        dEURO = new EuroCoin(0);
+        dEURO = new DecentralizedEURO(0);
         nDEPS = Equity(address(dEURO.reserve()));
         wnDEPS = new nDEPSWrapper(nDEPS);
         XEUR = new TestToken("Base Franc", "BEUR", uint8(18));

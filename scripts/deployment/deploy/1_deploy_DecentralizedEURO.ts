@@ -14,7 +14,7 @@ import { deployContract } from "../deployUtils";
     npm run-script deployPositions:network sepolia
 */
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const paramFile = "paramsEuroCoin.json";
+  const paramFile = "paramsDecentralizedEURO.json";
   let chainId = hre.network.config["chainId"];
   let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
 
@@ -28,9 +28,9 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let minApplicationPeriod = params["minApplicationPeriod"];
   console.log("\nMin application period =", minApplicationPeriod);
 
-  let EC = await deployContract(hre, "EuroCoin", [minApplicationPeriod]);
+  let EC = await deployContract(hre, "DecentralizedEURO", [minApplicationPeriod]);
   console.log(
-    `Verify EuroCoin:\nnpx hardhat verify --network sepolia ${await EC.getAddress()} ${minApplicationPeriod}`
+    `Verify DecentralizedEURO:\nnpx hardhat verify --network sepolia ${await EC.getAddress()} ${minApplicationPeriod}`
   );
 
   let reserve = await EC.reserve();
@@ -39,4 +39,4 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 };
 export default deploy;
-deploy.tags = ["main", "EuroCoin"];
+deploy.tags = ["main", "DecentralizedEURO"];

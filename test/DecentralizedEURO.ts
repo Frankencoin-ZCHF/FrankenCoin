@@ -1,17 +1,17 @@
 import { expect } from "chai";
 import { floatToDec18, dec18ToFloat } from "../scripts/math";
 import { ethers } from "hardhat";
-import { EuroCoin, StablecoinBridge, TestToken } from "../typechain";
+import { DecentralizedEURO, StablecoinBridge, TestToken } from "../typechain";
 import { evm_increaseTime } from "./helper";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 const limit = floatToDec18(100_000);
 const weeks = 30;
-describe("EuroCoin", () => {
+describe("DecentralizedEURO", () => {
   let owner: HardhatEthersSigner;
   let alice: HardhatEthersSigner;
 
-  let dEURO: EuroCoin;
+  let dEURO: DecentralizedEURO;
   let mockXEUR: TestToken;
   let bridge: StablecoinBridge;
 
@@ -19,8 +19,8 @@ describe("EuroCoin", () => {
     [owner, alice] = await ethers.getSigners();
     // create contracts
     // 10 day application period
-    const euroCoinFactory = await ethers.getContractFactory("EuroCoin");
-    dEURO = await euroCoinFactory.deploy(10 * 86400);
+    const decentralizedEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+    dEURO = await decentralizedEUROFactory.deploy(10 * 86400);
   });
 
   describe("Basic initialization", () => {
@@ -28,7 +28,7 @@ describe("EuroCoin", () => {
       let symbol = await dEURO.symbol();
       expect(symbol).to.be.equal("dEURO");
       let name = await dEURO.name();
-      expect(name).to.be.equal("EuroCoin");
+      expect(name).to.be.equal("DecentralizedEURO");
     });
 
     it("should support permit interface", async () => {
@@ -116,8 +116,8 @@ describe("EuroCoin", () => {
 
   describe("Minting & Burning", () => {
     before(async () => {
-      const euroCoinFactory = await ethers.getContractFactory("EuroCoin");
-      dEURO = await euroCoinFactory.deploy(10 * 86400);
+      const decentralizedEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+      dEURO = await decentralizedEUROFactory.deploy(10 * 86400);
       const XEURFactory = await ethers.getContractFactory("TestToken");
       mockXEUR = await XEURFactory.deploy("CryptoFranc", "XEUR", 18);
       const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
@@ -275,8 +275,8 @@ describe("EuroCoin", () => {
 
   describe("view func", () => {
     before(async () => {
-      const euroCoinFactory = await ethers.getContractFactory("EuroCoin");
-      dEURO = await euroCoinFactory.deploy(10 * 86400);
+      const decentralizedEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+      dEURO = await decentralizedEUROFactory.deploy(10 * 86400);
 
       const XEURFactory = await ethers.getContractFactory("TestToken");
       mockXEUR = await XEURFactory.deploy("CryptoFranc", "XEUR", 18);
