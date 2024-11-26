@@ -9,6 +9,7 @@ import {StablecoinBridge} from "../StablecoinBridge.sol";
 import {IPosition} from "../interface/IPosition.sol";
 import {IEuroCoin} from "../interface/IEuroCoin.sol";
 import {User} from "./User.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract MintingHubTest {
