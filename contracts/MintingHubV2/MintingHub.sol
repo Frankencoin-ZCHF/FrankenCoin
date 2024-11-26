@@ -17,13 +17,13 @@ import {PositionRoller} from "./PositionRoller.sol";
 
 /**
  * @title Minting Hub
- * @notice The central hub for creating, cloning and challenging collateralized Frankencoin positions.
+ * @notice The central hub for creating, cloning and challenging collateralized DecentralizedEURO positions.
  * @dev Only one instance of this contract is required, whereas every new position comes with a new position
  * contract. Pending challenges are stored as structs in an array.
  */
 contract MintingHub {
     /**
-     * @notice Irrevocable fee in ZCHF when proposing a new position (but not when cloning an existing one).
+     * @notice Irrevocable fee in deur when proposing a new position (but not when cloning an existing one).
      */
     uint256 public constant OPENING_FEE = 1000 * 10 ** 18;
 
@@ -36,7 +36,7 @@ contract MintingHub {
 
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
 
-    IDecentralizedEURO public immutable zchf; // currency
+    IDecentralizedEURO public immutable deur; // currency
     PositionRoller public immutable roller; // helper to roll positions
     ILeadrate public immutable rate; // to determine the interest rate
 
@@ -74,19 +74,19 @@ contract MintingHub {
     error InsufficientCollateral();
 
     modifier validPos(address position) {
-        if (zchf.getPositionParent(position) != address(this)) revert InvalidPos();
+        if (deur.getPositionParent(position) != address(this)) revert InvalidPos();
         _;
     }
 
-    constructor(address _zchf, address _leadrate, address _roller, address _factory) {
-        zchf = IDecentralizedEURO(_zchf);
+    constructor(address _deur, address _leadrate, address _roller, address _factory) {
+        deur = IDecentralizedEURO(_deur);
         rate = ILeadrate(_leadrate);
         POSITION_FACTORY = IPositionFactory(_factory);
         roller = PositionRoller(_roller);
     }
 
     /**
-     * @notice Open a collateralized loan position. See also https://docs.frankencoin.com/positions/open .
+     * @notice Open a collateralized loan position. See also https://docs.DecentralizedEURO.com/positions/open .
      * @dev For a successful call, you must set an allowance for the collateral token, allowing
      * the minting hub to transfer the initial collateral amount to the newly created position and to
      * withdraw the fees.
@@ -94,7 +94,7 @@ contract MintingHub {
      * @param _collateralAddress        address of collateral token
      * @param _minCollateral     minimum collateral required to prevent dust amounts
      * @param _initialCollateral amount of initial collateral to be deposited
-     * @param _mintingMaximum    maximal amount of ZCHF that can be minted by the position owner
+     * @param _mintingMaximum    maximal amount of deur that can be minted by the position owner
      * @param _expirationSeconds position tenor in unit of timestamp (seconds) from 'now'
      * @param _challengeSeconds  challenge period. Longer for less liquid collateral.
      * @param _riskPremium       ppm of minted amount that is added to the applicible minting fee as a risk premium
@@ -126,12 +126,12 @@ contract MintingHub {
                 bytes memory /*lowLevelData*/
             ) {}
             if (_initialCollateral < _minCollateral) revert InsufficientCollateral();
-            if (_minCollateral * _liqPrice < 5000 ether * 10 ** 18) revert InsufficientCollateral(); // must start with at least 5000 ZCHF worth of collateral
+            if (_minCollateral * _liqPrice < 5000 ether * 10 ** 18) revert InsufficientCollateral(); // must start with at least 5000 deur worth of collateral
         }
         IPosition pos = IPosition(
             POSITION_FACTORY.createNewPosition(
                 msg.sender,
-                address(zchf),
+                address(deur),
                 _collateralAddress,
                 _minCollateral,
                 _mintingMaximum,
@@ -143,8 +143,8 @@ contract MintingHub {
                 _reservePPM
             )
         );
-        zchf.registerPosition(address(pos));
-        zchf.collectProfits(msg.sender, OPENING_FEE);
+        deur.registerPosition(address(pos));
+        deur.collectProfits(msg.sender, OPENING_FEE);
         IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);
 
         emit PositionOpened(msg.sender, address(pos), address(pos), _collateralAddress);
@@ -174,7 +174,7 @@ contract MintingHub {
         address pos = POSITION_FACTORY.clonePosition(parent);
         IPosition child = IPosition(pos);
         child.initialize(parent, expiration);
-        zchf.registerPosition(pos);
+        deur.registerPosition(pos);
         IERC20 collateral = child.collateral();
         if (_initialCollateral < child.minimumCollateral()) revert InsufficientCollateral();
         collateral.transferFrom(msg.sender, pos, _initialCollateral); // collateral must still come from sender for security
@@ -210,7 +210,7 @@ contract MintingHub {
     }
 
     /**
-     * @notice Post a bid in ZCHF given an open challenge.
+     * @notice Post a bid in deur given an open challenge.
      *
      * @dev In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token
      * has a blacklist and the challenger is on it), it is possible to postpone the return of the collateral.
@@ -249,9 +249,9 @@ contract MintingHub {
         // No overflow possible thanks to invariant (col * price <= limit * 10**18)
         // enforced in Position.setPrice and knowing that collateral <= col.
         uint256 offer = (_calculatePrice(_challenge.start + phase, phase, liqPrice) * collateral) / 10 ** 18;
-        zchf.transferFrom(msg.sender, address(this), offer); // get money from bidder
+        deur.transferFrom(msg.sender, address(this), offer); // get money from bidder
         uint256 reward = (offer * CHALLENGER_REWARD) / 1000_000;
-        zchf.transfer(_challenge.challenger, reward); // pay out the challenger reward
+        deur.transfer(_challenge.challenger, reward); // pay out the challenger reward
         uint256 fundsAvailable = offer - reward; // funds available after reward
 
         // Example: available funds are 90, repayment is 50, reserve 20%. Then 20%*(90-50)=16 are collected as profits
@@ -265,21 +265,21 @@ contract MintingHub {
             // for excess fund distribution, which make position owners that maxed out their positions slightly better
             // off in comparison to those who did not.
             uint256 profits = (reservePPM * (fundsAvailable - repayment)) / 1000_000;
-            zchf.collectProfits(address(this), profits);
-            zchf.transfer(owner, fundsAvailable - repayment - profits);
+            deur.collectProfits(address(this), profits);
+            deur.transfer(owner, fundsAvailable - repayment - profits);
         } else if (fundsAvailable < repayment) {
-            zchf.coverLoss(address(this), repayment - fundsAvailable); // ensure we have enough to pay everything
+            deur.coverLoss(address(this), repayment - fundsAvailable); // ensure we have enough to pay everything
         }
-        zchf.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part, example: 50 ZCHF leading to 10 ZCHf in implicit profits
+        deur.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part, example: 50 deur leading to 10 deur in implicit profits
         return (collateral, offer);
     }
 
     function _avertChallenge(Challenge memory _challenge, uint32 number, uint256 liqPrice, uint256 size) internal {
-        require(block.timestamp != _challenge.start); // do not allow to avert the challenge in the same transaction, see CS-ZCHF-037
+        require(block.timestamp != _challenge.start); // do not allow to avert the challenge in the same transaction, see CS-deur-037
         if (msg.sender == _challenge.challenger) {
             // allow challenger to cancel challenge without paying themselves
         } else {
-            zchf.transferFrom(msg.sender, _challenge.challenger, (size * liqPrice) / (10 ** 18));
+            deur.transferFrom(msg.sender, _challenge.challenger, (size * liqPrice) / (10 ** 18));
         }
 
         _challenge.position.notifyChallengeAverted(size);
