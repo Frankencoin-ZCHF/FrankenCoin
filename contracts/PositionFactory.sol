@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./Position.sol";
-import "./interface/IDecentralizedEURO.sol";
+import {Position} from "./Position.sol";
 
 contract PositionFactory {
     /**

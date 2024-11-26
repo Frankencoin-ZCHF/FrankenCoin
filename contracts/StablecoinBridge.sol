@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC677Receiver.sol";
-import "./interface/IDecentralizedEURO.sol";
+import {IDecentralizedEURO} from "./interface/IDecentralizedEURO.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Stable Coin Bridge

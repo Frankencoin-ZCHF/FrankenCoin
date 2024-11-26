@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/MathUtil.sol";
+import {MathUtil} from "./utils/MathUtil.sol";
 
-import "./interface/IPosition.sol";
-import "./interface/IReserve.sol";
-import "./interface/IDecentralizedEURO.sol";
+import {IPosition} from "./interface/IPosition.sol";
+import {IReserve} from "./interface/IReserve.sol";
+import {IDecentralizedEURO} from "./interface/IDecentralizedEURO.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Position
