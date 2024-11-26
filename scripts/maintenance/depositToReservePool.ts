@@ -10,7 +10,7 @@ import { SigningKey } from "@ethersproject/signing-key";
 import { floatToDec18, dec18ToFloat } from "../math";
 const NODE_URL = "https://rpc.sepolia.org";
 const ERC20_ABI = require('../../abi/MockXEURToken.json');
-const dEURO_ABI = require('../../abi/EuroCoin.json');
+const dEURO_ABI = require('../../abi/DecentralizedEURO.json');
 const EQUITY_ABI = require('../../abi/Equity.json');
 
 const BRIDGE_ABI = require('../../abi/StablecoinBridge.json');

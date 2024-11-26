@@ -1,0 +1,5 @@
+[
+    "error ECDSAInvalidSignature()",
+    "error ECDSAInvalidSignatureLength(uint256)",
+    "error ECDSAInvalidSignatureS(bytes32)"
+]

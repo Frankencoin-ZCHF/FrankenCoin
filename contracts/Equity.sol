@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import {EuroCoin} from "./EuroCoin.sol";
+import {DecentralizedEURO} from "./DecentralizedEURO.sol";
 import {IReserve} from "./interface/IReserve.sol";
 import {MathUtil} from "./utils/MathUtil.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -12,10 +12,10 @@ import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
  * @title Equity
- * @notice If the EuroCoin system was a bank, this contract would represent the equity on its balance sheet.
+ * @notice If the DecentralizedEURO system was a bank, this contract would represent the equity on its balance sheet.
  * Like with a corporation, the owners of the equity capital are the shareholders, or in this case the holders
- * of Native Decentralized Euro Protocol Share (nDEPS) tokens. Anyone can mint additional nDEPS tokens by adding EuroCoins to the
- * reserve pool. Also, nDEPS tokens can be redeemed for EuroCoins again after a minimum holding period.
+ * of Native Decentralized Euro Protocol Share (nDEPS) tokens. Anyone can mint additional nDEPS tokens by adding DecentralizedEUROs to the
+ * reserve pool. Also, nDEPS tokens can be redeemed for DecentralizedEUROs again after a minimum holding period.
  * Furthermore, the nDEPS shares come with some voting power. Anyone that held at least 2% of the holding-period-
  * weighted reserve pool shares gains veto power and can veto new proposals.
  */
@@ -59,7 +59,7 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
      */
     uint256 public constant MIN_HOLDING_DURATION = 90 days << TIME_RESOLUTION_BITS; // Set to 5 for local testing
 
-    EuroCoin public immutable dEURO;
+    DecentralizedEURO public immutable dEURO;
 
     /**
      * @dev To track the total number of votes we need to know the number of votes at the anchor time and when the
@@ -91,7 +91,7 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
     event Delegation(address indexed from, address indexed to); // indicates a delegation
     event Trade(address who, int amount, uint totPrice, uint newprice); // amount pos or neg for mint or redemption
 
-    constructor(EuroCoin dEURO_) ERC20Permit("Native Decentralized Euro Protocol Share") ERC20("Native Decentralized Euro Protocol Share", "nDEPS") {
+    constructor(DecentralizedEURO dEURO_) ERC20Permit("Native Decentralized Euro Protocol Share") ERC20("Native Decentralized Euro Protocol Share", "nDEPS") {
         dEURO = dEURO_;
     }
 
@@ -297,13 +297,13 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
     }
 
     /**
-     * @notice Call this method to obtain newly minted pool shares in exchange for EuroCoins.
-     * No allowance required (i.e. it is hardcoded in the EuroCoin token contract).
+     * @notice Call this method to obtain newly minted pool shares in exchange for DecentralizedEUROs.
+     * No allowance required (i.e. it is hardcoded in the DecentralizedEURO token contract).
      * Make sure to invest at least 10e-12 * market cap to avoid rounding losses.
      *
      * @dev If equity is close to zero or negative, you need to send enough dEURO to bring equity back to 1000 dEURO.
      *
-     * @param amount            EuroCoins to invest
+     * @param amount            DecentralizedEUROs to invest
      * @param expectedShares    Minimum amount of expected shares for frontrunning protection
      */
     function invest(uint256 amount, uint256 expectedShares) external returns (uint256) {
@@ -323,7 +323,7 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
     }
 
     /**
-     * @notice Calculate shares received when investing EuroCoins
+     * @notice Calculate shares received when investing DecentralizedEUROs
      * @param investment    dEURO to be invested
      * @return shares to be received in return
      */
@@ -333,7 +333,7 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
 
     function _calculateShares(uint256 capitalBefore, uint256 investment) internal view returns (uint256) {
         uint256 totalShares = totalSupply();
-        uint256 investmentExFees = (investment * 997) / 1000; // remove 0.3% fee
+        uint256 investmentExFees = (investment * 980) / 1000; // remove 2% fee
         // Assign 1000000 nDEPS for the initial deposit, calculate the amount otherwise
         uint256 newTotalShares = capitalBefore < MINIMUM_EQUITY || totalShares == 0
             ? totalShares + 1_000_000 * ONE_DEC18
@@ -394,7 +394,7 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
         uint256 totalShares = totalSupply();
         require(shares + ONE_DEC18 < totalShares, "too many shares"); // make sure there is always at least one share
         uint256 capital = dEURO.equity();
-        uint256 reductionAfterFees = (shares * 997) / 1000;
+        uint256 reductionAfterFees = (shares * 980) / 1000; // remove 2% fee
         uint256 newCapital = _mulD18(capital, _power3(_divD18(totalShares - reductionAfterFees, totalShares)));
         return capital - newCapital;
     }
@@ -404,7 +404,7 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
      * and we should allow qualified nDEPS holders to restructure the system.
      *
      * Example: there was a devastating loss and equity stands at -1'000'000. Most shareholders have lost hope in the
-     * EuroCoin system except for a group of small nDEPS holders who still believes in it and is willing to provide
+     * DecentralizedEURO system except for a group of small nDEPS holders who still believes in it and is willing to provide
      * 2'000'000 dEURO to save it. These brave souls are essentially donating 1'000'000 to the minter reserve and it
      * would be wrong to force them to share the other million with the passive nDEPS holders. Instead, they will get
      * the possibility to bootstrap the system again owning 100% of all nDEPS shares.

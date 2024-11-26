@@ -4,7 +4,7 @@ import { ethers } from "hardhat";
 import { evm_increaseTime } from "./helper";
 import {
   Equity,
-  EuroCoin,
+  DecentralizedEURO,
   MintingHub,
   Position,
   StablecoinBridge,
@@ -18,7 +18,7 @@ describe("Position Tests", () => {
   let bob: HardhatEthersSigner;
   let charles: HardhatEthersSigner;
 
-  let dEURO: EuroCoin;
+  let dEURO: DecentralizedEURO;
   let mintingHub: MintingHub;
   let bridge: StablecoinBridge;
   let equity: Equity;
@@ -31,8 +31,8 @@ describe("Position Tests", () => {
   before(async () => {
     [owner, alice, bob, charles] = await ethers.getSigners();
     // create contracts
-    const EuroCoinFactory = await ethers.getContractFactory("EuroCoin");
-    dEURO = await EuroCoinFactory.deploy(10 * 86400);
+    const DecentralizedEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+    dEURO = await DecentralizedEUROFactory.deploy(10 * 86400);
     equity = await ethers.getContractAt("Equity", await dEURO.reserve());
 
     const positionFactoryFactory = await ethers.getContractFactory(

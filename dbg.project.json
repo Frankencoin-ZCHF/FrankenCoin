@@ -1,12 +1,12 @@
 {
     "contractsDir": "contracts-dbg",
-    "selectedContract": "EuroCoinTest",
+    "selectedContract": "DecentralizedEUROTest",
     "autoOpen": true,
     "breakOnEntry": false,
     "symbols": {
         "hardhat": {
             "projectPaths": [
-                "c:\\Users\\luziu\\Documents\\GitHub\\EuroCoin"
+                "c:\\Users\\luziu\\Documents\\GitHub\\DecentralizedEURO"
             ]
         }
     }

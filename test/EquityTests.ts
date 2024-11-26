@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { floatToDec, floatToDec18 } from "../scripts/math";
 import { ethers } from "hardhat";
 import { evm_increaseTime, evm_mine_blocks } from "./helper";
-import { Equity, EuroCoin, StablecoinBridge, TestToken } from "../typechain";
+import { Equity, DecentralizedEURO, StablecoinBridge, TestToken } from "../typechain";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Equity Tests", () => {
@@ -12,7 +12,7 @@ describe("Equity Tests", () => {
 
   let equity: Equity;
   let bridge: StablecoinBridge;
-  let dEURO: EuroCoin;
+  let dEURO: DecentralizedEURO;
   let XEUR: TestToken;
 
   before(async () => {
@@ -23,8 +23,8 @@ describe("Equity Tests", () => {
   });
 
   beforeEach(async () => {
-    const euroCoinFactory = await ethers.getContractFactory("EuroCoin");
-    dEURO = await euroCoinFactory.deploy(10 * 86400);
+    const decentralizedEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+    dEURO = await decentralizedEUROFactory.deploy(10 * 86400);
 
     let supply = floatToDec18(1000_000);
     const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");

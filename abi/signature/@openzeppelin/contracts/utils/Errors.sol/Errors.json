@@ -1,0 +1,6 @@
+[
+    "error FailedCall()",
+    "error FailedDeployment()",
+    "error InsufficientBalance(uint256,uint256)",
+    "error MissingPrecompile(address)"
+]

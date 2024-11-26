@@ -7,7 +7,7 @@ import {Position} from "../Position.sol";
 import {MintingHub} from "../MintingHub.sol";
 import {StablecoinBridge} from "../StablecoinBridge.sol";
 import {IPosition} from "../interface/IPosition.sol";
-import {IEuroCoin} from "../interface/IEuroCoin.sol";
+import {IDecentralizedEURO} from "../interface/IDecentralizedEURO.sol";
 import {User} from "./User.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -18,7 +18,7 @@ contract MintingHubTest {
 
     IERC20 xeur;
     TestToken col;
-    IEuroCoin dEURO;
+    IDecentralizedEURO dEURO;
 
     User alice;
     User bob;
@@ -41,23 +41,23 @@ contract MintingHubTest {
         require(dEURO.equity() == 1003849100000000000001, Strings.toString(dEURO.equity()));
         require(dEURO.reserve().totalSupply() == 0, Strings.toString(dEURO.reserve().totalSupply()));
         // ensure there is at least 25'000 dEURO in equity
-        bob.obtainEuroCoins(swap, 10000 ether);
+        bob.obtainDecentralizedEUROs(swap, 10000 ether);
         bob.invest(1000 ether);
         require(dEURO.reserve().totalSupply() == 1000 ether, Strings.toString(dEURO.reserve().totalSupply()));
         bob.invest(9000 ether);
-        alice.obtainEuroCoins(swap, 15000 ether);
+        alice.obtainDecentralizedEUROs(swap, 15000 ether);
         alice.invest(15000 ether);
         require(dEURO.equity() > 25000 ether, Strings.toString(dEURO.equity()));
     }
 
     function initiateAndDenyPosition() public {
-        alice.obtainEuroCoins(swap, 1000 ether);
+        alice.obtainDecentralizedEUROs(swap, 1000 ether);
         address pos = alice.initiatePosition(col, hub);
         bob.deny(hub, pos);
     }
 
     function initiatePosition() public {
-        alice.obtainEuroCoins(swap, 1000 ether);
+        alice.obtainDecentralizedEUROs(swap, 1000 ether);
         latestPosition = alice.initiatePosition(col, hub);
         require(col.balanceOf(address(alice)) == 0);
     }
@@ -97,7 +97,7 @@ contract MintingHubTest {
 
     function letBobChallengePart2() public returns (uint256) {
         /* alice.avertChallenge(hub, swap, first);
-        bob.obtainEuroCoins(swap, 30_000 ether);
+        bob.obtainDecentralizedEUROs(swap, 30_000 ether);
         bob.bid(hub, second, 10_000 ether);
         bob.bid(hub, latestChallenge, 20_000 ether);
         (address challenger, , , , , uint256 bid) = hub.challenges(
@@ -196,7 +196,7 @@ contract MintingHubTest {
         uint256 supplyAfter = equity.totalSupply();
         require(supplyAfter == supplyBefore - bobBefore);
         // revertWith("Shortfall: ", dEURO.minterReserve() - dEURO.balanceOf(address(dEURO.reserve()))); // 1000000000000000000000
-        alice.obtainEuroCoins(swap, 4000 ether);
+        alice.obtainDecentralizedEUROs(swap, 4000 ether);
         alice.invest(4000 ether);
         require(supplyAfter + 1000 ether == equity.totalSupply());
     }
@@ -213,7 +213,7 @@ contract MintingHubTest {
         uint256 size = pos.collateral().balanceOf(latestPosition);
         latestChallenge = bob.challenge(hub, latestPosition, size);
         // revertWith("col left ", size); // 100
-        bob.obtainEuroCoins(swap, 5000 ether);
+        bob.obtainDecentralizedEUROs(swap, 5000 ether);
     }
 
     function endLastChallenge() public view {

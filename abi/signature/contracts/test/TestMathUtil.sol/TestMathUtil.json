@@ -1,0 +1,9 @@
+[
+    "constructor()",
+    "function calculateShares(uint256,uint256,uint256) pure returns (uint256)",
+    "function cubicRoot(uint256,bool)",
+    "function divD18(uint256,uint256) pure returns (uint256)",
+    "function mulD18(uint256,uint256) pure returns (uint256)",
+    "function power3(uint256) pure returns (uint256)",
+    "function result() view returns (uint256)"
+]

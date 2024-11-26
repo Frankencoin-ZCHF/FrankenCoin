@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IEuroCoin} from "./interface/IEuroCoin.sol";
+import {IDecentralizedEURO} from "./interface/IDecentralizedEURO.sol";
 import {IPosition} from "./interface/IPosition.sol";
 import {IPositionFactory} from "./interface/IPositionFactory.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -9,7 +9,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 
 /**
  * @title Minting Hub
- * @notice The central hub for creating, cloning and challenging collateralized EuroCoin positions.
+ * @notice The central hub for creating, cloning and challenging collateralized DecentralizedEURO positions.
  * @dev Only one instance of this contract is required, whereas every new position comes with a new position
  * contract. Pending challenges are stored as structs in an array.
  */
@@ -27,7 +27,7 @@ contract MintingHub {
 
     IPositionFactory private immutable POSITION_FACTORY; // position contract to clone
 
-    IEuroCoin public immutable dEURO; // currency
+    IDecentralizedEURO public immutable dEURO; // currency
     Challenge[] public challenges; // list of open challenges
 
     /**
@@ -70,7 +70,7 @@ contract MintingHub {
     }
 
     constructor(address _dEURO, address _factory) {
-        dEURO = IEuroCoin(_dEURO);
+        dEURO = IDecentralizedEURO(_dEURO);
         POSITION_FACTORY = IPositionFactory(_factory);
     }
 

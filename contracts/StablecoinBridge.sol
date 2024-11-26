@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IEuroCoin} from "./interface/IEuroCoin.sol";
+import {IDecentralizedEURO} from "./interface/IDecentralizedEURO.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -11,7 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 contract StablecoinBridge {
     IERC20 public immutable eur; // the source stablecoin
-    IEuroCoin public immutable dEURO; // the dEURO
+    IDecentralizedEURO public immutable dEURO; // the dEURO
 
     /**
      * @notice The time horizon after which this bridge expires and needs to be replaced by a new contract.
@@ -30,7 +30,7 @@ contract StablecoinBridge {
 
     constructor(address other, address dEUROAddress, uint256 limit_, uint256 weeks_) {
         eur = IERC20(other);
-        dEURO = IEuroCoin(dEUROAddress);
+        dEURO = IDecentralizedEURO(dEUROAddress);
         horizon = block.timestamp + weeks_ * 1 weeks;
         limit = limit_;
         minted = 0;
