@@ -7,18 +7,18 @@ import {Position} from "../Position.sol";
 import {MintingHub} from "../MintingHub.sol";
 import {StablecoinBridge} from "../StablecoinBridge.sol";
 import {IPosition} from "../interface/IPosition.sol";
-import {IEuroCoin} from "../interface/IEuroCoin.sol";
+import {IDecentralizedEURO} from "../interface/IDecentralizedEURO.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract User {
-    IEuroCoin dEURO;
+    IDecentralizedEURO dEURO;
 
-    constructor(IEuroCoin dEURO_) {
+    constructor(IDecentralizedEURO dEURO_) {
         dEURO = dEURO_;
     }
 
-    function obtainEuroCoins(StablecoinBridge bridge, uint256 amount) public {
+    function obtainDecentralizedEUROs(StablecoinBridge bridge, uint256 amount) public {
         TestToken xeur = TestToken(address(bridge.eur()));
         xeur.mint(address(this), amount);
         xeur.approve(address(bridge), amount);
@@ -86,7 +86,7 @@ contract User {
 
     function testWithdraw(StablecoinBridge bridge, Position pos) public {
         IERC20 col = pos.collateral();
-        obtainEuroCoins(bridge, 1);
+        obtainDecentralizedEUROs(bridge, 1);
         bridge.dEURO().transfer(address(pos), 1);
         uint256 initialBalance = col.balanceOf(address(pos));
         pos.withdraw(address(bridge.dEURO()), address(this), 1);

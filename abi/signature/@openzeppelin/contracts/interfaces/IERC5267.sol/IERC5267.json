@@ -1,4 +1,0 @@
-[
-    "event EIP712DomainChanged()",
-    "function eip712Domain() view returns (bytes1, string, string, uint256, address, bytes32, uint256[])"
-]
