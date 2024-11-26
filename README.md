@@ -11,7 +11,7 @@ There also is a [public frontend](https://app.dEURO.com) and a [documentation pa
 The source code can be found in the [contracts](contracts) folder. The following are the most important contracts.
 
 | Contract              | Description                                                      |
-| --------------------  | ---------------------------------------------------------------- |
+| --------------------- | ---------------------------------------------------------------- |
 | DecentralizedEURO.sol | The DecentralizedEURO (dEURO) ERC20 token                        |
 | Equity.sol            | The Native Decentralized Euro Protocol Share (nDEPS) ERC20 token |
 | MintingHub.sol        | Plugin for oracle-free collateralized minting                    |
@@ -35,7 +35,7 @@ hh test
 hh coverage
 ```
 
-## Deployment
+# Deployment
 
 Define the private key from your deployer address and etherscan api key as an environment variable in `.env` file.
 
@@ -43,6 +43,8 @@ Define the private key from your deployer address and etherscan api key as an en
 PK=0x123456
 APIKEY=123456
 ```
+
+### Deploy Contract (manual)
 
 Then run a deployment script with tags and network params (e.g., `sepolia` that specifies the network)
 
@@ -60,4 +62,51 @@ hh deploy --network sepolia --tags positions
 
 The networks are configured in `hardhat.config.ts`.
 
-`npx hardhat verify "0x..." --network sepolia`
+### Deploy Contract (via hardhat ignition)
+
+```bash
+npx hardhat ignition deploy ./ignition/modules/$MODULE.ts --network polygon --deployment-id $ID
+```
+
+> Check out ./ignition/deployments/[deployment]/deployed_addresses.json
+
+> Check out ./ignition/deployments/[deployment]/journal.jsonl
+
+### Verity Deployed Contract
+
+```bash
+npx hardhat verify --network polygon --constructor-args ./ignition/constructor-args/$FILE.js $ADDRESS
+```
+
+# NPM and packages
+
+### Publish for NPM Pkg
+
+- `yarn run compile`
+- deploy smart contracts
+- save address and constructor args
+- prepare /export with addresses, abis, ...
+- increase package version
+- `yarn run build` (tsup)
+- log into npm via the console
+- `npm publish --access public`
+
+NPM Package: [@deuro/eurocoin](https://www.npmjs.com/package/@deuro/eurocoin)
+
+Publish: You need to be logged in and execute `npm publish --access public`
+
+Edit: `/exports/index.ts` for all pkg exports.
+
+### @dev: how to transpile package into bundled apps
+
+E.g. for `NextJs` using the `next.config.js` in root of project.
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  transpilePackages: ["@.../core", "@.../api"],
+};
+
+module.exports = nextConfig;
+```

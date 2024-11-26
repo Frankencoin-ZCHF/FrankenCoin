@@ -18,7 +18,7 @@ import {Leadrate} from "./Leadrate.sol";
  * The saved deuro are subject to a lockup of up to 14 days and only start to yield
  * an interest after the lockup ended. The purpose of this lockup is to discourage
  * short-term holdings and to avoid paying interest to transactional accounts.
- * Transactional accounts typically do not need an incentive to hold Frankencoins.
+ * Transactional accounts typically do not need an incentive to hold dEURO.
  */
 contract Savings is Leadrate {
     uint64 public immutable INTEREST_DELAY = uint64(3 days);
