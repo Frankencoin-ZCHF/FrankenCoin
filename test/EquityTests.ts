@@ -115,12 +115,12 @@ describe("Equity Tests", () => {
 
     it("should create 1000 more shares when adding seven capital plus fees", async () => {
       await equity.invest(floatToDec18(1000), 0);
-      let expected = await equity.calculateShares(floatToDec18(7000 / 0.997));
+      let expected = await equity.calculateShares(floatToDec18(7000 / 0.98));
       expect(expected).to.be.approximately(
         floatToDec18(1000000),
         floatToDec18(0.01)
       );
-      await equity.invest(floatToDec18(7000 / 0.997), expected);
+      await equity.invest(floatToDec18(7000 / 0.98), expected);
       let balance = await equity.balanceOf(owner.address);
       expect(balance).to.be.approximately(
         floatToDec18(2000000),
@@ -157,7 +157,7 @@ describe("Equity Tests", () => {
       const proceeds = await equity.calculateProceeds(redemptionAmount);
       expect(proceeds).to.be.approximately(
         (equityCapital * 7n) / 8n,
-        (equityCapital * 3n) / 1000n
+        (equityCapital * 20n) / 1000n
       );
       expect(proceeds).to.be.below((equityCapital * 7n) / 8n);
     });
