@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./interface/IDecentralizedEURO.sol";
-import "./interface/IReserve.sol";
-import "./Leadrate.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IDecentralizedEURO} from "./interface/IDecentralizedEURO.sol";
+import {IReserve} from "./interface/IReserve.sol";
+import {Leadrate} from "./Leadrate.sol";
 
 /**
  * @title Savings
@@ -15,7 +15,7 @@ import "./Leadrate.sol";
  * adjusted. The ticks counter serves as the basis for calculating the interest
  * due for the individual accoutns.
  *
- * The saved ZCHF are subject to a lockup of up to 14 days and only start to yield
+ * The saved deuro are subject to a lockup of up to 14 days and only start to yield
  * an interest after the lockup ended. The purpose of this lockup is to discourage
  * short-term holdings and to avoid paying interest to transactional accounts.
  * Transactional accounts typically do not need an incentive to hold Frankencoins.
@@ -23,7 +23,7 @@ import "./Leadrate.sol";
 contract Savings is Leadrate {
     uint64 public immutable INTEREST_DELAY = uint64(3 days);
 
-    IERC20 public immutable zchf;
+    IERC20 public immutable deuro;
 
     mapping(address => Account) public savings;
 
@@ -41,8 +41,8 @@ contract Savings is Leadrate {
     // The module is considered disabled if the interest is zero or about to become zero within three days.
     error ModuleDisabled();
 
-    constructor(IDecentralizedEURO zchf_, uint24 initialRatePPM) Leadrate(IReserve(zchf_.reserve()), initialRatePPM) {
-        zchf = IERC20(zchf_);
+    constructor(IDecentralizedEURO deuro_, uint24 initialRatePPM) Leadrate(IReserve(deuro_.reserve()), initialRatePPM) {
+        deuro = IERC20(deuro_);
     }
 
     /**
@@ -68,7 +68,7 @@ contract Savings is Leadrate {
         if (ticks > account.ticks) {
             uint192 earnedInterest = calculateInterest(account, ticks);
             if (earnedInterest > 0) {
-                zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
+                deuro.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
                 account.saved += earnedInterest;
                 emit InterestCollected(accountOwner, earnedInterest);
             }
@@ -91,7 +91,7 @@ contract Savings is Leadrate {
             return 0;
         } else {
             uint192 earnedInterest = uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
-            uint256 equity = IDecentralizedEURO(address(zchf)).equity();
+            uint256 equity = IDecentralizedEURO(address(deuro)).equity();
             if (earnedInterest > equity) {
                 return uint192(equity); // save conversion as equity is smaller than uint192 earnedInterest
             } else {
@@ -125,7 +125,7 @@ contract Savings is Leadrate {
         if (currentRatePPM == 0) revert ModuleDisabled();
         if (nextRatePPM == 0 && (nextChange <= block.timestamp + INTEREST_DELAY)) revert ModuleDisabled();
         Account storage balance = refresh(owner);
-        zchf.transferFrom(msg.sender, address(this), amount);
+        deuro.transferFrom(msg.sender, address(this), amount);
         uint64 ticks = currentTicks();
         assert(balance.ticks >= ticks);
         uint256 saved = balance.saved;
@@ -154,7 +154,7 @@ contract Savings is Leadrate {
         } else {
             account.saved -= amount;
         }
-        zchf.transfer(target, amount);
+        deuro.transfer(target, amount);
         emit Withdrawn(msg.sender, amount);
         return amount;
     }

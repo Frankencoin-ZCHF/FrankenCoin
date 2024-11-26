@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IDecentralizedEURO.sol";
-import "./interface/IReserve.sol";
+import {DecentralizedEURO} from "./DecentralizedEURO.sol";
+import {IReserve} from "./interface/IReserve.sol";
 
 /**
  * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')
