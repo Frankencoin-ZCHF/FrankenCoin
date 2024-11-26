@@ -92,7 +92,7 @@ contract Position is Ownable, IPosition, MathUtil {
     uint256 public immutable override minimumCollateral;
 
     /**
-     * @notice The interest in parts per million per year that is deducted when minting Frankencoins.
+     * @notice The interest in parts per million per year that is deducted when minting dEURO.
      * To be paid upfront.
      */
     uint24 public immutable riskPremiumPPM;
@@ -340,7 +340,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * The applicable upfront fee in ppm when minting more Frankencoins based on the annual interest rate and
+     * The applicable upfront fee in ppm when minting more dEURO based on the annual interest rate and
      * the expiration of the position.
      */
     function calculateCurrentFee() public view returns (uint24) {
@@ -348,7 +348,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     /**
-     * The applicable interest rate in ppm when minting more Frankencoins.
+     * The applicable interest rate in ppm when minting more dEURO.
      * It consists on the globally valid interest plus an individual risk premium.
      */
     function annualInterestPPM() public view returns (uint24) {

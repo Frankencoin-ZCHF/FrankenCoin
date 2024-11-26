@@ -11,7 +11,7 @@ contract PositionFactory {
      */
     function createNewPosition(
         address _owner,
-        address _zchf,
+        address _deuro,
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,
@@ -27,7 +27,7 @@ contract PositionFactory {
                 new Position(
                     _owner,
                     msg.sender,
-                    _zchf,
+                    _deuro,
                     _collateral,
                     _minCollateral,
                     _initialLimit,
