@@ -7,7 +7,6 @@ export interface ChainAddress {
 	wFPS: Address;
 	bridge: Address;
 	xchf: Address;
-	leadrate: Address;
 	savings: Address;
 	roller: Address;
 	mintingHubV1: Address;
@@ -34,13 +33,12 @@ export const ADDRESS: Record<number, ChainAddress> = {
 		wFPS: '0x5052D3Cc819f53116641e89b96Ff4cD1EE80B182',
 		bridge: '0x7bbe8F18040aF0032f4C2435E7a76db6F1E346DF',
 		xchf: '0xb4272071ecadd69d933adcd19ca99fe80664fc08',
-		leadrate: zeroAddress,
-		savings: zeroAddress,
-		roller: zeroAddress,
+		savings: '0x3BF301B0e2003E75A3e86AB82bD1EFF6A9dFB2aE',
+		roller: '0xAD0107D3Da540Fd54b1931735b65110C909ea6B6',
 		mintingHubV1: '0x7546762fdb1a6d9146b33960545C3f6394265219',
-		positionFactoryV1: zeroAddress,
-		mintingHubV2: zeroAddress,
-		positionFactoryV2: zeroAddress,
+		positionFactoryV1: '0x0CDE500e6940931ED190ded77bb48640c9486392',
+		mintingHubV2: '0xDe12B620A8a714476A97EfD14E6F7180Ca653557',
+		positionFactoryV2: '0x728310FeaCa72dc46cD5BF7d739556D5668472BA',
 
 		// bridge contracts for ZCHF
 		bridgePolygonFrankencoin: '0x02567e4b14b25549331fCEe2B56c647A8bAB16FD',
@@ -59,7 +57,6 @@ export const ADDRESS: Record<number, ChainAddress> = {
 		wFPS: '0x2993F73d87cadbaa9F282408D469B4AB96e3B70F',
 		bridge: zeroAddress, // not used
 		xchf: zeroAddress, // not used
-		leadrate: zeroAddress,
 		savings: '0x3E76D80f3531cfEb7C1b5F9a1A30Be6e9c182565',
 		roller: '0x9b128C790696b52F85CD9C6827305F8e8B6f9E9E',
 		mintingHubV1: '0x8CFd8281e03908Bfeb36DCa9bFAE95Beef6568F6',

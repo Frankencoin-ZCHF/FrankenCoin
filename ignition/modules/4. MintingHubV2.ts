@@ -22,15 +22,16 @@ console.log('Config Info');
 console.log(config);
 
 // constructor args
-export const args = [ADDR.leadrate, ADDR.roller, ADDR.positionFactoryV2, ADDR.mintingHubV2];
-storeConstructorArgs('MintingHubV2', args);
+export const args = [ADDR.frankenCoin, ADDR.savings, ADDR.roller, ADDR.positionFactoryV2];
+storeConstructorArgs('MintingHubV2', args, true);
 
 console.log('Constructor Args');
 console.log(args);
 
-const module = buildModule('MintingHubV2Module', (m) => {
-	const controller = m.contract('MintingHubV2', args);
+const MintingHubV2Module = buildModule('MintingHubV2Module', (m) => {
+	const controller = m.contract('MintingHub', args); // @dev: it uses the Contract name as an identifier
+
 	return { controller };
 });
 
-export default module;
+export default MintingHubV2Module;

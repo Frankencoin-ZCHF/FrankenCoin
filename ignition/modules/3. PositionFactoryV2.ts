@@ -23,14 +23,16 @@ console.log(config);
 
 // constructor args
 export const args = [];
-storeConstructorArgs('PositionFactoryV2', args);
+storeConstructorArgs('PositionFactoryV2', args, true);
 
 console.log('Constructor Args');
 console.log(args);
 
-const module = buildModule('PositionFactoryV2Module', (m) => {
+// process.exit();
+
+const PositionFactoryV2Module = buildModule('PositionFactoryV2Module', (m) => {
 	const controller = m.contract('PositionFactory', args);
 	return { controller };
 });
 
-export default module;
+export default PositionFactoryV2Module;
