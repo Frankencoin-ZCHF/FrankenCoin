@@ -1,0 +1,4 @@
+[
+    "function currentRatePPM() view returns (uint24)",
+    "function currentTicks() view returns (uint64)"
+]

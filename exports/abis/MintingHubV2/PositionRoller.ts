@@ -43,6 +43,17 @@ export const PositionRollerABI = [
 		type: 'error',
 	},
 	{
+		inputs: [
+			{
+				internalType: 'address',
+				name: 'pos',
+				type: 'address',
+			},
+		],
+		name: 'NotPosition',
+		type: 'error',
+	},
+	{
 		anonymous: false,
 		inputs: [
 			{

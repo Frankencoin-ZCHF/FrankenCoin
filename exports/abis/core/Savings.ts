@@ -45,7 +45,7 @@ export const SavingsABI = [
 		anonymous: false,
 		inputs: [
 			{
-				indexed: false,
+				indexed: true,
 				internalType: 'address',
 				name: 'account',
 				type: 'address',
@@ -102,7 +102,7 @@ export const SavingsABI = [
 		anonymous: false,
 		inputs: [
 			{
-				indexed: false,
+				indexed: true,
 				internalType: 'address',
 				name: 'account',
 				type: 'address',
@@ -121,7 +121,7 @@ export const SavingsABI = [
 		anonymous: false,
 		inputs: [
 			{
-				indexed: false,
+				indexed: true,
 				internalType: 'address',
 				name: 'account',
 				type: 'address',

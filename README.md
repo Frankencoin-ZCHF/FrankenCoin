@@ -34,14 +34,11 @@ With tsc-watch (auto refresh commands)
 npx tsc-watch --onCompilationComplete "npx hardhat test ./test/RollerTests.ts"
 ```
 
-## Deployment
+# Deployment
 
 Define the private key from your deployer address and etherscan api key as an environment variable in `.env` file.
 
-```shell
-PK=0x123456
-APIKEY=123456
-```
+### Deploy Contract (manual)
 
 Then run a deployment script with tags and network params (e.g., `sepolia` that specifies the network)
 
@@ -59,17 +56,40 @@ hh deploy --network sepolia --tags positions
 
 The networks are configured in `hardhat.config.ts`.
 
-`npx hardhat verify "0x..." --network sepolia`
+### Deploy Contract (via hardhat ignition)
 
-## Publish for NPM Pkg
+```bash
+npx hardhat ignition deploy ./ignition/modules/$MODULE.ts --network polygon --deployment-id $ID
+```
+
+> Check out ./ignition/deployments/[deployment]/deployed_addresses.json
+
+> Check out ./ignition/deployments/[deployment]/journal.jsonl
+
+### Verity Deployed Contract
+
+```bash
+npx hardhat verify --network polygon --constructor-args ./ignition/constructor-args/$FILE.js $ADDRESS
+```
+
+# NPM and packages
+
+### Publish for NPM Pkg
+
+-   `yarn run compile`
+-   deploy smart contracts
+-   verify smart contracts
+-   prepare /export with addresses, abis, ...
+-   increase package version
+-   `yarn run build` (tsup)
+-   log into npm via the console
+-   `npm publish --access public`
 
 NPM Package: [@frankencoin/zchf](https://www.npmjs.com/package/@frankencoin/zchf)
 
-"build": "tsup"
-
 Publish: You need to be logged in and execute `npm publish --access public`
 
-Edit: `index.ts` for all pkg exports.
+Edit: `/exports/index.ts` for all pkg exports.
 
 ## @dev: how to transpile package into bundled apps
 

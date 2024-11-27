@@ -1,0 +1,10 @@
+[
+    "constructor()",
+    "event Log(address,string)",
+    "function NAME() view returns (string)",
+    "function factory() view returns (address)",
+    "function fpsWrapper() view returns (address)",
+    "function initFrankencoin()",
+    "function mintingHub() view returns (address)",
+    "function zchf() view returns (address)"
+]

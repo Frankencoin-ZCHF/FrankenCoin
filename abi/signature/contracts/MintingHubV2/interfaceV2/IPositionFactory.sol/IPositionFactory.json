@@ -1,0 +1,4 @@
+[
+    "function clonePosition(address) returns (address)",
+    "function createNewPosition(address,address,address,uint256,uint256,uint40,uint40,uint40,uint24,uint256,uint24) returns (address)"
+]
