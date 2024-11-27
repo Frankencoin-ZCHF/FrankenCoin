@@ -10,7 +10,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const nDEPSDeployment = await get("nDEPS");
     nDEPSDeploymentAddress = nDEPSDeployment.address;
   } catch (err: unknown) {
-    nDEPSDeploymentAddress = "0x1970620A749B29ad05345b3531c62F3964a557e3";
+    nDEPSDeploymentAddress = "0xC92aF56C354FCF641f4567a04fd7032013E8A314";
     // throw err;
   }
 

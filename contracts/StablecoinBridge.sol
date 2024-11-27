@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
 import {IDecentralizedEURO} from "./interface/IDecentralizedEURO.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /**
  * @title Stable Coin Bridge
@@ -12,6 +14,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract StablecoinBridge {
     IERC20 public immutable eur; // the source stablecoin
     IDecentralizedEURO public immutable dEURO; // the dEURO
+    uint8 private immutable eurDecimals;
+    uint8 private immutable dEURODecimals;
 
     /**
      * @notice The time horizon after which this bridge expires and needs to be replaced by a new contract.
@@ -31,6 +35,8 @@ contract StablecoinBridge {
     constructor(address other, address dEUROAddress, uint256 limit_, uint256 weeks_) {
         eur = IERC20(other);
         dEURO = IDecentralizedEURO(dEUROAddress);
+        eurDecimals = IERC20Metadata(other).decimals();
+        dEURODecimals = IERC20Metadata(dEUROAddress).decimals();
         horizon = block.timestamp + weeks_ * 1 weeks;
         limit = limit_;
         minted = 0;
@@ -46,10 +52,13 @@ contract StablecoinBridge {
     /**
      * @notice Mint the target amount of dEUROs, taking the equal amount of source coins from the sender.
      * @dev This only works if an allowance for the source coins has been set and the caller has enough of them.
+     * @param amount The amount of the source stablecoin to bridge (convert).
      */
     function mintTo(address target, uint256 amount) public {
         eur.transferFrom(msg.sender, address(this), amount);
-        _mint(target, amount);
+        
+        uint256 targetAmount = _convertAmount(amount, eurDecimals, dEURODecimals);
+        _mint(target, targetAmount);
     }
 
     function _mint(address target, uint256 amount) internal {
@@ -61,6 +70,7 @@ contract StablecoinBridge {
 
     /**
      * @notice Convenience method for burnAndSend(msg.sender, amount)
+     * @param amount The amount of dEURO to burn.
      */
     function burn(uint256 amount) external {
         _burn(msg.sender, msg.sender, amount);
@@ -74,8 +84,25 @@ contract StablecoinBridge {
     }
 
     function _burn(address dEUROHolder, address target, uint256 amount) internal {
+        uint256 sourceAmount = _convertAmount(amount, dEURODecimals, eurDecimals);
         dEURO.burnFrom(dEUROHolder, amount);
-        eur.transfer(target, amount);
+        eur.transfer(target, sourceAmount);
         minted -= amount;
+    }
+
+    /**
+     * @notice Converts an amount between two tokens with different decimal places.
+     * @param amount The amount to convert.
+     * @param fromDecimals The decimal places of the source token.
+     * @param toDecimals The decimal places of the target token.
+     */
+    function _convertAmount(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
+        if (fromDecimals < toDecimals) {
+            return amount * 10**(toDecimals - fromDecimals);
+        } else if (fromDecimals > toDecimals) {
+            return amount / 10**(fromDecimals - toDecimals);
+        } else {
+            return amount;
+        }
     }
 }
