@@ -212,9 +212,14 @@ contract Position is Ownable, IPosition, MathUtil {
         totalMinted -= repaid_;
     }
 
+    /**
+     * Should only be called on the original position.
+     * Better use 'availableForMinting'.
+     */
     function availableForClones() external view returns (uint256) {
         // reserve capacity for the original to the extent the owner provided collateral
-        uint256 unusedPotential = (_collateralBalance() * price) / ONE_DEC18 - minted;
+        uint256 potential = (_collateralBalance() * price) / ONE_DEC18;
+        uint256 unusedPotential = minted > potential ? 0 : potential - minted;
         if (totalMinted + unusedPotential >= limit) {
             return 0;
         } else {
@@ -222,6 +227,11 @@ contract Position is Ownable, IPosition, MathUtil {
         }
     }
 
+    /**
+     * The amount available for minting in this position family.
+     * 
+     * Does not check if positions are challenged, closed, or under cooldown.
+     */
     function availableForMinting() public view returns (uint256) {
         if (address(this) == original) {
             return limit - totalMinted;
