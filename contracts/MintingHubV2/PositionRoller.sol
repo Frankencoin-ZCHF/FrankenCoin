@@ -18,6 +18,7 @@ contract PositionRoller {
 	IFrankencoin private zchf;
 
 	error NotOwner(address pos);
+	error NotPosition(address pos);
 	error Log(uint256, uint256, uint256);
 
 	event Roll(address source, uint256 collWithdraw, uint256 repay, address target, uint256 collDeposit, uint256 mint);
@@ -124,13 +125,13 @@ contract PositionRoller {
 		uint256 mint,
 		uint256 collDeposit,
 		uint40 expiration
-	) public own(source) {
+	) public valid(source) valid(target) own(source) {
 		zchf.mint(address(this), repay); // take a flash loan
 		source.repay(repay);
 		source.withdrawCollateral(msg.sender, collWithdraw);
 		if (mint > 0) {
 			IERC20 targetCollateral = IERC20(target.collateral());
-			if (Ownable(address(target)).owner() != msg.sender || expiration < target.expiration()) {
+			if (Ownable(address(target)).owner() != msg.sender || expiration != target.expiration()) {
 				targetCollateral.transferFrom(msg.sender, address(this), collDeposit); // get the new collateral
 				targetCollateral.approve(target.hub(), collDeposit); // approve the new collateral and clone:
 				target = IPosition(IMintingHub(target.hub()).clone(msg.sender, address(target), collDeposit, mint, expiration));
@@ -148,6 +149,11 @@ contract PositionRoller {
 
 	modifier own(IPosition pos) {
 		if (Ownable(address(pos)).owner() != msg.sender) revert NotOwner(address(pos));
+		_;
+	}
+
+	modifier valid(IPosition pos) {
+		if (zchf.getPositionParent(address(pos)) == address(0x0)) revert NotPosition(address(pos));
 		_;
 	}
 }

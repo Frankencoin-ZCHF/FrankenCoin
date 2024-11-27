@@ -15,7 +15,7 @@ import './Leadrate.sol';
  * adjusted. The ticks counter serves as the basis for calculating the interest
  * due for the individual accoutns.
  *
- * The saved ZCHF are subject to a lockup of up to 14 days and only start to yield
+ * The saved ZCHF are subject to a lockup of up to 3 days and only start to yield
  * an interest after the lockup ended. The purpose of this lockup is to discourage
  * short-term holdings and to avoid paying interest to transactional accounts.
  * Transactional accounts typically do not need an incentive to hold Frankencoins.
@@ -32,9 +32,9 @@ contract Savings is Leadrate {
 		uint64 ticks;
 	}
 
-	event Saved(address account, uint192 amount);
-	event InterestCollected(address account, uint256 interest);
-	event Withdrawn(address account, uint192 amount);
+	event Saved(address indexed account, uint192 amount);
+	event InterestCollected(address indexed account, uint256 interest);
+	event Withdrawn(address indexed account, uint192 amount);
 
 	error FundsLocked(uint40 remainingSeconds);
 
@@ -68,7 +68,8 @@ contract Savings is Leadrate {
 		if (ticks > account.ticks) {
 			uint192 earnedInterest = calculateInterest(account, ticks);
 			if (earnedInterest > 0) {
-				zchf.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
+				// collect interest as you go and trigger accounting event
+				(IFrankencoin(address(zchf))).coverLoss(address(this), earnedInterest);
 				account.saved += earnedInterest;
 				emit InterestCollected(accountOwner, earnedInterest);
 			}
@@ -118,8 +119,7 @@ contract Savings is Leadrate {
 
 	/**
 	 * Send 'amount' to the account of the provided owner.
-	 * The funds sent to the account are locked for up to 14 days, depending how much
-	 * already is in there.
+	 * The funds sent to the account are locked for a while, depending on how much already is in there.
 	 */
 	function save(address owner, uint192 amount) public {
 		if (currentRatePPM == 0) revert ModuleDisabled();
@@ -147,7 +147,7 @@ contract Savings is Leadrate {
 	function withdraw(address target, uint192 amount) public returns (uint256) {
 		Account storage account = refresh(msg.sender);
 		if (account.ticks > currentTicks()) {
-			revert FundsLocked(uint40(account.ticks - currentTicks() / currentRatePPM));
+			revert FundsLocked(uint40(account.ticks - currentTicks()) / currentRatePPM);
 		} else if (amount >= account.saved) {
 			amount = account.saved;
 			delete savings[msg.sender];

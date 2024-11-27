@@ -1,9 +1,0 @@
-[
-    "constructor(address)",
-    "function mintFromFirstPosition(uint256)",
-    "function openPosition(uint256,uint40) returns (address)",
-    "function openTwoPositions()",
-    "function p1() view returns (address)",
-    "function p2() view returns (address)",
-    "function roll()"
-]

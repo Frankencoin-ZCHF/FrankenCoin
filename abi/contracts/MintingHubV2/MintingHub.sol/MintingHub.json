@@ -290,12 +290,18 @@
             },
             {
                 "internalType": "uint256",
-                "name": "amount",
+                "name": "upToAmount",
                 "type": "uint256"
             }
         ],
         "name": "buyExpiredCollateral",
-        "outputs": [],
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
         "stateMutability": "nonpayable",
         "type": "function"
     },

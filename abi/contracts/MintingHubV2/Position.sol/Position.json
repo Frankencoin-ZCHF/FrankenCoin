@@ -86,6 +86,11 @@
         "type": "error"
     },
     {
+        "inputs": [],
+        "name": "Closed",
+        "type": "error"
+    },
+    {
         "inputs": [
             {
                 "internalType": "uint40",

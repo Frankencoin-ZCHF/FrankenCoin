@@ -1,5 +1,0 @@
-[
-    "constructor(address)",
-    "function forceBuy(address,uint256)",
-    "function openPositionFor(address) returns (address)"
-]
