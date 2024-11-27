@@ -1,0 +1,846 @@
+{
+  "address": "0x851A55bD9885D05C58a8b19876d26E618C2C831e",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_deur",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_leadrate",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_roller",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_factory",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "IncompatibleCollateral",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InsufficientCollateral",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidPos",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UnexpectedPrice",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "position",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "number",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "size",
+          "type": "uint256"
+        }
+      ],
+      "name": "ChallengeAverted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "challenger",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "position",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "size",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "number",
+          "type": "uint256"
+        }
+      ],
+      "name": "ChallengeStarted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "position",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "number",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "bid",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "acquiredCollateral",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "challengeSize",
+          "type": "uint256"
+        }
+      ],
+      "name": "ChallengeSucceeded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pos",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "priceE36MinusDecimals",
+          "type": "uint256"
+        }
+      ],
+      "name": "ForcedSale",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "position",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "original",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "collateral",
+          "type": "address"
+        }
+      ],
+      "name": "PositionOpened",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "collateral",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "beneficiary",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "PostPonedReturn",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "CHALLENGER_REWARD",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "EXPIRED_PRICE_FACTOR",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "OPENING_FEE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "_challengeNumber",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "size",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "postponeCollateralReturn",
+          "type": "bool"
+        }
+      ],
+      "name": "bid",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IPosition",
+          "name": "pos",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "buyExpiredCollateral",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_positionAddr",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_collateralAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minimumPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "challenge",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "challenges",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "challenger",
+          "type": "address"
+        },
+        {
+          "internalType": "uint40",
+          "name": "start",
+          "type": "uint40"
+        },
+        {
+          "internalType": "contract IPosition",
+          "name": "position",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "size",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "parent",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_initialCollateral",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_initialMint",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint40",
+          "name": "expiration",
+          "type": "uint40"
+        }
+      ],
+      "name": "clone",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "parent",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_initialCollateral",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_initialMint",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint40",
+          "name": "expiration",
+          "type": "uint40"
+        }
+      ],
+      "name": "clone",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "deur",
+      "outputs": [
+        {
+          "internalType": "contract IDecentralizedEURO",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IPosition",
+          "name": "pos",
+          "type": "address"
+        }
+      ],
+      "name": "expiredPurchasePrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_collateralAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_minCollateral",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_initialCollateral",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_mintingMaximum",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint40",
+          "name": "_initPeriodSeconds",
+          "type": "uint40"
+        },
+        {
+          "internalType": "uint40",
+          "name": "_expirationSeconds",
+          "type": "uint40"
+        },
+        {
+          "internalType": "uint40",
+          "name": "_challengeSeconds",
+          "type": "uint40"
+        },
+        {
+          "internalType": "uint24",
+          "name": "_riskPremium",
+          "type": "uint24"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_liqPrice",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint24",
+          "name": "_reservePPM",
+          "type": "uint24"
+        }
+      ],
+      "name": "openPosition",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "collateral",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "pendingReturns",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "challengeNumber",
+          "type": "uint32"
+        }
+      ],
+      "name": "price",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rate",
+      "outputs": [
+        {
+          "internalType": "contract ILeadrate",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "collateral",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        }
+      ],
+      "name": "returnPostponedCollateral",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "roller",
+      "outputs": [
+        {
+          "internalType": "contract PositionRoller",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x2156e2fd8cbba4d0c4f9f331c0742abd7f72485caaa19849f4fd5e9f86a04617",
+  "receipt": {
+    "to": null,
+    "from": "0x58b104da218e80DA6DA7E14C37A32851a26c8a6a",
+    "contractAddress": "0x851A55bD9885D05C58a8b19876d26E618C2C831e",
+    "transactionIndex": 16,
+    "gasUsed": "2267141",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x272264f93513076744d47534ce6b432161189f301feaec9dfa4b7182b1ec931d",
+    "transactionHash": "0x2156e2fd8cbba4d0c4f9f331c0742abd7f72485caaa19849f4fd5e9f86a04617",
+    "logs": [],
+    "blockNumber": 21276213,
+    "cumulativeGasUsed": "4576243",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xd45e911843721083A2751fA9Cc9D2a8089D8C0f5",
+    "0x42c43F17Dbea70a4a6f1ff9F3E5c023Da21B42C1",
+    "0x63B6654034C4a5Fc7901444031932825223C9Ac6",
+    "0x5F9C74b58D2C0a4FaB41318F94b5A23ba27FA98a"
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "2b6c9a674c0f5cac576001fd230e0d7c",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.26+commit.8a97fa7a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_deur\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_leadrate\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_roller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_factory\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"IncompatibleCollateral\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InsufficientCollateral\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidPos\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UnexpectedPrice\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"position\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"number\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"size\",\"type\":\"uint256\"}],\"name\":\"ChallengeAverted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"challenger\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"position\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"size\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"number\",\"type\":\"uint256\"}],\"name\":\"ChallengeStarted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"position\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"number\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bid\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"acquiredCollateral\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"challengeSize\",\"type\":\"uint256\"}],\"name\":\"ChallengeSucceeded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pos\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"priceE36MinusDecimals\",\"type\":\"uint256\"}],\"name\":\"ForcedSale\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"position\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"original\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"collateral\",\"type\":\"address\"}],\"name\":\"PositionOpened\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"collateral\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PostPonedReturn\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"CHALLENGER_REWARD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"EXPIRED_PRICE_FACTOR\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"OPENING_FEE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"_challengeNumber\",\"type\":\"uint32\"},{\"internalType\":\"uint256\",\"name\":\"size\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"postponeCollateralReturn\",\"type\":\"bool\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IPosition\",\"name\":\"pos\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"buyExpiredCollateral\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_positionAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_collateralAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minimumPrice\",\"type\":\"uint256\"}],\"name\":\"challenge\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"challenges\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"challenger\",\"type\":\"address\"},{\"internalType\":\"uint40\",\"name\":\"start\",\"type\":\"uint40\"},{\"internalType\":\"contract IPosition\",\"name\":\"position\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"size\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"parent\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_initialCollateral\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_initialMint\",\"type\":\"uint256\"},{\"internalType\":\"uint40\",\"name\":\"expiration\",\"type\":\"uint40\"}],\"name\":\"clone\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"parent\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_initialCollateral\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_initialMint\",\"type\":\"uint256\"},{\"internalType\":\"uint40\",\"name\":\"expiration\",\"type\":\"uint40\"}],\"name\":\"clone\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"deur\",\"outputs\":[{\"internalType\":\"contract IDecentralizedEURO\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IPosition\",\"name\":\"pos\",\"type\":\"address\"}],\"name\":\"expiredPurchasePrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_collateralAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_minCollateral\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_initialCollateral\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_mintingMaximum\",\"type\":\"uint256\"},{\"internalType\":\"uint40\",\"name\":\"_initPeriodSeconds\",\"type\":\"uint40\"},{\"internalType\":\"uint40\",\"name\":\"_expirationSeconds\",\"type\":\"uint40\"},{\"internalType\":\"uint40\",\"name\":\"_challengeSeconds\",\"type\":\"uint40\"},{\"internalType\":\"uint24\",\"name\":\"_riskPremium\",\"type\":\"uint24\"},{\"internalType\":\"uint256\",\"name\":\"_liqPrice\",\"type\":\"uint256\"},{\"internalType\":\"uint24\",\"name\":\"_reservePPM\",\"type\":\"uint24\"}],\"name\":\"openPosition\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"collateral\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"pendingReturns\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"challengeNumber\",\"type\":\"uint32\"}],\"name\":\"price\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rate\",\"outputs\":[{\"internalType\":\"contract ILeadrate\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"collateral\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"returnPostponedCollateral\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roller\",\"outputs\":[{\"internalType\":\"contract PositionRoller\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Only one instance of this contract is required, whereas every new position comes with a new position contract. Pending challenges are stored as structs in an array.\",\"kind\":\"dev\",\"methods\":{\"bid(uint32,uint256,bool)\":{\"details\":\"In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token has a blacklist and the challenger is on it), it is possible to postpone the return of the collateral.\",\"params\":{\"_challengeNumber\":\"index of the challenge as broadcast in the event\",\"postponeCollateralReturn\":\"To postpone the return of the collateral to the challenger. Usually false.\",\"size\":\"how much of the collateral the caller wants to bid for at most                          (automatically reduced to the available amount)\"}},\"challenge(address,uint256,uint256)\":{\"params\":{\"_collateralAmount\":\"amount of the collateral we want to challenge\",\"_positionAddr\":\"address of the position we want to challenge\",\"minimumPrice\":\"position.price() to guard against the minter fruntrunning with a price change\"},\"returns\":{\"_0\":\"index of the challenge in challenge-array\"}},\"clone(address,address,uint256,uint256,uint40)\":{\"details\":\"This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.\"},\"openPosition(address,uint256,uint256,uint256,uint40,uint40,uint40,uint24,uint256,uint24)\":{\"details\":\"For a successful call, you must set an allowance for the collateral token, allowing the minting hub to transfer the initial collateral amount to the newly created position and to withdraw the fees.\",\"params\":{\"_challengeSeconds\":\"challenge period. Longer for less liquid collateral.\",\"_collateralAddress\":\"address of collateral token\",\"_expirationSeconds\":\"position tenor in unit of timestamp (seconds) from 'now'\",\"_initialCollateral\":\"amount of initial collateral to be deposited\",\"_liqPrice\":\"Liquidation price with (36 - token decimals) decimals,                           e.g. 18 decimals for an 18 dec collateral, 36 decs for a 0 dec collateral.\",\"_minCollateral\":\"minimum collateral required to prevent dust amounts\",\"_mintingMaximum\":\"maximal amount of deur that can be minted by the position owner\",\"_reservePPM\":\"ppm of minted amount that is locked as borrower's reserve, e.g. 20%\",\"_riskPremium\":\"ppm of minted amount that is added to the applicible minting fee as a risk premium\"},\"returns\":{\"_0\":\"address           address of created position\"}},\"price(uint32)\":{\"details\":\"The price comes with (36-collateral.decimals()) digits, such that multiplying it with the raw collateral amount always yields a price with 36 digits, or 18 digits after dividing by 10**18 again.\"}},\"stateVariables\":{\"pendingReturns\":{\"details\":\"It maps collateral => beneficiary => amount.\"}},\"title\":\"Minting Hub\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"CHALLENGER_REWARD()\":{\"notice\":\"The challenger reward in parts per million (ppm) relative to the challenged amount, whereas challenged amount if defined as the challenged collateral amount times the liquidation price.\"},\"OPENING_FEE()\":{\"notice\":\"Irrevocable fee in deur when proposing a new position (but not when cloning an existing one).\"},\"bid(uint32,uint256,bool)\":{\"notice\":\"Post a bid in deur given an open challenge.\"},\"buyExpiredCollateral(address,uint256)\":{\"notice\":\"Buys the desired amount of the collateral asset from the given expired position using the applicable 'expiredPurchasePrice' in that instant.\"},\"challenge(address,uint256,uint256)\":{\"notice\":\"Launch a challenge (Dutch auction) on a position\"},\"clone(address,address,uint256,uint256,uint40)\":{\"notice\":\"Clones an existing position and immediately tries to mint the specified amount using the given collateral.\"},\"expiredPurchasePrice(address)\":{\"notice\":\"The applicable purchase price when forcing the sale of collateral of an expired position. The price starts at 10x the liquidation price at the expiration time, linearly declines to 1x liquidation price over the course of one challenge period, and then linearly declines less steeply to 0 over the course of another challenge period.\"},\"openPosition(address,uint256,uint256,uint256,uint40,uint40,uint40,uint24,uint256,uint24)\":{\"notice\":\"Open a collateralized loan position. See also https://docs.DecentralizedEURO.com/positions/open .\"},\"pendingReturns(address,address)\":{\"notice\":\"Map to remember pending postponed collateral returns.\"},\"price(uint32)\":{\"notice\":\"Get the price per unit of the collateral for the given challenge.\"},\"returnPostponedCollateral(address,address)\":{\"notice\":\"Challengers can call this method to withdraw collateral whose return was postponed.\"}},\"notice\":\"The central hub for creating, cloning and challenging collateralized DecentralizedEURO positions.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/MintingHubV2/MintingHub.sol\":\"MintingHub\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (access/Ownable.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {Context} from \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * The initial owner is set to the address provided by the deployer. This can\\n * later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    /**\\n     * @dev The caller account is not authorized to perform an operation.\\n     */\\n    error OwnableUnauthorizedAccount(address account);\\n\\n    /**\\n     * @dev The owner is not a valid owner account. (eg. `address(0)`)\\n     */\\n    error OwnableInvalidOwner(address owner);\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the address provided by the deployer as the initial owner.\\n     */\\n    constructor(address initialOwner) {\\n        if (initialOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(initialOwner);\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        _checkOwner();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if the sender is not the owner.\\n     */\\n    function _checkOwner() internal view virtual {\\n        if (owner() != _msgSender()) {\\n            revert OwnableUnauthorizedAccount(_msgSender());\\n        }\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby disabling any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        if (newOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.1.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Interface of the ERC-20 standard as defined in the ERC.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /**\\n     * @dev Returns the value of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the value of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets a `value` amount of tokens as the allowance of `spender` over the\\n     * caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to` using the\\n     * allowance mechanism. `value` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\\n}\\n\",\"keccak256\":\"0xe06a3f08a987af6ad2e1c1e774405d4fe08f1694b67517438b467cecf0da0ef7\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.1.0) (token/ERC20/extensions/IERC20Metadata.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC20} from \\\"../IERC20.sol\\\";\\n\\n/**\\n * @dev Interface for the optional metadata functions from the ERC-20 standard.\\n */\\ninterface IERC20Metadata is IERC20 {\\n    /**\\n     * @dev Returns the name of the token.\\n     */\\n    function name() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the symbol of the token.\\n     */\\n    function symbol() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the decimals places of the token.\\n     */\\n    function decimals() external view returns (uint8);\\n}\\n\",\"keccak256\":\"0x70f2f713b13b7ce4610bcd0ac9fec0f3cc43693b043abcb8dc40a42a726eb330\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n\\n    function _contextSuffixLength() internal view virtual returns (uint256) {\\n        return 0;\\n    }\\n}\\n\",\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\"},\"contracts/MintingHubV2/MintingHub.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport {MathUtil} from \\\"../utils/MathUtil.sol\\\";\\n\\nimport {IERC20} from \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\nimport {IERC20Metadata} from \\\"@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol\\\";\\nimport {Ownable} from \\\"@openzeppelin/contracts/access/Ownable.sol\\\";\\n\\nimport {IDecentralizedEURO} from \\\"../interface/IDecentralizedEURO.sol\\\";\\nimport {IReserve} from \\\"../interface/IReserve.sol\\\";\\nimport {ILeadrate} from \\\"../interface/ILeadrate.sol\\\";\\n\\nimport {IPosition} from \\\"./interface/IPosition.sol\\\";\\nimport {IPositionFactory} from \\\"./interface/IPositionFactory.sol\\\";\\nimport {PositionRoller} from \\\"./PositionRoller.sol\\\";\\n\\n/**\\n * @title Minting Hub\\n * @notice The central hub for creating, cloning and challenging collateralized DecentralizedEURO positions.\\n * @dev Only one instance of this contract is required, whereas every new position comes with a new position\\n * contract. Pending challenges are stored as structs in an array.\\n */\\ncontract MintingHub {\\n    /**\\n     * @notice Irrevocable fee in deur when proposing a new position (but not when cloning an existing one).\\n     */\\n    uint256 public constant OPENING_FEE = 1000 * 10 ** 18;\\n\\n    /**\\n     * @notice The challenger reward in parts per million (ppm) relative to the challenged amount, whereas\\n     * challenged amount if defined as the challenged collateral amount times the liquidation price.\\n     */\\n    uint256 public constant CHALLENGER_REWARD = 20000; // 2%\\n    uint256 public constant EXPIRED_PRICE_FACTOR = 10;\\n\\n    IPositionFactory private immutable POSITION_FACTORY; // position contract to clone\\n\\n    IDecentralizedEURO public immutable deur; // currency\\n    PositionRoller public immutable roller; // helper to roll positions\\n    ILeadrate public immutable rate; // to determine the interest rate\\n\\n    Challenge[] public challenges; // list of open challenges\\n\\n    /**\\n     * @notice Map to remember pending postponed collateral returns.\\n     * @dev It maps collateral => beneficiary => amount.\\n     */\\n    mapping(address collateral => mapping(address owner => uint256 amount)) public pendingReturns;\\n\\n    struct Challenge {\\n        address challenger; // the address from which the challenge was initiated\\n        uint40 start; // the start of the challenge\\n        IPosition position; // the position that was challenged\\n        uint256 size; // how much collateral the challenger provided\\n    }\\n\\n    event PositionOpened(address indexed owner, address indexed position, address original, address collateral);\\n    event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);\\n    event ChallengeAverted(address indexed position, uint256 number, uint256 size);\\n    event ChallengeSucceeded(\\n        address indexed position,\\n        uint256 number,\\n        uint256 bid,\\n        uint256 acquiredCollateral,\\n        uint256 challengeSize\\n    );\\n    event PostPonedReturn(address collateral, address indexed beneficiary, uint256 amount);\\n    event ForcedSale(address pos, uint256 amount, uint256 priceE36MinusDecimals);\\n\\n    error UnexpectedPrice();\\n    error InvalidPos();\\n    error IncompatibleCollateral();\\n    error InsufficientCollateral();\\n\\n    modifier validPos(address position) {\\n        if (deur.getPositionParent(position) != address(this)) revert InvalidPos();\\n        _;\\n    }\\n\\n    constructor(address _deur, address _leadrate, address _roller, address _factory) {\\n        deur = IDecentralizedEURO(_deur);\\n        rate = ILeadrate(_leadrate);\\n        POSITION_FACTORY = IPositionFactory(_factory);\\n        roller = PositionRoller(_roller);\\n    }\\n\\n    /**\\n     * @notice Open a collateralized loan position. See also https://docs.DecentralizedEURO.com/positions/open .\\n     * @dev For a successful call, you must set an allowance for the collateral token, allowing\\n     * the minting hub to transfer the initial collateral amount to the newly created position and to\\n     * withdraw the fees.\\n     *\\n     * @param _collateralAddress        address of collateral token\\n     * @param _minCollateral     minimum collateral required to prevent dust amounts\\n     * @param _initialCollateral amount of initial collateral to be deposited\\n     * @param _mintingMaximum    maximal amount of deur that can be minted by the position owner\\n     * @param _expirationSeconds position tenor in unit of timestamp (seconds) from 'now'\\n     * @param _challengeSeconds  challenge period. Longer for less liquid collateral.\\n     * @param _riskPremium       ppm of minted amount that is added to the applicible minting fee as a risk premium\\n     * @param _liqPrice          Liquidation price with (36 - token decimals) decimals,\\n     *                           e.g. 18 decimals for an 18 dec collateral, 36 decs for a 0 dec collateral.\\n     * @param _reservePPM        ppm of minted amount that is locked as borrower's reserve, e.g. 20%\\n     * @return address           address of created position\\n     */\\n    function openPosition(\\n        address _collateralAddress,\\n        uint256 _minCollateral,\\n        uint256 _initialCollateral,\\n        uint256 _mintingMaximum,\\n        uint40 _initPeriodSeconds,\\n        uint40 _expirationSeconds,\\n        uint40 _challengeSeconds,\\n        uint24 _riskPremium,\\n        uint256 _liqPrice,\\n        uint24 _reservePPM\\n    ) public returns (address) {\\n        {\\n            require(_riskPremium <= 1000000);\\n            require(CHALLENGER_REWARD <= _reservePPM && _reservePPM <= 1000000);\\n            require(IERC20Metadata(_collateralAddress).decimals() <= 24); // leaves 12 digits for price\\n            uint256 invalidAmount = IERC20(_collateralAddress).totalSupply() + 1;\\n            try IERC20(_collateralAddress).transfer(address(0x123), invalidAmount) {\\n                revert IncompatibleCollateral(); // we need a collateral that reverts on failed transfers\\n            } catch Error(string memory /*reason*/) {} catch Panic(uint /*errorCode*/) {} catch (\\n                bytes memory /*lowLevelData*/\\n            ) {}\\n            if (_initialCollateral < _minCollateral) revert InsufficientCollateral();\\n            if (_minCollateral * _liqPrice < 5000 ether * 10 ** 18) revert InsufficientCollateral(); // must start with at least 5000 deur worth of collateral\\n        }\\n        IPosition pos = IPosition(\\n            POSITION_FACTORY.createNewPosition(\\n                msg.sender,\\n                address(deur),\\n                _collateralAddress,\\n                _minCollateral,\\n                _mintingMaximum,\\n                _initPeriodSeconds,\\n                _expirationSeconds,\\n                _challengeSeconds,\\n                _riskPremium,\\n                _liqPrice,\\n                _reservePPM\\n            )\\n        );\\n        deur.registerPosition(address(pos));\\n        deur.collectProfits(msg.sender, OPENING_FEE);\\n        IERC20(_collateralAddress).transferFrom(msg.sender, address(pos), _initialCollateral);\\n\\n        emit PositionOpened(msg.sender, address(pos), address(pos), _collateralAddress);\\n        return address(pos);\\n    }\\n\\n    function clone(\\n        address parent,\\n        uint256 _initialCollateral,\\n        uint256 _initialMint,\\n        uint40 expiration\\n    ) public returns (address) {\\n        return clone(msg.sender, parent, _initialCollateral, _initialMint, expiration);\\n    }\\n\\n    /**\\n     * @notice Clones an existing position and immediately tries to mint the specified amount using the given collateral.\\n     * @dev This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral.\\n     */\\n    function clone(\\n        address owner,\\n        address parent,\\n        uint256 _initialCollateral,\\n        uint256 _initialMint,\\n        uint40 expiration\\n    ) public validPos(parent) returns (address) {\\n        address pos = POSITION_FACTORY.clonePosition(parent);\\n        IPosition child = IPosition(pos);\\n        child.initialize(parent, expiration);\\n        deur.registerPosition(pos);\\n        IERC20 collateral = child.collateral();\\n        if (_initialCollateral < child.minimumCollateral()) revert InsufficientCollateral();\\n        collateral.transferFrom(msg.sender, pos, _initialCollateral); // collateral must still come from sender for security\\n        emit PositionOpened(owner, address(pos), parent, address(collateral));\\n        child.mint(owner, _initialMint);\\n        Ownable(address(child)).transferOwnership(owner);\\n        return address(pos);\\n    }\\n\\n    /**\\n     * @notice Launch a challenge (Dutch auction) on a position\\n     * @param _positionAddr      address of the position we want to challenge\\n     * @param _collateralAmount  amount of the collateral we want to challenge\\n     * @param minimumPrice       position.price() to guard against the minter fruntrunning with a price change\\n     * @return index of the challenge in challenge-array\\n     */\\n    function challenge(\\n        address _positionAddr,\\n        uint256 _collateralAmount,\\n        uint256 minimumPrice\\n    ) external validPos(_positionAddr) returns (uint256) {\\n        IPosition position = IPosition(_positionAddr);\\n        // challenger should be ok if frontrun by owner with a higher price\\n        // in case owner fruntruns challenger with small price decrease to prevent challenge,\\n        // the challenger should set minimumPrice to market price\\n        if (position.price() < minimumPrice) revert UnexpectedPrice();\\n        IERC20(position.collateral()).transferFrom(msg.sender, address(this), _collateralAmount);\\n        uint256 pos = challenges.length;\\n        challenges.push(Challenge(msg.sender, uint40(block.timestamp), position, _collateralAmount));\\n        position.notifyChallengeStarted(_collateralAmount);\\n        emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);\\n        return pos;\\n    }\\n\\n    /**\\n     * @notice Post a bid in deur given an open challenge.\\n     *\\n     * @dev In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token\\n     * has a blacklist and the challenger is on it), it is possible to postpone the return of the collateral.\\n     *\\n     * @param _challengeNumber  index of the challenge as broadcast in the event\\n     * @param size              how much of the collateral the caller wants to bid for at most\\n     *                          (automatically reduced to the available amount)\\n     * @param postponeCollateralReturn To postpone the return of the collateral to the challenger. Usually false.\\n     */\\n    function bid(uint32 _challengeNumber, uint256 size, bool postponeCollateralReturn) external {\\n        Challenge memory _challenge = challenges[_challengeNumber];\\n        (uint256 liqPrice, uint40 phase) = _challenge.position.challengeData();\\n        size = _challenge.size < size ? _challenge.size : size; // cannot bid for more than the size of the challenge\\n\\n        if (block.timestamp <= _challenge.start + phase) {\\n            _avertChallenge(_challenge, _challengeNumber, liqPrice, size);\\n            emit ChallengeAverted(address(_challenge.position), _challengeNumber, size);\\n        } else {\\n            _returnChallengerCollateral(_challenge, _challengeNumber, size, postponeCollateralReturn);\\n            (uint256 transferredCollateral, uint256 offer) = _finishChallenge(_challenge, liqPrice, phase, size);\\n            emit ChallengeSucceeded(address(_challenge.position), _challengeNumber, offer, transferredCollateral, size);\\n        }\\n    }\\n\\n    function _finishChallenge(\\n        Challenge memory _challenge,\\n        uint256 liqPrice,\\n        uint40 phase,\\n        uint256 size\\n    ) internal returns (uint256, uint256) {\\n        // Repayments depend on what was actually minted, whereas bids depend on the available collateral\\n        (address owner, uint256 collateral, uint256 repayment, uint32 reservePPM) = _challenge\\n            .position\\n            .notifyChallengeSucceeded(msg.sender, size);\\n\\n        // No overflow possible thanks to invariant (col * price <= limit * 10**18)\\n        // enforced in Position.setPrice and knowing that collateral <= col.\\n        uint256 offer = (_calculatePrice(_challenge.start + phase, phase, liqPrice) * collateral) / 10 ** 18;\\n        deur.transferFrom(msg.sender, address(this), offer); // get money from bidder\\n        uint256 reward = (offer * CHALLENGER_REWARD) / 1000_000;\\n        deur.transfer(_challenge.challenger, reward); // pay out the challenger reward\\n        uint256 fundsAvailable = offer - reward; // funds available after reward\\n\\n        // Example: available funds are 90, repayment is 50, reserve 20%. Then 20%*(90-50)=16 are collected as profits\\n        // and the remaining 34 are sent to the position owner. If the position owner maxed out debt before the challenge\\n        // started and the liquidation price was 100, they would be slightly better off as they would get away with 80\\n        // instead of 40+36 = 76 in this example.\\n        if (fundsAvailable > repayment) {\\n            // The excess amount is distributed between the system and the owner using the reserve ratio\\n            // At this point, we cannot rely on the liquidation price because the challenge might have been started as a\\n            // response to an unreasonable increase of the liquidation price, such that we have to use this heuristic\\n            // for excess fund distribution, which make position owners that maxed out their positions slightly better\\n            // off in comparison to those who did not.\\n            uint256 profits = (reservePPM * (fundsAvailable - repayment)) / 1000_000;\\n            deur.collectProfits(address(this), profits);\\n            deur.transfer(owner, fundsAvailable - repayment - profits);\\n        } else if (fundsAvailable < repayment) {\\n            deur.coverLoss(address(this), repayment - fundsAvailable); // ensure we have enough to pay everything\\n        }\\n        deur.burnWithoutReserve(repayment, reservePPM); // Repay the challenged part, example: 50 deur leading to 10 deur in implicit profits\\n        return (collateral, offer);\\n    }\\n\\n    function _avertChallenge(Challenge memory _challenge, uint32 number, uint256 liqPrice, uint256 size) internal {\\n        require(block.timestamp != _challenge.start); // do not allow to avert the challenge in the same transaction, see CS-deur-037\\n        if (msg.sender == _challenge.challenger) {\\n            // allow challenger to cancel challenge without paying themselves\\n        } else {\\n            deur.transferFrom(msg.sender, _challenge.challenger, (size * liqPrice) / (10 ** 18));\\n        }\\n\\n        _challenge.position.notifyChallengeAverted(size);\\n        _challenge.position.collateral().transfer(msg.sender, size);\\n        if (size < _challenge.size) {\\n            challenges[number].size = _challenge.size - size;\\n        } else {\\n            require(size == _challenge.size);\\n            delete challenges[number];\\n        }\\n    }\\n\\n    /**\\n     * @notice Returns 'amount' of the collateral to the challenger and reduces or deletes the relevant challenge.\\n     */\\n    function _returnChallengerCollateral(\\n        Challenge memory _challenge,\\n        uint32 number,\\n        uint256 amount,\\n        bool postpone\\n    ) internal {\\n        _returnCollateral(_challenge.position.collateral(), _challenge.challenger, amount, postpone);\\n        if (_challenge.size == amount) {\\n            // bid on full amount\\n            delete challenges[number];\\n        } else {\\n            // bid on partial amount\\n            challenges[number].size -= amount;\\n        }\\n    }\\n\\n    /**\\n     * @notice Calculates the current Dutch auction price.\\n     * @dev Starts at the full price at time 'start' and linearly goes to 0 as 'phase2' passes.\\n     */\\n    function _calculatePrice(uint40 start, uint40 phase2, uint256 liqPrice) internal view returns (uint256) {\\n        uint40 timeNow = uint40(block.timestamp);\\n        if (timeNow <= start) {\\n            return liqPrice;\\n        } else if (timeNow >= start + phase2) {\\n            return 0;\\n        } else {\\n            uint256 timeLeft = phase2 - (timeNow - start);\\n            return (liqPrice / phase2) * timeLeft;\\n        }\\n    }\\n\\n    /**\\n     * @notice Get the price per unit of the collateral for the given challenge.\\n     * @dev The price comes with (36-collateral.decimals()) digits, such that multiplying it with the\\n     * raw collateral amount always yields a price with 36 digits, or 18 digits after dividing by 10**18 again.\\n     */\\n    function price(uint32 challengeNumber) public view returns (uint256) {\\n        Challenge memory _challenge = challenges[challengeNumber];\\n        if (_challenge.challenger == address(0x0)) {\\n            return 0;\\n        } else {\\n            (uint256 liqPrice, uint40 phase) = _challenge.position.challengeData();\\n            return _calculatePrice(_challenge.start + phase, phase, liqPrice);\\n        }\\n    }\\n\\n    /**\\n     * @notice Challengers can call this method to withdraw collateral whose return was postponed.\\n     */\\n    function returnPostponedCollateral(address collateral, address target) external {\\n        uint256 amount = pendingReturns[collateral][msg.sender];\\n        delete pendingReturns[collateral][msg.sender];\\n        IERC20(collateral).transfer(target, amount);\\n    }\\n\\n    function _returnCollateral(IERC20 collateral, address recipient, uint256 amount, bool postpone) internal {\\n        if (postpone) {\\n            // Postponing helps in case the challenger was blacklisted or otherwise cannot receive at the moment.\\n            pendingReturns[address(collateral)][recipient] += amount;\\n            emit PostPonedReturn(address(collateral), recipient, amount);\\n        } else {\\n            collateral.transfer(recipient, amount); // return the challenger's collateral\\n        }\\n    }\\n\\n    /**\\n     * The applicable purchase price when forcing the sale of collateral of an expired position.\\n     *\\n     * The price starts at 10x the liquidation price at the expiration time, linearly declines to\\n     * 1x liquidation price over the course of one challenge period, and then linearly declines\\n     * less steeply to 0 over the course of another challenge period.\\n     */\\n    function expiredPurchasePrice(IPosition pos) public view returns (uint256) {\\n        uint256 liqprice = pos.price();\\n        uint256 expiration = pos.expiration();\\n        if (block.timestamp <= expiration) {\\n            return EXPIRED_PRICE_FACTOR * liqprice;\\n        } else {\\n            uint256 challengePeriod = pos.challengePeriod();\\n            uint256 timePassed = block.timestamp - expiration;\\n            if (timePassed <= challengePeriod) {\\n                // from 10x liquidation price to 1x in first phase\\n                uint256 timeLeft = challengePeriod - timePassed;\\n                return liqprice + (((EXPIRED_PRICE_FACTOR - 1) * liqprice) / challengePeriod) * timeLeft;\\n            } else if (timePassed < 2 * challengePeriod) {\\n                // from 1x liquidation price to 0 in second phase\\n                uint256 timeLeft = 2 * challengePeriod - timePassed;\\n                return (liqprice / challengePeriod) * timeLeft;\\n            } else {\\n                // get collateral for free after both phases passed\\n                return 0;\\n            }\\n        }\\n    }\\n\\n    /**\\n     * Buys the desired amount of the collateral asset from the given expired position using\\n     * the applicable 'expiredPurchasePrice' in that instant.\\n     */\\n    function buyExpiredCollateral(IPosition pos, uint256 amount) external {\\n        uint256 forceSalePrice = expiredPurchasePrice(pos);\\n        uint256 costs = (forceSalePrice * amount) / 10 ** 18;\\n        pos.forceSale(msg.sender, amount, costs);\\n        emit ForcedSale(address(pos), amount, forceSalePrice);\\n    }\\n}\\n\",\"keccak256\":\"0xd31b81404f48420c9aa0d1489b5abf1c9d90889b5b58c267ceccd2f26fabdc84\",\"license\":\"MIT\"},\"contracts/MintingHubV2/PositionRoller.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport {IERC20} from \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\nimport {Ownable} from \\\"@openzeppelin/contracts/access/Ownable.sol\\\";\\n\\nimport {IDecentralizedEURO} from \\\"../interface/IDecentralizedEURO.sol\\\";\\nimport {IReserve} from \\\"../interface/IReserve.sol\\\";\\n\\nimport {IPosition} from \\\"./interface/IPosition.sol\\\";\\n\\n/**\\n * @title PositionRoller\\n *\\n * Helper to roll over a debt from an old position to a new one.\\n * Both positions should have the same collateral. Otherwise, it does not make much sense.\\n */\\ncontract PositionRoller {\\n    IDecentralizedEURO private deuro;\\n\\n    error NotOwner(address pos);\\n    error Log(uint256, uint256, uint256);\\n\\n    event Roll(address source, uint256 collWithdraw, uint256 repay, address target, uint256 collDeposit, uint256 mint);\\n\\n    constructor(address deuro_) {\\n        deuro = IDecentralizedEURO(deuro_);\\n    }\\n\\n    /**\\n     * Convenience method to roll and old position into a new one.\\n     *\\n     * Pre-condition is an allowance for the roller to spend the collateral assset on behalf of the caller,\\n     * i.e. one should set collateral.approve(roller, collateral.balanceOf(sourcePosition));\\n     *\\n     * The following is assumed:\\n     * - If the limit of the target position permits, the user wants to roll everything\\n     * - The user does not want to add additional collateral, but excess collateral is returned\\n     * - If not enough can be minted in the new position, it is ok for the roller to use deuro from the msg.sender\\n     */\\n    function rollFully(IPosition source, IPosition target) external {\\n        rollFullyWithExpiration(source, target, target.expiration());\\n    }\\n\\n    /**\\n     * Like rollFully, but with a custom expiration date for the new position.\\n     */\\n    function rollFullyWithExpiration(IPosition source, IPosition target, uint40 expiration) public {\\n        require(source.collateral() == target.collateral());\\n        uint256 repay = findRepaymentAmount(source);\\n        uint256 mintAmount = target.getMintAmount(repay);\\n        uint256 collateralToWithdraw = IERC20(source.collateral()).balanceOf(address(source));\\n        uint256 targetPrice = target.price();\\n        uint256 depositAmount = (mintAmount * 10 ** 18 + targetPrice - 1) / targetPrice; // round up\\n        if (depositAmount > collateralToWithdraw) {\\n            // If we need more collateral than available from the old position, we opt for taking\\n            // the missing funds from the caller instead of taking additional collateral from the caller\\n            depositAmount = collateralToWithdraw;\\n            mintAmount = (depositAmount * target.price()) / 10 ** 18; // round down, rest will be taken from caller\\n        }\\n        roll(source, repay, collateralToWithdraw, target, mintAmount, depositAmount, expiration);\\n    }\\n\\n    /**\\n     * Doing a binary search is not very efficient, but guaranteed to return a valid result without rounding errors.\\n     * To save gas costs, the frontend can also call this and other methods to calculate the right parameters and\\n     * then call 'roll' directly.\\n     */\\n    function findRepaymentAmount(IPosition pos) public view returns (uint256) {\\n        uint256 minted = pos.minted();\\n        uint24 reservePPM = pos.reserveContribution();\\n        if (minted == 0) {\\n            return 0;\\n        }\\n        uint256 higherResult = deuro.calculateFreedAmount(minted, reservePPM);\\n        if (higherResult == minted) {\\n            return minted;\\n        }\\n        return binarySearch(minted, reservePPM, 0, 0, minted, higherResult);\\n    }\\n\\n    // max call stack depth is 1024 in solidity. Binary search on 256 bit number takes at most 256 steps, so it should be fine.\\n    function binarySearch(\\n        uint256 target,\\n        uint24 reservePPM,\\n        uint256 lowerBound,\\n        uint256 lowerResult,\\n        uint256 higherBound,\\n        uint256 higherResult\\n    ) internal view returns (uint256) {\\n        uint256 middle = (lowerBound + higherBound) / 2;\\n        if (middle == lowerBound) {\\n            return higherBound; // we have reached max precision without exact match, return next higher result to be on the safe side\\n        } else {\\n            uint256 middleResult = deuro.calculateFreedAmount(middle, reservePPM);\\n            if (middleResult == target) {\\n                return middle;\\n            } else if (middleResult < target) {\\n                return binarySearch(target, reservePPM, middle, middleResult, higherBound, higherResult);\\n            } else {\\n                return binarySearch(target, reservePPM, lowerBound, lowerResult, middle, middleResult);\\n            }\\n        }\\n    }\\n\\n    /**\\n     * Rolls the source position into the target position using a flash loan.\\n     * Both the source and the target position must recognize this roller.\\n     * It is the responsibility of the caller to ensure that both positions are valid contracts.\\n     *\\n     * @param source The source position, must be owned by the msg.sender .\\n     * @param repay The amount to flash loan in order to repay the source position and free up some or all collateral.\\n     * @param collWithdraw Collateral to move from the source position to the msg.sender .\\n     * @param target The target position. If not owned by msg.sender or if it does not have the desired expiration,\\n     *               it is cloned to create a position owned by the msg.sender.\\n     * @param mint The amount to be minted from the target position using collateral from msg.sender.\\n     * @param collDeposit The amount of collateral to be send from msg.sender to the target position.\\n     * @param expiration The desired expiration date for the target position.\\n     */\\n    function roll(\\n        IPosition source,\\n        uint256 repay,\\n        uint256 collWithdraw,\\n        IPosition target,\\n        uint256 mint,\\n        uint256 collDeposit,\\n        uint40 expiration\\n    ) public own(source) {\\n        deuro.mint(address(this), repay); // take a flash loan\\n        source.repay(repay);\\n        source.withdrawCollateral(msg.sender, collWithdraw);\\n        if (mint > 0) {\\n            IERC20 targetCollateral = IERC20(target.collateral());\\n            if (Ownable(address(target)).owner() != msg.sender || expiration < target.expiration()) {\\n                targetCollateral.transferFrom(msg.sender, address(this), collDeposit); // get the new collateral\\n                targetCollateral.approve(target.hub(), collDeposit); // approve the new collateral and clone:\\n                target = IPosition(\\n                    IMintingHub(target.hub()).clone(msg.sender, address(target), collDeposit, mint, expiration)\\n                );\\n            } else {\\n                // We can roll into the provided existing position\\n                // We do not verify whether the target position has been created by the known minting hub in order\\n                // to allow positions to be rolled into future versions of the minting hub\\n                targetCollateral.transferFrom(msg.sender, address(target), collDeposit);\\n                target.mint(msg.sender, mint);\\n            }\\n        }\\n        deuro.burnFrom(msg.sender, repay); // repay the flash loan\\n        emit Roll(address(source), collWithdraw, repay, address(target), collDeposit, mint);\\n    }\\n\\n    modifier own(IPosition pos) {\\n        if (Ownable(address(pos)).owner() != msg.sender) revert NotOwner(address(pos));\\n        _;\\n    }\\n}\\n\\ninterface IMintingHub {\\n    function clone(\\n        address owner,\\n        address parent,\\n        uint256 _initialCollateral,\\n        uint256 _initialMint,\\n        uint40 expiration\\n    ) external returns (address);\\n}\\n\",\"keccak256\":\"0x288ea5d9c4d9d103db5ba5b55cb643891a0b61bbee15ae897007bc98fa9d9a95\",\"license\":\"MIT\"},\"contracts/MintingHubV2/interface/IPosition.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\ninterface IPosition {\\n    function hub() external view returns (address);\\n\\n    function collateral() external view returns (IERC20);\\n\\n    function minimumCollateral() external view returns (uint256);\\n\\n    function price() external view returns (uint256);\\n\\n    function minted() external view returns (uint256);\\n\\n    function challengedAmount() external view returns (uint256);\\n\\n    function original() external view returns (address);\\n\\n    function expiration() external view returns (uint40);\\n\\n    function cooldown() external view returns (uint40);\\n\\n    function limit() external view returns (uint256);\\n\\n    function challengePeriod() external view returns (uint40);\\n\\n    function start() external view returns (uint40);\\n\\n    function riskPremiumPPM() external view returns (uint24);\\n\\n    function reserveContribution() external view returns (uint24);\\n\\n    function initialize(address parent, uint40 _expiration) external;\\n\\n    function assertCloneable() external;\\n\\n    function notifyMint(uint256 mint_) external;\\n\\n    function notifyRepaid(uint256 repaid_) external;\\n\\n    function availableForClones() external view returns (uint256);\\n\\n    function availableForMinting() external view returns (uint256);\\n\\n    function deny(address[] calldata helpers, string calldata message) external;\\n\\n    function getUsableMint(uint256 totalMint, bool afterFees) external view returns (uint256);\\n\\n    function getMintAmount(uint256 usableMint) external view returns (uint256);\\n\\n    function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) external;\\n\\n    function adjustPrice(uint256 newPrice) external;\\n\\n    function mint(address target, uint256 amount) external;\\n\\n    function calculateCurrentFee() external view returns (uint24);\\n\\n    function annualInterestPPM() external view returns (uint24);\\n\\n    function calculateFee(uint256 exp) external view returns (uint24);\\n\\n    function repay(uint256 amount) external returns (uint256);\\n\\n    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external;\\n\\n    function withdraw(address token, address target, uint256 amount) external;\\n\\n    function withdrawCollateral(address target, uint256 amount) external;\\n\\n    function challengeData() external view returns (uint256 liqPrice, uint40 phase);\\n\\n    function notifyChallengeStarted(uint256 size) external;\\n\\n    function notifyChallengeAverted(uint256 size) external;\\n\\n    function notifyChallengeSucceeded(\\n        address _bidder,\\n        uint256 _size\\n    ) external returns (address, uint256, uint256, uint32);\\n}\\n\",\"keccak256\":\"0xa70e20bd25aed2aac8d4c1fcd91819492c57b20947f822f6fe212d8c2acb8ef7\",\"license\":\"MIT\"},\"contracts/MintingHubV2/interface/IPositionFactory.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IPositionFactory {\\n    function createNewPosition(\\n        address _owner,\\n        address _deuro,\\n        address _collateral,\\n        uint256 _minCollateral,\\n        uint256 _initialLimit,\\n        uint40 _initPeriod,\\n        uint40 _duration,\\n        uint40 _challengePeriod,\\n        uint24 _riskPremiumPPM,\\n        uint256 _liqPrice,\\n        uint24 _reserve\\n    ) external returns (address);\\n\\n    function clonePosition(address _parent) external returns (address);\\n}\\n\",\"keccak256\":\"0x5235f255a0695ed6d7d8c6ec03930314225d64bd147cbc7e024f2b6092963286\",\"license\":\"MIT\"},\"contracts/interface/IDecentralizedEURO.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport {IReserve} from \\\"./IReserve.sol\\\";\\nimport {IERC20} from \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\ninterface IDecentralizedEURO is IERC20 {\\n    function suggestMinter(\\n        address _minter,\\n        uint256 _applicationPeriod,\\n        uint256 _applicationFee,\\n        string calldata _message\\n    ) external;\\n\\n    function registerPosition(address position) external;\\n\\n    function denyMinter(address minter, address[] calldata helpers, string calldata message) external;\\n\\n    function reserve() external view returns (IReserve);\\n\\n    function minterReserve() external view returns (uint256);\\n\\n    function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) external view returns (uint256);\\n\\n    function calculateFreedAmount(uint256 amountExcludingReserve, uint32 reservePPM) external view returns (uint256);\\n\\n    function equity() external view returns (uint256);\\n\\n    function isMinter(address minter) external view returns (bool);\\n\\n    function getPositionParent(address position) external view returns (address);\\n\\n    function mint(address target, uint256 amount) external;\\n\\n    function mintWithReserve(address target, uint256 amount, uint32 reservePPM, uint32 feePPM) external;\\n\\n    function burnFrom(address target, uint256 amount) external;\\n\\n    function burnWithoutReserve(uint256 amountIncludingReserve, uint32 reservePPM) external;\\n\\n    function burnFromWithReserve(\\n        address payer,\\n        uint256 targetTotalBurnAmount,\\n        uint32 _reservePPM\\n    ) external returns (uint256);\\n\\n    function burnWithReserve(uint256 amountExcludingReserve, uint32 reservePPM) external returns (uint256);\\n\\n    function coverLoss(address source, uint256 amount) external;\\n\\n    function collectProfits(address source, uint256 _amount) external;\\n}\\n\",\"keccak256\":\"0x5a794e79a91424814795d9f3edd3db86e4d360f652a0250c04c279592417bb8e\",\"license\":\"MIT\"},\"contracts/interface/ILeadrate.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface ILeadrate {\\n   function currentRatePPM() external view returns (uint24);\\n   function currentTicks() external view returns (uint64);\\n}\",\"keccak256\":\"0x881b944dbc6c7d79ad5e8de37e31e1c11ff9b75eed314b62b1071f2e5b96dfc4\",\"license\":\"MIT\"},\"contracts/interface/IReserve.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport {IERC20} from \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\ninterface IReserve is IERC20 {\\n    function invest(uint256 amount, uint256 expected) external returns (uint256);\\n    function checkQualified(address sender, address[] calldata helpers) external view;\\n}\\n\",\"keccak256\":\"0x8d413b94c7860d6f8a9ba0168642db626830209824e4ad2d879d5f252490d2b9\",\"license\":\"MIT\"},\"contracts/utils/MathUtil.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @title Functions for share valuation\\n */\\ncontract MathUtil {\\n    uint256 internal constant ONE_DEC18 = 10 ** 18;\\n\\n    // Let's go for 12 digits of precision (18-6)\\n    uint256 internal constant THRESH_DEC18 = 10 ** 6;\\n\\n    /**\\n     * @notice Cubic root with Halley approximation\\n     *         Number 1e18 decimal\\n     * @param _v     number for which we calculate x**(1/3)\\n     * @return returns _v**(1/3)\\n     */\\n    function _cubicRoot(uint256 _v) internal pure returns (uint256) {\\n        // Good first guess for _v slightly above 1.0, which is often the case in the dEURO system\\n        uint256 x = _v > ONE_DEC18 && _v < 10 ** 19 ? (_v - ONE_DEC18) / 3 + ONE_DEC18 : ONE_DEC18;\\n        uint256 diff;\\n        do {\\n            uint256 powX3 = _mulD18(_mulD18(x, x), x);\\n            uint256 xnew = (x * (powX3 + 2 * _v)) / (2 * powX3 + _v);\\n            diff = xnew > x ? xnew - x : x - xnew;\\n            x = xnew;\\n        } while (diff > THRESH_DEC18);\\n        return x;\\n    }\\n\\n    function _mulD18(uint256 _a, uint256 _b) internal pure returns (uint256) {\\n        return (_a * _b) / ONE_DEC18;\\n    }\\n\\n    function _divD18(uint256 _a, uint256 _b) internal pure returns (uint256) {\\n        return (_a * ONE_DEC18) / _b;\\n    }\\n\\n    function _power3(uint256 _x) internal pure returns (uint256) {\\n        return _mulD18(_mulD18(_x, _x), _x);\\n    }\\n\\n    function _min(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return a < b ? a : b;\\n    }\\n}\\n\",\"keccak256\":\"0xc7c822f9db3f8ff7a4fdfa704cec3ce41f7799a983d2d6055531e2c068da0b4e\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x61010060405234801561001157600080fd5b506040516129683803806129688339810160408190526100309161006f565b6001600160a01b0393841660a05291831660e0529082166080521660c0526100c3565b80516001600160a01b038116811461006a57600080fd5b919050565b6000806000806080858703121561008557600080fd5b61008e85610053565b935061009c60208601610053565b92506100aa60408601610053565b91506100b860608601610053565b905092959194509250565b60805160a05160c05160e05161280a61015e6000396000610194015260006101ce015260008181610130015281816106ac0152818161075f015281816107d201528181610b8101528181610d30015281816110250152818161179601528181611c1801528181611ccd01528181611da001528181611e0b01528181611ec90152611f6b01526000818161067c0152610c37015261280a6000f3fe608060405234801561001057600080fd5b506004361061010b5760003560e01c8063643745fb116100a2578063af5806b611610071578063af5806b61461029f578063c14a9f05146102a8578063e6ac5ea4146102bb578063e6ca1df2146102ce578063e85cde6f146102e157600080fd5b8063643745fb146102035780637eb81bb31461022e5780638f1d3776146102415780639d8ff2a61461028c57600080fd5b80632c4e722e116100de5780632c4e722e1461018f5780632e2c6314146101b65780632f09177d146101c957806335a4b349146101f057600080fd5b80630f2f8e8614610110578063213d94231461012b57806325e281241461016a5780632bf78dd81461017f575b600080fd5b610118600a81565b6040519081526020015b60405180910390f35b6101527f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b039091168152602001610122565b61017d61017836600461218c565b6102f4565b005b610118683635c9adc5dea0000081565b6101527f000000000000000000000000000000000000000000000000000000000000000081565b6101526101c43660046121cb565b6103db565b6101527f000000000000000000000000000000000000000000000000000000000000000081565b6101526101fe36600461222d565b6103f3565b6101186102113660046122d3565b600160209081526000928352604080842090915290825290205481565b61017d61023c36600461232c565b610911565b61025461024f36600461236e565b610b09565b604080516001600160a01b03958616815264ffffffffff94909416602085015291909316908201526060810191909152608001610122565b61015261029a366004612387565b610b5b565b610118614e2081565b6101186102b63660046123e6565b610fff565b6101186102c936600461241b565b6113b2565b6101186102dc366004612438565b6115bf565b61017d6102ef3660046122d3565b6116cc565b60006102ff836113b2565b90506000670de0b6b3a7640000610316848461246b565b6103209190612488565b60405163211d798360e01b815233600482015260248101859052604481018290529091506001600160a01b0385169063211d798390606401600060405180830381600087803b15801561037257600080fd5b505af1158015610386573d6000803e3d6000fd5b5050604080516001600160a01b0388168152602081018790529081018590527f67a660133c1fb4c0bb0480a5e4a9919216684052f13f0713e88fa2fbbc81d0829250606001905060405180910390a150505050565b60006103ea3386868686610b5b565b95945050505050565b6000620f42408462ffffff16111561040a57600080fd5b8162ffffff16614e20111580156104295750620f42408262ffffff1611155b61043257600080fd5b60188b6001600160a01b031663313ce5676040518163ffffffff1660e01b8152600401602060405180830381865afa158015610472573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061049691906124aa565b60ff1611156104a457600080fd5b60008b6001600160a01b03166318160ddd6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156104e4573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061050891906124cd565b6105139060016124e6565b60405163a9059cbb60e01b81529091506001600160a01b038d169063a9059cbb90610546906101239085906004016124f9565b6020604051808303816000875af1925050508015610581575060408051601f3d908101601f1916820190925261057e91810190612512565b60015b6106015761058d61252f565b806308c379a0036105b257506105a1612586565b806105ac57506105cb565b5061061b565b634e487b71036105cb576105c461260b565b906105ac57505b3d8080156105f5576040519150601f19603f3d011682016040523d82523d6000602084013e6105fa565b606091505b505061061b565b506040516343befb6960e11b815260040160405180910390fd5b8a8a101561063c57604051633a23d82560e01b815260040160405180910390fd5b700eb194f8e1ae525fd5dcfab08000000000610658858d61246b565b101561067757604051633a23d82560e01b815260040160405180910390fd5b5060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635d824f76337f00000000000000000000000000000000000000000000000000000000000000008f8f8e8e8e8e8e8e8e6040518c63ffffffff1660e01b81526004016106fa9b9a9998979695949392919061262b565b6020604051808303816000875af1158015610719573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061073d91906126ac565b60405163b52c696d60e01b81526001600160a01b0380831660048301529192507f00000000000000000000000000000000000000000000000000000000000000009091169063b52c696d90602401600060405180830381600087803b1580156107a557600080fd5b505af11580156107b9573d6000803e3d6000fd5b505060405163375edc7760e11b81526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169250636ebdb8ee9150610814903390683635c9adc5dea00000906004016124f9565b600060405180830381600087803b15801561082e57600080fd5b505af1158015610842573d6000803e3d6000fd5b50506040516323b872dd60e01b81526001600160a01b038f1692506323b872dd915061087690339085908f906004016126c9565b6020604051808303816000875af1158015610895573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906108b99190612512565b50604080516001600160a01b03808416808352908f1660208301529133917fc9b570ab9d98bdf3e38a40fd71b20edafca42449f23ca51f0bdcbf40e8ffe175910160405180910390a39b9a5050505050505050505050565b6000808463ffffffff168154811061092b5761092b6126ed565b600091825260208083206040805160808101825260039490940290910180546001600160a01b038082168652600160a01b90910464ffffffffff169385019390935260018101549092168382018190526002909201546060840152805163194c325560e11b81528151939550849363329864aa926004808401939192918290030181865afa1580156109c1573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109e59190612703565b91509150848360600151106109fa5784610a00565b82606001515b9450808360200151610a129190612729565b64ffffffffff164211610a7f57610a2b83878488611762565b604080840151815163ffffffff89168152602081018890526001600160a01b03909116917f1eee30d91b773ac47d7485a3acb6bcd8c7c9cd8d95301b1af361baf5f0991d2e910160405180910390a2610b01565b610a8b83878787611a2b565b600080610a9a8585858a611b3e565b604080880151815163ffffffff8d16815260208101849052918201849052606082018b90529294509092506001600160a01b03909116907f7d3a26e8d43c5b70f86266bfa26c212e3c097716ff7240ccb6a9034e48754e239060800160405180910390a250505b505050505050565b60008181548110610b1957600080fd5b60009182526020909120600390910201805460018201546002909201546001600160a01b038083169450600160a01b90920464ffffffffff1692919091169084565b60405163aa5dd7f160e01b81526001600160a01b038581166004830152600091869130917f00000000000000000000000000000000000000000000000000000000000000009091169063aa5dd7f190602401602060405180830381865afa158015610bca573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610bee91906126ac565b6001600160a01b031614610c15576040516369229ba760e01b815260040160405180910390fd5b604051630167d12360e71b81526001600160a01b0387811660048301526000917f00000000000000000000000000000000000000000000000000000000000000009091169063b3e89180906024016020604051808303816000875af1158015610c82573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610ca691906126ac565b6040516336a3a4fd60e11b81526001600160a01b03898116600483015264ffffffffff871660248301529192508291821690636d4749fa90604401600060405180830381600087803b158015610cfb57600080fd5b505af1158015610d0f573d6000803e3d6000fd5b505060405163b52c696d60e01b81526001600160a01b0385811660048301527f000000000000000000000000000000000000000000000000000000000000000016925063b52c696d9150602401600060405180830381600087803b158015610d7657600080fd5b505af1158015610d8a573d6000803e3d6000fd5b505050506000816001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa158015610dce573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610df291906126ac565b9050816001600160a01b031663babe7c746040518163ffffffff1660e01b8152600401602060405180830381865afa158015610e32573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610e5691906124cd565b881015610e7657604051633a23d82560e01b815260040160405180910390fd5b6040516323b872dd60e01b81526001600160a01b038216906323b872dd90610ea690339087908d906004016126c9565b6020604051808303816000875af1158015610ec5573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610ee99190612512565b50604080516001600160a01b038b81168252838116602083015280861692908d16917fc9b570ab9d98bdf3e38a40fd71b20edafca42449f23ca51f0bdcbf40e8ffe175910160405180910390a36040516340c10f1960e01b81526001600160a01b038316906340c10f1990610f64908d908b906004016124f9565b600060405180830381600087803b158015610f7e57600080fd5b505af1158015610f92573d6000803e3d6000fd5b505060405163f2fde38b60e01b81526001600160a01b038d811660048301528516925063f2fde38b9150602401600060405180830381600087803b158015610fd957600080fd5b505af1158015610fed573d6000803e3d6000fd5b50949c9b505050505050505050505050565b60405163aa5dd7f160e01b81526001600160a01b038481166004830152600091859130917f00000000000000000000000000000000000000000000000000000000000000009091169063aa5dd7f190602401602060405180830381865afa15801561106e573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061109291906126ac565b6001600160a01b0316146110b9576040516369229ba760e01b815260040160405180910390fd5b600085905083816001600160a01b031663a035b1fe6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156110fd573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061112191906124cd565b101561114057604051630d57523160e11b815260040160405180910390fd5b806001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa15801561117e573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906111a291906126ac565b6001600160a01b03166323b872dd3330886040518463ffffffff1660e01b81526004016111d1939291906126c9565b6020604051808303816000875af11580156111f0573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906112149190612512565b50600080546040805160808101825233815264ffffffffff428116602083019081526001600160a01b03878116848601818152606086018e8152600189018a559880529451600388027f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563810180549551909616600160a01b026001600160c81b0319909516918416919091179390931790935592517f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56482018054919094166001600160a01b0319919091161790925593517f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56590910155516342d0204160e01b81529091906342d020419061133090899060040190815260200190565b600060405180830381600087803b15801561134a57600080fd5b505af115801561135e573d6000803e3d6000fd5b505060408051898152602081018590526001600160a01b03861693503392507fc4b384b2c5ca32c8e77081f4083be594a1ea9ba34f208a9f9a458f70608585f5910160405180910390a39695505050505050565b600080826001600160a01b031663a035b1fe6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156113f3573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061141791906124cd565b90506000836001600160a01b0316634665096d6040518163ffffffff1660e01b8152600401602060405180830381865afa158015611459573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061147d9190612746565b64ffffffffff1690508042116114a05761149882600a61246b565b949350505050565b6000846001600160a01b031663f3f480d96040518163ffffffff1660e01b8152600401602060405180830381865afa1580156114e0573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906115049190612746565b64ffffffffff16905060006115198342612763565b905081811161157257600061152e8284612763565b905080838661153f6001600a612763565b611549919061246b565b6115539190612488565b61155d919061246b565b61156790866124e6565b979650505050505050565b61157d82600261246b565b8110156115b35760008161159284600261246b565b61159c9190612763565b9050806115a98487612488565b611567919061246b565b50600095945050505050565b60008060008363ffffffff16815481106115db576115db6126ed565b60009182526020918290206040805160808101825260039390930290910180546001600160a01b03808216808652600160a01b90920464ffffffffff169585019590955260018201549094169183019190915260020154606082015291506116465750600092915050565b60008082604001516001600160a01b031663329864aa6040518163ffffffff1660e01b81526004016040805180830381865afa15801561168a573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906116ae9190612703565b915091506103ea8184602001516116c59190612729565b8284611fe2565b6001600160a01b038216600081815260016020908152604080832033845290915280822080549290555163a9059cbb60e01b815290919063a9059cbb9061171990859085906004016124f9565b6020604051808303816000875af1158015611738573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061175c9190612512565b50505050565b836020015164ffffffffff16420361177957600080fd5b83516001600160a01b0316331461183f5783516001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016906323b872dd903390670de0b6b3a76400006117d2878761246b565b6117dc9190612488565b6040518463ffffffff1660e01b81526004016117fa939291906126c9565b6020604051808303816000875af1158015611819573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061183d9190612512565b505b83604001516001600160a01b03166349746f10826040518263ffffffff1660e01b815260040161187191815260200190565b600060405180830381600087803b15801561188b57600080fd5b505af115801561189f573d6000803e3d6000fd5b5050505083604001516001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa1580156118e5573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061190991906126ac565b6001600160a01b031663a9059cbb33836040518363ffffffff1660e01b81526004016119369291906124f9565b6020604051808303816000875af1158015611955573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906119799190612512565b5083606001518110156119c9578084606001516119969190612763565b60008463ffffffff16815481106119af576119af6126ed565b90600052602060002090600302016002018190555061175c565b836060015181146119d957600080fd5b60008363ffffffff16815481106119f2576119f26126ed565b60009182526020822060039091020180546001600160c81b03191681556001810180546001600160a01b03191690556002015550505050565b611a9d84604001516001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa158015611a70573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611a9491906126ac565b85518484612070565b81846060015103611af95760008363ffffffff1681548110611ac157611ac16126ed565b60009182526020822060039091020180546001600160c81b03191681556001810180546001600160a01b03191690556002015561175c565b8160008463ffffffff1681548110611b1357611b136126ed565b90600052602060002090600302016002016000828254611b339190612763565b909155505050505050565b60008060008060008089604001516001600160a01b03166320aa9e7233896040518363ffffffff1660e01b8152600401611b799291906124f9565b6080604051808303816000875af1158015611b98573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611bbc9190612776565b93509350935093506000670de0b6b3a764000084611bea8b8e60200151611be39190612729565b8c8e611fe2565b611bf4919061246b565b611bfe9190612488565b6040516323b872dd60e01b81529091506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016906323b872dd90611c51903390309086906004016126c9565b6020604051808303816000875af1158015611c70573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611c949190612512565b506000620f4240611ca7614e208461246b565b611cb19190612488565b8c5160405163a9059cbb60e01b81529192506001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169163a9059cbb91611d029185906004016124f9565b6020604051808303816000875af1158015611d21573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611d459190612512565b506000611d528284612763565b905084811115611eb7576000620f4240611d6c8784612763565b611d7c9063ffffffff881661246b565b611d869190612488565b60405163375edc7760e11b81529091506001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690636ebdb8ee90611dd790309085906004016124f9565b600060405180830381600087803b158015611df157600080fd5b505af1158015611e05573d6000803e3d6000fd5b505050507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663a9059cbb89838986611e469190612763565b611e509190612763565b6040518363ffffffff1660e01b8152600401611e6d9291906124f9565b6020604051808303816000875af1158015611e8c573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611eb09190612512565b5050611f49565b84811015611f49576001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001663d1fa5e9830611ef98489612763565b6040518363ffffffff1660e01b8152600401611f169291906124f9565b600060405180830381600087803b158015611f3057600080fd5b505af1158015611f44573d6000803e3d6000fd5b505050505b6040516363b20c3360e11b81526004810186905263ffffffff851660248201527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169063c764186690604401600060405180830381600087803b158015611fb757600080fd5b505af1158015611fcb573d6000803e3d6000fd5b50979f949e50939c50505050505050505050505050565b60004264ffffffffff80861690821611611fff5782915050612069565b6120098486612729565b64ffffffffff168164ffffffffff1610612027576000915050612069565b600061203386836127b7565b61203d90866127b7565b64ffffffffff169050808564ffffffffff168561205a9190612488565b612064919061246b565b925050505b9392505050565b80156120fc576001600160a01b038085166000908152600160209081526040808320938716835292905290812080548492906120ad9084906124e6565b92505081905550826001600160a01b03167f8ab298b78a235f73eee230f82012c0cf4db76003eaabd16a0195f112e7d625c885846040516120ef9291906124f9565b60405180910390a261175c565b60405163a9059cbb60e01b81526001600160a01b0385169063a9059cbb9061212a90869086906004016124f9565b6020604051808303816000875af1158015612149573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061216d9190612512565b5050505050565b6001600160a01b038116811461218957600080fd5b50565b6000806040838503121561219f57600080fd5b82356121aa81612174565b946020939093013593505050565b64ffffffffff8116811461218957600080fd5b600080600080608085870312156121e157600080fd5b84356121ec81612174565b93506020850135925060408501359150606085013561220a816121b8565b939692955090935050565b803562ffffff8116811461222857600080fd5b919050565b6000806000806000806000806000806101408b8d03121561224d57600080fd5b8a3561225881612174565b995060208b0135985060408b0135975060608b0135965060808b013561227d816121b8565b955060a08b013561228d816121b8565b945060c08b013561229d816121b8565b93506122ab60e08c01612215565b92506101008b013591506122c26101208c01612215565b90509295989b9194979a5092959850565b600080604083850312156122e657600080fd5b82356122f181612174565b9150602083013561230181612174565b809150509250929050565b63ffffffff8116811461218957600080fd5b801515811461218957600080fd5b60008060006060848603121561234157600080fd5b833561234c8161230c565b92506020840135915060408401356123638161231e565b809150509250925092565b60006020828403121561238057600080fd5b5035919050565b600080600080600060a0868803121561239f57600080fd5b85356123aa81612174565b945060208601356123ba81612174565b9350604086013592506060860135915060808601356123d8816121b8565b809150509295509295909350565b6000806000606084860312156123fb57600080fd5b833561240681612174565b95602085013595506040909401359392505050565b60006020828403121561242d57600080fd5b813561206981612174565b60006020828403121561244a57600080fd5b81356120698161230c565b634e487b7160e01b600052601160045260246000fd5b808202811582820484141761248257612482612455565b92915050565b6000826124a557634e487b7160e01b600052601260045260246000fd5b500490565b6000602082840312156124bc57600080fd5b815160ff8116811461206957600080fd5b6000602082840312156124df57600080fd5b5051919050565b8082018082111561248257612482612455565b6001600160a01b03929092168252602082015260400190565b60006020828403121561252457600080fd5b81516120698161231e565b600060033d11156125485760046000803e5060005160e01c5b90565b601f8201601f1916810167ffffffffffffffff8111828210171561257f57634e487b7160e01b600052604160045260246000fd5b6040525050565b600060443d10156125945790565b6040513d600319016004823e80513d602482011167ffffffffffffffff821117156125be57505090565b808201805167ffffffffffffffff8111156125da575050505090565b3d84016003190182820160200111156125f4575050505090565b6126036020828501018561254b565b509392505050565b60008060233d1115612627576020600460003e50506000516001905b9091565b6001600160a01b038c811682528b811660208301528a166040820152606081018990526080810188905264ffffffffff87811660a083015286811660c0830152851660e082015262ffffff841661010082015261016081018361012083015261269c61014083018462ffffff169052565b9c9b505050505050505050505050565b6000602082840312156126be57600080fd5b815161206981612174565b6001600160a01b039384168152919092166020820152604081019190915260600190565b634e487b7160e01b600052603260045260246000fd5b6000806040838503121561271657600080fd5b82516020840151909250612301816121b8565b64ffffffffff818116838216019081111561248257612482612455565b60006020828403121561275857600080fd5b8151612069816121b8565b8181038181111561248257612482612455565b6000806000806080858703121561278c57600080fd5b845161279781612174565b602086015160408701516060880151929650909450925061220a8161230c565b64ffffffffff82811682821603908111156124825761248261245556fea2646970667358221220f5acbad441204c1afe9ea7e2efe08a6defcd0f26fd0f0fcdc5227fb032ca059564736f6c634300081a0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061010b5760003560e01c8063643745fb116100a2578063af5806b611610071578063af5806b61461029f578063c14a9f05146102a8578063e6ac5ea4146102bb578063e6ca1df2146102ce578063e85cde6f146102e157600080fd5b8063643745fb146102035780637eb81bb31461022e5780638f1d3776146102415780639d8ff2a61461028c57600080fd5b80632c4e722e116100de5780632c4e722e1461018f5780632e2c6314146101b65780632f09177d146101c957806335a4b349146101f057600080fd5b80630f2f8e8614610110578063213d94231461012b57806325e281241461016a5780632bf78dd81461017f575b600080fd5b610118600a81565b6040519081526020015b60405180910390f35b6101527f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b039091168152602001610122565b61017d61017836600461218c565b6102f4565b005b610118683635c9adc5dea0000081565b6101527f000000000000000000000000000000000000000000000000000000000000000081565b6101526101c43660046121cb565b6103db565b6101527f000000000000000000000000000000000000000000000000000000000000000081565b6101526101fe36600461222d565b6103f3565b6101186102113660046122d3565b600160209081526000928352604080842090915290825290205481565b61017d61023c36600461232c565b610911565b61025461024f36600461236e565b610b09565b604080516001600160a01b03958616815264ffffffffff94909416602085015291909316908201526060810191909152608001610122565b61015261029a366004612387565b610b5b565b610118614e2081565b6101186102b63660046123e6565b610fff565b6101186102c936600461241b565b6113b2565b6101186102dc366004612438565b6115bf565b61017d6102ef3660046122d3565b6116cc565b60006102ff836113b2565b90506000670de0b6b3a7640000610316848461246b565b6103209190612488565b60405163211d798360e01b815233600482015260248101859052604481018290529091506001600160a01b0385169063211d798390606401600060405180830381600087803b15801561037257600080fd5b505af1158015610386573d6000803e3d6000fd5b5050604080516001600160a01b0388168152602081018790529081018590527f67a660133c1fb4c0bb0480a5e4a9919216684052f13f0713e88fa2fbbc81d0829250606001905060405180910390a150505050565b60006103ea3386868686610b5b565b95945050505050565b6000620f42408462ffffff16111561040a57600080fd5b8162ffffff16614e20111580156104295750620f42408262ffffff1611155b61043257600080fd5b60188b6001600160a01b031663313ce5676040518163ffffffff1660e01b8152600401602060405180830381865afa158015610472573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061049691906124aa565b60ff1611156104a457600080fd5b60008b6001600160a01b03166318160ddd6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156104e4573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061050891906124cd565b6105139060016124e6565b60405163a9059cbb60e01b81529091506001600160a01b038d169063a9059cbb90610546906101239085906004016124f9565b6020604051808303816000875af1925050508015610581575060408051601f3d908101601f1916820190925261057e91810190612512565b60015b6106015761058d61252f565b806308c379a0036105b257506105a1612586565b806105ac57506105cb565b5061061b565b634e487b71036105cb576105c461260b565b906105ac57505b3d8080156105f5576040519150601f19603f3d011682016040523d82523d6000602084013e6105fa565b606091505b505061061b565b506040516343befb6960e11b815260040160405180910390fd5b8a8a101561063c57604051633a23d82560e01b815260040160405180910390fd5b700eb194f8e1ae525fd5dcfab08000000000610658858d61246b565b101561067757604051633a23d82560e01b815260040160405180910390fd5b5060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635d824f76337f00000000000000000000000000000000000000000000000000000000000000008f8f8e8e8e8e8e8e8e6040518c63ffffffff1660e01b81526004016106fa9b9a9998979695949392919061262b565b6020604051808303816000875af1158015610719573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061073d91906126ac565b60405163b52c696d60e01b81526001600160a01b0380831660048301529192507f00000000000000000000000000000000000000000000000000000000000000009091169063b52c696d90602401600060405180830381600087803b1580156107a557600080fd5b505af11580156107b9573d6000803e3d6000fd5b505060405163375edc7760e11b81526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169250636ebdb8ee9150610814903390683635c9adc5dea00000906004016124f9565b600060405180830381600087803b15801561082e57600080fd5b505af1158015610842573d6000803e3d6000fd5b50506040516323b872dd60e01b81526001600160a01b038f1692506323b872dd915061087690339085908f906004016126c9565b6020604051808303816000875af1158015610895573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906108b99190612512565b50604080516001600160a01b03808416808352908f1660208301529133917fc9b570ab9d98bdf3e38a40fd71b20edafca42449f23ca51f0bdcbf40e8ffe175910160405180910390a39b9a5050505050505050505050565b6000808463ffffffff168154811061092b5761092b6126ed565b600091825260208083206040805160808101825260039490940290910180546001600160a01b038082168652600160a01b90910464ffffffffff169385019390935260018101549092168382018190526002909201546060840152805163194c325560e11b81528151939550849363329864aa926004808401939192918290030181865afa1580156109c1573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109e59190612703565b91509150848360600151106109fa5784610a00565b82606001515b9450808360200151610a129190612729565b64ffffffffff164211610a7f57610a2b83878488611762565b604080840151815163ffffffff89168152602081018890526001600160a01b03909116917f1eee30d91b773ac47d7485a3acb6bcd8c7c9cd8d95301b1af361baf5f0991d2e910160405180910390a2610b01565b610a8b83878787611a2b565b600080610a9a8585858a611b3e565b604080880151815163ffffffff8d16815260208101849052918201849052606082018b90529294509092506001600160a01b03909116907f7d3a26e8d43c5b70f86266bfa26c212e3c097716ff7240ccb6a9034e48754e239060800160405180910390a250505b505050505050565b60008181548110610b1957600080fd5b60009182526020909120600390910201805460018201546002909201546001600160a01b038083169450600160a01b90920464ffffffffff1692919091169084565b60405163aa5dd7f160e01b81526001600160a01b038581166004830152600091869130917f00000000000000000000000000000000000000000000000000000000000000009091169063aa5dd7f190602401602060405180830381865afa158015610bca573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610bee91906126ac565b6001600160a01b031614610c15576040516369229ba760e01b815260040160405180910390fd5b604051630167d12360e71b81526001600160a01b0387811660048301526000917f00000000000000000000000000000000000000000000000000000000000000009091169063b3e89180906024016020604051808303816000875af1158015610c82573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610ca691906126ac565b6040516336a3a4fd60e11b81526001600160a01b03898116600483015264ffffffffff871660248301529192508291821690636d4749fa90604401600060405180830381600087803b158015610cfb57600080fd5b505af1158015610d0f573d6000803e3d6000fd5b505060405163b52c696d60e01b81526001600160a01b0385811660048301527f000000000000000000000000000000000000000000000000000000000000000016925063b52c696d9150602401600060405180830381600087803b158015610d7657600080fd5b505af1158015610d8a573d6000803e3d6000fd5b505050506000816001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa158015610dce573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610df291906126ac565b9050816001600160a01b031663babe7c746040518163ffffffff1660e01b8152600401602060405180830381865afa158015610e32573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610e5691906124cd565b881015610e7657604051633a23d82560e01b815260040160405180910390fd5b6040516323b872dd60e01b81526001600160a01b038216906323b872dd90610ea690339087908d906004016126c9565b6020604051808303816000875af1158015610ec5573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610ee99190612512565b50604080516001600160a01b038b81168252838116602083015280861692908d16917fc9b570ab9d98bdf3e38a40fd71b20edafca42449f23ca51f0bdcbf40e8ffe175910160405180910390a36040516340c10f1960e01b81526001600160a01b038316906340c10f1990610f64908d908b906004016124f9565b600060405180830381600087803b158015610f7e57600080fd5b505af1158015610f92573d6000803e3d6000fd5b505060405163f2fde38b60e01b81526001600160a01b038d811660048301528516925063f2fde38b9150602401600060405180830381600087803b158015610fd957600080fd5b505af1158015610fed573d6000803e3d6000fd5b50949c9b505050505050505050505050565b60405163aa5dd7f160e01b81526001600160a01b038481166004830152600091859130917f00000000000000000000000000000000000000000000000000000000000000009091169063aa5dd7f190602401602060405180830381865afa15801561106e573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061109291906126ac565b6001600160a01b0316146110b9576040516369229ba760e01b815260040160405180910390fd5b600085905083816001600160a01b031663a035b1fe6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156110fd573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061112191906124cd565b101561114057604051630d57523160e11b815260040160405180910390fd5b806001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa15801561117e573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906111a291906126ac565b6001600160a01b03166323b872dd3330886040518463ffffffff1660e01b81526004016111d1939291906126c9565b6020604051808303816000875af11580156111f0573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906112149190612512565b50600080546040805160808101825233815264ffffffffff428116602083019081526001600160a01b03878116848601818152606086018e8152600189018a559880529451600388027f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563810180549551909616600160a01b026001600160c81b0319909516918416919091179390931790935592517f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56482018054919094166001600160a01b0319919091161790925593517f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56590910155516342d0204160e01b81529091906342d020419061133090899060040190815260200190565b600060405180830381600087803b15801561134a57600080fd5b505af115801561135e573d6000803e3d6000fd5b505060408051898152602081018590526001600160a01b03861693503392507fc4b384b2c5ca32c8e77081f4083be594a1ea9ba34f208a9f9a458f70608585f5910160405180910390a39695505050505050565b600080826001600160a01b031663a035b1fe6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156113f3573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061141791906124cd565b90506000836001600160a01b0316634665096d6040518163ffffffff1660e01b8152600401602060405180830381865afa158015611459573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061147d9190612746565b64ffffffffff1690508042116114a05761149882600a61246b565b949350505050565b6000846001600160a01b031663f3f480d96040518163ffffffff1660e01b8152600401602060405180830381865afa1580156114e0573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906115049190612746565b64ffffffffff16905060006115198342612763565b905081811161157257600061152e8284612763565b905080838661153f6001600a612763565b611549919061246b565b6115539190612488565b61155d919061246b565b61156790866124e6565b979650505050505050565b61157d82600261246b565b8110156115b35760008161159284600261246b565b61159c9190612763565b9050806115a98487612488565b611567919061246b565b50600095945050505050565b60008060008363ffffffff16815481106115db576115db6126ed565b60009182526020918290206040805160808101825260039390930290910180546001600160a01b03808216808652600160a01b90920464ffffffffff169585019590955260018201549094169183019190915260020154606082015291506116465750600092915050565b60008082604001516001600160a01b031663329864aa6040518163ffffffff1660e01b81526004016040805180830381865afa15801561168a573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906116ae9190612703565b915091506103ea8184602001516116c59190612729565b8284611fe2565b6001600160a01b038216600081815260016020908152604080832033845290915280822080549290555163a9059cbb60e01b815290919063a9059cbb9061171990859085906004016124f9565b6020604051808303816000875af1158015611738573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061175c9190612512565b50505050565b836020015164ffffffffff16420361177957600080fd5b83516001600160a01b0316331461183f5783516001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016906323b872dd903390670de0b6b3a76400006117d2878761246b565b6117dc9190612488565b6040518463ffffffff1660e01b81526004016117fa939291906126c9565b6020604051808303816000875af1158015611819573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061183d9190612512565b505b83604001516001600160a01b03166349746f10826040518263ffffffff1660e01b815260040161187191815260200190565b600060405180830381600087803b15801561188b57600080fd5b505af115801561189f573d6000803e3d6000fd5b5050505083604001516001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa1580156118e5573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061190991906126ac565b6001600160a01b031663a9059cbb33836040518363ffffffff1660e01b81526004016119369291906124f9565b6020604051808303816000875af1158015611955573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906119799190612512565b5083606001518110156119c9578084606001516119969190612763565b60008463ffffffff16815481106119af576119af6126ed565b90600052602060002090600302016002018190555061175c565b836060015181146119d957600080fd5b60008363ffffffff16815481106119f2576119f26126ed565b60009182526020822060039091020180546001600160c81b03191681556001810180546001600160a01b03191690556002015550505050565b611a9d84604001516001600160a01b031663d8dfeb456040518163ffffffff1660e01b8152600401602060405180830381865afa158015611a70573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611a9491906126ac565b85518484612070565b81846060015103611af95760008363ffffffff1681548110611ac157611ac16126ed565b60009182526020822060039091020180546001600160c81b03191681556001810180546001600160a01b03191690556002015561175c565b8160008463ffffffff1681548110611b1357611b136126ed565b90600052602060002090600302016002016000828254611b339190612763565b909155505050505050565b60008060008060008089604001516001600160a01b03166320aa9e7233896040518363ffffffff1660e01b8152600401611b799291906124f9565b6080604051808303816000875af1158015611b98573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611bbc9190612776565b93509350935093506000670de0b6b3a764000084611bea8b8e60200151611be39190612729565b8c8e611fe2565b611bf4919061246b565b611bfe9190612488565b6040516323b872dd60e01b81529091506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016906323b872dd90611c51903390309086906004016126c9565b6020604051808303816000875af1158015611c70573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611c949190612512565b506000620f4240611ca7614e208461246b565b611cb19190612488565b8c5160405163a9059cbb60e01b81529192506001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169163a9059cbb91611d029185906004016124f9565b6020604051808303816000875af1158015611d21573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611d459190612512565b506000611d528284612763565b905084811115611eb7576000620f4240611d6c8784612763565b611d7c9063ffffffff881661246b565b611d869190612488565b60405163375edc7760e11b81529091506001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690636ebdb8ee90611dd790309085906004016124f9565b600060405180830381600087803b158015611df157600080fd5b505af1158015611e05573d6000803e3d6000fd5b505050507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663a9059cbb89838986611e469190612763565b611e509190612763565b6040518363ffffffff1660e01b8152600401611e6d9291906124f9565b6020604051808303816000875af1158015611e8c573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611eb09190612512565b5050611f49565b84811015611f49576001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001663d1fa5e9830611ef98489612763565b6040518363ffffffff1660e01b8152600401611f169291906124f9565b600060405180830381600087803b158015611f3057600080fd5b505af1158015611f44573d6000803e3d6000fd5b505050505b6040516363b20c3360e11b81526004810186905263ffffffff851660248201527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169063c764186690604401600060405180830381600087803b158015611fb757600080fd5b505af1158015611fcb573d6000803e3d6000fd5b50979f949e50939c50505050505050505050505050565b60004264ffffffffff80861690821611611fff5782915050612069565b6120098486612729565b64ffffffffff168164ffffffffff1610612027576000915050612069565b600061203386836127b7565b61203d90866127b7565b64ffffffffff169050808564ffffffffff168561205a9190612488565b612064919061246b565b925050505b9392505050565b80156120fc576001600160a01b038085166000908152600160209081526040808320938716835292905290812080548492906120ad9084906124e6565b92505081905550826001600160a01b03167f8ab298b78a235f73eee230f82012c0cf4db76003eaabd16a0195f112e7d625c885846040516120ef9291906124f9565b60405180910390a261175c565b60405163a9059cbb60e01b81526001600160a01b0385169063a9059cbb9061212a90869086906004016124f9565b6020604051808303816000875af1158015612149573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061216d9190612512565b5050505050565b6001600160a01b038116811461218957600080fd5b50565b6000806040838503121561219f57600080fd5b82356121aa81612174565b946020939093013593505050565b64ffffffffff8116811461218957600080fd5b600080600080608085870312156121e157600080fd5b84356121ec81612174565b93506020850135925060408501359150606085013561220a816121b8565b939692955090935050565b803562ffffff8116811461222857600080fd5b919050565b6000806000806000806000806000806101408b8d03121561224d57600080fd5b8a3561225881612174565b995060208b0135985060408b0135975060608b0135965060808b013561227d816121b8565b955060a08b013561228d816121b8565b945060c08b013561229d816121b8565b93506122ab60e08c01612215565b92506101008b013591506122c26101208c01612215565b90509295989b9194979a5092959850565b600080604083850312156122e657600080fd5b82356122f181612174565b9150602083013561230181612174565b809150509250929050565b63ffffffff8116811461218957600080fd5b801515811461218957600080fd5b60008060006060848603121561234157600080fd5b833561234c8161230c565b92506020840135915060408401356123638161231e565b809150509250925092565b60006020828403121561238057600080fd5b5035919050565b600080600080600060a0868803121561239f57600080fd5b85356123aa81612174565b945060208601356123ba81612174565b9350604086013592506060860135915060808601356123d8816121b8565b809150509295509295909350565b6000806000606084860312156123fb57600080fd5b833561240681612174565b95602085013595506040909401359392505050565b60006020828403121561242d57600080fd5b813561206981612174565b60006020828403121561244a57600080fd5b81356120698161230c565b634e487b7160e01b600052601160045260246000fd5b808202811582820484141761248257612482612455565b92915050565b6000826124a557634e487b7160e01b600052601260045260246000fd5b500490565b6000602082840312156124bc57600080fd5b815160ff8116811461206957600080fd5b6000602082840312156124df57600080fd5b5051919050565b8082018082111561248257612482612455565b6001600160a01b03929092168252602082015260400190565b60006020828403121561252457600080fd5b81516120698161231e565b600060033d11156125485760046000803e5060005160e01c5b90565b601f8201601f1916810167ffffffffffffffff8111828210171561257f57634e487b7160e01b600052604160045260246000fd5b6040525050565b600060443d10156125945790565b6040513d600319016004823e80513d602482011167ffffffffffffffff821117156125be57505090565b808201805167ffffffffffffffff8111156125da575050505090565b3d84016003190182820160200111156125f4575050505090565b6126036020828501018561254b565b509392505050565b60008060233d1115612627576020600460003e50506000516001905b9091565b6001600160a01b038c811682528b811660208301528a166040820152606081018990526080810188905264ffffffffff87811660a083015286811660c0830152851660e082015262ffffff841661010082015261016081018361012083015261269c61014083018462ffffff169052565b9c9b505050505050505050505050565b6000602082840312156126be57600080fd5b815161206981612174565b6001600160a01b039384168152919092166020820152604081019190915260600190565b634e487b7160e01b600052603260045260246000fd5b6000806040838503121561271657600080fd5b82516020840151909250612301816121b8565b64ffffffffff818116838216019081111561248257612482612455565b60006020828403121561275857600080fd5b8151612069816121b8565b8181038181111561248257612482612455565b6000806000806080858703121561278c57600080fd5b845161279781612174565b602086015160408701516060880151929650909450925061220a8161230c565b64ffffffffff82811682821603908111156124825761248261245556fea2646970667358221220f5acbad441204c1afe9ea7e2efe08a6defcd0f26fd0f0fcdc5227fb032ca059564736f6c634300081a0033",
+  "devdoc": {
+    "details": "Only one instance of this contract is required, whereas every new position comes with a new position contract. Pending challenges are stored as structs in an array.",
+    "kind": "dev",
+    "methods": {
+      "bid(uint32,uint256,bool)": {
+        "details": "In case that the collateral cannot be transfered back to the challenger (i.e. because the collateral token has a blacklist and the challenger is on it), it is possible to postpone the return of the collateral.",
+        "params": {
+          "_challengeNumber": "index of the challenge as broadcast in the event",
+          "postponeCollateralReturn": "To postpone the return of the collateral to the challenger. Usually false.",
+          "size": "how much of the collateral the caller wants to bid for at most                          (automatically reduced to the available amount)"
+        }
+      },
+      "challenge(address,uint256,uint256)": {
+        "params": {
+          "_collateralAmount": "amount of the collateral we want to challenge",
+          "_positionAddr": "address of the position we want to challenge",
+          "minimumPrice": "position.price() to guard against the minter fruntrunning with a price change"
+        },
+        "returns": {
+          "_0": "index of the challenge in challenge-array"
+        }
+      },
+      "clone(address,address,uint256,uint256,uint40)": {
+        "details": "This needs an allowance to be set on the collateral contract such that the minting hub can get the collateral."
+      },
+      "openPosition(address,uint256,uint256,uint256,uint40,uint40,uint40,uint24,uint256,uint24)": {
+        "details": "For a successful call, you must set an allowance for the collateral token, allowing the minting hub to transfer the initial collateral amount to the newly created position and to withdraw the fees.",
+        "params": {
+          "_challengeSeconds": "challenge period. Longer for less liquid collateral.",
+          "_collateralAddress": "address of collateral token",
+          "_expirationSeconds": "position tenor in unit of timestamp (seconds) from 'now'",
+          "_initialCollateral": "amount of initial collateral to be deposited",
+          "_liqPrice": "Liquidation price with (36 - token decimals) decimals,                           e.g. 18 decimals for an 18 dec collateral, 36 decs for a 0 dec collateral.",
+          "_minCollateral": "minimum collateral required to prevent dust amounts",
+          "_mintingMaximum": "maximal amount of deur that can be minted by the position owner",
+          "_reservePPM": "ppm of minted amount that is locked as borrower's reserve, e.g. 20%",
+          "_riskPremium": "ppm of minted amount that is added to the applicible minting fee as a risk premium"
+        },
+        "returns": {
+          "_0": "address           address of created position"
+        }
+      },
+      "price(uint32)": {
+        "details": "The price comes with (36-collateral.decimals()) digits, such that multiplying it with the raw collateral amount always yields a price with 36 digits, or 18 digits after dividing by 10**18 again."
+      }
+    },
+    "stateVariables": {
+      "pendingReturns": {
+        "details": "It maps collateral => beneficiary => amount."
+      }
+    },
+    "title": "Minting Hub",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "CHALLENGER_REWARD()": {
+        "notice": "The challenger reward in parts per million (ppm) relative to the challenged amount, whereas challenged amount if defined as the challenged collateral amount times the liquidation price."
+      },
+      "OPENING_FEE()": {
+        "notice": "Irrevocable fee in deur when proposing a new position (but not when cloning an existing one)."
+      },
+      "bid(uint32,uint256,bool)": {
+        "notice": "Post a bid in deur given an open challenge."
+      },
+      "buyExpiredCollateral(address,uint256)": {
+        "notice": "Buys the desired amount of the collateral asset from the given expired position using the applicable 'expiredPurchasePrice' in that instant."
+      },
+      "challenge(address,uint256,uint256)": {
+        "notice": "Launch a challenge (Dutch auction) on a position"
+      },
+      "clone(address,address,uint256,uint256,uint40)": {
+        "notice": "Clones an existing position and immediately tries to mint the specified amount using the given collateral."
+      },
+      "expiredPurchasePrice(address)": {
+        "notice": "The applicable purchase price when forcing the sale of collateral of an expired position. The price starts at 10x the liquidation price at the expiration time, linearly declines to 1x liquidation price over the course of one challenge period, and then linearly declines less steeply to 0 over the course of another challenge period."
+      },
+      "openPosition(address,uint256,uint256,uint256,uint40,uint40,uint40,uint24,uint256,uint24)": {
+        "notice": "Open a collateralized loan position. See also https://docs.DecentralizedEURO.com/positions/open ."
+      },
+      "pendingReturns(address,address)": {
+        "notice": "Map to remember pending postponed collateral returns."
+      },
+      "price(uint32)": {
+        "notice": "Get the price per unit of the collateral for the given challenge."
+      },
+      "returnPostponedCollateral(address,address)": {
+        "notice": "Challengers can call this method to withdraw collateral whose return was postponed."
+      }
+    },
+    "notice": "The central hub for creating, cloning and challenging collateralized DecentralizedEURO positions.",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 9453,
+        "contract": "contracts/MintingHubV2/MintingHub.sol:MintingHub",
+        "label": "challenges",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_array(t_struct(Challenge)9470_storage)dyn_storage"
+      },
+      {
+        "astId": 9460,
+        "contract": "contracts/MintingHubV2/MintingHub.sol:MintingHub",
+        "label": "pendingReturns",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_struct(Challenge)9470_storage)dyn_storage": {
+        "base": "t_struct(Challenge)9470_storage",
+        "encoding": "dynamic_array",
+        "label": "struct MintingHub.Challenge[]",
+        "numberOfBytes": "32"
+      },
+      "t_contract(IPosition)13094": {
+        "encoding": "inplace",
+        "label": "contract IPosition",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_uint256)"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_struct(Challenge)9470_storage": {
+        "encoding": "inplace",
+        "label": "struct MintingHub.Challenge",
+        "members": [
+          {
+            "astId": 9462,
+            "contract": "contracts/MintingHubV2/MintingHub.sol:MintingHub",
+            "label": "challenger",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address"
+          },
+          {
+            "astId": 9464,
+            "contract": "contracts/MintingHubV2/MintingHub.sol:MintingHub",
+            "label": "start",
+            "offset": 20,
+            "slot": "0",
+            "type": "t_uint40"
+          },
+          {
+            "astId": 9467,
+            "contract": "contracts/MintingHubV2/MintingHub.sol:MintingHub",
+            "label": "position",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(IPosition)13094"
+          },
+          {
+            "astId": 9469,
+            "contract": "contracts/MintingHubV2/MintingHub.sol:MintingHub",
+            "label": "size",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256"
+          }
+        ],
+        "numberOfBytes": "96"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      },
+      "t_uint40": {
+        "encoding": "inplace",
+        "label": "uint40",
+        "numberOfBytes": "5"
+      }
+    }
+  }
+}

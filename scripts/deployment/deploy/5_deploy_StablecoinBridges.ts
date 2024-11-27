@@ -25,7 +25,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const paramFile = __dirname + "/../parameters/paramsBridges.json";
   let paramsArr = require(paramFile);
 
-  for (let i = 0; i < paramsArr.length; i++) {
+  for (let i = 1; i < paramsArr.length; i++) {
     if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
       try {
         const mockTokenDeployment = await get("TestToken");
@@ -51,12 +51,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     
     console.log(`\nDeploying ${otherToken} StablecoinBridge with other = ${otherAddress}, limit = ${limit} EUR and weeks = ${weeks}`);
 
-    const dEURODeployment = await get("DecentralizedEURO");
+    // const dEURODeployment = await get("DecentralizedEURO");
+    const dEURODeploydeumentAddress = "0xd45e911843721083A2751fA9Cc9D2a8089D8C0f5";
     let dLimit = floatToDec18(limit);
     
     await deployContract(hre, "StablecoinBridge", [
       otherAddress,
-      dEURODeployment.address,
+      dEURODeploydeumentAddress,
       dLimit,
       weeks,
     ]);
@@ -66,7 +67,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     if (!["hardhat", "localhost"].includes(hre.network.name)) {
       console.log(
-        `Verify StablecoinBridge: npx hardhat verify --network ${hre.network.name} ${bridgeAddr} ${otherAddress} ${dEURODeployment.address} ${dLimit}`
+        `Verify StablecoinBridge: npx hardhat verify --network ${hre.network.name} ${bridgeAddr} ${otherAddress} ${dEURODeploydeumentAddress} ${dLimit} ${weeks}`
       );
       
       // Automate verification
