@@ -32,9 +32,9 @@ contract Savings is Leadrate {
         uint64 ticks;
     }
 
-    event Saved(address account, uint192 amount);
-    event InterestCollected(address account, uint256 interest);
-    event Withdrawn(address account, uint192 amount);
+    event Saved(address indexed account, uint192 amount);
+    event InterestCollected(address indexed account, uint256 interest);
+    event Withdrawn(address indexed account, uint192 amount);
 
     error FundsLocked(uint40 remainingSeconds);
 
@@ -68,7 +68,8 @@ contract Savings is Leadrate {
         if (ticks > account.ticks) {
             uint192 earnedInterest = calculateInterest(account, ticks);
             if (earnedInterest > 0) {
-                deuro.transferFrom(address(equity), address(this), earnedInterest); // collect interest as you go
+                // collect interest as you go and trigger accounting event
+                (IDecentralizedEURO(address(deuro))).coverLoss(address(this), earnedInterest);
                 account.saved += earnedInterest;
                 emit InterestCollected(accountOwner, earnedInterest);
             }

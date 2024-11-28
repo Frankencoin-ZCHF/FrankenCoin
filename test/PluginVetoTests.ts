@@ -18,7 +18,8 @@ describe("Plugin Veto Tests", () => {
   before(async () => {
     [owner, alice] = await ethers.getSigners();
     // create contracts
-    const DecentralizedEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+    const DecentralizedEUROFactory =
+      await ethers.getContractFactory("DecentralizedEURO");
     dEURO = await DecentralizedEUROFactory.deploy(10 * 86400);
 
     // mocktoken
@@ -32,7 +33,7 @@ describe("Plugin Veto Tests", () => {
       await mockXEUR.getAddress(),
       await dEURO.getAddress(),
       limit,
-      weeks
+      weeks,
     );
     await dEURO.initialize(await bridge.getAddress(), "");
     // wait for 1 block
@@ -62,7 +63,7 @@ describe("Plugin Veto Tests", () => {
         await mockAEUR.getAddress(),
         await dEURO.getAddress(),
         limit,
-        weeks
+        weeks,
       );
     });
     it("Participant suggests minter", async () => {
@@ -81,8 +82,8 @@ describe("Plugin Veto Tests", () => {
             await secondBridge.getAddress(),
             applicationPeriod,
             applicationFee,
-            msg
-          )
+            msg,
+          ),
       ).to.emit(dEURO, "MinterApplied");
     });
     it("can't mint before min period", async () => {
@@ -92,15 +93,15 @@ describe("Plugin Veto Tests", () => {
         .approve(await secondBridge.getAddress(), amount);
       // set allowance
       await expect(
-        secondBridge.connect(alice).mint(amount)
+        secondBridge.connect(alice).mint(amount),
       ).to.be.revertedWithCustomError(dEURO, "NotMinter");
     });
     it("deny minter", async () => {
       await expect(
-        dEURO.denyMinter(await secondBridge.getAddress(), [], "other denied")
+        dEURO.denyMinter(await secondBridge.getAddress(), [], "other denied"),
       ).to.emit(dEURO, "MinterDenied");
       await expect(
-        secondBridge.connect(alice).mint(floatToDec18(1_000))
+        secondBridge.connect(alice).mint(floatToDec18(1_000)),
       ).to.be.revertedWithCustomError(dEURO, "NotMinter");
     });
   });

@@ -66,6 +66,8 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     uint40 public expiration;
 
+    bool private closed;
+
     /**
      * @notice The original position to help identifying clones.
      */
@@ -112,6 +114,7 @@ contract Position is Ownable, IPosition, MathUtil {
     error ChallengeTooSmall();
     error Expired(uint40 time, uint40 expiration);
     error Alive();
+    error Closed();
     error Hot();
     error Challenged();
     error NotHub();
@@ -121,6 +124,12 @@ contract Position is Ownable, IPosition, MathUtil {
 
     modifier alive() {
         if (block.timestamp >= expiration) revert Expired(uint40(block.timestamp), expiration);
+        _;
+    }
+
+    // requires that the position has always been backed by a minimal amount of collateral
+    modifier backed() {
+        if (isClosed()) revert Closed();
         _;
     }
 
@@ -197,7 +206,7 @@ contract Position is Ownable, IPosition, MathUtil {
     /**
      * Cloning a position is only allowed if the position is not challenged, not expired and not in cooldown.
      */
-    function assertCloneable() external noChallenge noCooldown alive {}
+    function assertCloneable() external noChallenge noCooldown alive backed {}
 
     /**
      * Notify the original that some amount has been minted.
@@ -212,9 +221,14 @@ contract Position is Ownable, IPosition, MathUtil {
         totalMinted -= repaid_;
     }
 
+    /**
+     * Should only be called on the original position.
+     * Better use 'availableForMinting'.
+     */
     function availableForClones() external view returns (uint256) {
         // reserve capacity for the original to the extent the owner provided collateral
-        uint256 unusedPotential = (_collateralBalance() * price) / ONE_DEC18 - minted;
+        uint256 potential = (_collateralBalance() * price) / ONE_DEC18;
+        uint256 unusedPotential = minted > potential ? 0 : potential - minted;
         if (totalMinted + unusedPotential >= limit) {
             return 0;
         } else {
@@ -222,6 +236,11 @@ contract Position is Ownable, IPosition, MathUtil {
         }
     }
 
+    /**
+     * The amount available for minting in this position family.
+     *
+     * Does not check if positions are challenged, closed, or under cooldown.
+     */
     function availableForMinting() public view returns (uint256) {
         if (address(this) == original) {
             return limit - totalMinted;
@@ -245,11 +264,11 @@ contract Position is Ownable, IPosition, MathUtil {
      * This allows the users to still withdraw the collateral that is left, but never to mint again.
      */
     function _close() internal {
-        cooldown = type(uint40).max;
+        closed = true;
     }
 
     function isClosed() public view returns (bool) {
-        return cooldown == type(uint40).max;
+        return closed;
     }
 
     /**
@@ -311,7 +330,7 @@ contract Position is Ownable, IPosition, MathUtil {
         emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
-    function _adjustPrice(uint256 newPrice) internal noChallenge alive {
+    function _adjustPrice(uint256 newPrice) internal noChallenge alive backed {
         if (newPrice > price) {
             _restrictMinting(3 days);
         } else {
@@ -366,7 +385,7 @@ contract Position is Ownable, IPosition, MathUtil {
         return uint24(feePPM > 1000000 ? 1000000 : feePPM); // fee cannot exceed 100%
     }
 
-    function _mint(address target, uint256 amount, uint256 collateral_) internal noChallenge noCooldown alive {
+    function _mint(address target, uint256 amount, uint256 collateral_) internal noChallenge noCooldown alive backed {
         if (amount > availableForMinting()) revert LimitExceeded(amount, availableForMinting());
         Position(original).notifyMint(amount);
         deuro.mintWithReserve(target, amount, reserveContribution, calculateCurrentFee());
@@ -410,11 +429,17 @@ contract Position is Ownable, IPosition, MathUtil {
 
     /**
      * Force the sale of some collateral after the position is expired.
+     *
      * Can only be called by the minting hub and the minting hub is trusted to calculate the price correctly.
      * The proceeds from the sale are first used to repay the outstanding balance and then (if anything is left)
      * it is sent to the owner of the position.
+     *
+     * Do not allow a forced sale as long as there is an open challenge. Otherwise, a forced sale by the owner
+     * himself could remove any incentive to launch challenges shortly before the expiration. (CS-deuro2-001)
      */
-    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired {
+    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external onlyHub expired noChallenge {
+        // send collateral to buyer
+        uint256 remainingCollateral = _sendCollateral(buyer, collAmount);
         if (minted > 0) {
             uint256 availableReserve = deuro.calculateAssignedReserve(minted, reserveContribution);
             if (proceeds + availableReserve >= minted) {
@@ -427,16 +452,21 @@ contract Position is Ownable, IPosition, MathUtil {
             } else {
                 // we can only repay a part, nothing left to pay to owner
                 deuro.transferFrom(buyer, address(this), proceeds);
-                uint256 repaid = deuro.burnWithReserve(proceeds, reserveContribution);
-                _notifyRepaid(repaid);
+                if (remainingCollateral == 0) {
+                    // CS-deuro2-002, bad debt should be properly handled. In this case, the proceeds from
+                    // the forced sale did not suffice to repay the position and there is a loss
+                    deuro.coverLoss(address(this), minted - proceeds); // more than we need, but returned again on next line
+                    deuro.burnWithoutReserve(minted, reserveContribution);
+                    _notifyRepaid(minted);
+                } else {
+                    uint256 repaid = deuro.burnWithReserve(proceeds, reserveContribution);
+                    _notifyRepaid(repaid);
+                }
             }
         } else {
             // wire funds directly to owner
             deuro.transferFrom(buyer, owner(), proceeds);
         }
-        // send collateral to buyer
-        collateral.transfer(buyer, collAmount);
-        _considerClose(_collateralBalance());
         emit MintingUpdate(_collateralBalance(), price, minted);
     }
 
@@ -466,7 +496,7 @@ contract Position is Ownable, IPosition, MathUtil {
     }
 
     function _withdrawCollateral(address target, uint256 amount) internal noChallenge returns (uint256) {
-        if (block.timestamp <= cooldown && !isClosed()) revert Hot();
+        if (block.timestamp <= cooldown) revert Hot();
         uint256 balance = _sendCollateral(target, amount);
         _checkCollateral(balance, price);
         return balance;
@@ -478,18 +508,10 @@ contract Position is Ownable, IPosition, MathUtil {
             IERC20(collateral).transfer(target, amount);
         }
         uint256 balance = _collateralBalance();
-        _considerClose(balance);
-        return balance;
-    }
-
-    function _considerClose(uint256 collateralBalance) internal {
-        if (collateralBalance < minimumCollateral && challengedAmount == 0) {
-            // This leaves a slightly unsatisfying possibility open: if the withdrawal happens due to a successful
-            // challenge, there might be a small amount of collateral left that is not withheld in case there are no
-            // other pending challenges. The only way to cleanly solve this would be to have two distinct cooldowns,
-            // one for minting and one for withdrawals.
+        if (balance < minimumCollateral) {
             _close();
         }
+        return balance;
     }
 
     /**
@@ -497,8 +519,9 @@ contract Position is Ownable, IPosition, MathUtil {
      * variables change in an adverse way.
      */
     function _checkCollateral(uint256 collateralReserve, uint256 atPrice) internal view {
-        if (collateralReserve * atPrice < minted * ONE_DEC18)
-            revert InsufficientCollateral(collateralReserve * atPrice, minted * ONE_DEC18);
+        uint256 relevantCollateral = collateralReserve < minimumCollateral ? 0 : collateralReserve;
+        if (relevantCollateral * atPrice < minted * ONE_DEC18)
+            revert InsufficientCollateral(relevantCollateral * atPrice, minted * ONE_DEC18);
     }
 
     /**
@@ -510,7 +533,7 @@ contract Position is Ownable, IPosition, MathUtil {
         return (price, challengePeriod);
     }
 
-    function notifyChallengeStarted(uint256 size) external onlyHub {
+    function notifyChallengeStarted(uint256 size) external onlyHub alive {
         // Require minimum size. Collateral balance can be below minimum if it was partially challenged before.
         if (size < minimumCollateral && size < _collateralBalance()) revert ChallengeTooSmall();
         if (size == 0) revert ChallengeTooSmall();
@@ -526,9 +549,6 @@ contract Position is Ownable, IPosition, MathUtil {
         // Don't allow minter to close the position immediately so challenge can be repeated before
         // the owner has a chance to mint more on an undercollateralized position
         _restrictMinting(1 days);
-
-        // If this was the last open challenge and there is only a dust amount of collateral left, the position should be closed
-        _considerClose(_collateralBalance());
     }
 
     /**
