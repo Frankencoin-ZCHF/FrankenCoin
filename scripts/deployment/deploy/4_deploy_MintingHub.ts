@@ -10,16 +10,19 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     throw new Error("Chain ID is undefined");
   }
 
-  const params = getParams("paramsDEPSWrapper", chainId);
+  const params = getParams("paramsMintingHub", chainId);
 
   const decentralizedEURO = params.decentralizedEURO;
+  const savings = params.savings;
+  const positionRoller = params.positionRoller;
+  const positionFactory = params.positionFactory;
 
-  const args = [decentralizedEURO];
+  const args = [decentralizedEURO, savings, positionRoller, positionFactory];
 
-  const deployment = await deployContract(hre, "DEPSWrapper", args);
+  const deployment = await deployContract(hre, "MintingHub", args);
 
   const deploymentAddress = await deployment.getAddress();
- 
+
   if(hre.network.name === "mainnet" && process.env.ETHERSCAN_API_KEY){
     await verify(deploymentAddress, args);
   } else {
@@ -30,6 +33,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   console.log("-------------------------------------------------------------------");
 };
-
 export default deploy;
-deploy.tags = ["main", "DEPSWrapper"];
+deploy.tags = ["main", "MintingHub"];

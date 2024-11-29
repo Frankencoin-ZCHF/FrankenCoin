@@ -10,16 +10,17 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     throw new Error("Chain ID is undefined");
   }
 
-  const params = getParams("paramsDEPSWrapper", chainId);
+  const params = getParams("paramsSavings", chainId);
 
   const decentralizedEURO = params.decentralizedEURO;
+  const initialRatePPM = params.initialRatePPM;
 
-  const args = [decentralizedEURO];
-
-  const deployment = await deployContract(hre, "DEPSWrapper", args);
+  const args = [decentralizedEURO, initialRatePPM];
+  
+  const deployment = await deployContract(hre, "Savings", args);
 
   const deploymentAddress = await deployment.getAddress();
- 
+
   if(hre.network.name === "mainnet" && process.env.ETHERSCAN_API_KEY){
     await verify(deploymentAddress, args);
   } else {
@@ -30,6 +31,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   console.log("-------------------------------------------------------------------");
 };
-
 export default deploy;
-deploy.tags = ["main", "DEPSWrapper"];
+deploy.tags = ["main", "Savings"];

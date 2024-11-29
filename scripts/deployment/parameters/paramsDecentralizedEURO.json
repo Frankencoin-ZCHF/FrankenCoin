@@ -1,20 +1,14 @@
-[
-    {
-        "name": "DecentralizedEURO",
-        "chainId": 31337,
-        "chainName" : "Local",
-        "minApplicationPeriod" : 900
-    },
-    {
-        "name": "DecentralizedEURO",
-        "chainId": 11155111,
-        "chainName" : "Sepolia",
-        "minApplicationPeriod" : 900
-    },
-    {
-        "name": "DecentralizedEURO",
-        "chainId": 1,
-        "chainName" : "Ethereum",
-        "minApplicationPeriod" : 1209600
-    }
-]
+{
+  "1": {
+    "name": "mainnet",
+    "minApplicationPeriod": 1209600
+  },
+  "31337": {
+    "name": "local",
+    "minApplicationPeriod": 900
+  },
+  "11155111": {
+    "name": "sepolia",
+    "minApplicationPeriod": 900
+  }
+}

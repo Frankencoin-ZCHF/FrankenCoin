@@ -4,10 +4,11 @@ import { Contract } from "ethers";
 export const deployContract = async (
   hre: HardhatRuntimeEnvironment,
   contractName: string,
-  args?: any[]
+  args?: any[],
+  verbose = true
 ): Promise<Contract> => {
   const {
-    deployments: { deploy, log, get },
+    deployments: { deploy, log },
     getNamedAccounts,
     ethers,
   } = hre;
@@ -20,9 +21,10 @@ export const deployContract = async (
     log: true,
   });
 
+
+  if (verbose) {
+    log(`Contract ${contractName} deployed to: ${deployment.address} with args: ${args}`);
+  }
+
   return ethers.getContractAt(contractName, deployment.address);
 };
-
-export function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}

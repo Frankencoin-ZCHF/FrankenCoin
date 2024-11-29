@@ -19,9 +19,9 @@ const DEFAULT_API_KEY = "5U72KF899MIGKQP64MHFSCINXV1V3W27J3";
 let pk: string | SigningKey =
   <string>process.env.PK == null ? DEFAULT_PK : <string>process.env.PK;
 let etherscanapikey: string =
-  <string>process.env.APIKEY == null
+  <string>process.env.ETHERSCAN_API_KEY == null
     ? DEFAULT_API_KEY
-    : <string>process.env.APIKEY;
+    : <string>process.env.ETHERSCAN_API_KEY;
 
 const config: HardhatUserConfig = {
   solidity: {
