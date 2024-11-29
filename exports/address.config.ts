@@ -5,8 +5,14 @@ export interface ChainAddress {
   decentralizedEURO: Address;
   equity: Address;
   DEPSwrapper: Address;
-  bridge: Address;
+  bridgeEURT: Address;
+  bridgeEURS: Address;
+  bridgeVEUR: Address;
+  bridgeEURC: Address;
   eurt: Address;
+  eurs: Address;
+  veur: Address;
+  eurc: Address;
   savings: Address;
   roller: Address;
   mintingHubV2: Address;
@@ -19,14 +25,14 @@ export const ADDRESS: Record<number, ChainAddress> = {
     decentralizedEURO: "0xd45e911843721083A2751fA9Cc9D2a8089D8C0f5",
     equity: "0xC92aF56C354FCF641f4567a04fd7032013E8A314",
     DEPSwrapper: "0xE699A78B3eC44Ab013f1839305bB1a5a987A05B0",
-    bridge: "0x7416E83375C7cb4D74F06F8Dc4Acd4243cEA8248",
-    bridgeEURS: "0xA719b0D3f447118632fECc48c3273224D1319099"
-    bridgeVEUR: "0x289BDB83952D4217F5DB59fD7c777b84792cb039"
-    bridgeEURC: "0xD5C411355fdb4E3B38FA17a1A5E541474aBf1e76"
+    bridgeEURT: "0x7416E83375C7cb4D74F06F8Dc4Acd4243cEA8248",
+    bridgeEURS: "0xA719b0D3f447118632fECc48c3273224D1319099",
+    bridgeVEUR: "0x289BDB83952D4217F5DB59fD7c777b84792cb039",
+    bridgeEURC: "0xD5C411355fdb4E3B38FA17a1A5E541474aBf1e76",
     eurt: "0xC581b735A1688071A1746c968e0798D642EDE491",
-    eurs: "0xdb25f211ab05b1c97d595516f45794528a807ad8"
-    veur: "0x6ba75d640bebfe5da1197bb5a2aff3327789b5d3"
-    eurc: "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c"
+    eurs: "0xdb25f211ab05b1c97d595516f45794528a807ad8",
+    veur: "0x6ba75d640bebfe5da1197bb5a2aff3327789b5d3",
+    eurc: "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
     savings: "0x4Be3ce63952fd4605d4a6FA4C5F877F6AC73bAa2",
     roller: "0x18fA3796a43c297950f76A1bA6162d58dD2d7EDa",
     mintingHubV2: "0x762FbFA1f0C62a31FBDd91be63b01Fcd392d733B",
