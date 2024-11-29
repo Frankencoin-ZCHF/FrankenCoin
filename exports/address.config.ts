@@ -26,7 +26,7 @@ export const ADDRESS: Record<number, ChainAddress> = {
     eurt: "0xC581b735A1688071A1746c968e0798D642EDE491",
     eurs: "0xdb25f211ab05b1c97d595516f45794528a807ad8"
     veur: "0x6ba75d640bebfe5da1197bb5a2aff3327789b5d3"
-    eurc: "0x6ba75d640bebfe5da1197bb5a2aff3327789b5d3"
+    eurc: "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c"
     savings: "0x4Be3ce63952fd4605d4a6FA4C5F877F6AC73bAa2",
     roller: "0x18fA3796a43c297950f76A1bA6162d58dD2d7EDa",
     mintingHubV2: "0x762FbFA1f0C62a31FBDd91be63b01Fcd392d733B",
