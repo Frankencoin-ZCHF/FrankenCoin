@@ -2,26 +2,23 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-network-helpers";
+import "@nomicfoundation/hardhat-ignition-ethers";
 import "hardhat-deploy";
 import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
 import { HardhatUserConfig } from "hardhat/config";
-import { SigningKey } from "@ethersproject/signing-key";
+import { getChildFromSeed } from "./helper/wallet";
 
 import dotenv from "dotenv";
 dotenv.config();
 
-//export default config;
-const DEFAULT_PK =
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // do not send ETH to this account
-const DEFAULT_API_KEY = "5U72KF899MIGKQP64MHFSCINXV1V3W27J3";
+const seed = process.env.DEPLOYER_ACCOUNT_SEED;
+if (!seed) throw new Error("Failed to import the seed string from .env");
+const w0 = getChildFromSeed(seed, 0); // deployer
 
-let pk: string | SigningKey =
-  <string>process.env.PK == null ? DEFAULT_PK : <string>process.env.PK;
-let etherscanapikey: string =
-  <string>process.env.ETHERSCAN_API_KEY == null
-    ? DEFAULT_API_KEY
-    : <string>process.env.ETHERSCAN_API_KEY;
+const alchemy = process.env.ALCHEMY_RPC_KEY;
+if (alchemy?.length == 0 || !alchemy)
+  console.log("WARN: No Alchemy Key found in .env");
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -39,29 +36,21 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    sepolia: {
-      url: "https://ethereum-sepolia.blockpi.network/v1/rpc/public",
-      chainId: 11155111,
-      gas: 50_000,
-      gasPrice: "auto",
-      accounts: [pk],
-      timeout: 50_000,
-    },
     mainnet: {
-      url: "https://eth.llamarpc.com",
+      url: `https://eth-mainnet.g.alchemy.com/v2/${alchemy}`,
       chainId: 1,
       gas: "auto",
       gasPrice: "auto",
-      accounts: [pk],
+      accounts: [w0.privateKey],
       timeout: 50_000,
     },
-    goerli: {
-      url: "https://goerli.infura.io/v3/",
-      chainId: 5,
+    polygon: {
+      url: `https://polygon-mainnet.g.alchemy.com/v2/${alchemy}`,
+      chainId: 137,
       gas: "auto",
       gasPrice: "auto",
-      accounts: [pk],
-      timeout: 50000,
+      accounts: [w0.privateKey],
+      timeout: 50_000,
     },
   },
   namedAccounts: {
@@ -70,7 +59,10 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: etherscanapikey,
+    apiKey: process.env.ETHERSCAN_API,
+  },
+  sourcify: {
+    enabled: true,
   },
   paths: {
     sources: "./contracts",

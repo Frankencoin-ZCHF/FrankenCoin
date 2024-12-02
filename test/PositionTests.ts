@@ -235,24 +235,24 @@ describe("Position Tests", () => {
         ),
       ).to.be.revertedWithoutReason();
     });
-    // it("should revert creating position when collateral token does not revert on error", async () => {
-    //   const testTokenFactory = await ethers.getContractFactory("TestToken");
-    //   const testToken = await testTokenFactory.deploy("Test", "Test", 17);
-    //   await expect(
-    //     mintingHub.openPosition(
-    //       await testToken.getAddress(),
-    //       minCollateral,
-    //       fInitialCollateral,
-    //       initialLimit,
-    //       86400 * 2,
-    //       duration,
-    //       challengePeriod,
-    //       fFees,
-    //       floatToDec18(4000),
-    //       fReserve,
-    //     ),
-    //   ).to.be.revertedWithCustomError(mintingHub, "IncompatibleCollateral");
-    // });
+    it("should revert creating position when collateral token does not revert on error", async () => {
+      const testTokenFactory = await ethers.getContractFactory("FreakToken");
+      const testToken = await testTokenFactory.deploy("Test", "Test", 17);
+      await expect(
+        mintingHub.openPosition(
+          await testToken.getAddress(),
+          minCollateral,
+          fInitialCollateral,
+          initialLimit,
+          86400 * 2,
+          duration,
+          challengePeriod,
+          fFees,
+          floatToDec18(4000),
+          fReserve
+        )
+      ).to.be.revertedWithCustomError(mintingHub, "IncompatibleCollateral");
+    });
     it("create position", async () => {
       let openingFeedEURO = await mintingHub.OPENING_FEE();
       await mockVOL.approve(await mintingHub.getAddress(), fInitialCollateral);

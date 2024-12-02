@@ -212,6 +212,8 @@ contract DecentralizedEURO is ERC20Permit, ERC3009, IDecentralizedEURO, ERC165 {
      * and paid 10 dEURO into the reserve. Now they want to repay the debt by burning 50 dEURO. When doing so using this
      * method, 50 dEURO get burned and on top of that, 10 dEURO previously assigned to the minter's reserved are
      * reassigned to the pool share holders.
+     * 
+     * CS-ZCHF2-009: the Profit event can overstate profits in case there is no equity capital left.
      */
     function burnWithoutReserve(uint256 amount, uint32 reservePPM) public override minterOnly {
         _burn(msg.sender, amount);
@@ -270,7 +272,7 @@ contract DecentralizedEURO is ERC20Permit, ERC3009, IDecentralizedEURO, ERC165 {
 
     /**
      * @notice Calculates the reserve attributable to someone who minted the given amount with the given reserve requirement.
-     * Under normal circumstances, this is just the reserver requirement multiplied by the amount. However, after a
+     * Under normal circumstances, this is just the reserve requirement multiplied by the amount. However, after a
      * severe loss of capital that burned into the minter's reserve, this can also be less than that.
      */
     function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) public view returns (uint256) {
@@ -342,11 +344,6 @@ contract DecentralizedEURO is ERC20Permit, ERC3009, IDecentralizedEURO, ERC165 {
      */
     function getPositionParent(address _position) public view override returns (address) {
         return positions[_position];
-    }
-
-
-    function getERC3009TypeId() public view returns (bytes4) {
-        return type(ERC3009).interfaceId;
     }
 
     /**

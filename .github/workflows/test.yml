@@ -16,5 +16,7 @@ jobs:
           node-version: '22.x'
       - name: Install packages
         run: npm i
+      - name: Create dummy .env from .env.example
+        run: mv .env.example .env
       - name: Run Tests
         run: npm test

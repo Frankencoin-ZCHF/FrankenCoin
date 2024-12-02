@@ -1,8 +1,12 @@
+**.DS_Store
+.deploys
+.states
 node_modules
 build
 typechain
 typechain-types
 artifacts
+artifacts*/
 cache
 coverage
 coverage.json

@@ -31,13 +31,13 @@ contract PositionExpirationTest {
         address pos = hub.openPosition(
             address(col),
             10,
-            100,
+            100 /* collateral */,
             1000000 * 10 ** 18,
             7 days,
             30 days,
             10 hours,
             50000,
-            1000 * 10 ** 36,
+            1000 * 10 ** 36 /* price */,
             200000
         );
         Position(pos).transferOwnership(owner);
