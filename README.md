@@ -20,6 +20,43 @@ The source code can be found in the [contracts](contracts) folder. The following
 | StablecoinBridge.sol  | Plugin for 1:1 swaps with other EUR stablecoins                  |
 | Savings.sol          | A module to pay out interest to ZCHF holders    |
 
+# Code basis and changes after the fork
+
+The last status adopted by Frankencoin was Commit [a2ce625c554bbd3465a31e7d8b7360a054339dd2]([https://app.dEURO.com](https://github.com/Frankencoin-ZCHF/FrankenCoin/commit/a2ce625c554bbd3465a31e7d8b7360a054339dd2) on December 2, 2024. The following things were built on it as a fork.
+
+## Core module
+ZCHF was renamed to dEURO
+Frankencoin was renamed to DecentralizedEURO
+FPS was renamed to nDEPS (native Decentralized Protocol Share)
+nDEPS now cost 1000 times less than the FPS for Frankencoin
+ERC20 token has been completely converted to standard Open Zeppelin V5
+ERC165 token standard has been added
+ERC3009 added
+SmartContract internal exchange fee (can also be called issuance fee) increased from 0.3% to 2%. 
+
+## WFPS Wrapper
+WFPS has been renamed to nDEPS
+WFPS has been renamed DEPS
+(so “w” is no longer used for “wrapped” but the non-wrapped version is now called “native”)
+
+## Bridges
+Frankencoin had a single bridge to XCHF from Bitcoin Suisse
+dEURO has 4 bridges to 
+	Tether EUR
+	Circle EUR
+	VNX EUR
+	Stasis EUR
+
+## Minting module v1
+In contrast to Frankencoin, dEURO does not use the minting module v1 at all
+
+# Audit Reports
+2023-02-10 [Blockbite](https://github.com/Frankencoin-ZCHF/FrankenCoin/blob/main/audits/blockbite-audit.pdf)
+2023-06-09 [code4rena](https://code4rena.com/reports/2023-04-frankencoin)
+2023-10-30 [chainsecurity Report 1](https://github.com/Frankencoin-ZCHF/FrankenCoin/blob/main/audits/V1/blockbite-audit.pdf)
+2024-09-25 [Decurity](https://github.com/Decurity/audits/blob/master/Frankencoin/frankencoin-audit-report-2024-1.1.pdf)
+2024-11-28 [ChainSecurity Report 2](https://cdn.prod.website-files.com/65d35b01a4034b72499019e8/674873bff5163fea0b1d9faa_ChainSecurity_Frankencoin_Frankencoin_v2024_audit.pdf)
+
 # Development
 
 ### Yarn Package Scripts
