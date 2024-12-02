@@ -35,7 +35,7 @@ export async function getSigningManagerFromPK(
   nodeUrl: string,
   pk: any
 ) {
-  const provider = new ethers.providers.JsonRpcProvider(nodeUrl);
+  const provider = new ethers.JsonRpcProvider(nodeUrl);
   const wallet = new ethers.Wallet(pk);
   const signer = wallet.connect(provider);
   const signingContractManager = new ethers.Contract(ctrAddr, ctrAbi, signer);
@@ -48,7 +48,7 @@ export function capitalToShares(
   dCapital: bigint
 ): bigint {
   if (totalShares == 0n) {
-    return 1000n;
+    return 1000000n;
   } else {
     return (
       totalShares *
@@ -62,4 +62,13 @@ export function sharesToCapital(
   dShares: bigint
 ) {
   return -totalCapital * (((totalShares - dShares) / totalShares) ** 3n - 1n);
+}
+
+export function getParams(
+  name: string,
+  chainId: number,
+): any {
+  // __dirname + "/../parameters/paramsBridges.json";
+  const paramFile = __dirname + "/deployment/parameters/" + name + ".json";
+  return require(paramFile)[chainId];
 }

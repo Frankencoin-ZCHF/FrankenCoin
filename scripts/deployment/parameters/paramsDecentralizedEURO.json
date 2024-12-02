@@ -1,0 +1,14 @@
+{
+  "1": {
+    "name": "mainnet",
+    "minApplicationPeriod": 1209600
+  },
+  "31337": {
+    "name": "local",
+    "minApplicationPeriod": 900
+  },
+  "11155111": {
+    "name": "sepolia",
+    "minApplicationPeriod": 900
+  }
+}

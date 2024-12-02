@@ -1,0 +1,39 @@
+{
+  "1": {
+    "name": "mainnet",
+    "bridges": [
+      {
+        "name": "EURT",
+        "other": "0xc581b735a1688071a1746c968e0798d642ede491",
+        "decentralizedEURO": "0xd45e911843721083A2751fA9Cc9D2a8089D8C0f5",
+        "limit": 5000,
+        "weeks": 30,
+        "applicationMsg": "EURT Bridge"
+      },
+      {
+        "name": "EURC",
+        "other": "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
+        "decentralizedEURO": "0xd45e911843721083A2751fA9Cc9D2a8089D8C0f5",
+        "limit": 500,
+        "weeks": 30,
+        "applicationMsg": "EURC Bridge"
+      },
+      {
+        "name": "VEUR",
+        "other": "0x6ba75d640bebfe5da1197bb5a2aff3327789b5d3",
+        "decentralizedEURO": "0xd45e911843721083A2751fA9Cc9D2a8089D8C0f5",
+        "limit": 500,
+        "weeks": 30,
+        "applicationMsg": "VEUR Bridge"
+      },
+      {
+        "name": "EURS",
+        "other": "0xdb25f211ab05b1c97d595516f45794528a807ad8",
+        "decentralizedEURO": "0xd45e911843721083A2751fA9Cc9D2a8089D8C0f5",
+        "limit": 500,
+        "weeks": 30,
+        "applicationMsg": "EURS Bridge"
+      }
+    ]
+  }
+}

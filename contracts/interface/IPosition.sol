@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
-import "./IReserve.sol";
-import "./IFrankencoin.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IPosition {
-
     function initialize(address parent, uint40 _expiration) external;
 
     function hub() external view returns(address);
@@ -41,7 +38,7 @@ interface IPosition {
 
     function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);
 
-    function getMintAmount(uint256 usableMint) external view returns (uint256);
+    function getMintAmount(uint256 usableMint) external view returns(uint256 );
 
     function challengeData() external view returns (uint256 liqPrice, uint40 phase);
 

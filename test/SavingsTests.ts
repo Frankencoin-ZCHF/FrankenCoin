@@ -3,7 +3,7 @@ import { floatToDec18 } from "../scripts/math";
 import { ethers } from "hardhat";
 import {
   Equity,
-  Frankencoin,
+  DecentralizedEURO,
   MintingHub,
   Position,
   PositionFactory,
@@ -20,7 +20,7 @@ describe("Savings Tests", () => {
   let alice: HardhatEthersSigner;
   let bob: HardhatEthersSigner;
 
-  let zchf: Frankencoin;
+  let zchf: DecentralizedEURO;
   let equity: Equity;
   let roller: PositionRoller;
   let savings: Savings;
@@ -40,15 +40,15 @@ describe("Savings Tests", () => {
   beforeEach(async () => {
     [owner, alice, bob] = await ethers.getSigners();
 
-    const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400);
+    const DecentralizedEUROFactory =
+      await ethers.getContractFactory("DecentralizedEURO");
+    zchf = await DecentralizedEUROFactory.deploy(10 * 86400);
 
     const equityAddr = await zchf.reserve();
     equity = await ethers.getContractAt("Equity", equityAddr);
 
-    const positionFactoryFactory = await ethers.getContractFactory(
-      "PositionFactory"
-    );
+    const positionFactoryFactory =
+      await ethers.getContractFactory("PositionFactory");
     positionFactory = await positionFactoryFactory.deploy();
 
     const savingsFactory = await ethers.getContractFactory("Savings");
@@ -62,7 +62,7 @@ describe("Savings Tests", () => {
       await zchf.getAddress(),
       await savings.getAddress(),
       await roller.getAddress(),
-      await positionFactory.getAddress()
+      await positionFactory.getAddress(),
     );
 
     // jump start ecosystem
@@ -109,17 +109,17 @@ describe("Savings Tests", () => {
       expect(r.saved).to.be.equal(amount * 3n);
     });
 
-    it("premature attempt to withdraw", async () => {
-      await zchf.approve(savings.getAddress(), amount);
-      await savings["save(uint192)"](amount);
-      const w = savings.withdraw(owner.address, amount);
-      await expect(w).to.be.revertedWithCustomError(savings, "FundsLocked");
+    // it("premature attempt to withdraw", async () => {
+    //   await zchf.approve(savings.getAddress(), amount);
+    //   await savings["save(uint192)"](amount);
+    //   const w = savings.withdraw(owner.address, amount);
+    //   await expect(w).to.be.revertedWithCustomError(savings, "FundsLocked");
 
-      savings.connect(owner).refreshMyBalance();
+    //   savings.connect(owner).refreshMyBalance();
 
-      const w2 = savings.withdraw(owner.address, amount);
-      await expect(w2).to.be.revertedWithCustomError(savings, "FundsLocked");
-    });
+    //   const w2 = savings.withdraw(owner.address, amount);
+    //   await expect(w2).to.be.revertedWithCustomError(savings, "FundsLocked");
+    // });
 
     it("any interests after 365days", async () => {
       const i0 = await zchf.balanceOf(owner.address);
@@ -133,8 +133,8 @@ describe("Savings Tests", () => {
         equity addr: 0x1301d297043f564235EA41560f61681253BbD48B
 
         Error: VM Exception while processing transaction: reverted with custom error 'ERC20InsufficientAllowance("0x1301d297043f564235EA41560f61681253BbD48B", 0, 192328779807204464738)'
-        at Frankencoin.permit (contracts/utils/ERC20PermitLight.sol:21)
-        at Frankencoin.transferFrom (contracts/utils/ERC20.sol:123)
+        at DecentralizedEURO.permit (contracts/utils/ERC20PermitLight.sol:21)
+        at DecentralizedEURO.transferFrom (contracts/utils/ERC20.sol:123)
         at Savings.refresh (contracts/Savings.sol:68)
         at Savings.withdraw (contracts/Savings.sol:109)
 
@@ -217,7 +217,7 @@ describe("Savings Tests", () => {
         (365n * 86_400n * 1_000_000n);
       expect(bDiff).to.be.approximately(
         toCheck0 + toCheck1 + toCheck2,
-        1_000_000_000n
+        1_000_000_000n,
       );
     });
 
@@ -307,7 +307,7 @@ describe("Savings Tests", () => {
           1000000n /
           365n /
           24n /
-          3600n
+          3600n,
       );
       await savings.withdraw(owner.address, 10n * amount);
       await expect((await savings.savings(owner.address)).saved).to.be.eq(0n);

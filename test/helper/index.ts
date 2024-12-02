@@ -18,3 +18,9 @@ export const evm_increaseTimeTo = async (seconds: number | bigint) => {
 export const evm_mine_blocks = async (n: number) => {
   await helper.mine(n);
 };
+
+export function getFutureTimeStamp(addHours: number) {
+  const date = new Date();
+  date.setHours(date.getHours() + addHours);
+  return date.getTime();
+}

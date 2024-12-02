@@ -1,21 +1,23 @@
-# FrankenCoin Core
+# dEURO
 
-This is the source code repository for the smart contracts of the oracle-free, collateralized stablecoin Frankencoin.
+This repository is a friendly fork of Frankencoin-ZCHF.
 
-There also is a [public frontend](https://frankencoin.com), a [documentation page](https://docs.frankencoin.com), an outdated [Frankencoin Research Paper](https://www.snb.ch/n/mmr/reference/sem_2022_06_03_maire/source/sem_2022_06_03_maire.n.pdf), and a more recent chapter of a [pending phd thesis](https://frankencoin.com/thesis-preprint-frankencoin.pdf).
+This is the source code repository for the smart contracts of the oracle-free, collateralized stablecoin dEURO.
+
+There also is a [public frontend](https://app.dEURO.com) and a [documentation page](https://docs.dEURO.com).
 
 ### Source Code
 
 The source code can be found in the [contracts](contracts) folder. The following are the most important contracts.
 
-| Contract             | Description                                     |
-| -------------------- | ----------------------------------------------- |
-| Frankencoin.sol      | The Frankencoin (ZCHF) ERC20 token              |
-| Equity.sol           | The Frankencoin Pool Shares (FPS) ERC20 token   |
-| MintingHub.sol       | Plugin for oracle-free collateralized minting   |
-| Position.sol         | A borrowed minting position holding collateral  |
+| Contract              | Description                                                      |
+| --------------------- | ---------------------------------------------------------------- |
+| DecentralizedEURO.sol | The DecentralizedEURO (dEURO) ERC20 token                        |
+| Equity.sol            | The Native Decentralized Euro Protocol Share (nDEPS) ERC20 token |
+| MintingHub.sol        | Plugin for oracle-free collateralized minting                    |
+| Position.sol          | A borrowed minting position holding collateral                   |
 | PositionRoller.sol   | A module to roll positions into new ones        |
-| StablecoinBridge.sol | Plugin for 1:1 swaps with other CHF stablecoins |
+| StablecoinBridge.sol  | Plugin for 1:1 swaps with other EUR stablecoins                  |
 | Savings.sol          | A module to pay out interest to ZCHF holders    |
 
 # Development
@@ -87,11 +89,11 @@ Then run a deployment script with tags and network params (e.g., `sepolia` that 
 
 ```shell
 hh deploy --network sepolia --tags MockTokens
-hh deploy --network sepolia --tags Frankencoin
+hh deploy --network sepolia --tags DecentralizedEURO
 hh deploy --network sepolia --tags PositionFactory
 hh deploy --network sepolia --tags MintingHub
-hh deploy --network sepolia --tags MockCHFToken
-hh deploy --network sepolia --tags XCHFBridge
+hh deploy --network sepolia --tags MockEURToken
+hh deploy --network sepolia --tags XEURBridge
 hh deploy --network sepolia --tags positions
 ```
 

@@ -13,12 +13,13 @@ coverage.json
 .idea
 *.iml
 dist/
-abi/
 .env
 launch.json
 scripts/deployment/deployments/localhost
 scripts/deployment/deployments/hardhat
 .VSCodeCounter/
 .vscode/settings.json
-
 tst.ts
+package-lock.json
+.DS_Store
+abi/

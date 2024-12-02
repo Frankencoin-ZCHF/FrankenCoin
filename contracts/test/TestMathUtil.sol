@@ -4,22 +4,25 @@ pragma solidity ^0.8.0;
 import "../utils/MathUtil.sol";
 
 contract TestMathUtil is MathUtil {
-
     uint256 public result;
 
-    constructor(){
+    constructor() {
         result = 1;
     }
 
     // make it a transaction so we can measure gas costs in our tests
     function cubicRoot(uint256 a, bool recordResult) external {
-        uint256 r = _cubicRoot(a); 
-        if (recordResult){
+        uint256 r = _cubicRoot(a);
+        if (recordResult) {
             result = r;
         }
     }
 
-    function calculateShares(uint256 totalShares, uint256 capitalBefore, uint256 investment) external pure returns (uint256) {
+    function calculateShares(
+        uint256 totalShares,
+        uint256 capitalBefore,
+        uint256 investment
+    ) external pure returns (uint256) {
         uint256 newTotalShares = _mulD18(totalShares, _cubicRoot(_divD18(capitalBefore + investment, capitalBefore)));
         return newTotalShares - totalShares;
     }

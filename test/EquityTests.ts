@@ -1,13 +1,13 @@
 import { expect } from "chai";
-import { floatToDec18 } from "../scripts/math";
+import { floatToDec, floatToDec18 } from "../scripts/math";
 import { ethers } from "hardhat";
 import { evm_increaseTime, evm_mine_blocks } from "./helper";
 import {
   Equity,
-  Frankencoin,
-  Savings,
+  DecentralizedEURO,
   StablecoinBridge,
   TestToken,
+  Savings,
 } from "../typechain";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
@@ -19,58 +19,68 @@ describe("Equity Tests", () => {
   let equity: Equity;
   let bridge: StablecoinBridge;
   let savings: Savings;
-  let zchf: Frankencoin;
-  let xchf: TestToken;
+  let dEURO: DecentralizedEURO;
+  let XEUR: TestToken;
 
   before(async () => {
     [owner, alice, bob] = await ethers.getSigners();
 
-    const xchfFactory = await ethers.getContractFactory("TestToken");
-    xchf = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
+    const XEURFactory = await ethers.getContractFactory("TestToken");
+    XEUR = await XEURFactory.deploy("CryptoFranc", "XEUR", 18);
   });
 
   beforeEach(async () => {
-    const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400);
+    const decentralizedEUROFactory =
+      await ethers.getContractFactory("DecentralizedEURO");
+    dEURO = await decentralizedEUROFactory.deploy(10 * 86400);
 
     let supply = floatToDec18(1000_000);
     const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
     bridge = await bridgeFactory.deploy(
-      await xchf.getAddress(),
-      await zchf.getAddress(),
-      floatToDec18(100_000_000_000)
+      await XEUR.getAddress(),
+      await dEURO.getAddress(),
+      floatToDec18(100_000_000_000),
+      30,
     );
-    await zchf.initialize(await bridge.getAddress(), "");
+    await dEURO.initialize(await bridge.getAddress(), "");
 
-    await xchf.mint(owner.address, supply);
-    await xchf.approve(await bridge.getAddress(), supply);
+    await XEUR.mint(owner.address, supply);
+    await XEUR.approve(await bridge.getAddress(), supply);
     await bridge.mint(supply);
-    await zchf.transfer(bob.address, floatToDec18(5000));
-    equity = await ethers.getContractAt("Equity", await zchf.reserve());
-
+    await dEURO.transfer(bob.address, floatToDec18(5000));
+    equity = await ethers.getContractAt("Equity", await dEURO.reserve());
     const savingsFactory = await ethers.getContractFactory("Savings");
-    savings = await savingsFactory.deploy(zchf.getAddress(), 20000n);
+    savings = await savingsFactory.deploy(dEURO.getAddress(), 20000n);
   });
 
   describe("basic initialization", () => {
-    it("should have symbol ZCHF", async () => {
-      let symbol = await zchf.symbol();
-      expect(symbol).to.be.equal("ZCHF");
+    it("should have symbol dEURO", async () => {
+      let symbol = await dEURO.symbol();
+      expect(symbol).to.be.equal("dEURO");
     });
-    it("should have symbol FPS", async () => {
+
+    it("should have symbol nDEPS", async () => {
       let symbol = await equity.symbol();
-      expect(symbol).to.be.equal("FPS");
+      expect(symbol).to.be.equal("nDEPS");
     });
+
+    it("should support permit interface", async () => {
+      let supportsInterface = await equity.supportsInterface("0x9d8ff7da");
+      expect(supportsInterface).to.be.true;
+    });
+
     it("should have the right name", async () => {
       let symbol = await equity.name();
-      expect(symbol).to.be.equal("Frankencoin Pool Share");
+      expect(symbol).to.be.equal("Native Decentralized Euro Protocol Share");
     });
-    it("should have inital price 1 ZCHF / FPS", async () => {
+
+    it("should have initial price 0.001 dEURO / nDEPS", async () => {
       let price = await equity.price();
-      expect(price).to.be.equal(BigInt(1e18));
+      expect(price).to.be.equal(BigInt(1e15));
     });
+
     it("should have some coins", async () => {
-      let balance = await zchf.balanceOf(owner.address);
+      let balance = await dEURO.balanceOf(owner.address);
       expect(balance).to.be.equal(floatToDec18(1000_000 - 5000));
     });
   });
@@ -78,48 +88,53 @@ describe("Equity Tests", () => {
   describe("minting shares", () => {
     it("should revert minting less than minimum equity amount", async () => {
       await expect(equity.invest(floatToDec18(999), 0)).to.be.revertedWith(
-        "insuf equity"
+        "insuf equity",
       );
     });
+
+    // TODO: Check this again, compare to the original
     it("should revert minting when minted less than expected", async () => {
       await expect(
-        equity.invest(floatToDec18(1000), floatToDec18(9999))
+        equity.invest(floatToDec18(1000), floatToDec18(9999999)),
       ).to.be.revertedWithoutReason();
     });
+
     // it("should revert minting when total supply exceeds max of uint96", async () => {
     //   await equity.invest(floatToDec18(1000), 0);
     //   const amount = floatToDec18(80_000_000_000);
-    //   await xchf.mint(owner.address, amount);
-    //   await xchf.approve(await bridge.getAddress(), amount);
+    //   await XEUR.mint(owner.address, amount);
+    //   await XEUR.approve(await bridge.getAddress(), amount);
     //   await bridge.mint(amount);
     //   await equity.invest(amount, 0);
     //   await expect(equity.invest(amount, 0)).to.be.revertedWith(
     //     "total supply exceeded"
     //   );
     // });
+
     it("should create an initial share", async () => {
       const expected = await equity.calculateShares(floatToDec18(1000));
-      await zchf.transfer(await equity.getAddress(), 1);
+      await dEURO.transfer(await equity.getAddress(), 1);
       const price = await equity.price();
-      expect(price).to.be.equal(floatToDec18(1));
+      expect(price).to.be.equal(floatToDec(1, 15));
       await equity.calculateShares(floatToDec18(1000));
 
       await equity.invest(floatToDec18(1000), expected);
       let balance = await equity.balanceOf(owner.address);
-      expect(balance).to.be.equal(floatToDec18(1000));
+      expect(balance).to.be.equal(floatToDec18(1000000));
     });
+
     it("should create 1000 more shares when adding seven capital plus fees", async () => {
       await equity.invest(floatToDec18(1000), 0);
-      let expected = await equity.calculateShares(floatToDec18(7000 / 0.997));
+      let expected = await equity.calculateShares(floatToDec18(7000 / 0.98));
       expect(expected).to.be.approximately(
-        floatToDec18(1000),
-        floatToDec18(0.01)
+        floatToDec18(1000000),
+        floatToDec18(0.01),
       );
-      await equity.invest(floatToDec18(7000 / 0.997), expected);
+      await equity.invest(floatToDec18(7000 / 0.98), expected);
       let balance = await equity.balanceOf(owner.address);
       expect(balance).to.be.approximately(
-        floatToDec18(2000),
-        floatToDec18(0.01)
+        floatToDec18(2000000),
+        floatToDec18(0.01),
       );
     });
   });
@@ -156,7 +171,7 @@ describe("Equity Tests", () => {
       await savings.proposeChange(21000n, []);
       expect(savings.applyChange()).to.be.revertedWithCustomError(
         savings,
-        "ChangeNotReady"
+        "ChangeNotReady",
       );
     });
 
@@ -177,30 +192,33 @@ describe("Equity Tests", () => {
       const expected = await equity.calculateShares(floatToDec18(7000 / 0.997));
       await equity.invest(floatToDec18(7000 / 0.997), expected);
     });
+
     it("should refuse redemption before time passed", async () => {
       expect(await equity.canRedeem(owner.address)).to.be.false;
       await expect(
-        equity.redeem(owner.address, floatToDec18(0.1))
+        equity.redeem(owner.address, floatToDec18(0.1)),
       ).to.be.revertedWithoutReason();
     });
+
     it("should allow redemption after time passed", async () => {
       await evm_increaseTime(90 * 86_400 + 60);
       expect(await equity.canRedeem(owner.address)).to.be.true;
 
       await expect(
-        equity.calculateProceeds((await equity.totalSupply()) * 2n)
+        equity.calculateProceeds((await equity.totalSupply()) * 2n),
       ).to.be.revertedWith("too many shares");
 
       const redemptionAmount =
-        (await equity.balanceOf(owner.address)) - floatToDec18(1000.0);
-      const equityCapital = await zchf.balanceOf(await equity.getAddress());
+        (await equity.balanceOf(owner.address)) - floatToDec18(1000000.0);
+      const equityCapital = await dEURO.balanceOf(await equity.getAddress());
       const proceeds = await equity.calculateProceeds(redemptionAmount);
       expect(proceeds).to.be.approximately(
         (equityCapital * 7n) / 8n,
-        (equityCapital * 3n) / 1000n
+        (equityCapital * 20n) / 1000n,
       );
       expect(proceeds).to.be.below((equityCapital * 7n) / 8n);
     });
+
     it("should be able to redeem more than expected amounts", async () => {
       await evm_increaseTime(90 * 86_400 + 60);
       expect(await equity.canRedeem(owner.address)).to.be.true;
@@ -209,16 +227,17 @@ describe("Equity Tests", () => {
         (await equity.balanceOf(owner.address)) - floatToDec18(1000.0);
       const proceeds = await equity.calculateProceeds(redemptionAmount);
       await expect(
-        equity.redeemExpected(owner.address, redemptionAmount, proceeds * 2n)
+        equity.redeemExpected(owner.address, redemptionAmount, proceeds * 2n),
       ).to.be.revertedWithoutReason();
 
-      const beforeBal = await zchf.balanceOf(alice.address);
+      const beforeBal = await dEURO.balanceOf(alice.address);
       await expect(
-        equity.redeemExpected(alice.address, redemptionAmount, proceeds)
+        equity.redeemExpected(alice.address, redemptionAmount, proceeds),
       ).to.be.emit(equity, "Trade");
-      const afterBal = await zchf.balanceOf(alice.address);
+      const afterBal = await dEURO.balanceOf(alice.address);
       expect(afterBal - beforeBal).to.be.equal(proceeds);
     });
+
     it("should be able to redeem allowed shares for share holder", async () => {
       await evm_increaseTime(90 * 86_400 + 60);
 
@@ -227,7 +246,7 @@ describe("Equity Tests", () => {
       await equity.approve(alice.address, redemptionAmount);
 
       const proceeds = await equity.calculateProceeds(redemptionAmount);
-      const beforeBal = await zchf.balanceOf(bob.address);
+      const beforeBal = await dEURO.balanceOf(bob.address);
       await expect(
         equity
           .connect(alice)
@@ -235,13 +254,13 @@ describe("Equity Tests", () => {
             owner.address,
             bob.address,
             redemptionAmount,
-            proceeds * 2n
-          )
+            proceeds * 2n,
+          ),
       ).to.be.revertedWithoutReason();
       await equity
         .connect(alice)
         .redeemFrom(owner.address, bob.address, redemptionAmount, proceeds);
-      const afterBal = await zchf.balanceOf(bob.address);
+      const afterBal = await dEURO.balanceOf(bob.address);
       expect(afterBal - beforeBal).to.be.equal(proceeds);
     });
   });
@@ -337,7 +356,7 @@ describe("Equity Tests", () => {
       expect(votesBefore0 + votesBefore5).to.be.eq(totalVotesBefore);
       await equity.kamikaze(
         [bob.address],
-        votesBefore5 + balance5 * BigInt(2 ** 20)
+        votesBefore5 + balance5 * BigInt(2 ** 20),
       );
       let votesAfter0 = await equity.votes(owner.address);
       let votesAfter5 = await equity.votes(bob.address);
@@ -346,11 +365,13 @@ describe("Equity Tests", () => {
       expect(totalVotesA).to.be.eq(votesAfter0);
     });
   });
+
   describe("delegate voting power", () => {
     beforeEach(async () => {
       await equity.invest(floatToDec18(1000), 0);
       await equity.connect(bob).invest(floatToDec18(1000), 0);
     });
+
     it("delegate vote", async () => {
       await equity.connect(bob).delegateVoteTo(alice.address);
       await equity.connect(alice).delegateVoteTo(owner.address);
@@ -361,33 +382,189 @@ describe("Equity Tests", () => {
       let qualified2 = await equity.votesDelegated(owner.address, []);
       expect(qualified1 > qualified2).to.be.true;
       await expect(
-        equity.votesDelegated(bob.address, [alice.address])
+        equity.votesDelegated(bob.address, [alice.address]),
       ).to.be.revertedWithoutReason();
       await expect(
-        equity.votesDelegated(bob.address, [bob.address])
+        equity.votesDelegated(bob.address, [bob.address]),
       ).to.be.revertedWithoutReason();
       await expect(
-        equity.votesDelegated(owner.address, [alice.address, bob.address])
+        equity.votesDelegated(owner.address, [alice.address, bob.address]),
       ).to.be.revertedWithoutReason();
     });
+
     it("should revert qualified check when not meet quorum", async () => {
-      await zchf.transfer(alice.address, 1);
+      await dEURO.transfer(alice.address, 1);
       await equity.connect(alice).invest(1, 0);
       await expect(
-        equity.checkQualified(alice.address, [])
+        equity.checkQualified(alice.address, []),
       ).to.be.revertedWithCustomError(equity, "NotQualified");
     });
   });
   describe("restructure cap table", () => {
     it("should revert restructure when have enough equity", async () => {
-      await zchf.transfer(await equity.getAddress(), floatToDec18(1000));
+      await dEURO.transfer(await equity.getAddress(), floatToDec18(1000));
       await expect(
-        equity.restructureCapTable([], [])
+        equity.restructureCapTable([], []),
       ).to.be.revertedWithoutReason();
     });
+
     it("should burn equity balances of given users", async () => {
-      await zchf.transfer(await equity.getAddress(), floatToDec18(100));
+      await dEURO.transfer(await equity.getAddress(), floatToDec18(100));
       await equity.restructureCapTable([], [alice.address, bob.address]);
+    });
+  });
+
+  describe("StablecoinBridge Tests", () => {
+    let eur: TestToken;
+    let bridge: StablecoinBridge;
+
+    beforeEach(async () => {
+      const dEUROFactory = await ethers.getContractFactory("DecentralizedEURO");
+      dEURO = await dEUROFactory.deploy(10 * 86400);
+
+      const TokenFactory = await ethers.getContractFactory("TestToken");
+      eur = await TokenFactory.deploy("Euro Stablecoin", "EUR", 6);
+
+      const StablecoinBridgeFactory =
+        await ethers.getContractFactory("StablecoinBridge");
+      bridge = await StablecoinBridgeFactory.deploy(
+        await eur.getAddress(),
+        await dEURO.getAddress(),
+        ethers.parseEther("5000"),
+        30,
+      );
+
+      await dEURO.initialize(await bridge.getAddress(), "");
+    });
+
+    describe("Decimal conversion in mintTo, burn, and burnAndSend", () => {
+      it("should correctly handle mintTo, burn, and burnAndSend when sourceDecimals < targetDecimals", async () => {
+        const amount = ethers.parseUnits("1000", 6);
+        const expectedMintAmount = ethers.parseUnits("1000", 18);
+
+        // Mint EUR and approve
+        await eur.mint(alice.address, amount);
+        await eur.connect(alice).approve(await bridge.getAddress(), amount);
+
+        // Mint dEURO
+        await bridge.connect(alice).mintTo(alice.address, amount);
+        const aliceBalanceAfterMint = await dEURO.balanceOf(alice.address);
+        expect(aliceBalanceAfterMint).to.equal(expectedMintAmount);
+
+        // Approve dEURO for burning
+        await dEURO
+          .connect(alice)
+          .approve(await bridge.getAddress(), expectedMintAmount);
+
+        // Burn dEURO back to EUR
+        await bridge.connect(alice).burn(expectedMintAmount);
+        const aliceEURBalance = await eur.balanceOf(alice.address);
+        expect(aliceEURBalance).to.equal(amount);
+
+        // Mint dEURO again
+        await eur.connect(alice).approve(await bridge.getAddress(), amount);
+        await bridge.connect(alice).mintTo(alice.address, amount);
+
+        // Burn dEURO and send EUR to owner
+        const ownerEURBalanceBefore = await eur.balanceOf(owner.address);
+        await bridge
+          .connect(alice)
+          .burnAndSend(owner.address, expectedMintAmount);
+        const ownerEURBalance = await eur.balanceOf(owner.address);
+        expect(ownerEURBalance - ownerEURBalanceBefore).to.equal(amount);
+      });
+
+      it("should correctly handle mintTo, burn, and burnAndSend when sourceDecimals > targetDecimals", async () => {
+        const dEUROFactory = await ethers.getContractFactory("TestToken");
+        const newDEURO = await dEUROFactory.deploy(
+          "Decentralized EURO",
+          "dEUR",
+          2,
+        );
+
+        const StablecoinBridgeFactory =
+          await ethers.getContractFactory("StablecoinBridge");
+        const newBridge = await StablecoinBridgeFactory.deploy(
+          await eur.getAddress(),
+          await newDEURO.getAddress(),
+          ethers.parseEther("5000"),
+          30,
+        );
+
+        await newDEURO.mint(
+          newBridge.getAddress(),
+          ethers.parseUnits("1000", 2),
+        );
+
+        const amount = ethers.parseUnits("1000", 6);
+        const expectedMintAmount = ethers.parseUnits("1000", 2);
+
+        await eur.mint(alice.address, amount);
+
+        await eur.connect(alice).approve(await newBridge.getAddress(), amount);
+        await newBridge.connect(alice).mintTo(alice.address, amount);
+        const aliceBalanceAfterMint = await newDEURO.balanceOf(alice.address);
+        expect(aliceBalanceAfterMint).to.equal(expectedMintAmount);
+
+        await newDEURO
+          .connect(alice)
+          .approve(await newBridge.getAddress(), expectedMintAmount);
+        await newBridge.connect(alice).burn(expectedMintAmount);
+        const aliceEURBalance = await eur.balanceOf(alice.address);
+        expect(aliceEURBalance).to.equal(amount);
+
+        await eur.approve(await newBridge.getAddress(), amount);
+        await newBridge.mintTo(alice.address, amount);
+        const ownerEURBalanceBefore = await eur.balanceOf(owner.address);
+
+        await newDEURO
+          .connect(alice)
+          .approve(await newBridge.getAddress(), amount);
+        await newBridge
+          .connect(alice)
+          .burnAndSend(owner.address, expectedMintAmount);
+        const ownerEURBalance = await eur.balanceOf(owner.address);
+        expect(ownerEURBalance - ownerEURBalanceBefore).to.equal(amount);
+      });
+
+      it("should correctly handle mintTo, burn, and burnAndSend when sourceDecimals == targetDecimals", async () => {
+        const identicalDEURO = await ethers.getContractFactory("TestToken");
+        const newDEURO = await identicalDEURO.deploy("dEURO", "dEUR", 6);
+
+        const BridgeFactory =
+          await ethers.getContractFactory("StablecoinBridge");
+        const identicalBridge = await BridgeFactory.deploy(
+          await eur.getAddress(),
+          await newDEURO.getAddress(),
+          ethers.parseEther("5000"),
+          30,
+        );
+
+        const amount = ethers.parseUnits("1000", 6);
+
+        await eur.approve(await identicalBridge.getAddress(), amount);
+
+        await identicalBridge.mintTo(alice.address, amount);
+        const aliceBalanceAfterMint = await newDEURO.balanceOf(alice.address);
+        expect(aliceBalanceAfterMint).to.equal(amount);
+
+        await newDEURO
+          .connect(alice)
+          .approve(await identicalBridge.getAddress(), amount);
+        await identicalBridge.connect(alice).burn(amount);
+        const aliceEURBalance = await eur.balanceOf(alice.address);
+        expect(aliceEURBalance).to.equal(amount);
+
+        await eur.approve(await identicalBridge.getAddress(), amount);
+        await identicalBridge.mintTo(alice.address, amount);
+        const ownerEURBalanceBefore = await eur.balanceOf(owner.address);
+        await newDEURO
+          .connect(alice)
+          .approve(await identicalBridge.getAddress(), amount);
+        await identicalBridge.connect(alice).burnAndSend(owner.address, amount);
+        const ownerEURBalance = await eur.balanceOf(owner.address);
+        expect(ownerEURBalance - ownerEURBalanceBefore).to.equal(amount);
+      });
     });
   });
 });

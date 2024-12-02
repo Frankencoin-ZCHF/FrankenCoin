@@ -102,7 +102,7 @@ def construct_overlapping_returns(r_in, TauIn_min, tau_min):
 
 # 1) data
 TauIn = 1440#60
-DF = pd.read_pickle("./Risk/XBTCHF_"+str(TauIn)+"_Processed_v3.pkl")
+DF = pd.read_pickle("./Risk/XBTEUR_"+str(TauIn)+"_Processed_v3.pkl")
 r_in = DF["logRet"].to_numpy()
 stats.describe(r_in)
 r_in_max = DF["maxRet"].to_numpy()

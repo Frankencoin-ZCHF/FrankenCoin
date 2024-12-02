@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC20.sol";
-import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
-import "./interface/IReserve.sol";
+import {DecentralizedEURO} from "./DecentralizedEURO.sol";
+import {IReserve} from "./interface/IReserve.sol";
 
 /**
  * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')
@@ -13,7 +11,6 @@ import "./interface/IReserve.sol";
  *
  **/
 contract Leadrate {
-
     IReserve public immutable equity;
 
     // the following five variables are less than 256 bit so they should be stored
@@ -80,5 +77,4 @@ contract Leadrate {
     function ticks(uint256 timestamp) public view returns (uint64) {
         return ticksAnchor + (uint64(timestamp) - anchorTime) * currentRatePPM;
     }
-
 }
