@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {DecentralizedEURO} from "./DecentralizedEURO.sol";
 import {IReserve} from "./interface/IReserve.sol";
+import {ERC3009} from "./impl/ERC3009.sol";
 import {MathUtil} from "./utils/MathUtil.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,7 +20,7 @@ import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * Furthermore, the nDEPS shares come with some voting power. Anyone that held at least 2% of the holding-period-
  * weighted reserve pool shares gains veto power and can veto new proposals.
  */
-contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
+contract Equity is ERC20Permit, ERC3009, MathUtil, IReserve, ERC165 {
     /**
      * The VALUATION_FACTOR determines the market cap of the reserve pool shares relative to the equity reserves.
      * The following always holds: Market Cap = Valuation Factor * Equity Reserve = Price * Supply
@@ -428,6 +429,7 @@ contract Equity is ERC20Permit, MathUtil, IReserve, ERC165 {
         return
             interfaceId == type(IERC20).interfaceId ||
             interfaceId == type(ERC20Permit).interfaceId ||
+            interfaceId == type(ERC3009).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

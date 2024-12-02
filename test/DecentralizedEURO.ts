@@ -32,8 +32,10 @@ describe("DecentralizedEURO", () => {
     });
 
     it("should support permit interface", async () => {
-      let supportsInterface = await dEURO.supportsInterface("0x9d8ff7da");
-      expect(supportsInterface).to.be.true;
+      let supportsERC3009Interface = await dEURO.supportsInterface("0xb9012196");
+      let supportsPermitInterface = await dEURO.supportsInterface("0x9d8ff7da");
+      expect(supportsERC3009Interface).to.be.true;
+      expect(supportsPermitInterface).to.be.true;
     });
 
     it("create mock token", async () => {

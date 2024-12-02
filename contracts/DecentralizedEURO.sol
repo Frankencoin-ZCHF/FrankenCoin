@@ -8,6 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {ERC3009} from "./impl/ERC3009.sol";
 
 /**
  * @title DecentralizedEURO
@@ -15,7 +16,7 @@ import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * It is not upgradable, but open to arbitrary minting plugins. These are automatically accepted if none of the
  * qualified pool share holders casts a veto, leading to a flexible but conservative governance.
  */
-contract DecentralizedEURO is ERC20Permit, IDecentralizedEURO, ERC165 {
+contract DecentralizedEURO is ERC20Permit, ERC3009, IDecentralizedEURO, ERC165 {
     /**
      * @notice Minimal fee and application period when suggesting a new minter.
      */
@@ -343,6 +344,11 @@ contract DecentralizedEURO is ERC20Permit, IDecentralizedEURO, ERC165 {
         return positions[_position];
     }
 
+
+    function getERC3009TypeId() public view returns (bytes4) {
+        return type(ERC3009).interfaceId;
+    }
+
     /**
      * @dev See {IERC165-supportsInterface}.
      */
@@ -350,6 +356,7 @@ contract DecentralizedEURO is ERC20Permit, IDecentralizedEURO, ERC165 {
         return
             interfaceId == type(IERC20).interfaceId ||
             interfaceId == type(ERC20Permit).interfaceId ||
+            interfaceId == type(ERC3009).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }
