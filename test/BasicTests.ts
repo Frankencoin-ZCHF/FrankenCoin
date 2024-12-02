@@ -6,6 +6,8 @@ import {
   Equity,
   Frankencoin,
   PositionFactory,
+  PositionRoller,
+  Savings,
   StablecoinBridge,
   TestToken,
 } from "../typechain";
@@ -19,6 +21,8 @@ describe("Basic Tests", () => {
   let zchf: Frankencoin;
   let equity: Equity;
   let positionFactory: PositionFactory;
+  let savings: Savings;
+  let roller: PositionRoller;
   let mockXCHF: TestToken;
   let bridge: StablecoinBridge;
 
@@ -37,11 +41,9 @@ describe("Basic Tests", () => {
     );
     positionFactory = await positionFactoryFactory.deploy();
 
-    const mintingHubFactory = await ethers.getContractFactory("MintingHub");
-    await mintingHubFactory.deploy(
-      await zchf.getAddress(),
-      await positionFactory.getAddress()
-    );
+    const savingsFactory = await ethers.getContractFactory("Savings");
+    savings = await savingsFactory.deploy(zchf.getAddress(), 20000n);
+
   });
 
   describe("basic initialization", () => {
@@ -50,6 +52,39 @@ describe("Basic Tests", () => {
       expect(symbol).to.be.equal("ZCHF");
       let name = await zchf.name();
       expect(name).to.be.equal("Frankencoin");
+    });
+  });
+
+  describe("savings module init", () => {
+    it("init values", async () => {
+      let currentRatePPM = await savings.currentRatePPM();
+      expect(currentRatePPM).to.be.equal(20000n);
+      let nextRatePPM = await savings.nextRatePPM();
+      expect(nextRatePPM).to.be.equal(20000n);
+    });
+    it("tries to propose no changes", async () => {
+      await savings.proposeChange(20000n, []);
+    });
+    it("tries to apply no changes", async () => {
+      await expect(savings.applyChange()).to.be.revertedWithCustomError(
+        savings,
+        "NoPendingChange"
+      );
+    });
+    it("ticks accumulation check ", async () => {
+      const getTimeStamp = async () => {
+        const blockNumBefore = await ethers.provider.getBlockNumber();
+        const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+        return blockBefore?.timestamp ?? null;
+      };
+      const snap1 = await savings.currentTicks();
+      const time1 = await getTimeStamp();
+      await evm_increaseTime(86_400);
+      const snap2 = await savings.currentTicks();
+      const time2 = await getTimeStamp();
+      const diff = time2! - time1!;
+
+      expect(snap2).to.be.equal(parseInt(snap1.toString()) + diff * 20000);
     });
   });
 

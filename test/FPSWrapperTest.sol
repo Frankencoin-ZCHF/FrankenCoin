@@ -45,8 +45,6 @@ contract FPSWrapperTest is Test {
         uint256 tot = fps.totalVotes();
         wfps.halveHoldingDuration(new address[](0));
         uint256 votesAfter = fps.votes(address(wfps));
-        console.log("wfps votes ", fps.votes(address(wfps)));
-        console.log("total votes ", fps.totalVotes());
         require(votesAfter == votesBefore / 2);
         require(fps.totalVotes() == tot + votesAfter - votesBefore);
         vm.expectRevert();
