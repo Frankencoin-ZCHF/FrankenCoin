@@ -78,11 +78,12 @@ async function deployPos(params: any, hre: HardhatRuntimeEnvironment) {
   //   fliqPrice.toString(),
   //   fReservePPM.toString()
   // );
-  let tx = await mintingHubContract.openPositionOneWeek(
+  let tx = await mintingHubContract.openPosition(
     collateralAddr,
     fMinCollateral,
     fInitialCollateral,
     initialLimitZCHF,
+    7n*24n*3600n,
     duration,
     challengePeriod,
     feesPPM,

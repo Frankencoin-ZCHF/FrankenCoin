@@ -232,6 +232,30 @@
     {
         "inputs": [
             {
+                "internalType": "uint256",
+                "name": "amountExcludingReserve",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint32",
+                "name": "reservePPM",
+                "type": "uint32"
+            }
+        ],
+        "name": "calculateFreedAmount",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "address",
                 "name": "source",
                 "type": "address"

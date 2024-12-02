@@ -14,23 +14,24 @@ The source code can be found in the [contracts](contracts) folder. The following
 | Equity.sol           | The Frankencoin Pool Shares (FPS) ERC20 token   |
 | MintingHub.sol       | Plugin for oracle-free collateralized minting   |
 | Position.sol         | A borrowed minting position holding collateral  |
+| PositionRoller.sol   | A module to roll positions into new ones        |
 | StablecoinBridge.sol | Plugin for 1:1 swaps with other CHF stablecoins |
+| Savings.sol          | A module to pay out interest to ZCHF holders    |
 
 ## Compiling and Testing
 
-The project is setup to be compiled and tested with hardhat. Assuming [node.js](https://heynode.com/tutorial/install-nodejs-locally-nvm/) is already present, try commands like these to get ready:
+The project is setup to be compiled and tested with hardhat. Given [node.js](https://heynode.com/tutorial/install-nodejs-locally-nvm/) and hardhat are installed, you can compile or compile and test using these two commands:
 
 ```shell
-npm install --global hardhat-shorthand
-yarn
+npx hardhat compile
+npx hardhat test
+npx hardhat coverage
 ```
 
-Once all is there, you can compile or compile & test using these two commands:
+With tsc-watch (auto refresh commands)
 
 ```shell
-hh compile
-hh test
-hh coverage
+npx tsc-watch --onCompilationComplete "npx hardhat test ./test/RollerTests.ts"
 ```
 
 ## Deployment

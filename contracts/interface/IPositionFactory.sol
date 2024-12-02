@@ -8,12 +8,12 @@ interface IPositionFactory {
         address _collateral,
         uint256 _minCollateral,
         uint256 _initialLimit,
-        uint256 _initPeriodSeconds,
-        uint256 _duration,
-        uint64 _challengePeriod,
-        uint32 _annualInterestPPM,
+        uint40 _initPeriodSeconds,
+        uint40 _duration,
+        uint40 _challengePeriod,
+        uint24 _riskPremiumPPM,
         uint256 _liqPrice,
-        uint32 _reserve
+        uint24 _reserve
     ) external returns (address);
 
     function clonePosition(address _existing) external returns (address);
