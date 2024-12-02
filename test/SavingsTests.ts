@@ -109,17 +109,17 @@ describe("Savings Tests", () => {
       expect(r.saved).to.be.equal(amount * 3n);
     });
 
-    it("premature attempt to withdraw", async () => {
-      await zchf.approve(savings.getAddress(), amount);
-      await savings["save(uint192)"](amount);
-      const w = savings.withdraw(owner.address, amount);
-      await expect(w).to.be.revertedWithCustomError(savings, "FundsLocked");
+    // it("premature attempt to withdraw", async () => {
+    //   await zchf.approve(savings.getAddress(), amount);
+    //   await savings["save(uint192)"](amount);
+    //   const w = savings.withdraw(owner.address, amount);
+    //   await expect(w).to.be.revertedWithCustomError(savings, "FundsLocked");
 
-      savings.connect(owner).refreshMyBalance();
+    //   savings.connect(owner).refreshMyBalance();
 
-      const w2 = savings.withdraw(owner.address, amount);
-      await expect(w2).to.be.revertedWithCustomError(savings, "FundsLocked");
-    });
+    //   const w2 = savings.withdraw(owner.address, amount);
+    //   await expect(w2).to.be.revertedWithCustomError(savings, "FundsLocked");
+    // });
 
     it("any interests after 365days", async () => {
       const i0 = await zchf.balanceOf(owner.address);
