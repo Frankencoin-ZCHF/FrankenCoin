@@ -36,8 +36,6 @@ contract Savings is Leadrate {
     event InterestCollected(address indexed account, uint256 interest);
     event Withdrawn(address indexed account, uint192 amount);
 
-    error FundsLocked(uint40 remainingSeconds);
-
     // The module is considered disabled if the interest is zero or about to become zero within three days.
     error ModuleDisabled();
 
@@ -147,9 +145,7 @@ contract Savings is Leadrate {
      */
     function withdraw(address target, uint192 amount) public returns (uint256) {
         Account storage account = refresh(msg.sender);
-        if (account.ticks > currentTicks()) {
-            revert FundsLocked(uint40(account.ticks - currentTicks()) / currentRatePPM);
-        } else if (amount >= account.saved) {
+        if (amount >= account.saved) {
             amount = account.saved;
             delete savings[msg.sender];
         } else {
