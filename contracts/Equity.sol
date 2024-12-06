@@ -291,7 +291,6 @@ contract Equity is ERC20PermitLight, MathUtil, IReserve {
     function _reduceVotes(address target, uint256 amount) internal returns (uint256) {
         uint256 votesBefore = votes(target);
         if (amount >= votesBefore) {
-            amount = votesBefore;
             voteAnchor[target] = _anchorTime();
             return votesBefore;
         } else {
