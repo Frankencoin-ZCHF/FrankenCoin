@@ -249,8 +249,8 @@ describe("Position Tests", () => {
           challengePeriod,
           fFees,
           floatToDec18(4000),
-          fReserve
-        )
+          fReserve,
+        ),
       ).to.be.revertedWithCustomError(mintingHub, "IncompatibleCollateral");
     });
     it("create position", async () => {
@@ -1613,6 +1613,113 @@ describe("Position Tests", () => {
 
     it("roll into clone", async () => {
       // TODO
+    });
+  });
+
+  describe("repay with refund", () => {
+    beforeEach(async () => {
+      let collateral = await mockVOL.getAddress();
+      let fliqPrice = floatToDec18(5000);
+      let minCollateral = floatToDec18(1);
+      let fInitialCollateral = floatToDec18(initialCollateral); // 110
+      let duration = BigInt(400 * 86_400);
+      let fFees = BigInt(fee * 1_000_000);
+      let fReserve = BigInt(reserve * 1_000_000);
+      let challengePeriod = BigInt(3 * 86400);
+
+      await mockVOL
+        .connect(owner)
+        .approve(await mintingHub.getAddress(), fInitialCollateral);
+      let tx = await mintingHub.openPosition(
+        collateral,
+        minCollateral,
+        fInitialCollateral,
+        initialLimit,
+        7n * 24n * 3600n,
+        duration,
+        challengePeriod,
+        fFees,
+        fliqPrice,
+        fReserve,
+      );
+
+      let rc = await tx.wait();
+      const topic =
+        "0xc9b570ab9d98bdf3e38a40fd71b20edafca42449f23ca51f0bdcbf40e8ffe175";
+      const log = rc?.logs.find((x) => x.topics.indexOf(topic) >= 0);
+      positionAddr = "0x" + log?.topics[2].substring(26);
+      positionContract = await ethers.getContractAt(
+        "Position",
+        positionAddr,
+        owner,
+      );
+    });
+
+    it("should refund interest when repaying before expiration", async () => {
+      // Wait for cooldown to end
+      await evm_increaseTime(86400 * 8);
+
+      // Mint some dEURO first
+      const mintAmount = floatToDec18(10_000);
+      await positionContract.mint(owner.address, mintAmount);
+
+      // Wait 100days
+      await evm_increaseTime(86400 * 100);
+
+      // Calculate expected refund
+      const currentFee = await positionContract.calculateCurrentFee();
+      const repayAmount = floatToDec18(8_000);
+      const expectedRefund = (currentFee * repayAmount) / 1_000_000n;
+
+      // Track balances before repay
+      const balanceBefore = await dEURO.balanceOf(owner.address);
+      const annPPm = await positionContract.annualInterestPPM();
+      const exp = await positionContract.expiration();
+      const timestamp = await time.latest();
+
+      // Perform repay
+      await expect(positionContract.repay(repayAmount))
+        .to.emit(dEURO, "Loss")
+        .withArgs(owner.address, expectedRefund);
+
+      // Verify refund was received
+      const balanceAfter = await dEURO.balanceOf(owner.address);
+      expect(balanceAfter).to.be.equal(
+        balanceBefore + expectedRefund - repayAmount,
+      );
+
+      const calcRefund =
+        (repayAmount * annPPm * (exp - BigInt(timestamp))) /
+        (1_000_000n * 86400n * 365n);
+
+      console.log({
+        annPPm,
+        exp,
+        timestamp,
+        expectedRefund,
+        currentFee,
+        calcRefund,
+      });
+
+      expect(calcRefund).to.be.greaterThanOrEqual(expectedRefund); // due to passing of time i might be greater
+    });
+
+    it("should not refund interest when repaying after expiration", async () => {
+      // Wait for cooldown to end
+      await evm_increaseTime(86400 * 8);
+
+      // Mint some dEURO first
+      const mintAmount = floatToDec18(10_000);
+      await positionContract.mint(owner.address, mintAmount);
+
+      // Wait for position to expire
+      await evm_increaseTime(86400 * 3000);
+
+      // Repay should not trigger refund event
+      await expect(positionContract.repay(floatToDec18(500))).to.not.emit(
+        dEURO,
+        "Loss",
+      );
     });
   });
 });

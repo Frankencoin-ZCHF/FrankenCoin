@@ -414,6 +414,14 @@ contract Position is Ownable, IPosition, MathUtil {
      * E.g. if minted is 50 and reservePPM is 200000, it is necessary to repay 40 to be able to close the position.
      */
     function repay(uint256 amount) public returns (uint256) {
+        if (block.timestamp < expiration) {
+            uint256 refundFee = (calculateCurrentFee() * amount) / 1_000_000;
+            if (refundFee > 0) {
+                // refund interest as you go and trigger accounting event
+                deuro.coverLoss(msg.sender, refundFee);
+            }
+        }
+
         IERC20(deuro).transferFrom(msg.sender, address(this), amount);
         uint256 actuallyRepaid = IDecentralizedEURO(deuro).burnWithReserve(amount, reserveContribution);
         _notifyRepaid(actuallyRepaid);
