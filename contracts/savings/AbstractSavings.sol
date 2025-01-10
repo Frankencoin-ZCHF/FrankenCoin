@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./utils/ERC20.sol";
 import "./interface/IFrankencoin.sol";
 import "./interface/IReserve.sol";
-import "./Leadrate.sol";
+import "../rate/AbstractLeadrate.sol";
 
 /**
  * @title Savings
@@ -20,10 +20,11 @@ import "./Leadrate.sol";
  * short-term holdings and to avoid paying interest to transactional accounts.
  * Transactional accounts typically do not need an incentive to hold Frankencoins.
  */
-contract Savings is Leadrate {
+abstract contract AbstractSavings is AbstractLeadrate {
+    
     uint64 public immutable INTEREST_DELAY = uint64(3 days);
 
-    IERC20 public immutable zchf;
+    IERC20 public immutable ZCHF;
 
     mapping(address => Account) public savings;
 
@@ -41,8 +42,8 @@ contract Savings is Leadrate {
     // The module is considered disabled if the interest is zero or about to become zero within three days.
     error ModuleDisabled();
 
-    constructor(IFrankencoin zchf_, uint24 initialRatePPM) Leadrate(IReserve(zchf_.reserve()), initialRatePPM) {
-        zchf = IERC20(zchf_);
+    constructor(IERC20 zchf){
+        ZCHF = zchf;
     }
 
     /**
@@ -69,7 +70,7 @@ contract Savings is Leadrate {
             uint192 earnedInterest = calculateInterest(account, ticks);
             if (earnedInterest > 0) {
                 // collect interest as you go and trigger accounting event
-                (IFrankencoin(address(zchf))).coverLoss(address(this), earnedInterest); 
+                collectInterest(earnedInterest);
                 account.saved += earnedInterest;
                 emit InterestCollected(accountOwner, earnedInterest);
             }
@@ -77,6 +78,9 @@ contract Savings is Leadrate {
         }
         return account;
     }
+
+    function collectInterest(uint192 earnedInterest) internal abtract;
+    
 
     function accruedInterest(address accountOwner) public view returns (uint192) {
         return accruedInterest(accountOwner, block.timestamp);
@@ -91,13 +95,7 @@ contract Savings is Leadrate {
         if (ticks <= account.ticks || account.ticks == 0) {
             return 0;
         } else {
-            uint192 earnedInterest = uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
-            uint256 equity = IFrankencoin(address(zchf)).equity();
-            if (earnedInterest > equity) {
-                return uint192(equity); // save conversion as equity is smaller than uint192 earnedInterest
-            } else {
-                return earnedInterest;
-            }
+            return uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
         }
     }
 
