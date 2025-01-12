@@ -10,6 +10,8 @@ import "./interface/IReserve.sol";
  * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')
  *
  * A module that can provide other modules with the lead interest rate for the system.
+ * 
+ * This is an abstract module that is agnostic about the way the lead rate is updated.
  *
  **/
 abstract contract AbstractLeadrate {

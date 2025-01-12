@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/ERC20.sol";
-import "./interface/IFrankencoin.sol";
-import "./interface/IReserve.sol";
+import "../utils/ERC20.sol";
 import "../rate/AbstractLeadrate.sol";
 
 /**
@@ -25,6 +23,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
     uint64 public immutable INTEREST_DELAY = uint64(3 days);
 
     IERC20 public immutable ZCHF;
+    IInterestSource public immutable SOURCE;
 
     mapping(address => Account) public savings;
 
@@ -42,8 +41,9 @@ abstract contract AbstractSavings is AbstractLeadrate {
     // The module is considered disabled if the interest is zero or about to become zero within three days.
     error ModuleDisabled();
 
-    constructor(IERC20 zchf){
+    constructor(IERC20 zchf, address source){
         ZCHF = zchf;
+        SOURCE = IInterestSource(source);
     }
 
     /**
@@ -70,7 +70,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
             uint192 earnedInterest = calculateInterest(account, ticks);
             if (earnedInterest > 0) {
                 // collect interest as you go and trigger accounting event
-                collectInterest(earnedInterest);
+                SOURCE.coverLoss(address(this), earnedInterest);
                 account.saved += earnedInterest;
                 emit InterestCollected(accountOwner, earnedInterest);
             }
@@ -78,9 +78,6 @@ abstract contract AbstractSavings is AbstractLeadrate {
         }
         return account;
     }
-
-    function collectInterest(uint192 earnedInterest) internal abtract;
-    
 
     function accruedInterest(address accountOwner) public view returns (uint192) {
         return accruedInterest(accountOwner, block.timestamp);
@@ -156,4 +153,8 @@ abstract contract AbstractSavings is AbstractLeadrate {
         emit Withdrawn(msg.sender, amount);
         return amount;
     }
+}
+
+interface IInterestSource {
+    function coverLoss(address source, uint256 amount) external;
 }
