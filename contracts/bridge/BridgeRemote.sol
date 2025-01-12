@@ -5,7 +5,7 @@ import "./BridgedFrankencoin.sol";
 /**
  * @title Bridge
  */
-contract Bridge {
+contract BridgeRemote {
 
     BridgedFrankencoin immutable ZCHF;
 
@@ -64,6 +64,13 @@ contract Bridge {
     function updateVotes(address voter, uint256 votes, uint256 totalVotes_) external mainnetOnly {
         votes[voter] = votes;
         totalVotes = totalVotes;
+    }
+
+    function transferToMainnet(address target, uint256 amount) external {
+        zchf.burnFrom(msg.sender, amount);
+        uint256 transferredLoss = min(accruedLosses, amount);
+        // send message to mainnet: receive(target, amount, transferredLoss);
+        accruedLosses -= transferredLoss;
     }
 
     function checkQualified(address sender, address[] calldata helpers) external view{

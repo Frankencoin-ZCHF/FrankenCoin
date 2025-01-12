@@ -5,6 +5,7 @@ import "./interface/IERC20.sol";
 import "./interface/IFrankencoin.sol";
 import "./interface/IPosition.sol";
 import "./interface/IReserve.sol";
+import "../bridge/BridgeRecipient.sol";
 import "./AbstractLeadrate.sol";
 
 /**
@@ -13,25 +14,17 @@ import "./AbstractLeadrate.sol";
  * A module that can provide other modules with the lead interest rate for the system.
  *
  **/
-contract BridgedLeadRate is AbstractLeadrate {
+contract BridgedLeadRate is AbstractLeadrate, BridgeRecipient {
 
-    address public constant MAINxxxx
+    address public constant MAIN_LEADRATE = 0x3BF301B0e2003E75A3e86AB82bD1EFF6A9dFB2aE;
 
-    address public immutable bridge;
+    error WrongSource(address source);
 
-    error NotBridge();
-    error WrongSource();
-
-    constructor(IReserve bridge_, uint24 initialRatePPM) AbstractLeadrate(initialRatePPM) {
-        bridge = bridge_;
-    }
-
-    modifier bridgeOnly() {
-        if (msg.sender != bridge) revert NotBridge();
-        _;
+    constructor(address bridge_, uint24 initialRatePPM) AbstractLeadrate(initialRatePPM) BridgeRecipient(bridge_) {
     }
 
     function updateRate(address mainnetDataSource, uint24 newRatePPM_) external bridgeOnly {
+        if (mainnetDataSource != MAIN_LEADRATE) revert WrongSource(source);
         super.updateRate(newRatePPM_);
     }
 

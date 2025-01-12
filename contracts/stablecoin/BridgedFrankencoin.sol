@@ -7,10 +7,13 @@ import "./interface/IReserve.sol";
 import "./interface/IFrankencoin.sol";
 
 /**
- * @title FrankenCoin
- * @notice The Frankencoin (ZCHF) is an ERC-20 token that is designed to track the value of the Swiss franc.
- * It is not upgradable, but open to arbitrary minting plugins. These are automatically accepted if none of the
- * qualified pool share holders casts a veto, leading to a flexible but conservative governance.
+ * @title Bridged Frankencoin ERC-20 Token
+ * 
+ * Like its mainnet counterpart, it has the capapbility to add minting modules. This allows to
+ * potentially add similar collateralized minting methods as in the mainnet Frankencoin.
+ * 
+ * However, there is only one FPS, the one on mainnet and voting power has to be projected onto the
+ * side chains.
  */
 contract Frankencoin is ERC20PermitLight {
 
@@ -35,8 +38,6 @@ contract Frankencoin is ERC20PermitLight {
 
     event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
     event MinterDenied(address indexed minter, string message);
-    event Loss(address indexed reportingMinter, uint256 amount);
-    event Profit(address indexed reportingMinter, uint256 amount);
 
     error PeriodTooShort();
     error FeeTooLow();
