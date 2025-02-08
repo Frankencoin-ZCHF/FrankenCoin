@@ -30,10 +30,12 @@ abstract contract AbstractSavings is AbstractLeadrate {
     struct Account {
         uint192 saved;
         uint64 ticks;
+        address referrer;
+        uint32 referralFeePPM;
     }
 
     event Saved(address indexed account , uint192 amount);
-    event InterestCollected(address indexed account, uint256 interest);
+    event InterestCollected(address indexed account, uint256 interest, uint256 referrerFee);
     event Withdrawn(address indexed account, uint192 amount);
 
     error FundsLocked(uint40 remainingSeconds);
@@ -71,8 +73,9 @@ abstract contract AbstractSavings is AbstractLeadrate {
             if (earnedInterest > 0) {
                 // collect interest as you go and trigger accounting event
                 SOURCE.coverLoss(address(this), earnedInterest);
-                account.saved += earnedInterest;
-                emit InterestCollected(accountOwner, earnedInterest);
+                uint192 referralFee = deductReferralFee(account, earnedInterest);
+                account.saved += (earnedInterest - referralFee);
+                emit InterestCollected(accountOwner, earnedInterest, referralFee);
             }
             account.ticks = ticks;
         }
@@ -95,7 +98,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
             return uint192((uint256(ticks - account.ticks) * account.saved) / 1000000 / 365 days);
         }
     }
-
+    
     /**
      * Save 'amount'.
      */
@@ -136,7 +139,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
      * Withdraw up to 'amount' to the target address.
      * When trying to withdraw more than available, all that is available is withdrawn.
      * Returns the acutally transferred amount.
-     *
+     * 
      * Fails if the funds in the account have not been in the account for long enough.
      */
     function withdraw(address target, uint192 amount) public returns (uint256) {
@@ -153,6 +156,53 @@ abstract contract AbstractSavings is AbstractLeadrate {
         emit Withdrawn(msg.sender, amount);
         return amount;
     }
+
+    // REFERRAL LOGIC
+
+    /**
+     * Save the given amount and set the referrer to earn a fee on the collected interest.
+     * 
+     * Referral fee is given in parts per million and can be at most 100'000, which is 10%.
+     */
+    function save(uint192 amount, address referrer, uint24 referralFeePPM) public {
+        save(msg.sender, amount);
+        setReferrer(frontend, referralFeePPM);
+    }
+
+    /**
+     * Adjust to the given amount and set the referrer to earn a fee on the collected interest.
+     * 
+     * Referral fee is given in parts per million and can be at most 100'000, which is 10%.
+     */
+    function adjust(uint192 targetAmount, address referrer, uint24 referralFeePPM) public {
+        adjust(targetAmount);
+        setReferrer(frontend, referralFeePPM);
+    }
+
+    /**
+     * Remove the referrer.
+     */
+    function dropReferrer() public {
+        refresh(msg.sender);
+        setReferrer(address(0x0), 0);
+    }
+
+    function setReferrer(address referrer, uint32 referralFeePPM) internal {
+        if (referralFeePPM > 100_000) revert ReferralFeeTooHigh(referralFeePPM); // don't allow more than 10%
+        balance[msg.sender].referrer = referrer;
+        balance[msg.sender].referralFeePPM = referralFeePPM;
+    }
+
+    function deductReferralFee(Account memory balance, uint192 earnedInterest) internal returns (uint192) {
+        if (balance.frontend != address(0x0)){
+            uint256 referralFee = uint256(earnedInterest) * balance.referralFeePPM / 1000000;
+            zchf.transfer(balance.referrer, referralFee);
+            return uint192(referralFee);
+        } else {
+            return 0;
+        }
+    }
+
 }
 
 interface IInterestSource {
