@@ -139,14 +139,10 @@ abstract contract AbstractSavings is AbstractLeadrate {
      * Withdraw up to 'amount' to the target address.
      * When trying to withdraw more than available, all that is available is withdrawn.
      * Returns the acutally transferred amount.
-     * 
-     * Fails if the funds in the account have not been in the account for long enough.
      */
     function withdraw(address target, uint192 amount) public returns (uint256) {
         Account storage account = refresh(msg.sender);
-        if (account.ticks > currentTicks()) {
-            revert FundsLocked(uint40(account.ticks - currentTicks()) / currentRatePPM);
-        } else if (amount >= account.saved) {
+        if (amount >= account.saved) {
             amount = account.saved;
             delete savings[msg.sender];
         } else {
