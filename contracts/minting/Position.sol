@@ -116,6 +116,7 @@ contract Position is Ownable, IPosition, MathUtil {
     error Alive();
     error Closed();
     error Hot();
+    error PriceIncreaseTooHigh(uint256 maxPrice, uint256 whatWasTried);
     error Challenged();
     error NotHub();
     error NotOriginal();
@@ -320,15 +321,20 @@ contract Position is Ownable, IPosition, MathUtil {
 
     function _adjustPrice(uint256 newPrice) internal noChallenge alive backed {
         if (newPrice > price) {
-            _restrictMinting(3 days);
+            _preparePriceIncrease(newPrice);    
         } else {
             _checkCollateral(_collateralBalance(), newPrice);
         }
         _setPrice(newPrice, minted + availableForMinting());
     }
 
+    function _preparePriceIncrease(uint256 newPrice) internal noCooldown {
+        if (newPrice > 3*price) revert PriceIncreaseTooHigh(3*price, newPrice);
+        _restrictMinting(3 days);
+    }
+
     function _setPrice(uint256 newPrice, uint256 bounds) internal {
-        require(newPrice * minimumCollateral <= bounds * ONE_DEC18); // very important sanity check, see github.com/Frankencoin-ZCHF/FrankenCoin/issues/52
+        require(newPrice * minimumCollateral <= bounds * ONE_DEC18); // sanity check
         price = newPrice;
     }
 
@@ -483,8 +489,7 @@ contract Position is Ownable, IPosition, MathUtil {
         emit MintingUpdate(balance, price, minted);
     }
 
-    function _withdrawCollateral(address target, uint256 amount) internal noChallenge returns (uint256) {
-        if (block.timestamp <= cooldown) revert Hot();
+    function _withdrawCollateral(address target, uint256 amount) internal noChallenge noCooldown returns (uint256) {
         uint256 balance = _sendCollateral(target, amount);
         _checkCollateral(balance, price);
         return balance;
