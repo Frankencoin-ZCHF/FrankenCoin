@@ -153,44 +153,59 @@ abstract contract AbstractSavings is AbstractLeadrate {
         return amount;
     }
 
-    // REFERRAL LOGIC
+    /**
+     * REFERRAL LOGIC
+     * 
+     * The following functions can be used by a frontend or wallet contains functions to
+     * access the savings features of the Frankencoin system. It allows the frontend or
+     * wallet to set a referrer and a referral fee when calling save or adjust, but not
+     * when withdrawing. The referral fee can be up to 25% (250'000 ppm). It is deducted
+     * from the collected interest.
+     * 
+     * The user can drop or change the referrer at any time, so the fee is not very sticky.
+     * The magnitude of the fee that can be charged mainly depends on how convenient the
+     * frontend or wallet is in comparison to the user directly interfering with the system
+     * himself. So economically, it really is a frontend fee that can only be charged to
+     * the extent that the frontend provides a more convenient way of interaction with the
+     * protocol and the users are willing to pay for that convenience.
+     */
 
     /**
      * Save the given amount and set the referrer to earn a fee on the collected interest.
      * 
-     * Referral fee is given in parts per million and can be at most 100'000, which is 10%.
+     * Referral fee is given in parts per million and can be at most 250'000, which is 25%.
      */
     function save(uint192 amount, address referrer, uint24 referralFeePPM) public {
         save(msg.sender, amount);
-        setReferrer(frontend, referralFeePPM);
+        setReferrer(referrer, referralFeePPM);
     }
 
     /**
      * Adjust to the given amount and set the referrer to earn a fee on the collected interest.
      * 
-     * Referral fee is given in parts per million and can be at most 100'000, which is 10%.
+     * Referral fee is given in parts per million and can be at most 250'000, which is 25%.
      */
     function adjust(uint192 targetAmount, address referrer, uint24 referralFeePPM) public {
         adjust(targetAmount);
-        setReferrer(frontend, referralFeePPM);
+        setReferrer(referrer, referralFeePPM);
     }
 
     /**
      * Remove the referrer.
      */
     function dropReferrer() public {
-        refresh(msg.sender);
+        refresh(msg.sender); // pay accrued referral fee before dropping referrer
         setReferrer(address(0x0), 0);
     }
 
     function setReferrer(address referrer, uint32 referralFeePPM) internal {
-        if (referralFeePPM > 100_000) revert ReferralFeeTooHigh(referralFeePPM); // don't allow more than 10%
+        if (referralFeePPM > 250_000) revert ReferralFeeTooHigh(referralFeePPM); // don't allow more than 25%
         balance[msg.sender].referrer = referrer;
         balance[msg.sender].referralFeePPM = referralFeePPM;
     }
 
     function deductReferralFee(Account memory balance, uint192 earnedInterest) internal returns (uint192) {
-        if (balance.frontend != address(0x0)){
+        if (balance.referrer != address(0x0)){
             uint256 referralFee = uint256(earnedInterest) * balance.referralFeePPM / 1000000;
             zchf.transfer(balance.referrer, referralFee);
             return uint192(referralFee);
