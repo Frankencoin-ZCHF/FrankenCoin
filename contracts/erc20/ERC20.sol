@@ -11,8 +11,8 @@
 
 pragma solidity ^0.8.0;
 
-import "../interface/IERC20.sol";
-import "../interface/IERC677Receiver.sol";
+import "./IERC20.sol";
+import "./IERC677Receiver.sol";
 
 /**
  * @dev Implementation of the `IERC20` interface.

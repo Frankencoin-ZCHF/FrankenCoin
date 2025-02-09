@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC20.sol";
-import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
-import "./interface/IReserve.sol";
+import "../erc20/IERC20.sol";
+import "../stablecoin/IFrankencoin.sol";
+import "../minting/IPosition.sol";
 
 /**
  * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')
@@ -26,11 +25,7 @@ abstract contract AbstractLeadrate {
 
     event RateChanged(uint24 newRate);
 
-    error NoPendingChange();
-    error ChangeNotReady();
-
     constructor(uint24 initialRatePPM) {
-        equity = equity_;
         currentRatePPM = initialRatePPM;
         anchorTime = uint40(block.timestamp);
         ticksAnchor = 0;

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../interface/IFrankencoin.sol";
-import "../rate/MainLeadrate.sol";
+import "../stablecoin/IFrankencoin.sol";
+import "../rate/Leadrate.sol";
 import "./AbstractSavings.sol";
 
 /**
@@ -10,9 +10,9 @@ import "./AbstractSavings.sol";
  *
  * Module to enable savings based on a Leadrate ("Leitzins") module on mainnet.
  */
-abstract contract Savings is MainLeadrate, AbstractSavings {
-    
-    constructor(IFrankencoin zchf_, uint24 initialRatePPM) MainLeadrate(zchf_.reserve(), initialRatePPM) AbstractSavings(zchf_, address(zchf_)) {
+abstract contract Savings is Leadrate, AbstractSavings {
+
+    constructor(IFrankencoin zchf_, uint24 initialRatePPM) AbstractSavings(zchf_) Leadrate(zchf_.reserve(), initialRatePPM) {
     }
 
 }

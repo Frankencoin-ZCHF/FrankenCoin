@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/ERC20PermitLight.sol";
-import "./Equity.sol";
-import "./interface/IReserve.sol";
-import "./interface/IFrankencoin.sol";
+import "../erc20/ERC20PermitLight.sol";
+import "../equity/IGovernance.sol";
+import "../equity/Equity.sol";
+import "./IFrankencoin.sol";
 
 /**
  * @title FrankenCoin
@@ -22,7 +22,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     /**
      * @notice The contract that holds the reserve.
      */
-    IReserve public immutable override reserve;
+    IGovernance public immutable override reserve;
 
     /**
      * @notice How much of the reserve belongs to the minters. Everything else belongs to the pool share holders.
@@ -76,7 +76,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
     }
 
     function initialize(address _minter, string calldata _message) external {
-        require(totalSupply() == 0 && reserve.totalSupply() == 0);
+        require(totalSupply() == 0 && (Equity(address(reserve)).totalSupply() == 0));
         minters[_minter] = block.timestamp;
         emit MinterApplied(_minter, 0, 0, _message);
     }

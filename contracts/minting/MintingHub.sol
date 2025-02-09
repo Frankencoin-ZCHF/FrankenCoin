@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC20.sol";
-import "./interface/IReserve.sol";
-import "./interface/ILeadrate.sol";
-import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
-import "./interface/IPositionFactory.sol";
+import "../erc20/IERC20.sol";
+import "../rate/ILeadrate.sol";
+import "../stablecoin/IFrankencoin.sol";
+import "../minting/IPosition.sol";
+import "../minting/IPositionFactory.sol";
 import "./PositionRoller.sol";
-import "./utils/Ownable.sol";
+import "../utils/Ownable.sol";
 
 /**
  * @title Minting Hub

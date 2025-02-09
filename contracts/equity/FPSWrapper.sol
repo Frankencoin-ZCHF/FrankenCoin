@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./ERC20.sol";
-import "./ERC20PermitLight.sol";
-import "../Equity.sol";
+import "../erc20/ERC20.sol";
+import "../erc20/ERC20PermitLight.sol";
+import "./Equity.sol";
 
 contract FPSWrapper is ERC20 {
 

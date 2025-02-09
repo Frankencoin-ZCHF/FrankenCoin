@@ -1,16 +1,14 @@
 pragma solidity ^0.8.0;
 
 import "../stablecoin/IFrankencoin.sol";
-import "../equity/IReserve.sol";
 
 /**
  * @title Bridge
  */
 contract BridgeMainnet {
 
+/*     IGovernance immutable GOV;
     IFrankencoin immutable ZCHF;
-    IReserve immutable EQUITY;
-    ISavings immutable SAVINGS;
 
     mapping (address=>uint24) bridges; // bridges must have unique addresses, even if on different chains
 
@@ -25,10 +23,9 @@ contract BridgeMainnet {
         uint216 amountSent;
     }
 
-    constructor(IFrankencoin zchf, ISavings savings){
+    constructor(IFrankencoin zchf){
         ZCHF = zchf;
-        EQUITY = zchf.reserve();
-        SAVINGS = savings;
+        GOV = zchf.reserve();
     }
 
     modifier bridgesOnly(uint16 chainId, address bridge){
@@ -70,7 +67,7 @@ contract BridgeMainnet {
         EQUITY.checkQualified(msg.sender, _helpers);
         delete bridges[_minter];
         emit BridgeDenied(_minter, _message);
-    }
+    } */
 
 }
 

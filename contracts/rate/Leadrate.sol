@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC20.sol";
-import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
-import "./interface/IReserve.sol";
+import "../erc20/IERC20.sol";
+import "../stablecoin/IFrankencoin.sol";
+import "../minting/IPosition.sol";
+import "../equity/IGovernance.sol";
 import "./AbstractLeadrate.sol";
 
 /**
@@ -13,9 +13,9 @@ import "./AbstractLeadrate.sol";
  * A module that can provide other modules with the lead interest rate for the system.
  *
  **/
-contract MainLeadrate is AbstractLeadrate{
+contract Leadrate is AbstractLeadrate {
 
-    IReserve public immutable equity;
+    IGovernance public immutable equity;
 
     // the following five variables are less than 256 bit so they should be stored
     // in the same slot, making them cheap to access together, right?
@@ -27,7 +27,7 @@ contract MainLeadrate is AbstractLeadrate{
     error NoPendingChange();
     error ChangeNotReady();
 
-    constructor(IReserve equity_, uint24 initialRatePPM) AbstractLeadrate(initialRatePPM) {
+    constructor(IGovernance equity_, uint24 initialRatePPM) AbstractLeadrate(initialRatePPM) {
         equity = equity_;
         nextRatePPM = initialRatePPM;
         nextChange = uint40(block.timestamp);

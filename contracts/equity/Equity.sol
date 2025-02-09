@@ -5,8 +5,7 @@ pragma solidity ^0.8.0;
 import "./Governance.sol";
 import "../stablecoin/Frankencoin.sol";
 import "../utils/MathUtil.sol";
-import "../interface/IReserve.sol";
-import "../interface/IERC677Receiver.sol";
+import "../erc20/IERC677Receiver.sol";
 
 /**
  * @title Equity
@@ -17,7 +16,7 @@ import "../interface/IERC677Receiver.sol";
  * Furthermore, the FPS shares come with some voting power. Anyone that held at least 3% of the holding-period-
  * weighted reserve pool shares gains veto power and can veto new proposals.
  */
-contract Equity is Governance, ERC20PermitLight, MathUtil, IReserve {
+contract Equity is Governance, ERC20PermitLight, MathUtil {
     /**
      * The VALUATION_FACTOR determines the market cap of the reserve pool shares relative to the equity reserves.
      * The following always holds: Market Cap = Valuation Factor * Equity Reserve = Price * Supply
@@ -38,11 +37,6 @@ contract Equity is Governance, ERC20PermitLight, MathUtil, IReserve {
     uint32 public constant VALUATION_FACTOR = 3;
 
     uint256 private constant MINIMUM_EQUITY = 1000 * ONE_DEC18;
-
-    /**
-     * @notice The quorum in basis points. 100 is 1%.
-     */
-    uint32 private constant QUORUM = 200;
 
     /**
      * @notice The number of digits to store the average holding time of share tokens.
@@ -175,7 +169,7 @@ contract Equity is Governance, ERC20PermitLight, MathUtil, IReserve {
     /**
      * @notice The votes of the holder, excluding votes from delegates.
      */
-    function votes(address holder) public view returns (uint256) {
+    function votes(address holder) public override view returns (uint256) {
         return balanceOf(holder) * (_anchorTime() - voteAnchor[holder]);
     }
 
@@ -189,7 +183,7 @@ contract Equity is Governance, ERC20PermitLight, MathUtil, IReserve {
     /**
      * @notice Total number of votes in the system.
      */
-    function totalVotes() public view returns (uint256) {
+    function totalVotes() public override view returns (uint256) {
         return totalVotesAtAnchor + totalSupply() * (_anchorTime() - totalVotesAnchorTime);
     }
 

@@ -2,7 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-abstract constract Governance {
+import "./IGovernance.sol";
+
+abstract contract Governance is IGovernance {
+
+    /**
+     * @notice The quorum in basis points. 100 is 1%.
+     */
+    uint32 private constant QUORUM = 200;
 
     /**
      * @notice Keeping track on who delegated votes to whom.
@@ -16,12 +23,12 @@ abstract constract Governance {
     /**
      * @notice The votes of the holder, excluding votes from delegates.
      */
-    function votes(address holder) abstract public view returns (uint256);
+    function votes(address holder) virtual public view returns (uint256);
 
     /**
      * @notice Total number of votes in the system.
      */
-    function totalVotes() abstract public view returns (uint256);
+    function totalVotes() virtual public view returns (uint256);
 
     /**
      * @notice The number of votes the sender commands when taking the support of the helpers into account.
@@ -74,22 +81,22 @@ abstract constract Governance {
      * @notice Increases the voting power of the delegate by your number of votes without taking away any voting power
      * from the sender.
      */
-    function delegateVoteTo(address delegate) external {
-        delgate(msg.sender, delegate);
+    function delegateVoteTo(address delegate_) external {
+        delegate(msg.sender, delegate_);
     }
 
-    function delegate(address owner, address delegate) internal {
-        delegates[msg.sender] = delegate;
-        emit Delegation(msg.sender, delegate);
+    function delegate(address owner, address delegate_) internal {
+        delegates[msg.sender] = delegate_;
+        emit Delegation(msg.sender, delegate_);
     }
 
-    function _canVoteFor(address delegate, address owner) internal view returns (bool) {
-        if (owner == delegate) {
+    function _canVoteFor(address delegate_, address owner) internal view returns (bool) {
+        if (owner == delegate_) {
             return true;
         } else if (owner == address(0x0)) {
             return false;
         } else {
-            return _canVoteFor(delegate, delegates[owner]);
+            return _canVoteFor(delegate_, delegates[owner]);
         }
     }
 

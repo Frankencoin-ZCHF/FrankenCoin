@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/Ownable.sol";
-import "./utils/MathUtil.sol";
+import "../utils/Ownable.sol";
+import "../utils/MathUtil.sol";
 
-import "./interface/IERC20.sol";
-import "./interface/ILeadrate.sol";
-import "./interface/IPosition.sol";
-import "./interface/IReserve.sol";
-import "./interface/IFrankencoin.sol";
+import "../erc20/IERC20.sol";
+import "../rate/ILeadrate.sol";
+import "./IPosition.sol";
+import "../stablecoin/IFrankencoin.sol";
 
 // import "hardhat/console.sol";
 
@@ -246,7 +245,7 @@ contract Position is Ownable, IPosition, MathUtil {
      */
     function deny(address[] calldata helpers, string calldata message) external {
         if (block.timestamp >= start) revert TooLate();
-        IReserve(zchf.reserve()).checkQualified(msg.sender, helpers);
+        zchf.reserve().checkQualified(msg.sender, helpers);
         _close();
         emit PositionDenied(msg.sender, message);
     }

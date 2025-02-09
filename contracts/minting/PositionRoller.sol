@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interface/IERC20.sol";
-import "./interface/IFrankencoin.sol";
-import "./interface/IPosition.sol";
-import "./utils/Ownable.sol";
-import "./interface/IReserve.sol";
-
-import "hardhat/console.sol";
+import "../erc20/IERC20.sol";
+import "../stablecoin/IFrankencoin.sol";
+import "./IPosition.sol";
+import "../utils/Ownable.sol";
 
 /**
  * @title PositionRoller

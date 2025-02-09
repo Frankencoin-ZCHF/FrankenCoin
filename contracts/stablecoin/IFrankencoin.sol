@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
-import "./IReserve.sol";
+import "../erc20/IERC20.sol";
+import "../equity/IGovernance.sol";
 
 interface IFrankencoin is IERC20 {
     function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) external;
@@ -11,7 +11,7 @@ interface IFrankencoin is IERC20 {
 
     function denyMinter(address minter, address[] calldata helpers, string calldata message) external;
 
-    function reserve() external view returns (IReserve);
+    function reserve() external view returns (IGovernance);
 
     function minterReserve() external view returns (uint256);
 

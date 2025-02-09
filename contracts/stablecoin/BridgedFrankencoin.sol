@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./utils/ERC20PermitLight.sol";
-import "./Equity.sol";
-import "./interface/IReserve.sol";
-import "./interface/IFrankencoin.sol";
+import "../erc20/ERC20PermitLight.sol";
+import "../equity/Equity.sol";
+import "../equity/BridgedGovernance.sol";
+import "../bridge/Recipient.sol";
 
 /**
  * @title Bridged Frankencoin ERC-20 Token
@@ -15,7 +15,7 @@ import "./interface/IFrankencoin.sol";
  * However, there is only one FPS, the one on mainnet and voting power has to be projected onto the
  * side chains.
  */
-contract Frankencoin is ERC20PermitLight {
+contract BridgedFrankencoin is ERC20PermitLight, Recipient {
 
     /**
      * @notice Minimal fee and application period when suggesting a new minter.
@@ -36,8 +36,15 @@ contract Frankencoin is ERC20PermitLight {
      */
     mapping(address position => address registeringMinter) public positions;
 
+    BridgedGovernance public immutable reserve;
+
+    uint256 public accruedLoss;
+
     event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
     event MinterDenied(address indexed minter, string message);
+    event Loss(address indexed reportingMinter, uint256 amount);
+    event Profit(address indexed reportingMinter, uint256 amount);
+    event SentProfitsHome(uint256 amount);
 
     error PeriodTooShort();
     error FeeTooLow();
@@ -54,9 +61,9 @@ contract Frankencoin is ERC20PermitLight {
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(uint256 _minApplicationPeriod) ERC20(18) {
+    constructor(IGovernance reserve_, address bridge, uint256 _minApplicationPeriod) ERC20(18) Recipient(bridge) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
-        reserve = new Equity(this);
+        reserve = new BridgedGovernance(bridge);
     }
 
     function name() external pure override returns (string memory) {
@@ -65,12 +72,6 @@ contract Frankencoin is ERC20PermitLight {
 
     function symbol() external pure override returns (string memory) {
         return "ZCHF";
-    }
-
-    function initialize(address _minter, string calldata _message) external {
-        require(totalSupply() == 0 && reserve.totalSupply() == 0);
-        minters[_minter] = block.timestamp;
-        emit MinterApplied(_minter, 0, 0, _message);
     }
 
     /**
@@ -87,12 +88,7 @@ contract Frankencoin is ERC20PermitLight {
      * @param _applicationFee      The fee paid by the caller, at least MIN_FEE
      * @param _message             An optional human readable message to everyone watching this contract
      */
-    function suggestMinter(
-        address _minter,
-        uint256 _applicationPeriod,
-        uint256 _applicationFee,
-        string calldata _message
-    ) external override {
+    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) external {
         if (_applicationPeriod < MIN_APPLICATION_PERIOD) revert PeriodTooShort();
         if (_applicationFee < MIN_FEE) revert FeeTooLow();
         if (minters[_minter] != 0) revert AlreadyRegistered();
@@ -119,7 +115,7 @@ contract Frankencoin is ERC20PermitLight {
      * @notice Allows minters to register collateralized debt positions, thereby giving them the ability to mint Frankencoins.
      * @dev It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
      */
-    function registerPosition(address _position) external override {
+    function registerPosition(address _position) external {
         if (!isMinter(msg.sender)) revert NotMinter();
         positions[_position] = msg.sender;
     }
@@ -128,14 +124,14 @@ contract Frankencoin is ERC20PermitLight {
      * @notice Qualified pool share holders can deny minters during the application period.
      * @dev Calling this function is relatively cheap thanks to the deletion of a storage slot.
      */
-    function denyMinter(address _minter, address[] calldata _helpers, string calldata _message) external override {
+    function denyMinter(address _minter, address[] calldata _helpers, string calldata _message) external {
         if (block.timestamp > minters[_minter]) revert TooLate();
-        bridge.checkQualified(msg.sender, _helpers);
+        reserve.checkQualified(msg.sender, _helpers);
         delete minters[_minter];
         emit MinterDenied(_minter, _message);
     }
 
-    function mint(address _target, uint256 _amount) external override minterOnly {
+    function mint(address _target, uint256 _amount) external minterOnly {
         _mint(_target, _amount);
     }
 
@@ -149,7 +145,7 @@ contract Frankencoin is ERC20PermitLight {
     /**
      * @notice Burn someone elses ZCHF.
      */
-    function burnFrom(address _owner, uint256 _amount) external override minterOnly {
+    function burnFrom(address _owner, uint256 _amount) external minterOnly {
         _burn(_owner, _amount);
     }
 
@@ -158,16 +154,67 @@ contract Frankencoin is ERC20PermitLight {
     }
 
     /**
+     * @notice Notify the Frankencoin that a minter lost economic access to some coins. This does not mean that the coins are
+     * literally lost. It just means that some ZCHF will likely never be repaid and that in order to bring the system
+     * back into balance, the lost amount of ZCHF must be removed from the reserve instead.
+     *
+     * For example, if a minter printed 1 million ZCHF for a mortgage and the mortgage turned out to be unsound with
+     * the house only yielding 800'000 in the subsequent auction, there is a loss of 200'000 that needs to be covered
+     * by the reserve.
+     */
+    function coverLoss(address source, uint256 _amount) external minterOnly {
+        uint256 reserveLeft = balanceOf(address(reserve));
+        if (_amount > reserveLeft){
+            accruedLoss += (_amount - reserveLeft);
+            _mint(address(reserve), _amount - reserveLeft);
+        }
+        _transfer(address(reserve), source, _amount);
+        emit Loss(source, _amount);
+    }
+
+    function collectProfits(address source, uint256 _amount) external minterOnly {
+        _collectProfits(msg.sender, source, _amount);
+    }
+
+    function _collectProfits(address minter, address source, uint256 _amount) internal {
+        _transfer(source, address(reserve), _amount);
+        if (accruedLoss > _amount){
+            accruedLoss -= _amount;
+            _burn(address(reserve), _amount);
+        } else if (accruedLoss > 0) {
+            _burn(address(reserve), accruedLoss);
+            accruedLoss = 0;
+        }
+        emit Profit(minter, _amount);
+    }
+
+    /**
+     * Uses a multichain call to send home all accrued profits, if any
+     */
+    function sendProfitsHome() external {
+        uint256 reserveLeft = balanceOf(address(reserve));
+        if (reserveLeft > 0){
+            // TODO: transfer(mainnet, equityContract, reserveLeft);
+            emit SentProfitsHome(reserveLeft);
+        }
+    }
+
+    function reportLosses() external {
+        // TODO: burn accruedLoss tokens on the mainnet equity contract
+        accruedLoss = 0;
+    }
+
+    /**
      * @notice Returns true if the address is an approved minter.
      */
-    function isMinter(address _minter) public view override returns (bool) {
+    function isMinter(address _minter) public view returns (bool) {
         return minters[_minter] != 0 && block.timestamp >= minters[_minter];
     }
 
     /**
      * @notice Returns the address of the minter that created this position or null if the provided address is unknown.
      */
-    function getPositionParent(address _position) public view override returns (address) {
+    function getPositionParent(address _position) public view returns (address) {
         return positions[_position];
     }
 }

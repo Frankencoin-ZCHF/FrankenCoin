@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../utils/ERC20.sol";
+import "../stablecoin/IFrankencoin.sol";
 import "../rate/AbstractLeadrate.sol";
 
 /**
@@ -22,8 +22,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
     
     uint64 public immutable INTEREST_DELAY = uint64(3 days);
 
-    IERC20 public immutable ZCHF;
-    IInterestSource public immutable SOURCE;
+    IFrankencoin public immutable ZCHF;
 
     mapping(address => Account) public savings;
 
@@ -43,9 +42,10 @@ abstract contract AbstractSavings is AbstractLeadrate {
     // The module is considered disabled if the interest is zero or about to become zero within three days.
     error ModuleDisabled();
 
-    constructor(IERC20 zchf, address source){
+    error ReferralFeeTooHigh(uint32 fee);
+
+    constructor(IFrankencoin zchf){
         ZCHF = zchf;
-        SOURCE = IInterestSource(source);
     }
 
     /**
@@ -72,7 +72,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
             uint192 earnedInterest = calculateInterest(account, ticks);
             if (earnedInterest > 0) {
                 // collect interest as you go and trigger accounting event
-                SOURCE.coverLoss(address(this), earnedInterest);
+                ZCHF.coverLoss(address(this), earnedInterest);
                 uint192 referralFee = deductReferralFee(account, earnedInterest);
                 account.saved += (earnedInterest - referralFee);
                 emit InterestCollected(accountOwner, earnedInterest, referralFee);
@@ -121,9 +121,9 @@ abstract contract AbstractSavings is AbstractLeadrate {
      */
     function save(address owner, uint192 amount) public {
         if (currentRatePPM == 0) revert ModuleDisabled();
-        if (nextRatePPM == 0 && (nextChange <= block.timestamp + INTEREST_DELAY)) revert ModuleDisabled();
+       // if (nextRatePPM == 0 && (nextChange <= block.timestamp + INTEREST_DELAY)) revert ModuleDisabled(); TODO: figure out why this was in there
         Account storage balance = refresh(owner);
-        zchf.transferFrom(msg.sender, address(this), amount);
+        ZCHF.transferFrom(msg.sender, address(this), amount);
         uint64 ticks = currentTicks();
         assert(balance.ticks >= ticks);
         uint256 saved = balance.saved;
@@ -148,7 +148,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
         } else {
             account.saved -= amount;
         }
-        zchf.transfer(target, amount);
+        ZCHF.transfer(target, amount);
         emit Withdrawn(msg.sender, amount);
         return amount;
     }
@@ -200,14 +200,14 @@ abstract contract AbstractSavings is AbstractLeadrate {
 
     function setReferrer(address referrer, uint32 referralFeePPM) internal {
         if (referralFeePPM > 250_000) revert ReferralFeeTooHigh(referralFeePPM); // don't allow more than 25%
-        balance[msg.sender].referrer = referrer;
-        balance[msg.sender].referralFeePPM = referralFeePPM;
+        savings[msg.sender].referrer = referrer;
+        savings[msg.sender].referralFeePPM = referralFeePPM;
     }
 
     function deductReferralFee(Account memory balance, uint192 earnedInterest) internal returns (uint192) {
         if (balance.referrer != address(0x0)){
             uint256 referralFee = uint256(earnedInterest) * balance.referralFeePPM / 1000000;
-            zchf.transfer(balance.referrer, referralFee);
+            ZCHF.transfer(balance.referrer, referralFee);
             return uint192(referralFee);
         } else {
             return 0;
