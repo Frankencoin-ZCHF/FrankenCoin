@@ -73,7 +73,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
             if (earnedInterest > 0) {
                 // collect interest as you go and trigger accounting event
                 ZCHF.coverLoss(address(this), earnedInterest);
-                uint192 referralFee = deductReferralFee(account, earnedInterest);
+                uint192 referralFee = deductTransferReferralFee(account, earnedInterest);
                 account.saved += (earnedInterest - referralFee);
                 emit InterestCollected(accountOwner, earnedInterest, referralFee);
             }
@@ -204,7 +204,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
         savings[msg.sender].referralFeePPM = referralFeePPM;
     }
 
-    function deductReferralFee(Account memory balance, uint192 earnedInterest) internal returns (uint192) {
+    function deductTransferReferralFee(Account memory balance, uint192 earnedInterest) internal returns (uint192) {
         if (balance.referrer != address(0x0)){
             uint256 referralFee = uint256(earnedInterest) * balance.referralFeePPM / 1000000;
             ZCHF.transfer(balance.referrer, referralFee);
