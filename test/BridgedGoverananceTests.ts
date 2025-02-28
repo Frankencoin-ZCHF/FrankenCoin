@@ -1,11 +1,4 @@
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import {
-  BridgedGovernance,
-  BridgedGovernanceSender,
-  CCIPLocalSimulator,
-  Equity,
-  Frankencoin,
-} from "../typechain";
+import { CCIPLocalSimulator } from "../typechain";
 import { ethers } from "hardhat";
 import { evm_increaseTime } from "./helper";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
@@ -88,7 +81,7 @@ describe.only("Bridged Governance Tests", () => {
     await equity.connect(user4).invest(ethers.parseEther("5000"), 0);
     await equity.connect(user5).invest(ethers.parseEther("5000"), 0);
 
-    await evm_increaseTime(7 * 24 * 60 * 60); // 7 days
+    await evm_increaseTime(100 * 24 * 60 * 60); // 100 days
 
     return {
       ccipLocalSimulator,
@@ -283,6 +276,113 @@ describe.only("Bridged Governance Tests", () => {
       expect(
         await fixture.bridgedGovernance.delegates(fixture.user2.address)
       ).to.equal(ethers.ZeroAddress);
+    });
+
+    it("should update votes", async () => {
+      const fixture = await loadFixture(deployFixture);
+      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
+        await fixture.bridgedGovernance.getAddress(),
+        fixture.ccipLocalSimulatorConfig.chainSelector_,
+        [await fixture.user1.getAddress()],
+        ethers.ZeroAddress
+      );
+
+      const votesBefore = await fixture.equity.votes(
+        await fixture.user1.getAddress()
+      );
+
+      // transfer initial votes
+      await (
+        await fixture.bridgedGovernanceSender
+          .connect(fixture.user1)
+          .syncVotesPayNative(
+            await fixture.bridgedGovernance.getAddress(),
+            fixture.ccipLocalSimulatorConfig.chainSelector_,
+            [await fixture.user1.getAddress()],
+            { value: fee }
+          )
+      ).wait();
+
+      expect(
+        await fixture.bridgedGovernance.votes(await fixture.user1.getAddress())
+      ).eq(await fixture.equity.votes(await fixture.user1.getAddress()));
+
+      await fixture.equity
+        .connect(fixture.user1)
+        .redeem(await fixture.user1.getAddress(), ethers.parseEther("1"));
+
+      const votesAfter = await fixture.equity.votes(
+        await fixture.user1.getAddress()
+      );
+      expect(votesAfter).to.lessThan(votesBefore);
+
+      // transfer updated votes
+      await (
+        await fixture.bridgedGovernanceSender
+          .connect(fixture.user1)
+          .syncVotesPayNative(
+            await fixture.bridgedGovernance.getAddress(),
+            fixture.ccipLocalSimulatorConfig.chainSelector_,
+            [await fixture.user1.getAddress()],
+            { value: fee }
+          )
+      ).wait();
+
+      expect(
+        await fixture.bridgedGovernance.votes(await fixture.user1.getAddress())
+      ).to.equal(await fixture.equity.votes(await fixture.user1.getAddress()));
+    });
+
+    it("should update delegation", async () => {
+      const fixture = await loadFixture(deployFixture);
+      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
+        await fixture.bridgedGovernance.getAddress(),
+        fixture.ccipLocalSimulatorConfig.chainSelector_,
+        [await fixture.user1.getAddress()],
+        ethers.ZeroAddress
+      );
+
+      const user2Addr = await fixture.user2.getAddress();
+      await fixture.equity.connect(fixture.user1).delegateVoteTo(user2Addr);
+
+      // transfer delegation
+      await (
+        await fixture.bridgedGovernanceSender
+          .connect(fixture.user1)
+          .syncVotesPayNative(
+            await fixture.bridgedGovernance.getAddress(),
+            fixture.ccipLocalSimulatorConfig.chainSelector_,
+            [await fixture.user1.getAddress()],
+            { value: fee }
+          )
+      ).wait();
+
+      expect(
+        await fixture.bridgedGovernance.delegates(
+          await fixture.user1.getAddress()
+        )
+      ).to.equal(user2Addr);
+
+      const user3Addr = await fixture.user3.getAddress();
+      await fixture.equity.connect(fixture.user1).delegateVoteTo(user3Addr);
+
+      // transfer redelegation
+      await (
+        await fixture.bridgedGovernanceSender
+          .connect(fixture.user1)
+          .syncVotesPayNative(
+            await fixture.bridgedGovernance.getAddress(),
+            fixture.ccipLocalSimulatorConfig.chainSelector_,
+            [await fixture.user1.getAddress()],
+            { value: fee }
+          )
+      ).wait();
+
+      expect(
+        await fixture.bridgedGovernance.delegates(
+          await fixture.user1.getAddress()
+        )
+      ).to.equal(user3Addr);
     });
   });
 });
