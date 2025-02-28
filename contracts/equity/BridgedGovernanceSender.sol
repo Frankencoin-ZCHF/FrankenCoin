@@ -9,6 +9,7 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {IERC20} from "../erc20/IERC20.sol";
 
 contract BridgedGovernanceSender {
+    uint64 public immutable UPDATE_VETO_PERIOD = 5 days;
     Governance public immutable GOVERNANCE;
 
     // Could change in the future. So no immutable for us here
@@ -17,6 +18,13 @@ contract BridgedGovernanceSender {
     // TODO Define where we want to have the immutablility
     IRouterClient public router;
     IERC20 public ccipFeeToken;
+    UpdateProposal public updateProposal;
+
+    struct UpdateProposal {
+        IRouterClient router;
+        IERC20 ccipFeeToken;
+        uint64 proposalEnd;
+    }
 
     event MessageSent(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
@@ -26,8 +34,12 @@ contract BridgedGovernanceSender {
         uint256 fees, // The fees paid for sending the CCIP message.
         address[] syncedVoters
     );
+    event ProposalCreated(address router, address ccipFeeToken, uint64 end);
+    event ProposalVetoed();
+    event ProposalApplied(address router, address ccipFeeToken);
 
     error InsufficientBalance(uint256 available, uint256 required);
+    error OngoingProposal(uint64 proposalEnd);
 
     constructor(Governance _governance, IRouterClient _router, IERC20 _ccipFeeToken) {
         GOVERNANCE = _governance;
@@ -91,6 +103,47 @@ contract BridgedGovernanceSender {
 
         // cleanup left over dust. We don't care about success
         payable(address(msg.sender)).call{value: address(this).balance}("");
+    }
+
+    function proposeUpdate(
+        address _sender,
+        address[] calldata _helpers,
+        IRouterClient _router,
+        IERC20 _ccipFeeToken
+    ) external {
+        GOVERNANCE.checkQualified(_sender, _helpers);
+        uint64 currentEnd = updateProposal.proposalEnd;
+        if (currentEnd > block.timestamp) {
+            revert OngoingProposal(currentEnd);
+        }
+
+        uint64 end = uint64(block.timestamp) + UPDATE_VETO_PERIOD;
+        updateProposal.proposalEnd = end;
+        updateProposal.router = _router;
+        updateProposal.ccipFeeToken = _ccipFeeToken;
+        emit ProposalCreated({router: address(_router), ccipFeeToken: address(_ccipFeeToken), end: end});
+    }
+
+    function vetoProposal(address _sender, address[] calldata _helpers) external {
+        GOVERNANCE.checkQualified(_sender, _helpers);
+        updateProposal.proposalEnd = type(uint64).max;
+
+        emit ProposalVetoed();
+    }
+
+    function applyProposal() external {
+        uint64 currentEnd = updateProposal.proposalEnd;
+        if (currentEnd > block.timestamp) {
+            revert OngoingProposal(currentEnd);
+        }
+
+        IRouterClient _router = updateProposal.router;
+        IERC20 _ccipFeeToken = updateProposal.ccipFeeToken;
+        router = _router;
+        ccipFeeToken = _ccipFeeToken;
+        updateProposal.proposalEnd = type(uint64).max;
+
+        emit ProposalApplied({router: address(_router), ccipFeeToken: address(_ccipFeeToken)});
     }
 
     function _getCCIPMessage(
