@@ -4,7 +4,7 @@ import { evm_increaseTime } from "./helper";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 
-describe.only("Bridged Governance Tests", () => {
+describe("Bridged Governance Tests", () => {
   async function deployFixture() {
     const [minter, user1, user2, user3, user4, user5] =
       await ethers.getSigners();
