@@ -52,7 +52,7 @@ contract BridgedGovernanceSender {
         uint64 _destinationChainSelector,
         address[] calldata _voters
     ) external returns (bytes32 messageId) {
-        Client.EVM2AnyMessage memory message = _getCCIPMessage(_destination, _voters, address(ccipFeeToken));
+        Client.EVM2AnyMessage memory message = getCCIPMessage(_destination, _voters, address(ccipFeeToken));
         uint256 fees = router.getFee(_destinationChainSelector, message);
         uint256 availableBalance = ccipFeeToken.balanceOf(address(this));
 
@@ -60,7 +60,7 @@ contract BridgedGovernanceSender {
             revert InsufficientBalance({available: availableBalance, required: fees});
         }
 
-        ccipFeeToken.transferFrom(msg.sender, address(this),fees);
+        ccipFeeToken.transferFrom(msg.sender, address(this), fees);
         ccipFeeToken.approve(address(router), fees);
 
         messageId = router.ccipSend(_destinationChainSelector, message);
@@ -79,8 +79,8 @@ contract BridgedGovernanceSender {
         address _destination,
         uint64 _destinationChainSelector,
         address[] calldata _voters
-    ) external returns (bytes32 messageId) {
-        Client.EVM2AnyMessage memory message = _getCCIPMessage(_destination, _voters, address(0));
+    ) external payable returns (bytes32 messageId) {
+        Client.EVM2AnyMessage memory message = getCCIPMessage(_destination, _voters, address(0));
         uint256 fees = router.getFee(_destinationChainSelector, message);
         uint256 availableBalance = address(this).balance;
 
@@ -144,11 +144,21 @@ contract BridgedGovernanceSender {
         emit ProposalApplied({router: address(_router), ccipFeeToken: address(_ccipFeeToken)});
     }
 
-    function _getCCIPMessage(
+    function getCCIPFee(
+        address _destination,
+        uint64 _destinationChainSelector,
+        address[] calldata _voters,
+        address _feeTokenAddress
+    ) public view returns (uint256) {
+        Client.EVM2AnyMessage memory message = getCCIPMessage(_destination, _voters, _feeTokenAddress);
+        return router.getFee(_destinationChainSelector, message);
+    }
+
+    function getCCIPMessage(
         address _destination,
         address[] calldata _voters,
         address _feeTokenAddress
-    ) internal view returns (Client.EVM2AnyMessage memory) {
+    ) public view returns (Client.EVM2AnyMessage memory) {
         SyncVote[] memory syncVotes = new SyncVote[](_voters.length);
         for (uint256 i = 0; i < _voters.length; ) {
             syncVotes[i] = SyncVote({
@@ -184,7 +194,7 @@ contract BridgedGovernanceSender {
                     // where you set the extra arguments off-chain. This allows adaptation depending on the lanes, messages,
                     // and ensures compatibility with future CCIP upgrades. Read more about it here: https://docs.chain.link/ccip/best-practices#using-extraargs
                     Client.EVMExtraArgsV2({
-                        gasLimit: 200_000, // Gas limit for the callback on the destination chain
+                        gasLimit: 2_000_000, // Gas limit for the callback on the destination chain
                         allowOutOfOrderExecution: true // Allows the message to be executed out of order relative to other messages from the same sender
                     })
                 ),
