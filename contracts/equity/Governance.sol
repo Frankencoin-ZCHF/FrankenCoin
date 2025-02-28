@@ -86,8 +86,8 @@ abstract contract Governance is IGovernance {
     }
 
     function delegate(address owner, address delegate_) internal {
-        delegates[msg.sender] = delegate_;
-        emit Delegation(msg.sender, delegate_);
+        delegates[owner] = delegate_;
+        emit Delegation(owner, delegate_);
     }
 
     function _canVoteFor(address delegate_, address owner) internal view returns (bool) {
