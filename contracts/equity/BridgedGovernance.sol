@@ -42,6 +42,8 @@ contract BridgedGovernance is CCIPReceiver, Governance {
 
         SyncMessage memory syncMessage = abi.decode(any2EvmMessage.data, (SyncMessage)); // abi-decoding of the sent text
 
+        _processSyncMessage(syncMessage);
+
         emit MessageReceived({
             messageId: any2EvmMessage.messageId,
             sourceChain: any2EvmMessage.sourceChainSelector,
