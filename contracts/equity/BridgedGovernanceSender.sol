@@ -60,6 +60,7 @@ contract BridgedGovernanceSender {
             revert InsufficientBalance({available: availableBalance, required: fees});
         }
 
+        ccipFeeToken.transferFrom(msg.sender, address(this),fees);
         ccipFeeToken.approve(address(router), fees);
 
         messageId = router.ccipSend(_destinationChainSelector, message);
@@ -72,9 +73,6 @@ contract BridgedGovernanceSender {
             fees: fees,
             syncedVoters: _voters
         });
-
-        // cleanup left over dust. We don't care about success
-        ccipFeeToken.transfer(msg.sender, ccipFeeToken.balanceOf(address(this)));
     }
 
     function syncVotesPayNative(
