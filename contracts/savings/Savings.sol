@@ -10,7 +10,7 @@ import "./AbstractSavings.sol";
  *
  * Module to enable savings based on a Leadrate ("Leitzins") module on mainnet.
  */
-abstract contract Savings is Leadrate, AbstractSavings {
+contract Savings is Leadrate, AbstractSavings {
 
     constructor(IFrankencoin zchf_, uint24 initialRatePPM) AbstractSavings(zchf_) Leadrate(zchf_.reserve(), initialRatePPM) {
     }

@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "../erc20/ERC20PermitLight.sol";
 import "../equity/Equity.sol";
 import "../equity/BridgedGovernance.sol";
-import "../bridge/Recipient.sol";
 
 /**
  * @title Bridged Frankencoin ERC-20 Token
- * 
+ *
  * Like its mainnet counterpart, it has the capapbility to add minting modules. This allows to
  * potentially add similar collateralized minting methods as in the mainnet Frankencoin.
- * 
+ *
  * However, there is only one FPS, the one on mainnet and voting power has to be projected onto the
  * side chains.
  */
-contract BridgedFrankencoin is ERC20PermitLight, Recipient {
-
+contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
     /**
      * @notice Minimal fee and application period when suggesting a new minter.
      */
@@ -36,7 +36,7 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
      */
     mapping(address position => address registeringMinter) public positions;
 
-    BridgedGovernance public immutable reserve;
+    IGovernance public immutable reserve;
 
     uint256 public accruedLoss;
 
@@ -61,9 +61,13 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(IGovernance reserve_, address bridge, uint256 _minApplicationPeriod) ERC20(18) Recipient(bridge) {
+    constructor(
+        IGovernance reserve_,
+        address router_,
+        uint256 _minApplicationPeriod
+    ) ERC20(18) CCIPReceiver(router_) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
-        reserve = new BridgedGovernance(bridge);
+        reserve = reserve_;
     }
 
     function name() external pure override returns (string memory) {
@@ -88,7 +92,12 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
      * @param _applicationFee      The fee paid by the caller, at least MIN_FEE
      * @param _message             An optional human readable message to everyone watching this contract
      */
-    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) external {
+    function suggestMinter(
+        address _minter,
+        uint256 _applicationPeriod,
+        uint256 _applicationFee,
+        string calldata _message
+    ) external {
         if (_applicationPeriod < MIN_APPLICATION_PERIOD) revert PeriodTooShort();
         if (_applicationFee < MIN_FEE) revert FeeTooLow();
         if (minters[_minter] != 0) revert AlreadyRegistered();
@@ -104,8 +113,8 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
      */
     function _allowance(address owner, address spender) internal view override returns (uint256) {
         uint256 explicit = super._allowance(owner, spender);
-        if ((explicit == 0 || explicit == DISABLE_MINTER_ALLOWANCE) && canMint(spender)){
-            // if there is no allowance set (or minters explicitely disabled), we check for minter's allowance           
+        if ((explicit == 0 || explicit == DISABLE_MINTER_ALLOWANCE) && canMint(spender)) {
+            // if there is no allowance set (or minters explicitely disabled), we check for minter's allowance
             return explicit == DISABLE_MINTER_ALLOWANCE ? 0 : INFINITY;
         }
         return explicit;
@@ -164,7 +173,7 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
      */
     function coverLoss(address source, uint256 _amount) external minterOnly {
         uint256 reserveLeft = balanceOf(address(reserve));
-        if (_amount > reserveLeft){
+        if (_amount > reserveLeft) {
             accruedLoss += (_amount - reserveLeft);
             _mint(address(reserve), _amount - reserveLeft);
         }
@@ -178,7 +187,7 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
 
     function _collectProfits(address minter, address source, uint256 _amount) internal {
         _transfer(source, address(reserve), _amount);
-        if (accruedLoss > _amount){
+        if (accruedLoss > _amount) {
             accruedLoss -= _amount;
             _burn(address(reserve), _amount);
         } else if (accruedLoss > 0) {
@@ -193,7 +202,7 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
      */
     function sendProfitsHome() external {
         uint256 reserveLeft = balanceOf(address(reserve));
-        if (reserveLeft > 0){
+        if (reserveLeft > 0) {
             // TODO: transfer(mainnet, equityContract, reserveLeft);
             emit SentProfitsHome(reserveLeft);
         }
@@ -217,4 +226,6 @@ contract BridgedFrankencoin is ERC20PermitLight, Recipient {
     function getPositionParent(address _position) public view returns (address) {
         return positions[_position];
     }
+
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {}
 }

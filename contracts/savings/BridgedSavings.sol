@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+
 import "../rate/BridgedLeadrate.sol";
 import "./AbstractSavings.sol";
-import "../bridge/Recipient.sol";
 import "../erc20/IERC20.sol";
 
 /**
@@ -13,7 +13,7 @@ import "../erc20/IERC20.sol";
  */
 contract BridgedSavings is AbstractSavings, BridgedLeadrate {
 
-    constructor(IFrankencoin zchf_, address bridge_, uint24 initialRatePPM) AbstractSavings(zchf_) BridgedLeadrate(bridge_, initialRatePPM){
+    constructor(IFrankencoin zchf_, address router_, uint24 initialRatePPM) AbstractSavings(zchf_) BridgedLeadrate(router_, initialRatePPM){
     }
 
 }
