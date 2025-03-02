@@ -160,16 +160,14 @@ contract BridgedGovernanceSender {
         address _feeTokenAddress
     ) public view returns (Client.EVM2AnyMessage memory) {
         SyncVote[] memory syncVotes = new SyncVote[](_voters.length);
-        for (uint256 i = 0; i < _voters.length; ) {
+
+        // omitted unchecked optimization for readability
+        for (uint256 i = 0; i < _voters.length; i++) {
             syncVotes[i] = SyncVote({
                 voter: _voters[i],
                 votes: GOVERNANCE.votes(_voters[i]),
                 delegatee: GOVERNANCE.delegates(_voters[i])
             });
-
-            unchecked {
-                ++i;
-            }
         }
 
         return _buildCCIPMessage(_destination, _feeTokenAddress, GOVERNANCE.totalVotes(), syncVotes);

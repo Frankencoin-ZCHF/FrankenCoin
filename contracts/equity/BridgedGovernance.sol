@@ -54,13 +54,12 @@ contract BridgedGovernance is CCIPReceiver, Governance {
 
     function _processSyncMessage(SyncMessage memory syncMessage) internal {
         _totalVotes = syncMessage.totalVotes;
-        for (uint64 i = 0; i < syncMessage.votes.length; ) {
+
+        // omitted unchecked optimization for readability
+        for (uint64 i = 0; i < syncMessage.votes.length; i++) {
             SyncVote memory syncVote = syncMessage.votes[i];
             _votes[syncVote.voter] = syncVote.votes;
             delegate(syncVote.voter, syncVote.delegatee);
-            unchecked {
-                ++i;
-            }
         }
     }
 }
