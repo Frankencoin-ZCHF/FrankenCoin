@@ -15,7 +15,7 @@ contract BridgedGovernanceSender {
     event MessageSent(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
-        address indexed receiver, // The address of the receiver on the destination chain.
+        bytes indexed receiver, // The address of the receiver on the destination chain.
         address feeToken, // the token address used to pay CCIP fees.
         uint256 fees, // The fees paid for sending the CCIP message.
         address[] syncedVoters
@@ -40,7 +40,7 @@ contract BridgedGovernanceSender {
      * @return messageId bytes32 MessageID of the sent message
      */
     function syncVotesPayToken(
-        address _receiver,
+        bytes calldata _receiver,
         uint64 _destinationChainSelector,
         IERC20 _ccipFeeToken,
         address[] calldata _voters,
@@ -81,7 +81,7 @@ contract BridgedGovernanceSender {
      * @return messageId bytes32 MessageID of the sent message
      */
     function syncVotesPayNative(
-        address _receiver,
+        bytes calldata _receiver,
         uint64 _destinationChainSelector,
         address[] calldata _voters,
         bytes calldata _extraArgs
@@ -118,7 +118,7 @@ contract BridgedGovernanceSender {
      * @return Client.EVM2AnyMessage The CCIP message to be sent
      */
     function getCCIPMessage(
-        address _receiver,
+        bytes calldata _receiver,
         address _feeTokenAddress,
         address[] calldata _voters,
         bytes calldata _extraArgs
@@ -147,7 +147,7 @@ contract BridgedGovernanceSender {
      * @return uint256 The fee required to send the CCIP message.
      */
     function getCCIPFee(
-        address _receiver,
+        bytes calldata _receiver,
         uint64 _destinationChainSelector,
         address _feeTokenAddress,
         address[] calldata _voters,
@@ -170,7 +170,7 @@ contract BridgedGovernanceSender {
      * @return Client.EVM2AnyMessage The CCIP message to be sent
      */
     function _buildCCIPMessage(
-        address _receiver,
+        bytes calldata _receiver,
         address _feeTokenAddress,
         uint256 _totalVotes,
         SyncVote[] memory _votes,
@@ -180,7 +180,7 @@ contract BridgedGovernanceSender {
 
         return
             Client.EVM2AnyMessage({
-                receiver: abi.encode(_receiver),
+                receiver: _receiver,
                 data: abi.encode(_syncMessage),
                 tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array as no tokens are transferred
                 extraArgs: _extraArgs,

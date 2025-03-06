@@ -6,7 +6,7 @@ import { expect } from "chai";
 import { getLinkTokenContract } from "./helper/ccip";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
-describe("Bridged Governance Tests", () => {
+describe.only("Bridged Governance Tests", () => {
   async function sendSyncMessage(
     bridgedGovernanceSender: BridgedGovernanceSender,
     sender: HardhatEthersSigner,
@@ -17,7 +17,7 @@ describe("Bridged Governance Tests", () => {
     extraArgs: string = "0x"
   ) {
     const fee = await bridgedGovernanceSender.getCCIPFee(
-      receiver,
+      ethers.AbiCoder.defaultAbiCoder().encode(["address"], [receiver]),
       chainSelector,
       feeToken,
       voters,
@@ -33,7 +33,7 @@ describe("Bridged Governance Tests", () => {
       const tx = await bridgedGovernanceSender
         .connect(sender)
         .syncVotesPayToken(
-          receiver,
+          ethers.AbiCoder.defaultAbiCoder().encode(["address"], [receiver]),
           chainSelector,
           feeToken,
           voters,
@@ -43,9 +43,15 @@ describe("Bridged Governance Tests", () => {
     } else {
       const tx = await bridgedGovernanceSender
         .connect(sender)
-        .syncVotesPayNative(receiver, chainSelector, voters, extraArgs, {
-          value: fee,
-        });
+        .syncVotesPayNative(
+          ethers.AbiCoder.defaultAbiCoder().encode(["address"], [receiver]),
+          chainSelector,
+          voters,
+          extraArgs,
+          {
+            value: fee,
+          }
+        );
       await tx.wait();
     }
   }
@@ -570,9 +576,7 @@ describe("Bridged Governance Tests", () => {
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
         ccipLocalSimulatorConfig.linkToken_,
-        [
-          await user1.getAddress(),
-        ]
+        [await user1.getAddress()]
       );
 
       expect(await bridgedGovernance.votes(await user1.getAddress())).eq(
@@ -592,9 +596,7 @@ describe("Bridged Governance Tests", () => {
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
         ccipLocalSimulatorConfig.linkToken_,
-        [
-          await user1.getAddress(),
-        ]
+        [await user1.getAddress()]
       );
 
       expect(await bridgedGovernance.votes(await user1.getAddress())).to.equal(
@@ -622,9 +624,7 @@ describe("Bridged Governance Tests", () => {
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
         ccipLocalSimulatorConfig.linkToken_,
-        [
-          await user1.getAddress(),
-        ]
+        [await user1.getAddress()]
       );
 
       const user3Addr = await user3.getAddress();
@@ -638,9 +638,7 @@ describe("Bridged Governance Tests", () => {
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
         ccipLocalSimulatorConfig.linkToken_,
-        [
-          await user1.getAddress(),
-        ]
+        [await user1.getAddress()]
       );
 
       expect(
