@@ -1,10 +1,55 @@
-import { CCIPLocalSimulator } from "../typechain";
+import { BridgedGovernanceSender, CCIPLocalSimulator } from "../typechain";
 import { ethers } from "hardhat";
 import { evm_increaseTime } from "./helper";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
+import { getLinkTokenContract } from "./helper/ccip";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Bridged Governance Tests", () => {
+  async function sendSyncMessage(
+    bridgedGovernanceSender: BridgedGovernanceSender,
+    sender: HardhatEthersSigner,
+    receiver: string,
+    chainSelector: bigint,
+    feeToken: string,
+    voters: string[],
+    extraArgs: string = "0x"
+  ) {
+    const fee = await bridgedGovernanceSender.getCCIPFee(
+      receiver,
+      chainSelector,
+      feeToken,
+      voters,
+      extraArgs
+    );
+
+    if (feeToken !== ethers.ZeroAddress) {
+      const linkTokenContract = await getLinkTokenContract(feeToken);
+      await linkTokenContract
+        .connect(sender)
+        .approve(await bridgedGovernanceSender, fee);
+
+      const tx = await bridgedGovernanceSender
+        .connect(sender)
+        .syncVotesPayToken(
+          receiver,
+          chainSelector,
+          feeToken,
+          voters,
+          extraArgs
+        );
+      await tx.wait();
+    } else {
+      const tx = await bridgedGovernanceSender
+        .connect(sender)
+        .syncVotesPayNative(receiver, chainSelector, voters, extraArgs, {
+          value: fee,
+        });
+      await tx.wait();
+    }
+  }
+
   async function deployFixture() {
     const [minter, user1, user2, user3, user4, user5] =
       await ethers.getSigners();
@@ -30,8 +75,7 @@ describe("Bridged Governance Tests", () => {
     );
     const bridgedGovernanceSender = await bridgedGovernanceSenderFactory.deploy(
       await equity.getAddress(),
-      ccipLocalSimulatorConfig.sourceRouter_,
-      ccipLocalSimulatorConfig.linkToken_
+      ccipLocalSimulatorConfig.sourceRouter_
     );
 
     const bridgedGovernanceFactory = await ethers.getContractFactory(
@@ -101,287 +145,506 @@ describe("Bridged Governance Tests", () => {
 
   describe("syncVotesPayNative", () => {
     it("should transfer single user votes", async () => {
-      const fixture = await loadFixture(deployFixture);
-      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
-        await fixture.bridgedGovernance.getAddress(),
-        fixture.ccipLocalSimulatorConfig.chainSelector_,
-        [await fixture.user1.getAddress()],
-        ethers.ZeroAddress
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
+        [await user1.getAddress()]
       );
 
-      const tx = await fixture.bridgedGovernanceSender
-        .connect(fixture.user1)
-        .syncVotesPayNative(
-          await fixture.bridgedGovernance.getAddress(),
-          fixture.ccipLocalSimulatorConfig.chainSelector_,
-          [fixture.user1.address],
-          { value: fee }
-        );
-      await tx.wait();
-
       // checks
-      expect(
-        await fixture.bridgedGovernance.votes(fixture.user1.address)
-      ).to.equal(await fixture.equity.votes(fixture.user1.address));
+      expect(await bridgedGovernance.votes(user1.address)).to.equal(
+        await equity.votes(user1.address)
+      );
     });
 
     it("should transfer single user delegation", async () => {
-      const fixture = await loadFixture(deployFixture);
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await equity.connect(user1).delegateVoteTo(await user2.getAddress());
 
-      await fixture.equity
-        .connect(fixture.user1)
-        .delegateVoteTo(await fixture.user2.getAddress());
-      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
-        await fixture.bridgedGovernance.getAddress(),
-        fixture.ccipLocalSimulatorConfig.chainSelector_,
-        [await fixture.user1.getAddress()],
-        ethers.ZeroAddress
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
+        [await user1.getAddress()]
       );
-
-      const tx = await fixture.bridgedGovernanceSender
-        .connect(fixture.user1)
-        .syncVotesPayNative(
-          await fixture.bridgedGovernance.getAddress(),
-          fixture.ccipLocalSimulatorConfig.chainSelector_,
-          [fixture.user1.address],
-          { value: fee }
-        );
-      await tx.wait();
-
       // checks
-      expect(
-        await fixture.bridgedGovernance.delegates(fixture.user1.address)
-      ).to.equal(await fixture.user2.getAddress());
+      expect(await bridgedGovernance.delegates(user1.address)).to.equal(
+        await user2.getAddress()
+      );
     });
 
     it("should transfer totalVotes along", async () => {
-      const fixture = await loadFixture(deployFixture);
-      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
-        await fixture.bridgedGovernance.getAddress(),
-        fixture.ccipLocalSimulatorConfig.chainSelector_,
-        [await fixture.user1.getAddress()],
-        ethers.ZeroAddress
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
+        []
       );
 
-      const tx = await fixture.bridgedGovernanceSender
-        .connect(fixture.user1)
-        .syncVotesPayNative(
-          await fixture.bridgedGovernance.getAddress(),
-          fixture.ccipLocalSimulatorConfig.chainSelector_,
-          [fixture.user1.address],
-          { value: fee }
-        );
-      await tx.wait();
-
       // checks
-      expect(await fixture.bridgedGovernance.totalVotes()).to.equal(
-        await fixture.equity.totalVotes()
+      expect(await bridgedGovernance.totalVotes()).to.equal(
+        await equity.totalVotes()
       );
     });
 
     it("should transfer multiple users", async () => {
-      const fixture = await loadFixture(deployFixture);
-      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
-        await fixture.bridgedGovernance.getAddress(),
-        fixture.ccipLocalSimulatorConfig.chainSelector_,
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        user3,
+        user4,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
         [
-          await fixture.user1.getAddress(),
-          await fixture.user2.getAddress(),
-          await fixture.user3.getAddress(),
-          await fixture.user4.getAddress(),
-        ],
-        ethers.ZeroAddress
+          await user1.getAddress(),
+          await user2.getAddress(),
+          await user3.getAddress(),
+          await user4.getAddress(),
+        ]
       );
 
-      const tx = await fixture.bridgedGovernanceSender
-        .connect(fixture.user1)
-        .syncVotesPayNative(
-          await fixture.bridgedGovernance.getAddress(),
-          fixture.ccipLocalSimulatorConfig.chainSelector_,
-          [
-            await fixture.user1.getAddress(),
-            await fixture.user2.getAddress(),
-            await fixture.user3.getAddress(),
-            await fixture.user4.getAddress(),
-          ],
-          { value: fee }
-        );
-      await tx.wait();
-
       // checks
-      expect(
-        await fixture.bridgedGovernance.votes(fixture.user1.address)
-      ).to.equal(await fixture.equity.votes(fixture.user1.address));
-      expect(
-        await fixture.bridgedGovernance.votes(fixture.user2.address)
-      ).to.equal(await fixture.equity.votes(fixture.user2.address));
-      expect(
-        await fixture.bridgedGovernance.votes(fixture.user3.address)
-      ).to.equal(await fixture.equity.votes(fixture.user3.address));
-      expect(
-        await fixture.bridgedGovernance.votes(fixture.user4.address)
-      ).to.equal(await fixture.equity.votes(fixture.user4.address));
+      expect(await bridgedGovernance.votes(user1.address)).to.equal(
+        await equity.votes(user1.address)
+      );
+      expect(await bridgedGovernance.votes(user2.address)).to.equal(
+        await equity.votes(user2.address)
+      );
+      expect(await bridgedGovernance.votes(user3.address)).to.equal(
+        await equity.votes(user3.address)
+      );
+      expect(await bridgedGovernance.votes(user4.address)).to.equal(
+        await equity.votes(user4.address)
+      );
     });
 
     it("should transfer multiple user delegation", async () => {
-      const fixture = await loadFixture(deployFixture);
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        user3,
+        user4,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
 
-      await fixture.equity
-        .connect(fixture.user1)
-        .delegateVoteTo(await fixture.user2.getAddress());
-      await fixture.equity
-        .connect(fixture.user3)
-        .delegateVoteTo(await fixture.user2.getAddress());
-      await fixture.equity
-        .connect(fixture.user4)
-        .delegateVoteTo(await fixture.user2.getAddress());
+      await equity.connect(user1).delegateVoteTo(await user2.getAddress());
+      await equity.connect(user3).delegateVoteTo(await user2.getAddress());
+      await equity.connect(user4).delegateVoteTo(await user2.getAddress());
 
-      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
-        await fixture.bridgedGovernance.getAddress(),
-        fixture.ccipLocalSimulatorConfig.chainSelector_,
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
         [
-          await fixture.user1.getAddress(),
-          await fixture.user2.getAddress(),
-          await fixture.user3.getAddress(),
-          await fixture.user4.getAddress(),
-        ],
-        ethers.ZeroAddress
+          await user1.getAddress(),
+          await user2.getAddress(),
+          await user3.getAddress(),
+          await user4.getAddress(),
+        ]
       );
 
-      const tx = await fixture.bridgedGovernanceSender
-        .connect(fixture.user1)
-        .syncVotesPayNative(
-          await fixture.bridgedGovernance.getAddress(),
-          fixture.ccipLocalSimulatorConfig.chainSelector_,
-          [
-            await fixture.user1.getAddress(),
-            await fixture.user2.getAddress(),
-            await fixture.user3.getAddress(),
-            await fixture.user4.getAddress(),
-          ],
-          { value: fee }
-        );
-      await tx.wait();
-
       // checks
-      expect(
-        await fixture.bridgedGovernance.delegates(fixture.user1.address)
-      ).to.equal(await fixture.user2.getAddress());
-      expect(
-        await fixture.bridgedGovernance.delegates(fixture.user3.address)
-      ).to.equal(await fixture.user2.getAddress());
-      expect(
-        await fixture.bridgedGovernance.delegates(fixture.user4.address)
-      ).to.equal(await fixture.user2.getAddress());
-      expect(
-        await fixture.bridgedGovernance.delegates(fixture.user2.address)
-      ).to.equal(ethers.ZeroAddress);
+      expect(await bridgedGovernance.delegates(user1.address)).to.equal(
+        await user2.getAddress()
+      );
+      expect(await bridgedGovernance.delegates(user3.address)).to.equal(
+        await user2.getAddress()
+      );
+      expect(await bridgedGovernance.delegates(user4.address)).to.equal(
+        await user2.getAddress()
+      );
+      expect(await bridgedGovernance.delegates(user2.address)).to.equal(
+        ethers.ZeroAddress
+      );
     });
 
     it("should update votes", async () => {
-      const fixture = await loadFixture(deployFixture);
-      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
-        await fixture.bridgedGovernance.getAddress(),
-        fixture.ccipLocalSimulatorConfig.chainSelector_,
-        [await fixture.user1.getAddress()],
-        ethers.ZeroAddress
-      );
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
 
-      const votesBefore = await fixture.equity.votes(
-        await fixture.user1.getAddress()
-      );
+      const votesBefore = await equity.votes(await user1.getAddress());
 
       // transfer initial votes
-      await (
-        await fixture.bridgedGovernanceSender
-          .connect(fixture.user1)
-          .syncVotesPayNative(
-            await fixture.bridgedGovernance.getAddress(),
-            fixture.ccipLocalSimulatorConfig.chainSelector_,
-            [await fixture.user1.getAddress()],
-            { value: fee }
-          )
-      ).wait();
-
-      expect(
-        await fixture.bridgedGovernance.votes(await fixture.user1.getAddress())
-      ).eq(await fixture.equity.votes(await fixture.user1.getAddress()));
-
-      await fixture.equity
-        .connect(fixture.user1)
-        .redeem(await fixture.user1.getAddress(), ethers.parseEther("1"));
-
-      const votesAfter = await fixture.equity.votes(
-        await fixture.user1.getAddress()
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
+        [await user1.getAddress()]
       );
+
+      expect(await bridgedGovernance.votes(await user1.getAddress())).eq(
+        await equity.votes(await user1.getAddress())
+      );
+
+      await equity
+        .connect(user1)
+        .redeem(await user1.getAddress(), ethers.parseEther("1"));
+
+      const votesAfter = await equity.votes(await user1.getAddress());
       expect(votesAfter).to.lessThan(votesBefore);
 
       // transfer updated votes
-      await (
-        await fixture.bridgedGovernanceSender
-          .connect(fixture.user1)
-          .syncVotesPayNative(
-            await fixture.bridgedGovernance.getAddress(),
-            fixture.ccipLocalSimulatorConfig.chainSelector_,
-            [await fixture.user1.getAddress()],
-            { value: fee }
-          )
-      ).wait();
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
+        [await user1.getAddress()]
+      );
 
-      expect(
-        await fixture.bridgedGovernance.votes(await fixture.user1.getAddress())
-      ).to.equal(await fixture.equity.votes(await fixture.user1.getAddress()));
+      expect(await bridgedGovernance.votes(await user1.getAddress())).to.equal(
+        await equity.votes(await user1.getAddress())
+      );
     });
 
     it("should update delegation", async () => {
-      const fixture = await loadFixture(deployFixture);
-      const fee = await fixture.bridgedGovernanceSender.getCCIPFee(
-        await fixture.bridgedGovernance.getAddress(),
-        fixture.ccipLocalSimulatorConfig.chainSelector_,
-        [await fixture.user1.getAddress()],
-        ethers.ZeroAddress
-      );
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        user3,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
 
-      const user2Addr = await fixture.user2.getAddress();
-      await fixture.equity.connect(fixture.user1).delegateVoteTo(user2Addr);
+      const user2Addr = await user2.getAddress();
+      await equity.connect(user1).delegateVoteTo(user2Addr);
 
       // transfer delegation
-      await (
-        await fixture.bridgedGovernanceSender
-          .connect(fixture.user1)
-          .syncVotesPayNative(
-            await fixture.bridgedGovernance.getAddress(),
-            fixture.ccipLocalSimulatorConfig.chainSelector_,
-            [await fixture.user1.getAddress()],
-            { value: fee }
-          )
-      ).wait();
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
+        [await user1.getAddress()]
+      );
 
       expect(
-        await fixture.bridgedGovernance.delegates(
-          await fixture.user1.getAddress()
-        )
+        await bridgedGovernance.delegates(await user1.getAddress())
       ).to.equal(user2Addr);
 
-      const user3Addr = await fixture.user3.getAddress();
-      await fixture.equity.connect(fixture.user1).delegateVoteTo(user3Addr);
+      const user3Addr = await user3.getAddress();
+      await equity.connect(user1).delegateVoteTo(user3Addr);
 
       // transfer redelegation
-      await (
-        await fixture.bridgedGovernanceSender
-          .connect(fixture.user1)
-          .syncVotesPayNative(
-            await fixture.bridgedGovernance.getAddress(),
-            fixture.ccipLocalSimulatorConfig.chainSelector_,
-            [await fixture.user1.getAddress()],
-            { value: fee }
-          )
-      ).wait();
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ethers.ZeroAddress,
+        [await user1.getAddress()]
+      );
 
       expect(
-        await fixture.bridgedGovernance.delegates(
-          await fixture.user1.getAddress()
-        )
+        await bridgedGovernance.delegates(await user1.getAddress())
+      ).to.equal(user3Addr);
+    });
+  });
+
+  describe("syncVotesPayToken", () => {
+    it("should transfer single user votes", async () => {
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [await user1.getAddress()]
+      );
+
+      // checks
+      expect(await bridgedGovernance.votes(user1.address)).to.equal(
+        await equity.votes(user1.address)
+      );
+    });
+
+    it("should transfer single user delegation", async () => {
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+
+      await equity.connect(user1).delegateVoteTo(await user2.getAddress());
+
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [await user1.getAddress()]
+      );
+
+      // checks
+      expect(await bridgedGovernance.delegates(user1.address)).to.equal(
+        await user2.getAddress()
+      );
+    });
+
+    it("should transfer totalVotes along", async () => {
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        []
+      );
+
+      // checks
+      expect(await bridgedGovernance.totalVotes()).to.equal(
+        await equity.totalVotes()
+      );
+    });
+
+    it("should transfer multiple users", async () => {
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        user3,
+        user4,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [
+          await user1.getAddress(),
+          await user2.getAddress(),
+          await user3.getAddress(),
+          await user4.getAddress(),
+        ]
+      );
+
+      // checks
+      expect(await bridgedGovernance.votes(user1.address)).to.equal(
+        await equity.votes(user1.address)
+      );
+      expect(await bridgedGovernance.votes(user2.address)).to.equal(
+        await equity.votes(user2.address)
+      );
+      expect(await bridgedGovernance.votes(user3.address)).to.equal(
+        await equity.votes(user3.address)
+      );
+      expect(await bridgedGovernance.votes(user4.address)).to.equal(
+        await equity.votes(user4.address)
+      );
+    });
+
+    it("should transfer multiple user delegation", async () => {
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        user3,
+        user4,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+
+      await equity.connect(user1).delegateVoteTo(await user2.getAddress());
+      await equity.connect(user3).delegateVoteTo(await user2.getAddress());
+      await equity.connect(user4).delegateVoteTo(await user2.getAddress());
+
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [
+          await user1.getAddress(),
+          await user2.getAddress(),
+          await user3.getAddress(),
+          await user4.getAddress(),
+        ]
+      );
+
+      // checks
+      expect(await bridgedGovernance.delegates(user1.address)).to.equal(
+        await user2.getAddress()
+      );
+      expect(await bridgedGovernance.delegates(user3.address)).to.equal(
+        await user2.getAddress()
+      );
+      expect(await bridgedGovernance.delegates(user4.address)).to.equal(
+        await user2.getAddress()
+      );
+      expect(await bridgedGovernance.delegates(user2.address)).to.equal(
+        ethers.ZeroAddress
+      );
+    });
+
+    it("should update votes", async () => {
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+
+      const votesBefore = await equity.votes(await user1.getAddress());
+
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [
+          await user1.getAddress(),
+        ]
+      );
+
+      expect(await bridgedGovernance.votes(await user1.getAddress())).eq(
+        await equity.votes(await user1.getAddress())
+      );
+
+      await equity
+        .connect(user1)
+        .redeem(await user1.getAddress(), ethers.parseEther("1"));
+
+      const votesAfter = await equity.votes(await user1.getAddress());
+      expect(votesAfter).to.lessThan(votesBefore);
+
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [
+          await user1.getAddress(),
+        ]
+      );
+
+      expect(await bridgedGovernance.votes(await user1.getAddress())).to.equal(
+        await equity.votes(await user1.getAddress())
+      );
+    });
+
+    it("should update delegation", async () => {
+      const {
+        bridgedGovernanceSender,
+        bridgedGovernance,
+        user1,
+        user2,
+        user3,
+        ccipLocalSimulatorConfig,
+        equity,
+      } = await loadFixture(deployFixture);
+      await equity.connect(user1).delegateVoteTo(await user2.getAddress());
+
+      // transfer delegation
+
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [
+          await user1.getAddress(),
+        ]
+      );
+
+      const user3Addr = await user3.getAddress();
+      await equity.connect(user1).delegateVoteTo(user3Addr);
+
+      // transfer redelegation
+
+      await sendSyncMessage(
+        bridgedGovernanceSender,
+        user1,
+        await bridgedGovernance.getAddress(),
+        ccipLocalSimulatorConfig.chainSelector_,
+        ccipLocalSimulatorConfig.linkToken_,
+        [
+          await user1.getAddress(),
+        ]
+      );
+
+      expect(
+        await bridgedGovernance.delegates(await user1.getAddress())
       ).to.equal(user3Addr);
     });
   });

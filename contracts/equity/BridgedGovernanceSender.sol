@@ -9,155 +9,119 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {IERC20} from "../erc20/IERC20.sol";
 
 contract BridgedGovernanceSender {
-    uint64 public immutable UPDATE_VETO_PERIOD = 5 days;
     Governance public immutable GOVERNANCE;
-
-    // Could change in the future. So no immutable for us here
-    // We cannot deploy a new version easily because the Satellites use this contract address
-    // as immutable.
-    // TODO Define where we want to have the immutablility
-    IRouterClient public router;
-    IERC20 public ccipFeeToken;
-    UpdateProposal public updateProposal;
-
-    struct UpdateProposal {
-        IRouterClient router;
-        IERC20 ccipFeeToken;
-        uint64 proposalEnd;
-    }
+    IRouterClient public immutable ROUTER;
 
     event MessageSent(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
-        address destination, // The address of the receiver on the destination chain.
+        address indexed receiver, // The address of the receiver on the destination chain.
         address feeToken, // the token address used to pay CCIP fees.
         uint256 fees, // The fees paid for sending the CCIP message.
         address[] syncedVoters
     );
-    event ProposalCreated(address router, address ccipFeeToken, uint64 end);
-    event ProposalVetoed();
-    event ProposalApplied(address router, address ccipFeeToken);
 
     error InsufficientBalance(uint256 available, uint256 required);
-    error OngoingProposal(uint64 proposalEnd);
-
-    constructor(Governance _governance, IRouterClient _router, IERC20 _ccipFeeToken) {
+    constructor(Governance _governance, IRouterClient _router) {
         GOVERNANCE = _governance;
-        router = _router;
-        ccipFeeToken = _ccipFeeToken;
+        ROUTER = _router;
     }
 
+    /**
+     * @notice Sync governance votes to destination paying with ERC20 token
+     * @dev extraArgs for CCIP can be provided such as gasLimit or out-of-order execution
+     *
+     * @param _receiver                 Address of the recipient on the destination chain
+     * @param _destinationChainSelector Chain selector of the destination chain
+     * @param _ccipFeeToken             Token used to pay the ccip fees
+     * @param _voters                   Collection of addresses which votes and delegation should be synced
+     * @param _extraArgs                Extra args for ccip message
+     *
+     * @return messageId bytes32 MessageID of the sent message
+     */
     function syncVotesPayToken(
-        address _destination,
+        address _receiver,
         uint64 _destinationChainSelector,
-        address[] calldata _voters
+        IERC20 _ccipFeeToken,
+        address[] calldata _voters,
+        bytes calldata _extraArgs
     ) external returns (bytes32 messageId) {
-        Client.EVM2AnyMessage memory message = getCCIPMessage(_destination, _voters, address(ccipFeeToken));
-        uint256 fees = router.getFee(_destinationChainSelector, message);
-        uint256 availableBalance = ccipFeeToken.balanceOf(address(this));
+        Client.EVM2AnyMessage memory message = getCCIPMessage(_receiver, address(_ccipFeeToken), _voters, _extraArgs);
+        uint256 fees = ROUTER.getFee(_destinationChainSelector, message);
+        uint256 availableBalance = _ccipFeeToken.balanceOf(msg.sender);
 
         if (fees > availableBalance) {
             revert InsufficientBalance({available: availableBalance, required: fees});
         }
 
-        ccipFeeToken.transferFrom(msg.sender, address(this), fees);
-        ccipFeeToken.approve(address(router), fees);
+        _ccipFeeToken.transferFrom(msg.sender, address(this), fees);
+        _ccipFeeToken.approve(address(ROUTER), fees);
 
-        messageId = router.ccipSend(_destinationChainSelector, message);
+        messageId = ROUTER.ccipSend(_destinationChainSelector, message);
 
         emit MessageSent({
             messageId: messageId,
             destinationChainSelector: _destinationChainSelector,
-            destination: _destination,
-            feeToken: address(ccipFeeToken),
+            receiver: _receiver,
+            feeToken: address(_ccipFeeToken),
             fees: fees,
             syncedVoters: _voters
         });
     }
 
+    /**
+     * @notice Sync governance votes to destination paying with native token
+     * @dev extraArgs for CCIP can be provided such as gasLimit or out-of-order execution
+     *
+     * @param _receiver                 Address of the recipient on the destination chain
+     * @param _destinationChainSelector Chain selector of the destination chain
+     * @param _voters                   Collection of addresses which votes and delegation should be synced
+     * @param _extraArgs                Extra args for ccip message
+     *
+     * @return messageId bytes32 MessageID of the sent message
+     */
     function syncVotesPayNative(
-        address _destination,
+        address _receiver,
         uint64 _destinationChainSelector,
-        address[] calldata _voters
+        address[] calldata _voters,
+        bytes calldata _extraArgs
     ) external payable returns (bytes32 messageId) {
-        Client.EVM2AnyMessage memory message = getCCIPMessage(_destination, _voters, address(0));
-        uint256 fees = router.getFee(_destinationChainSelector, message);
+        Client.EVM2AnyMessage memory message = getCCIPMessage(_receiver, address(0), _voters, _extraArgs);
+        uint256 fees = ROUTER.getFee(_destinationChainSelector, message);
         uint256 availableBalance = address(this).balance;
 
         if (fees > availableBalance) {
             revert InsufficientBalance({available: availableBalance, required: fees});
         }
 
-        messageId = router.ccipSend{value: fees}(_destinationChainSelector, message);
+        messageId = ROUTER.ccipSend{value: fees}(_destinationChainSelector, message);
 
         emit MessageSent({
             messageId: messageId,
             destinationChainSelector: _destinationChainSelector,
-            destination: _destination,
-            feeToken: address(ccipFeeToken),
+            receiver: _receiver,
+            feeToken: address(0),
             fees: fees,
             syncedVoters: _voters
         });
-
-        // cleanup left over dust. We don't care about success
-        payable(address(msg.sender)).call{value: address(this).balance}("");
     }
 
-    function proposeUpdate(
-        address _sender,
-        address[] calldata _helpers,
-        IRouterClient _router,
-        IERC20 _ccipFeeToken
-    ) external {
-        GOVERNANCE.checkQualified(_sender, _helpers);
-        uint64 currentEnd = updateProposal.proposalEnd;
-        if (currentEnd > block.timestamp) {
-            revert OngoingProposal(currentEnd);
-        }
-
-        uint64 end = uint64(block.timestamp) + UPDATE_VETO_PERIOD;
-        updateProposal.proposalEnd = end;
-        updateProposal.router = _router;
-        updateProposal.ccipFeeToken = _ccipFeeToken;
-        emit ProposalCreated({router: address(_router), ccipFeeToken: address(_ccipFeeToken), end: end});
-    }
-
-    function vetoProposal(address _sender, address[] calldata _helpers) external {
-        GOVERNANCE.checkQualified(_sender, _helpers);
-        updateProposal.proposalEnd = type(uint64).max;
-
-        emit ProposalVetoed();
-    }
-
-    function applyProposal() external {
-        uint64 currentEnd = updateProposal.proposalEnd;
-        if (currentEnd > block.timestamp) {
-            revert OngoingProposal(currentEnd);
-        }
-
-        IRouterClient _router = updateProposal.router;
-        IERC20 _ccipFeeToken = updateProposal.ccipFeeToken;
-        router = _router;
-        ccipFeeToken = _ccipFeeToken;
-        updateProposal.proposalEnd = type(uint64).max;
-
-        emit ProposalApplied({router: address(_router), ccipFeeToken: address(_ccipFeeToken)});
-    }
-
-    function getCCIPFee(
-        address _destination,
-        uint64 _destinationChainSelector,
-        address[] calldata _voters,
-        address _feeTokenAddress
-    ) public view returns (uint256) {
-        Client.EVM2AnyMessage memory message = getCCIPMessage(_destination, _voters, _feeTokenAddress);
-        return router.getFee(_destinationChainSelector, message);
-    }
-
+    /**
+     * @notice Gathers necessary information and builds the CCIP message to be sent
+     * @dev Gets the necessary information for voters from governance
+     *
+     * @param _receiver                 Address of the recipient on the destination chain
+     * @param _feeTokenAddress          Token used to pay the ccip fees
+     * @param _voters                   Collection of addresses which votes and delegation should be synced
+     * @param _extraArgs                Extra args for ccip message
+     *
+     * @return Client.EVM2AnyMessage The CCIP message to be sent
+     */
     function getCCIPMessage(
-        address _destination,
+        address _receiver,
+        address _feeTokenAddress,
         address[] calldata _voters,
-        address _feeTokenAddress
+        bytes calldata _extraArgs
     ) public view returns (Client.EVM2AnyMessage memory) {
         SyncVote[] memory syncVotes = new SyncVote[](_voters.length);
 
@@ -170,14 +134,47 @@ contract BridgedGovernanceSender {
             });
         }
 
-        return _buildCCIPMessage(_destination, _feeTokenAddress, GOVERNANCE.totalVotes(), syncVotes);
+        return _buildCCIPMessage(_receiver, _feeTokenAddress, GOVERNANCE.totalVotes(), syncVotes, _extraArgs);
     }
 
+    /**
+     * @notice Get the fee required to send a CCIP message.
+     * @param _destinationChainSelector The selector of the destination chain.
+     * @param _feeTokenAddress          The address of the fee token.
+     * @param _voters                   Collection of addresses which votes and delegation should be synced
+     * @param _extraArgs                Extra args for ccip message
+     *
+     * @return uint256 The fee required to send the CCIP message.
+     */
+    function getCCIPFee(
+        address _receiver,
+        uint64 _destinationChainSelector,
+        address _feeTokenAddress,
+        address[] calldata _voters,
+        bytes calldata _extraArgs
+    ) public view returns (uint256) {
+        Client.EVM2AnyMessage memory message = getCCIPMessage(_receiver, _feeTokenAddress, _voters, _extraArgs);
+        return ROUTER.getFee(_destinationChainSelector, message);
+    }
+
+    /**
+     * @notice Builds the CCIP message to be sent
+     * @dev Gets the necessary information for voters from governance
+     *
+     * @param _receiver         Address of the recipient on the destination chain
+     * @param _feeTokenAddress  Token used to pay the ccip fees
+     * @param _totalVotes       Total votes available in governance
+     * @param _votes            Collection of SyncVote
+     * @param _extraArgs        Extra args for ccip message
+     *
+     * @return Client.EVM2AnyMessage The CCIP message to be sent
+     */
     function _buildCCIPMessage(
         address _receiver,
         address _feeTokenAddress,
         uint256 _totalVotes,
-        SyncVote[] memory _votes
+        SyncVote[] memory _votes,
+        bytes calldata _extraArgs
     ) private pure returns (Client.EVM2AnyMessage memory) {
         SyncMessage memory _syncMessage = SyncMessage({votes: _votes, totalVotes: _totalVotes});
 
@@ -186,16 +183,7 @@ contract BridgedGovernanceSender {
                 receiver: abi.encode(_receiver),
                 data: abi.encode(_syncMessage),
                 tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array as no tokens are transferred
-                extraArgs: Client._argsToBytes(
-                    // Additional arguments, setting gas limit and allowing out-of-order execution.
-                    // Best Practice: For simplicity, the values are hardcoded. It is advisable to use a more dynamic approach
-                    // where you set the extra arguments off-chain. This allows adaptation depending on the lanes, messages,
-                    // and ensures compatibility with future CCIP upgrades. Read more about it here: https://docs.chain.link/ccip/best-practices#using-extraargs
-                    Client.EVMExtraArgsV2({
-                        gasLimit: 2_000_000, // Gas limit for the callback on the destination chain
-                        allowOutOfOrderExecution: true // Allows the message to be executed out of order relative to other messages from the same sender
-                    })
-                ),
+                extraArgs: _extraArgs,
                 // Set the feeToken to a feeTokenAddress, indicating specific asset will be used for fees
                 feeToken: _feeTokenAddress
             });

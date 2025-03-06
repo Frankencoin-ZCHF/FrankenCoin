@@ -28,14 +28,25 @@ contract BridgedGovernance is CCIPReceiver, Governance {
         MAINNET_GOVERNANCE_ADDRESS = _mainnetGovernanceAddress;
     }
 
+    /**
+     * @notice Get the number of votes held by a holder.
+     * @param holder The address to check.
+     */
     function votes(address holder) public view override returns (uint256) {
         return _votes[holder];
     }
 
+    /**
+     * @notice Get the total number of votes.
+     */
     function totalVotes() public view override returns (uint256) {
         return _totalVotes;
     }
 
+    /**
+     * @notice Process a received message.
+     * @param any2EvmMessage The message to process.
+     */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
         if (any2EvmMessage.sourceChainSelector != MAINNET_CHAIN_SELECTOR) revert InvalidSourceChain();
         if (abi.decode(any2EvmMessage.sender, (address)) != MAINNET_GOVERNANCE_ADDRESS) revert InvalidSender();
@@ -52,6 +63,10 @@ contract BridgedGovernance is CCIPReceiver, Governance {
         });
     }
 
+    /**
+     * @notice Updates internal state with received message
+     * @param syncMessage The message to process.
+     */
     function _processSyncMessage(SyncMessage memory syncMessage) internal {
         _totalVotes = syncMessage.totalVotes;
 
