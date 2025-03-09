@@ -48,8 +48,6 @@ contract CCIPAdmin {
     uint64 public remoteChainDeadline;
     uint64 public adminDeadline;
 
-    error NotReady(uint64 deadline);
-    error NotVetoable();
     error NotAppliable();
     error InvalidUpdate(bytes32 expected, bytes32 given);
 
@@ -88,13 +86,6 @@ contract CCIPAdmin {
         _;
     }
 
-    modifier onlyReady(uint64 deadline) {
-        if (deadline != 0) {
-            revert NotReady(deadline);
-        }
-        _;
-    }
-
     constructor(
         IGovernance _governance,
         ITokenPool _tokenPool,
@@ -116,7 +107,7 @@ contract CCIPAdmin {
     function proposeRemotePoolUpdate(
         RemotePoolUpdate memory _update,
         address[] calldata _helpers
-    ) external onlyReady(remotePoolUpdateDeadline) onlyQualified(msg.sender, _helpers) {
+    ) external onlyQualified(msg.sender, _helpers) {
         bytes32 updateHash = keccak256(abi.encode(_update));
         proposedRemotePoolUpdate = updateHash;
         remotePoolUpdateDeadline = uint64(block.timestamp + VETO_PERIOD);
@@ -132,7 +123,7 @@ contract CCIPAdmin {
     function proposeChainRateLimiterUpdate(
         ChainRateLimiterUpdate calldata _update,
         address[] calldata _helpers
-    ) external onlyReady(chainRateLimiterDeadline) onlyQualified(msg.sender, _helpers) {
+    ) external onlyQualified(msg.sender, _helpers) {
         bytes32 updateHash = keccak256(abi.encode(_update));
         proposedChainRateLimiterUpdate = keccak256(abi.encode(_update));
         chainRateLimiterDeadline = uint64(block.timestamp + VETO_PERIOD);
@@ -148,7 +139,7 @@ contract CCIPAdmin {
     function proposeRemoteChainUpdate(
         RemoteChainUpdate calldata _update,
         address[] calldata _helpers
-    ) external onlyReady(remoteChainDeadline) onlyQualified(msg.sender, _helpers) {
+    ) external onlyQualified(msg.sender, _helpers) {
         bytes32 updateHash = keccak256(abi.encode(_update));
         proposedRemoteChainUpdate = updateHash;
         remoteChainDeadline = uint64(block.timestamp + VETO_PERIOD);
@@ -164,7 +155,7 @@ contract CCIPAdmin {
     function proposeAdminTransfer(
         address _newAdmin,
         address[] calldata _helpers
-    ) external onlyReady(adminDeadline) onlyQualified(msg.sender, _helpers) {
+    ) external onlyQualified(msg.sender, _helpers) {
         proposedAdmin = _newAdmin;
         adminDeadline = uint64(block.timestamp + VETO_PERIOD);
 
@@ -180,16 +171,12 @@ contract CCIPAdmin {
         address[] calldata _helpers
     ) external onlyQualified(msg.sender, _helpers) {
         if (_proposalType == ProposalType.REMOTE_POOL) {
-            _checkVeto(remotePoolUpdateDeadline);
             remotePoolUpdateDeadline = 0;
         } else if (_proposalType == ProposalType.CHAIN_RATE_LIMIT) {
-            _checkVeto(chainRateLimiterDeadline);
             chainRateLimiterDeadline = 0;
         } else if (_proposalType == ProposalType.REMOTE_CHAINS) {
-            _checkVeto(remoteChainDeadline);
             remoteChainDeadline = 0;
         } else if (_proposalType == ProposalType.ADMIN_TRANSFER) {
-            _checkVeto(adminDeadline);
             adminDeadline = 0;
         }
 
@@ -256,21 +243,8 @@ contract CCIPAdmin {
         emit AdminTransfered({newAdmin: newAdmin});
     }
 
-    function _isOngoing(uint64 _deadline) private view returns (bool) {
-        if (_deadline > block.timestamp) {
-            return true;
-        }
-        return false;
-    }
-
-    function _checkVeto(uint64 _deadline) private view {
-        if (!_isOngoing(_deadline)) {
-            revert NotVetoable();
-        }
-    }
-
     function _checkAppliable(uint64 _deadline) private view {
-        if (_isOngoing(_deadline) || _deadline == 0) {
+        if (_deadline > block.timestamp || _deadline == 0) {
             revert NotAppliable();
         }
     }
