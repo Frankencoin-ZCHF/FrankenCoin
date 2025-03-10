@@ -104,6 +104,12 @@ contract CCIPAdmin {
         _tokenPool.acceptOwnership();
     }
 
+    /**
+     * @notice Proposed a remote pool update
+     * @dev The contract only stores the hash. So the data has to be passed in during apply again
+     * @param _update  The update proposal
+     * @param _helpers Helpers needed to be qualified
+     */
     function proposeRemotePoolUpdate(
         RemotePoolUpdate memory _update,
         address[] calldata _helpers
@@ -120,6 +126,12 @@ contract CCIPAdmin {
         });
     }
 
+    /**
+     * @notice Proposed a rate limit update
+     * @dev The contract only stores the hash. So the data has to be passed in during apply again
+     * @param _update  The update proposal
+     * @param _helpers Helpers needed to be qualified
+     */
     function proposeChainRateLimiterUpdate(
         ChainRateLimiterUpdate calldata _update,
         address[] calldata _helpers
@@ -136,6 +148,12 @@ contract CCIPAdmin {
         });
     }
 
+    /**
+     * @notice Propose to add or remove remote chains
+     * @dev The contract only stores the hash. So the data has to be passed in during apply again
+     * @param _update  The update proposal
+     * @param _helpers Helpers needed to be qualified
+     */
     function proposeRemoteChainUpdate(
         RemoteChainUpdate calldata _update,
         address[] calldata _helpers
@@ -152,6 +170,12 @@ contract CCIPAdmin {
         });
     }
 
+    /**
+     * @notice Proposed a new admin for the TokenPool and Admin on the Token registry
+     * @dev Useful to transfer to a new CCIPAdmin contract
+     * @param _newAdmin  The address of the new admin
+     * @param _helpers Helpers needed to be qualified
+     */
     function proposeAdminTransfer(
         address _newAdmin,
         address[] calldata _helpers
@@ -166,6 +190,11 @@ contract CCIPAdmin {
         });
     }
 
+    /**
+     * @notice Veto a proposal
+     * @param _proposalType What type of proposal gets vetoed
+     * @param _helpers Helpers needed to be qualified
+     */
     function vetoProposal(
         ProposalType _proposalType,
         address[] calldata _helpers
@@ -183,6 +212,11 @@ contract CCIPAdmin {
         emit ProposalVetoed(_proposalType);
     }
 
+    /**
+     * @notice Apply a proposal. Only works if VETO_PERIOD has been awaited.
+     * @param _proposalType What type of proposal gets vetoed
+     * @param _updateData Abi encoded data required to perform the update.
+     */
     function applyProposal(ProposalType _proposalType, bytes calldata _updateData) external {
         if (_proposalType == ProposalType.REMOTE_POOL) {
             _checkAppliable(remotePoolUpdateDeadline);
@@ -202,6 +236,10 @@ contract CCIPAdmin {
         }
     }
 
+    /**
+     * @notice Applies the update on the TokenPool
+     * @param update RemotePoolUpdate information
+     */
     function _applyRemotePoolUpdate(RemotePoolUpdate memory update) private {
         if (update.add) {
             TOKEN_POOL.addRemotePool(update.remoteChainSelector, update.remotePoolAddress);
@@ -212,6 +250,11 @@ contract CCIPAdmin {
         emit RemotePoolUpdateApplied(update.add, update.remoteChainSelector, update.remotePoolAddress);
     }
 
+    /**
+     * @notice Applies the rate limit update
+     * @dev Bulk function that allows multiple updates at once
+     * @param update ChainRateLimiterUpdate information
+     */
     function _applyChainRateLimiterUpdate(ChainRateLimiterUpdate memory update) private {
         TOKEN_POOL.setChainRateLimiterConfigs(
             update.remoteChainSelectors,
@@ -226,6 +269,11 @@ contract CCIPAdmin {
         });
     }
 
+    /**
+     * @notice Applies the remote chain updates
+     * @dev Bulk function that allows multiple updates at once
+     * @param update RemoteChainUpdate information
+     */
     function _applyRemoteChainUpdate(RemoteChainUpdate memory update) private {
         TOKEN_POOL.applyChainUpdates(update.chainsToRemove, update.chainsToAdd);
         remoteChainDeadline = 0;
@@ -235,6 +283,10 @@ contract CCIPAdmin {
         });
     }
 
+    /**
+     * @notice Applies the admin transfer
+     * @dev Transfers admin on the TokenPool and ownership on the ZCHF token on the TokenAdminRegistry
+     */
     function _applyAdminTransfer() private {
         address newAdmin = proposedAdmin;
         TOKEN_ADMIN_REGISTRY.transferAdminRole(ZCHF, newAdmin);
@@ -243,12 +295,21 @@ contract CCIPAdmin {
         emit AdminTransfered({newAdmin: newAdmin});
     }
 
+    /**
+     * @notice Checks if a proposal is appliable
+     */
     function _checkAppliable(uint64 _deadline) private view {
         if (_deadline > block.timestamp || _deadline == 0) {
             revert NotAppliable();
         }
     }
 
+    /**
+     * @notice Checks if a given hash matches the expected hash
+     * @dev Used by applyProposal to verify the input data
+     * @param _expected Hash to match against
+     * @param _given Given hash to match the expected hash
+     */
     function _checkHash(bytes32 _expected, bytes32 _given) private pure {
         if (_expected != _given) {
             revert InvalidUpdate(_expected, _given);
