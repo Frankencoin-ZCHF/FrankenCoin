@@ -4,13 +4,14 @@ pragma solidity ^0.8.0;
 
 import {IGovernance} from "../equity/IGovernance.sol";
 import {ITokenPool} from "./ITokenPool.sol";
+import {IRegistryModuleOwner} from "./IRegistryModuleOwner.sol";
 import {ITokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol";
 import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
 
 contract CCIPAdmin {
     uint256 public immutable VETO_PERIOD;
     IGovernance public immutable GOVERNANCE;
-    ITokenPool public immutable TOKEN_POOL;
+    ITokenPool public tokenPool;
     ITokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;
     address public immutable ZCHF;
 
@@ -88,20 +89,37 @@ contract CCIPAdmin {
 
     constructor(
         IGovernance _governance,
-        ITokenPool _tokenPool,
         ITokenAdminRegistry _tokenAdminRegistry,
         uint64 _vetoPeriod,
-        address _zchf
+        address _zchf,
+        IRegistryModuleOwner _registryOwner
     ) {
         GOVERNANCE = _governance;
-        TOKEN_POOL = _tokenPool;
         VETO_PERIOD = _vetoPeriod;
         TOKEN_ADMIN_REGISTRY = _tokenAdminRegistry;
         ZCHF = _zchf;
+        if (address(_registryOwner) != address(0)) {
+            _registryOwner.registerAdminViaGetCCIPAdmin(_zchf);
+        }
+    }
 
-        _tokenAdminRegistry.acceptAdminRole(_zchf);
-        _tokenAdminRegistry.setPool(_zchf, address(_tokenPool));
-        _tokenPool.acceptOwnership();
+    function setTokenPool(ITokenPool _tokenPool) external {
+        require(address(tokenPool) == address(0));
+        tokenPool = _tokenPool;
+        TOKEN_ADMIN_REGISTRY.setPool(ZCHF, address(_tokenPool));
+    }
+
+    function acceptAdmin() public {
+        TOKEN_ADMIN_REGISTRY.acceptAdminRole(ZCHF);
+    }
+
+    function acceptOwnership() public {
+        tokenPool.acceptOwnership();
+    }
+
+    function acceptCCIPAll() external {
+        acceptAdmin();
+        acceptOwnership();
     }
 
     /**
@@ -242,9 +260,9 @@ contract CCIPAdmin {
      */
     function _applyRemotePoolUpdate(RemotePoolUpdate memory update) private {
         if (update.add) {
-            TOKEN_POOL.addRemotePool(update.remoteChainSelector, update.remotePoolAddress);
+            tokenPool.addRemotePool(update.remoteChainSelector, update.remotePoolAddress);
         } else {
-            TOKEN_POOL.removeRemotePool(update.remoteChainSelector, update.remotePoolAddress);
+            tokenPool.removeRemotePool(update.remoteChainSelector, update.remotePoolAddress);
         }
         remotePoolUpdateDeadline = 0;
         emit RemotePoolUpdateApplied(update.add, update.remoteChainSelector, update.remotePoolAddress);
@@ -256,7 +274,7 @@ contract CCIPAdmin {
      * @param update ChainRateLimiterUpdate information
      */
     function _applyChainRateLimiterUpdate(ChainRateLimiterUpdate memory update) private {
-        TOKEN_POOL.setChainRateLimiterConfigs(
+        tokenPool.setChainRateLimiterConfigs(
             update.remoteChainSelectors,
             update.outboundConfigs,
             update.inboundConfigs
@@ -275,7 +293,7 @@ contract CCIPAdmin {
      * @param update RemoteChainUpdate information
      */
     function _applyRemoteChainUpdate(RemoteChainUpdate memory update) private {
-        TOKEN_POOL.applyChainUpdates(update.chainsToRemove, update.chainsToAdd);
+        tokenPool.applyChainUpdates(update.chainsToRemove, update.chainsToAdd);
         remoteChainDeadline = 0;
         emit RemoteChainUpdateApplied({
             remoteChainSelectorsRemoved: update.chainsToRemove,
@@ -290,7 +308,7 @@ contract CCIPAdmin {
     function _applyAdminTransfer() private {
         address newAdmin = proposedAdmin;
         TOKEN_ADMIN_REGISTRY.transferAdminRole(ZCHF, newAdmin);
-        TOKEN_POOL.transferOwnership(newAdmin);
+        tokenPool.transferOwnership(newAdmin);
         adminDeadline = 0;
         emit AdminTransfered({newAdmin: newAdmin});
     }
