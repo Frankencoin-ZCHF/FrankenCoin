@@ -6,7 +6,7 @@ import { expect } from "chai";
 import { getLinkTokenContract } from "./helper/ccip";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
-describe.only("Bridged Governance Tests", () => {
+describe("Bridged Governance Tests", () => {
   async function sendSyncMessage(
     bridgedGovernanceSender: BridgedGovernanceSender,
     sender: HardhatEthersSigner,

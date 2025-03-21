@@ -53,7 +53,11 @@ describe("CCIP Admin Tests", () => {
       await ethers.getSigners();
 
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    const zchf = await frankenCoinFactory.deploy(10 * 864000);
+    const zchf = await frankenCoinFactory.deploy(
+      10 * 864000,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
+    );
     await zchf.initialize(minter.address, "");
 
     const tokenPoolFactory = await ethers.getContractFactory("TestTokenPool");
@@ -69,11 +73,12 @@ describe("CCIP Admin Tests", () => {
     const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
     const ccipAdmin = await ccipAdminFactory.deploy(
       await zchf.reserve(),
-      await tokenPool.getAddress(),
       await tokenAdminRegistry.getAddress(),
       3600,
-      await zchf.getAddress()
+      await zchf.getAddress(),
+      ethers.ZeroAddress
     );
+    await (await ccipAdmin.setTokenPool(await tokenPool.getAddress())).wait();
 
     // Setup users
     await zchf.mintWithReserve(
@@ -139,92 +144,6 @@ describe("CCIP Admin Tests", () => {
 
     return decoded;
   }
-
-  describe("constructor", () => {
-    it("should accept the admin role on the registry", async () => {
-      const { ccipAdmin, tokenAdminRegistry, zchf } = await loadFixture(
-        deployFixture
-      );
-      const deployTx = await ccipAdmin
-        .deploymentTransaction()
-        ?.getTransaction();
-      const receipt = await deployTx?.wait();
-
-      const decodedFunctionCalls = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenAdminRegistry.interface
-      );
-
-      let found = false;
-      for (const functionCall of decodedFunctionCalls) {
-        if (functionCall.args[0] == "acceptAdminRole") {
-          const functionArgs = ethers.AbiCoder.defaultAbiCoder().decode(
-            ["address"],
-            functionCall.args[1]
-          );
-          if (functionArgs[0] == (await zchf.getAddress())) {
-            found = true;
-          }
-        }
-      }
-
-      expect(found).to.true;
-    });
-
-    it("should set the pool", async () => {
-      const { ccipAdmin, tokenAdminRegistry, zchf, tokenPool } =
-        await loadFixture(deployFixture);
-      const deployTx = await ccipAdmin
-        .deploymentTransaction()
-        ?.getTransaction();
-      const receipt = await deployTx?.wait();
-
-      const decodedFunctionCalls = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenAdminRegistry.interface
-      );
-
-      let found = false;
-      for (const functionCall of decodedFunctionCalls) {
-        if (functionCall.args[0] == "setPool") {
-          const functionArgs = ethers.AbiCoder.defaultAbiCoder().decode(
-            ["address", "address"],
-            functionCall.args[1]
-          );
-          if (
-            functionArgs[0] == (await zchf.getAddress()) &&
-            functionArgs[1] == (await tokenPool.getAddress())
-          ) {
-            found = true;
-          }
-        }
-      }
-
-      expect(found).to.true;
-    });
-
-    it("should accept the ownership", async () => {
-      const { ccipAdmin, tokenPool } = await loadFixture(deployFixture);
-      const deployTx = await ccipAdmin
-        .deploymentTransaction()
-        ?.getTransaction();
-      const receipt = await deployTx?.wait();
-
-      const decodedFunctionCalls = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-
-      let found = false;
-      for (const functionCall of decodedFunctionCalls) {
-        if (functionCall.args[0] == "acceptOwnership") {
-          found = true;
-        }
-      }
-
-      expect(found).to.true;
-    });
-  });
 
   describe("Propose Remote Pool Update", async () => {
     const updateTypes =

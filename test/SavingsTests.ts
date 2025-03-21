@@ -41,7 +41,7 @@ describe("Savings Tests", () => {
     [owner, alice, bob] = await ethers.getSigners();
 
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400);
+    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress, ethers.ZeroAddress);
 
     const equityAddr = await zchf.reserve();
     equity = await ethers.getContractAt("Equity", equityAddr);
