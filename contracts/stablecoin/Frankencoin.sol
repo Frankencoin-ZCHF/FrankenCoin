@@ -18,6 +18,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      */
     uint256 public constant MIN_FEE = 1000 * (10 ** 18);
     uint256 public immutable MIN_APPLICATION_PERIOD; // for example 10 days
+    address public immutable CCIP_ADMIN;
 
     /**
      * @notice The contract that holds the reserve.
@@ -62,9 +63,14 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(uint256 _minApplicationPeriod) ERC20(18) {
+    constructor(uint256 _minApplicationPeriod, address _ccipAdmin, address _reserve) ERC20(18) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
-        reserve = new Equity(this);
+        CCIP_ADMIN = _ccipAdmin;
+        reserve = address(_reserve) == address(0) ? new Equity(this) : Equity(_reserve);
+    }
+
+    function getCCIPAdmin() external view returns (address) {
+        return CCIP_ADMIN;
     }
 
     function name() external pure override returns (string memory) {
@@ -216,7 +222,7 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * and paid 10 ZCHF into the reserve. Now they want to repay the debt by burning 50 ZCHF. When doing so using this
      * method, 50 ZCHF get burned and on top of that, 10 ZCHF previously assigned to the minter's reserved are
      * reassigned to the pool share holders.
-     * 
+     *
      * CS-ZCHF2-009: the Profit event can overstate profits in case there is no equity capital left.
      */
     function burnWithoutReserve(uint256 amount, uint32 reservePPM) public override minterOnly {
@@ -295,10 +301,15 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * @notice Calculate the amount that is freed when returning amountExcludingReserve given a reserve ratio of reservePPM,
      * taking into account potential losses. Example values in the comments.
      */
-    function calculateFreedAmount(uint256 amountExcludingReserve /* 41 */, uint32 reservePPM /* 20% */) public view returns (uint256) {
+    function calculateFreedAmount(
+        uint256 amountExcludingReserve /* 41 */,
+        uint32 reservePPM /* 20% */
+    ) public view returns (uint256) {
         uint256 currentReserve = balanceOf(address(reserve)); // 18, 10% below what we should have
         uint256 minterReserve_ = minterReserve(); // 20
-        uint256 adjustedReservePPM = currentReserve < minterReserve_ ? (reservePPM * currentReserve) / minterReserve_ : reservePPM; // 18%
+        uint256 adjustedReservePPM = currentReserve < minterReserve_
+            ? (reservePPM * currentReserve) / minterReserve_
+            : reservePPM; // 18%
         return (1000000 * amountExcludingReserve) / (1000000 - adjustedReservePPM); // 41 / (1-18%) = 50
     }
 

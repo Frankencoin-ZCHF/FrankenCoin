@@ -1,0 +1,298 @@
+{
+  "address": "0xe679B93c300b3ba507693d7Af21A8B0d3fd363aF",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract IGovernance",
+          "name": "equity_",
+          "type": "address"
+        },
+        {
+          "internalType": "uint24",
+          "name": "initialRatePPM",
+          "type": "uint24"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "ChangeNotReady",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoPendingChange",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint24",
+          "name": "newRate",
+          "type": "uint24"
+        }
+      ],
+      "name": "RateChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "who",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint24",
+          "name": "nextRate",
+          "type": "uint24"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint40",
+          "name": "nextChange",
+          "type": "uint40"
+        }
+      ],
+      "name": "RateProposed",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "applyChange",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentRatePPM",
+      "outputs": [
+        {
+          "internalType": "uint24",
+          "name": "",
+          "type": "uint24"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentTicks",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "equity",
+      "outputs": [
+        {
+          "internalType": "contract IGovernance",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextChange",
+      "outputs": [
+        {
+          "internalType": "uint40",
+          "name": "",
+          "type": "uint40"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextRatePPM",
+      "outputs": [
+        {
+          "internalType": "uint24",
+          "name": "",
+          "type": "uint24"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint24",
+          "name": "newRatePPM_",
+          "type": "uint24"
+        },
+        {
+          "internalType": "address[]",
+          "name": "helpers",
+          "type": "address[]"
+        }
+      ],
+      "name": "proposeChange",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "ticks",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x72f4090e596cbb7f2d115dcb4d6d6d8d9f5196d7e6f3686c6bd9f110d910d902",
+  "receipt": {
+    "to": null,
+    "from": "0xD92fE8B91aB9eC967eC4208eac1d4EA625cDFF03",
+    "contractAddress": "0xe679B93c300b3ba507693d7Af21A8B0d3fd363aF",
+    "transactionIndex": 83,
+    "gasUsed": "446736",
+    "logsBloom": "0x00000000000000000000800000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000",
+    "blockHash": "0xc904cab0066b5bc501812ad209e89c8b0aed991694f77c661f8b420153f952b3",
+    "transactionHash": "0x72f4090e596cbb7f2d115dcb4d6d6d8d9f5196d7e6f3686c6bd9f110d910d902",
+    "logs": [
+      {
+        "transactionIndex": 83,
+        "blockNumber": 7901732,
+        "transactionHash": "0x72f4090e596cbb7f2d115dcb4d6d6d8d9f5196d7e6f3686c6bd9f110d910d902",
+        "address": "0xe679B93c300b3ba507693d7Af21A8B0d3fd363aF",
+        "topics": [
+          "0xd76dfbd4c35cffe2a846b6488bc677c511aa4337e1551f3a360427ac7a78de7b"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000000000000000fa0",
+        "logIndex": 130,
+        "blockHash": "0xc904cab0066b5bc501812ad209e89c8b0aed991694f77c661f8b420153f952b3"
+      }
+    ],
+    "blockNumber": 7901732,
+    "cumulativeGasUsed": "6237559",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x3e94a9aB9fc662eA83e939c0BC801bE1C131853B",
+    4000
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "76d7a9ad677e8057d18143f24edcad6f",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.24+commit.e11b9ed9\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"contract IGovernance\",\"name\":\"equity_\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"initialRatePPM\",\"type\":\"uint24\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"ChangeNotReady\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NoPendingChange\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint24\",\"name\":\"newRate\",\"type\":\"uint24\"}],\"name\":\"RateChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"who\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint24\",\"name\":\"nextRate\",\"type\":\"uint24\"},{\"indexed\":false,\"internalType\":\"uint40\",\"name\":\"nextChange\",\"type\":\"uint40\"}],\"name\":\"RateProposed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"applyChange\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentRatePPM\",\"outputs\":[{\"internalType\":\"uint24\",\"name\":\"\",\"type\":\"uint24\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentTicks\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"equity\",\"outputs\":[{\"internalType\":\"contract IGovernance\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nextChange\",\"outputs\":[{\"internalType\":\"uint40\",\"name\":\"\",\"type\":\"uint40\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nextRatePPM\",\"outputs\":[{\"internalType\":\"uint24\",\"name\":\"\",\"type\":\"uint24\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint24\",\"name\":\"newRatePPM_\",\"type\":\"uint24\"},{\"internalType\":\"address[]\",\"name\":\"helpers\",\"type\":\"address[]\"}],\"name\":\"proposeChange\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"ticks\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"title\":\"Leadrate (attempt at translating the nicely concise German term 'Leitzins') A module that can provide other modules with the lead interest rate for the system.*\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"applyChange()\":{\"notice\":\"Setting a previously proposed interest rate change into force.\"},\"currentTicks()\":{\"notice\":\"Total accumulated 'interest ticks' since this contract was deployed. One 'tick' is a ppm-second, so one months of 12% annual interest is   120000*30*24*3600 = 311040000000 ticks. Two months of 6% annual interest would result in the same number of ticks. For simplicity, this is linear, so there is no \\\"interest on interest\\\".\"},\"proposeChange(uint24,address[])\":{\"notice\":\"Proposes a new interest rate that will automatically be applied after seven days. To cancel a proposal, just overwrite it with a new one proposing the current rate.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/rate/Leadrate.sol\":\"Leadrate\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/equity/IGovernance.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IGovernance {\\n   function checkQualified(address sender, address[] calldata helpers) external view;\\n}\",\"keccak256\":\"0x7b41d66c02ba4f39b371bcbfd0456c233574b38cbc31031d6a22ad8ecf99a934\",\"license\":\"MIT\"},\"contracts/erc20/IERC20.sol\":{\"content\":\"/**\\n * SPDX-License-Identifier: MIT\\n *\\n * Copyright (c) 2016-2019 zOS Global Limited\\n *\\n */\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP. Does not include\\n * the optional functions; to access them see `ERC20Detailed`.\\n */\\n\\ninterface IERC20 {\\n    function name() external view returns (string memory);\\n\\n    function symbol() external view returns (string memory);\\n\\n    function decimals() external view returns (uint8);\\n\\n    /**\\n     * @dev Returns the amount of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the amount of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves `amount` tokens from the caller's account to `recipient`.\\n     *\\n     * Returns always true. Throws error on failure.\\n     *\\n     * Emits a `Transfer` event.\\n     */\\n    function transfer(address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through `transferFrom`. This is\\n     * zero by default.\\n     *\\n     * This value can change when `approve` or `transferFrom` are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * > Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an `Approval` event.\\n     */\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Moves `amount` tokens from `sender` to `recipient` using the\\n     * allowance mechanism. `amount` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns always true. Throws error on failure.\\n     *\\n     * Emits a `Transfer` event.\\n     */\\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to `approve`. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n}\\n\",\"keccak256\":\"0x6c4823424e1d0c53e2d3e978b81929fcec2583b96ed286abc955b71a5aad5544\",\"license\":\"MIT\"},\"contracts/minting/IPosition.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../erc20/IERC20.sol\\\";\\nimport \\\"../stablecoin/IFrankencoin.sol\\\";\\n\\ninterface IPosition {\\n\\n    function initialize(address parent, uint40 _expiration) external;\\n\\n    function hub() external view returns(address);\\n\\n    function original() external view returns (address);\\n\\n    function collateral() external view returns (IERC20);\\n\\n    function minimumCollateral() external view returns (uint256);\\n\\n    function challengePeriod() external view returns (uint40);\\n\\n    function expiration() external view returns (uint40);\\n\\n    function price() external view returns (uint256);\\n\\n    function deny(address[] calldata helpers, string calldata message) external;\\n\\n    function mint(address target, uint256 amount) external;\\n\\n    function repay(uint256 amount) external returns (uint256);\\n\\n    function adjust(uint256 newMinted, uint256 newCollateral, uint256 newPrice) external;\\n\\n    function minted() external view returns (uint256);\\n\\n    function availableForMinting() external view returns (uint256);\\n\\n    function reserveContribution() external view returns (uint24);\\n\\n    function withdrawCollateral(address target, uint256 amount) external;\\n\\n    function getUsableMint(uint256 totalMint, bool beforeFees) external view returns (uint256);\\n\\n    function getMintAmount(uint256 usableMint) external view returns (uint256);\\n\\n    function challengeData() external view returns (uint256 liqPrice, uint40 phase);\\n\\n    function notifyChallengeStarted(uint256 size) external;\\n\\n    function notifyChallengeAverted(uint256 size) external;\\n\\n    function notifyChallengeSucceeded(address _bidder, uint256 _size) external returns (address, uint256, uint256, uint32);\\n\\n    function forceSale(address buyer, uint256 collAmount, uint256 proceeds) external;\\n\\n}\",\"keccak256\":\"0xf2a93b6681110f43ab7dd6df7ef6115dfe719d7b3d4c17d2ade9b71f5a472298\",\"license\":\"MIT\"},\"contracts/rate/AbstractLeadrate.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../erc20/IERC20.sol\\\";\\nimport \\\"../stablecoin/IFrankencoin.sol\\\";\\nimport \\\"../minting/IPosition.sol\\\";\\n\\n/**\\n * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')\\n *\\n * A module that can provide other modules with the lead interest rate for the system.\\n * \\n * This is an abstract module that is agnostic about the way the lead rate is updated.\\n *\\n **/\\nabstract contract AbstractLeadrate {\\n\\n    // the following five variables are less than 256 bit so they should be stored\\n    // in the same slot, making them cheap to access together, right?\\n\\n    uint24 public currentRatePPM; // 24 bit allows rates of up to 1670% per year\\n\\n    uint40 private anchorTime; // 40 bits for time in seconds spans up to 1000 human generations\\n    uint64 private ticksAnchor; // in bips * seconds, uint88 allows up to\\n\\n    event RateChanged(uint24 newRate);\\n\\n    constructor(uint24 initialRatePPM) {\\n        currentRatePPM = initialRatePPM;\\n        anchorTime = uint40(block.timestamp);\\n        ticksAnchor = 0;\\n        emit RateChanged(initialRatePPM); // emit for init indexing, if wanted\\n    }\\n\\n    /**\\n     * Setting a previously proposed interest rate change into force.\\n     */\\n    function updateRate(uint24 rate) internal {\\n        uint40 timeNow = uint40(block.timestamp);\\n        ticksAnchor += (timeNow - anchorTime) * currentRatePPM;\\n        anchorTime = timeNow;\\n        currentRatePPM = rate;\\n        emit RateChanged(rate);\\n    }\\n\\n    /**\\n     * Total accumulated 'interest ticks' since this contract was deployed.\\n     * One 'tick' is a ppm-second, so one months of 12% annual interest is\\n     *   120000*30*24*3600 = 311040000000 ticks.\\n     * Two months of 6% annual interest would result in the same number of\\n     * ticks. For simplicity, this is linear, so there is no \\\"interest on interest\\\".\\n     */\\n    function currentTicks() public view returns (uint64) {\\n        return ticks(block.timestamp);\\n    }\\n\\n    function ticks(uint256 timestamp) public view returns (uint64) {\\n        return ticksAnchor + (uint64(timestamp) - anchorTime) * currentRatePPM;\\n    }\\n\\n}\\n\",\"keccak256\":\"0xbcd53b60c8b42632afb4abadf73a052d43e39c956bc3be8b39ace14de75b5451\",\"license\":\"MIT\"},\"contracts/rate/Leadrate.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../erc20/IERC20.sol\\\";\\nimport \\\"../stablecoin/IFrankencoin.sol\\\";\\nimport \\\"../minting/IPosition.sol\\\";\\nimport \\\"../equity/IGovernance.sol\\\";\\nimport \\\"./AbstractLeadrate.sol\\\";\\n\\n/**\\n * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')\\n *\\n * A module that can provide other modules with the lead interest rate for the system.\\n *\\n **/\\ncontract Leadrate is AbstractLeadrate {\\n\\n    IGovernance public immutable equity;\\n\\n    // the following five variables are less than 256 bit so they should be stored\\n    // in the same slot, making them cheap to access together, right?\\n\\n    uint24 public nextRatePPM;\\n    uint40 public nextChange;\\n\\n    event RateProposed(address who, uint24 nextRate, uint40 nextChange);\\n    error NoPendingChange();\\n    error ChangeNotReady();\\n\\n    constructor(IGovernance equity_, uint24 initialRatePPM) AbstractLeadrate(initialRatePPM) {\\n        equity = equity_;\\n        nextRatePPM = initialRatePPM;\\n        nextChange = uint40(block.timestamp);\\n    }\\n\\n    /**\\n     * Proposes a new interest rate that will automatically be applied after seven days.\\n     * To cancel a proposal, just overwrite it with a new one proposing the current rate.\\n     */\\n    function proposeChange(uint24 newRatePPM_, address[] calldata helpers) external {\\n        equity.checkQualified(msg.sender, helpers);\\n        nextRatePPM = newRatePPM_;\\n        nextChange = uint40(block.timestamp + 7 days);\\n        emit RateProposed(msg.sender, nextRatePPM, nextChange);\\n    }\\n\\n    /**\\n     * Setting a previously proposed interest rate change into force.\\n     */\\n    function applyChange() external {\\n        if (currentRatePPM == nextRatePPM) revert NoPendingChange();\\n        uint40 timeNow = uint40(block.timestamp);\\n        if (timeNow < nextChange) revert ChangeNotReady();\\n        super.updateRate(nextRatePPM);\\n    }\\n\\n}\\n\",\"keccak256\":\"0x46780498941c32723c0cf5a13ac83887a2318a6e20ca37495ddb723b24b76c08\",\"license\":\"MIT\"},\"contracts/stablecoin/IFrankencoin.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../erc20/IERC20.sol\\\";\\nimport \\\"../equity/IGovernance.sol\\\";\\n\\ninterface IFrankencoin is IERC20 {\\n    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) external;\\n\\n    function registerPosition(address position) external;\\n\\n    function denyMinter(address minter, address[] calldata helpers, string calldata message) external;\\n\\n    function reserve() external view returns (IGovernance);\\n\\n    function minterReserve() external view returns (uint256);\\n\\n    function calculateAssignedReserve(uint256 mintedAmount, uint32 _reservePPM) external view returns (uint256);\\n\\n    function calculateFreedAmount(uint256 amountExcludingReserve, uint32 reservePPM) external view returns (uint256);\\n\\n    function equity() external view returns (uint256);\\n\\n    function isMinter(address minter) external view returns (bool);\\n\\n    function getPositionParent(address position) external view returns (address);\\n\\n    function mint(address target, uint256 amount) external;\\n\\n    function mintWithReserve(address target, uint256 amount, uint32 reservePPM, uint32 feePPM) external;\\n\\n    function burnFrom(address target, uint256 amount) external;\\n\\n    function burnWithoutReserve(uint256 amountIncludingReserve, uint32 reservePPM) external;\\n\\n    function burnFromWithReserve(address payer, uint256 targetTotalBurnAmount, uint32 _reservePPM) external returns (uint256);\\n\\n    function burnWithReserve(uint256 amountExcludingReserve, uint32 reservePPM) external returns (uint256);\\n\\n    function coverLoss(address source, uint256 amount) external;\\n\\n    function collectProfits(address source, uint256 _amount) external;\\n}\\n\",\"keccak256\":\"0x6bf849e534a6dce37af291e9d714abe47d32e4dbcb8f3f285774aaae8da99b5d\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60a060405234801561001057600080fd5b506040516107fb3803806107fb83398101604081905261002f916100f1565b6000805462ffffff83166001600160401b0319909116811763010000004264ffffffffff160217600160401b600160801b03191690915560405190815281907fd76dfbd4c35cffe2a846b6488bc677c511aa4337e1551f3a360427ac7a78de7b9060200160405180910390a1506001600160a01b039190911660805260008054600160801b600160c01b031916600160801b62ffffff9093169290920264ffffffffff60981b191691909117600160981b4264ffffffffff160217905561013f565b6000806040838503121561010457600080fd5b82516001600160a01b038116811461011b57600080fd5b602084015190925062ffffff8116811461013457600080fd5b809150509250929050565b60805161069a6101616000396000818161011901526101a0015261069a6000f3fe608060405234801561001057600080fd5b50600436106100885760003560e01c8063534cb30d1161005b578063534cb30d146100e857806391a0ac6a14610114578063b079f16314610153578063b6f83c171461015b57600080fd5b806306a7b3761461008d5780631de252e4146100b55780632e4b20ab146100ca5780634e65037e146100e0575b600080fd5b60005461009c9062ffffff1681565b60405162ffffff90911681526020015b60405180910390f35b6100c86100c336600461047b565b610189565b005b60005461009c90600160801b900462ffffff1681565b6100c86102ae565b6100fb6100f636600461050b565b610330565b60405167ffffffffffffffff90911681526020016100ac565b61013b7f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020016100ac565b6100fb610386565b60005461017390600160981b900464ffffffffff1681565b60405164ffffffffff90911681526020016100ac565b60405163352e3a8360e01b81526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169063352e3a83906101d990339086908690600401610524565b60006040518083038186803b1580156101f157600080fd5b505afa158015610205573d6000803e3d6000fd5b50506000805462ffffff60801b1916600160801b62ffffff8816021790555061023390504262093a8061059d565b6000805464ffffffffff60981b1916600160981b64ffffffffff9384168102919091179182905560408051338152600160801b840462ffffff16602082015291909204909216908201527e4964f2e48bd8a460fb41883098593956d335f36fdded4ca9cbac9252d72b2f9060600160405180910390a1505050565b60005462ffffff600160801b820481169116036102de5760405163147fde5f60e31b815260040160405180910390fd5b600054429064ffffffffff600160981b90910481169082161015610315576040516301b3782160e21b815260040160405180910390fd5b60005461032d90600160801b900462ffffff16610396565b50565b6000805462ffffff811690610353906301000000900464ffffffffff16846105b0565b61035d91906105d8565b600054610380919068010000000000000000900467ffffffffffffffff16610604565b92915050565b600061039142610330565b905090565b600054429062ffffff8116906103ba906301000000900464ffffffffff1683610625565b6103c49190610643565b64ffffffffff16600060088282829054906101000a900467ffffffffffffffff166103ef9190610604565b82546101009290920a67ffffffffffffffff818102199093169190921691909102179055506000805467ffffffffffffffff1916630100000064ffffffffff84160262ffffff19161762ffffff84169081179091556040519081527fd76dfbd4c35cffe2a846b6488bc677c511aa4337e1551f3a360427ac7a78de7b9060200160405180910390a15050565b60008060006040848603121561049057600080fd5b833562ffffff811681146104a357600080fd5b9250602084013567ffffffffffffffff808211156104c057600080fd5b818601915086601f8301126104d457600080fd5b8135818111156104e357600080fd5b8760208260051b85010111156104f857600080fd5b6020830194508093505050509250925092565b60006020828403121561051d57600080fd5b5035919050565b6001600160a01b0384811682526040602080840182905290830184905260009185916060850184805b88811015610578578535858116808214610565578384fd5b845250948301949183019160010161054d565b50909998505050505050505050565b634e487b7160e01b600052601160045260246000fd5b8082018082111561038057610380610587565b67ffffffffffffffff8281168282160390808211156105d1576105d1610587565b5092915050565b67ffffffffffffffff8181168382160280821691908281146105fc576105fc610587565b505092915050565b67ffffffffffffffff8181168382160190808211156105d1576105d1610587565b64ffffffffff8281168282160390808211156105d1576105d1610587565b64ffffffffff8181168382160280821691908281146105fc576105fc61058756fea2646970667358221220cf4873969d0883a7e1a6c7b91a97f6b8c5aab96f443f9a6f6782e255587d4dd364736f6c63430008180033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100885760003560e01c8063534cb30d1161005b578063534cb30d146100e857806391a0ac6a14610114578063b079f16314610153578063b6f83c171461015b57600080fd5b806306a7b3761461008d5780631de252e4146100b55780632e4b20ab146100ca5780634e65037e146100e0575b600080fd5b60005461009c9062ffffff1681565b60405162ffffff90911681526020015b60405180910390f35b6100c86100c336600461047b565b610189565b005b60005461009c90600160801b900462ffffff1681565b6100c86102ae565b6100fb6100f636600461050b565b610330565b60405167ffffffffffffffff90911681526020016100ac565b61013b7f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020016100ac565b6100fb610386565b60005461017390600160981b900464ffffffffff1681565b60405164ffffffffff90911681526020016100ac565b60405163352e3a8360e01b81526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169063352e3a83906101d990339086908690600401610524565b60006040518083038186803b1580156101f157600080fd5b505afa158015610205573d6000803e3d6000fd5b50506000805462ffffff60801b1916600160801b62ffffff8816021790555061023390504262093a8061059d565b6000805464ffffffffff60981b1916600160981b64ffffffffff9384168102919091179182905560408051338152600160801b840462ffffff16602082015291909204909216908201527e4964f2e48bd8a460fb41883098593956d335f36fdded4ca9cbac9252d72b2f9060600160405180910390a1505050565b60005462ffffff600160801b820481169116036102de5760405163147fde5f60e31b815260040160405180910390fd5b600054429064ffffffffff600160981b90910481169082161015610315576040516301b3782160e21b815260040160405180910390fd5b60005461032d90600160801b900462ffffff16610396565b50565b6000805462ffffff811690610353906301000000900464ffffffffff16846105b0565b61035d91906105d8565b600054610380919068010000000000000000900467ffffffffffffffff16610604565b92915050565b600061039142610330565b905090565b600054429062ffffff8116906103ba906301000000900464ffffffffff1683610625565b6103c49190610643565b64ffffffffff16600060088282829054906101000a900467ffffffffffffffff166103ef9190610604565b82546101009290920a67ffffffffffffffff818102199093169190921691909102179055506000805467ffffffffffffffff1916630100000064ffffffffff84160262ffffff19161762ffffff84169081179091556040519081527fd76dfbd4c35cffe2a846b6488bc677c511aa4337e1551f3a360427ac7a78de7b9060200160405180910390a15050565b60008060006040848603121561049057600080fd5b833562ffffff811681146104a357600080fd5b9250602084013567ffffffffffffffff808211156104c057600080fd5b818601915086601f8301126104d457600080fd5b8135818111156104e357600080fd5b8760208260051b85010111156104f857600080fd5b6020830194508093505050509250925092565b60006020828403121561051d57600080fd5b5035919050565b6001600160a01b0384811682526040602080840182905290830184905260009185916060850184805b88811015610578578535858116808214610565578384fd5b845250948301949183019160010161054d565b50909998505050505050505050565b634e487b7160e01b600052601160045260246000fd5b8082018082111561038057610380610587565b67ffffffffffffffff8281168282160390808211156105d1576105d1610587565b5092915050565b67ffffffffffffffff8181168382160280821691908281146105fc576105fc610587565b505092915050565b67ffffffffffffffff8181168382160190808211156105d1576105d1610587565b64ffffffffff8281168282160390808211156105d1576105d1610587565b64ffffffffff8181168382160280821691908281146105fc576105fc61058756fea2646970667358221220cf4873969d0883a7e1a6c7b91a97f6b8c5aab96f443f9a6f6782e255587d4dd364736f6c63430008180033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "title": "Leadrate (attempt at translating the nicely concise German term 'Leitzins') A module that can provide other modules with the lead interest rate for the system.*",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "applyChange()": {
+        "notice": "Setting a previously proposed interest rate change into force."
+      },
+      "currentTicks()": {
+        "notice": "Total accumulated 'interest ticks' since this contract was deployed. One 'tick' is a ppm-second, so one months of 12% annual interest is   120000*30*24*3600 = 311040000000 ticks. Two months of 6% annual interest would result in the same number of ticks. For simplicity, this is linear, so there is no \"interest on interest\"."
+      },
+      "proposeChange(uint24,address[])": {
+        "notice": "Proposes a new interest rate that will automatically be applied after seven days. To cancel a proposal, just overwrite it with a new one proposing the current rate."
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 16572,
+        "contract": "contracts/rate/Leadrate.sol:Leadrate",
+        "label": "currentRatePPM",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_uint24"
+      },
+      {
+        "astId": 16574,
+        "contract": "contracts/rate/Leadrate.sol:Leadrate",
+        "label": "anchorTime",
+        "offset": 3,
+        "slot": "0",
+        "type": "t_uint40"
+      },
+      {
+        "astId": 16576,
+        "contract": "contracts/rate/Leadrate.sol:Leadrate",
+        "label": "ticksAnchor",
+        "offset": 8,
+        "slot": "0",
+        "type": "t_uint64"
+      },
+      {
+        "astId": 16753,
+        "contract": "contracts/rate/Leadrate.sol:Leadrate",
+        "label": "nextRatePPM",
+        "offset": 16,
+        "slot": "0",
+        "type": "t_uint24"
+      },
+      {
+        "astId": 16755,
+        "contract": "contracts/rate/Leadrate.sol:Leadrate",
+        "label": "nextChange",
+        "offset": 19,
+        "slot": "0",
+        "type": "t_uint40"
+      }
+    ],
+    "types": {
+      "t_uint24": {
+        "encoding": "inplace",
+        "label": "uint24",
+        "numberOfBytes": "3"
+      },
+      "t_uint40": {
+        "encoding": "inplace",
+        "label": "uint40",
+        "numberOfBytes": "5"
+      },
+      "t_uint64": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    }
+  }
+}

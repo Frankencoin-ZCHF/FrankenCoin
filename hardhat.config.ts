@@ -22,7 +22,7 @@ if (alchemy?.length == 0 || !alchemy)
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.24",
     settings: {
       optimizer: {
         enabled: true,
@@ -67,6 +67,11 @@ const config: HardhatUserConfig = {
       gasPrice: "auto",
       accounts: [w0.privateKey],
       timeout: 50_000,
+      // @ts-expect-error Urls is valid but not in the typings...
+      urls: {
+        apiURL: "https://api-amoy.polygonscan.com/api",
+        browserURL: "https://amoy.polygonscan.com"
+      },
     },
   },
   namedAccounts: {
@@ -75,7 +80,10 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API,
+    apiKey: {
+      sepolia:process.env.ETHERSCAN_API || '',
+      polygonAmoy: process.env.POLYGONSCAN_API || '',
+    }
   },
   sourcify: {
     enabled: true,

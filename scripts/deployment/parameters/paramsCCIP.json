@@ -1,0 +1,37 @@
+[
+  {
+    "chainName": "Sepolia",
+    "chainId": 11155111,
+    "router": "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
+    "vetoPeriod": "30",
+    "tokenAdminRegistry": "0x95F29FEE11c5C55d26cCcf1DB6772DE953B37B82",
+    "rmnProxy": "0xba3f6251de62dED61Ff98590cB2fDf6871FbB991",
+    "registryModuleOwner": "0x62e731218d0D47305aba2BE3751E7EE9E5520790",
+    "tokenPool": "0xd2bD88BBe0f63e4edFD1EcbD810446Ffd528c895",
+    "zchf": "0x93f3ACD0e1a63b87EEb8Ab9dA65178131fAd6b50",
+    "chainSelector": "16015286601757825753"
+  },
+  {
+    "chainName": "Amoy",
+    "chainId": 80002,
+    "router": "0x9C32fCB86BF0f4a1A8921a9Fe46de3198bb884B2",
+    "vetoPeriod": "30",
+    "tokenAdminRegistry": "0x1e73f6842d7afDD78957ac143d1f315404Dd9e5B",
+    "chainSelector": "16281711391670634445",
+    "mainnetChainSelector": "16015286601757825753",
+    "mainnetGovernanceSender": "0xa6B5a8dBeE81ADFC1144aD90332B36AC5Fcb8035",
+    "rmnProxy": "0x7c1e545A40750Ee8761282382D51E017BAC68CBB",
+    "registryModuleOwner": "0x84ad5890A63957C960e0F19b0448A038a574936B",
+    "zchf": "0xE325c1dA55695c2a6347b6d4e8243eaBdBCddDD7",
+    "tokenPool": "0x5a803AeAAEa6304eAdae05Db19aeB18fbF15C5D5",
+    "link": "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904"
+  },
+  {
+    "chainName": "Local",
+    "chainId": 31337,
+    "router": "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
+    "tokenPool": "",
+    "vetoPeriod": "30",
+    "tokenAdminRegistry": "0x95F29FEE11c5C55d26cCcf1DB6772DE953B37B82"
+  }
+]

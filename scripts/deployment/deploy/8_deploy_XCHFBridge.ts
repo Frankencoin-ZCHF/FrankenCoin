@@ -26,7 +26,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   } = hre;
   let xchfAddress;
   let applicationMsg;
-  if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
+  if (["hardhat", "localhost", "${hre.network.name}"].includes(hre.network.name)) {
     console.log("Setting Mock-XCHF-Token Bridge");
     try {
       const xchfDeployment = await get("TestToken");
@@ -63,7 +63,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let bridgeAddr: string = bridgeDeployment.address;
 
   console.log(
-    `Verify StablecoinBridge:\nnpx hardhat verify --network sepolia ${bridgeAddr} ${xchfAddress} ${ZCHFDeployment.address} ${dLimit}\n`
+    `Verify StablecoinBridge:\nnpx hardhat verify --network ${hre.network.name} ${bridgeAddr} ${xchfAddress} ${ZCHFDeployment.address} ${dLimit}\n`
   );
 
   let isAlreadyMinter = await zchfContract.isMinter(bridgeAddr);
@@ -92,13 +92,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
   }
 
-  if (["hardhat", "localhost", "sepolia"].includes(hre.network.name)) {
+/*   if (["hardhat", "localhost", "${hre.network.name}"].includes(hre.network.name)) {
     let amount = floatToDec18(20_000);
     const mockXCHF = await ethers.getContractAt("TestToken", xchfAddress);
     await mockXCHF.approve(bridgeAddr, amount);
     const bridge = await ethers.getContractAt("StablecoinBridge", bridgeAddr);
     await bridge.mint(amount);
-  }
+  } */
 };
 export default deploy;
 deploy.tags = ["main", "XCHFBridge"];

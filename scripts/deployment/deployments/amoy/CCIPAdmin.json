@@ -1,0 +1,1199 @@
+{
+  "address": "0x6BE007d55F7EFC8fd0eD2Dc79999D7E95D5F5441",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract IGovernance",
+          "name": "_governance",
+          "type": "address"
+        },
+        {
+          "internalType": "contract ITokenAdminRegistry",
+          "name": "_tokenAdminRegistry",
+          "type": "address"
+        },
+        {
+          "internalType": "uint64",
+          "name": "_vetoPeriod",
+          "type": "uint64"
+        },
+        {
+          "internalType": "address",
+          "name": "_zchf",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IRegistryModuleOwner",
+          "name": "_registryOwner",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "expected",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "given",
+          "type": "bytes32"
+        }
+      ],
+      "name": "InvalidUpdate",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAppliable",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "deadline",
+          "type": "uint64"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        }
+      ],
+      "name": "AdminTransferProposed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "AdminTransfered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64[]",
+              "name": "remoteChainSelectors",
+              "type": "uint64[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "isEnabled",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "capacity",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "rate",
+                  "type": "uint128"
+                }
+              ],
+              "internalType": "struct RateLimiter.Config[]",
+              "name": "outboundConfigs",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "isEnabled",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "capacity",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "rate",
+                  "type": "uint128"
+                }
+              ],
+              "internalType": "struct RateLimiter.Config[]",
+              "name": "inboundConfigs",
+              "type": "tuple[]"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct CCIPAdmin.ChainRateLimiterUpdate",
+          "name": "update",
+          "type": "tuple"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "updateHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "vetoDeadline",
+          "type": "uint64"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        }
+      ],
+      "name": "ChainRateLimitUpdateProposed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64[]",
+          "name": "remoteChainSelectors",
+          "type": "uint64[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "isEnabled",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint128",
+              "name": "capacity",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "rate",
+              "type": "uint128"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct RateLimiter.Config[]",
+          "name": "outboundConfigs",
+          "type": "tuple[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "isEnabled",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint128",
+              "name": "capacity",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "rate",
+              "type": "uint128"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct RateLimiter.Config[]",
+          "name": "inboundConfigs",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "ChainRateLimiterUpdateApplied",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "enum CCIPAdmin.ProposalType",
+          "name": "proposalType",
+          "type": "uint8"
+        }
+      ],
+      "name": "ProposalVetoed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64[]",
+          "name": "remoteChainSelectorsRemoved",
+          "type": "uint64[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "remoteChainSelector",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "remotePoolAddresses",
+              "type": "bytes[]"
+            },
+            {
+              "internalType": "bytes",
+              "name": "remoteTokenAddress",
+              "type": "bytes"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "isEnabled",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "capacity",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "rate",
+                  "type": "uint128"
+                }
+              ],
+              "internalType": "struct RateLimiter.Config",
+              "name": "outboundRateLimiterConfig",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "isEnabled",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "capacity",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "rate",
+                  "type": "uint128"
+                }
+              ],
+              "internalType": "struct RateLimiter.Config",
+              "name": "inboundRateLimiterConfig",
+              "type": "tuple"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ITokenPool.ChainUpdate[]",
+          "name": "remoteChainsAdded",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "RemoteChainUpdateApplied",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64[]",
+              "name": "chainsToRemove",
+              "type": "uint64[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint64",
+                  "name": "remoteChainSelector",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "bytes[]",
+                  "name": "remotePoolAddresses",
+                  "type": "bytes[]"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "remoteTokenAddress",
+                  "type": "bytes"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "bool",
+                      "name": "isEnabled",
+                      "type": "bool"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "capacity",
+                      "type": "uint128"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "rate",
+                      "type": "uint128"
+                    }
+                  ],
+                  "internalType": "struct RateLimiter.Config",
+                  "name": "outboundRateLimiterConfig",
+                  "type": "tuple"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "bool",
+                      "name": "isEnabled",
+                      "type": "bool"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "capacity",
+                      "type": "uint128"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "rate",
+                      "type": "uint128"
+                    }
+                  ],
+                  "internalType": "struct RateLimiter.Config",
+                  "name": "inboundRateLimiterConfig",
+                  "type": "tuple"
+                }
+              ],
+              "internalType": "struct ITokenPool.ChainUpdate[]",
+              "name": "chainsToAdd",
+              "type": "tuple[]"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct CCIPAdmin.RemoteChainUpdate",
+          "name": "update",
+          "type": "tuple"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "updateHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "vetoDeadline",
+          "type": "uint64"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        }
+      ],
+      "name": "RemoteChainUpdateProposed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "add",
+          "type": "bool"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "remoteChainSelector",
+          "type": "uint64"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes",
+          "name": "remotePoolAddress",
+          "type": "bytes"
+        }
+      ],
+      "name": "RemotePoolUpdateApplied",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "remoteChainSelector",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes",
+              "name": "remotePoolAddress",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bool",
+              "name": "add",
+              "type": "bool"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct CCIPAdmin.RemotePoolUpdate",
+          "name": "update",
+          "type": "tuple"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "updateHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "vetoDeadline",
+          "type": "uint64"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        }
+      ],
+      "name": "RemotePoolUpdateProposed",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "GOVERNANCE",
+      "outputs": [
+        {
+          "internalType": "contract IGovernance",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "TOKEN_ADMIN_REGISTRY",
+      "outputs": [
+        {
+          "internalType": "contract ITokenAdminRegistry",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "VETO_PERIOD",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "ZCHF",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acceptAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acceptCCIPAll",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acceptOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "adminDeadline",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum CCIPAdmin.ProposalType",
+          "name": "_proposalType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_updateData",
+          "type": "bytes"
+        }
+      ],
+      "name": "applyProposal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "chainRateLimiterDeadline",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_newAdmin",
+          "type": "address"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_helpers",
+          "type": "address[]"
+        }
+      ],
+      "name": "proposeAdminTransfer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64[]",
+              "name": "remoteChainSelectors",
+              "type": "uint64[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "isEnabled",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "capacity",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "rate",
+                  "type": "uint128"
+                }
+              ],
+              "internalType": "struct RateLimiter.Config[]",
+              "name": "outboundConfigs",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "isEnabled",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "capacity",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "rate",
+                  "type": "uint128"
+                }
+              ],
+              "internalType": "struct RateLimiter.Config[]",
+              "name": "inboundConfigs",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct CCIPAdmin.ChainRateLimiterUpdate",
+          "name": "_update",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_helpers",
+          "type": "address[]"
+        }
+      ],
+      "name": "proposeChainRateLimiterUpdate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64[]",
+              "name": "chainsToRemove",
+              "type": "uint64[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint64",
+                  "name": "remoteChainSelector",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "bytes[]",
+                  "name": "remotePoolAddresses",
+                  "type": "bytes[]"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "remoteTokenAddress",
+                  "type": "bytes"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "bool",
+                      "name": "isEnabled",
+                      "type": "bool"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "capacity",
+                      "type": "uint128"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "rate",
+                      "type": "uint128"
+                    }
+                  ],
+                  "internalType": "struct RateLimiter.Config",
+                  "name": "outboundRateLimiterConfig",
+                  "type": "tuple"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "bool",
+                      "name": "isEnabled",
+                      "type": "bool"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "capacity",
+                      "type": "uint128"
+                    },
+                    {
+                      "internalType": "uint128",
+                      "name": "rate",
+                      "type": "uint128"
+                    }
+                  ],
+                  "internalType": "struct RateLimiter.Config",
+                  "name": "inboundRateLimiterConfig",
+                  "type": "tuple"
+                }
+              ],
+              "internalType": "struct ITokenPool.ChainUpdate[]",
+              "name": "chainsToAdd",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct CCIPAdmin.RemoteChainUpdate",
+          "name": "_update",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_helpers",
+          "type": "address[]"
+        }
+      ],
+      "name": "proposeRemoteChainUpdate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "remoteChainSelector",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes",
+              "name": "remotePoolAddress",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bool",
+              "name": "add",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct CCIPAdmin.RemotePoolUpdate",
+          "name": "_update",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_helpers",
+          "type": "address[]"
+        }
+      ],
+      "name": "proposeRemotePoolUpdate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proposedAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proposedChainRateLimiterUpdate",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proposedRemoteChainUpdate",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proposedRemotePoolUpdate",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "remoteChainDeadline",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "remotePoolUpdateDeadline",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract ITokenPool",
+          "name": "_tokenPool",
+          "type": "address"
+        }
+      ],
+      "name": "setTokenPool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tokenPool",
+      "outputs": [
+        {
+          "internalType": "contract ITokenPool",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum CCIPAdmin.ProposalType",
+          "name": "_proposalType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_helpers",
+          "type": "address[]"
+        }
+      ],
+      "name": "vetoProposal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x91de7d89c6ee0aa66e0ea574b7c868f1d4b57076f587028d50a08cd6c6d87add",
+  "receipt": {
+    "to": null,
+    "from": "0xD92fE8B91aB9eC967eC4208eac1d4EA625cDFF03",
+    "contractAddress": "0x6BE007d55F7EFC8fd0eD2Dc79999D7E95D5F5441",
+    "transactionIndex": 1,
+    "gasUsed": "2093811",
+    "logsBloom": "0x00000000000000000000000000000000000000000000040000000000000000000000000020000000000001000000104000008000000000000000010400000020000000000840800000000040000000800000000000000000000100080000000000000000020000000400000000000800000000000000000080000000000000020000000000000000000000000040000000000008000004000000000000000000200000000000000000000000000000100000000000000000000000000000004000000000400000000001000000000000000000000000000000100000000120000000000000000000000000000000000000000000020000001800000000100000",
+    "blockHash": "0x0d457873a44a081197b41b74776f4a6d1d03ee088b9cbec82d29ddb8bf4b6f1b",
+    "transactionHash": "0x91de7d89c6ee0aa66e0ea574b7c868f1d4b57076f587028d50a08cd6c6d87add",
+    "logs": [
+      {
+        "transactionIndex": 1,
+        "blockNumber": 19467012,
+        "transactionHash": "0x91de7d89c6ee0aa66e0ea574b7c868f1d4b57076f587028d50a08cd6c6d87add",
+        "address": "0x1e73f6842d7afDD78957ac143d1f315404Dd9e5B",
+        "topics": [
+          "0xc54c3051ff16e63bb9203214432372aca006c589e3653619b577a3265675b716",
+          "0x000000000000000000000000e325c1da55695c2a6347b6d4e8243eabdbcdddd7",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000006be007d55f7efc8fd0ed2dc79999d7e95d5f5441"
+        ],
+        "data": "0x",
+        "logIndex": 3,
+        "blockHash": "0x0d457873a44a081197b41b74776f4a6d1d03ee088b9cbec82d29ddb8bf4b6f1b"
+      },
+      {
+        "transactionIndex": 1,
+        "blockNumber": 19467012,
+        "transactionHash": "0x91de7d89c6ee0aa66e0ea574b7c868f1d4b57076f587028d50a08cd6c6d87add",
+        "address": "0x84ad5890A63957C960e0F19b0448A038a574936B",
+        "topics": [
+          "0x09590fb70af4b833346363965e043a9339e8c7d378b8a2b903c75c277faec4f9",
+          "0x000000000000000000000000e325c1da55695c2a6347b6d4e8243eabdbcdddd7",
+          "0x0000000000000000000000006be007d55f7efc8fd0ed2dc79999d7e95d5f5441"
+        ],
+        "data": "0x",
+        "logIndex": 4,
+        "blockHash": "0x0d457873a44a081197b41b74776f4a6d1d03ee088b9cbec82d29ddb8bf4b6f1b"
+      },
+      {
+        "transactionIndex": 1,
+        "blockNumber": 19467012,
+        "transactionHash": "0x91de7d89c6ee0aa66e0ea574b7c868f1d4b57076f587028d50a08cd6c6d87add",
+        "address": "0x0000000000000000000000000000000000001010",
+        "topics": [
+          "0x4dfe1bbbcf077ddc3e01291eea2d5c70c2b422b415d95645b9adcfd678cb1d63",
+          "0x0000000000000000000000000000000000000000000000000000000000001010",
+          "0x000000000000000000000000d92fe8b91ab9ec967ec4208eac1d4ea625cdff03",
+          "0x0000000000000000000000006dc2dd54f24979ec26212794c71afefed722280c"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000116f3a01b1155000000000000000000000000000000000000000000000000000eba2d41efc791aa00000000000000000000000000000000000000000000069c6e49597208d8413b0000000000000000000000000000000000000000000000000da339a1d4b63caa00000000000000000000000000000000000000000000069c6f604d1223e9963b",
+        "logIndex": 5,
+        "blockHash": "0x0d457873a44a081197b41b74776f4a6d1d03ee088b9cbec82d29ddb8bf4b6f1b"
+      }
+    ],
+    "blockNumber": 19467012,
+    "cumulativeGasUsed": "2241249",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x19F5699A81F1Cc4f4767D6beE463073B08786733",
+    "0x1e73f6842d7afDD78957ac143d1f315404Dd9e5B",
+    "30",
+    "0xE325c1dA55695c2a6347b6d4e8243eaBdBCddDD7",
+    "0x84ad5890A63957C960e0F19b0448A038a574936B"
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "76d7a9ad677e8057d18143f24edcad6f",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.24+commit.e11b9ed9\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"contract IGovernance\",\"name\":\"_governance\",\"type\":\"address\"},{\"internalType\":\"contract ITokenAdminRegistry\",\"name\":\"_tokenAdminRegistry\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"_vetoPeriod\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"_zchf\",\"type\":\"address\"},{\"internalType\":\"contract IRegistryModuleOwner\",\"name\":\"_registryOwner\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"expected\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"given\",\"type\":\"bytes32\"}],\"name\":\"InvalidUpdate\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotAppliable\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"proposer\",\"type\":\"address\"}],\"name\":\"AdminTransferProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminTransfered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"uint64[]\",\"name\":\"remoteChainSelectors\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config[]\",\"name\":\"outboundConfigs\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config[]\",\"name\":\"inboundConfigs\",\"type\":\"tuple[]\"}],\"indexed\":false,\"internalType\":\"struct CCIPAdmin.ChainRateLimiterUpdate\",\"name\":\"update\",\"type\":\"tuple\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"updateHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"vetoDeadline\",\"type\":\"uint64\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"proposer\",\"type\":\"address\"}],\"name\":\"ChainRateLimitUpdateProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint64[]\",\"name\":\"remoteChainSelectors\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"indexed\":false,\"internalType\":\"struct RateLimiter.Config[]\",\"name\":\"outboundConfigs\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"indexed\":false,\"internalType\":\"struct RateLimiter.Config[]\",\"name\":\"inboundConfigs\",\"type\":\"tuple[]\"}],\"name\":\"ChainRateLimiterUpdateApplied\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"enum CCIPAdmin.ProposalType\",\"name\":\"proposalType\",\"type\":\"uint8\"}],\"name\":\"ProposalVetoed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint64[]\",\"name\":\"remoteChainSelectorsRemoved\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"remoteChainSelector\",\"type\":\"uint64\"},{\"internalType\":\"bytes[]\",\"name\":\"remotePoolAddresses\",\"type\":\"bytes[]\"},{\"internalType\":\"bytes\",\"name\":\"remoteTokenAddress\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config\",\"name\":\"outboundRateLimiterConfig\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config\",\"name\":\"inboundRateLimiterConfig\",\"type\":\"tuple\"}],\"indexed\":false,\"internalType\":\"struct ITokenPool.ChainUpdate[]\",\"name\":\"remoteChainsAdded\",\"type\":\"tuple[]\"}],\"name\":\"RemoteChainUpdateApplied\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"uint64[]\",\"name\":\"chainsToRemove\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"remoteChainSelector\",\"type\":\"uint64\"},{\"internalType\":\"bytes[]\",\"name\":\"remotePoolAddresses\",\"type\":\"bytes[]\"},{\"internalType\":\"bytes\",\"name\":\"remoteTokenAddress\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config\",\"name\":\"outboundRateLimiterConfig\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config\",\"name\":\"inboundRateLimiterConfig\",\"type\":\"tuple\"}],\"internalType\":\"struct ITokenPool.ChainUpdate[]\",\"name\":\"chainsToAdd\",\"type\":\"tuple[]\"}],\"indexed\":false,\"internalType\":\"struct CCIPAdmin.RemoteChainUpdate\",\"name\":\"update\",\"type\":\"tuple\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"updateHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"vetoDeadline\",\"type\":\"uint64\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"proposer\",\"type\":\"address\"}],\"name\":\"RemoteChainUpdateProposed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"add\",\"type\":\"bool\"},{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"remoteChainSelector\",\"type\":\"uint64\"},{\"indexed\":true,\"internalType\":\"bytes\",\"name\":\"remotePoolAddress\",\"type\":\"bytes\"}],\"name\":\"RemotePoolUpdateApplied\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"remoteChainSelector\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"remotePoolAddress\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"add\",\"type\":\"bool\"}],\"indexed\":false,\"internalType\":\"struct CCIPAdmin.RemotePoolUpdate\",\"name\":\"update\",\"type\":\"tuple\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"updateHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"vetoDeadline\",\"type\":\"uint64\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"proposer\",\"type\":\"address\"}],\"name\":\"RemotePoolUpdateProposed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"GOVERNANCE\",\"outputs\":[{\"internalType\":\"contract IGovernance\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"TOKEN_ADMIN_REGISTRY\",\"outputs\":[{\"internalType\":\"contract ITokenAdminRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"VETO_PERIOD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ZCHF\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"acceptAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"acceptCCIPAll\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"adminDeadline\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enum CCIPAdmin.ProposalType\",\"name\":\"_proposalType\",\"type\":\"uint8\"},{\"internalType\":\"bytes\",\"name\":\"_updateData\",\"type\":\"bytes\"}],\"name\":\"applyProposal\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"chainRateLimiterDeadline\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newAdmin\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"_helpers\",\"type\":\"address[]\"}],\"name\":\"proposeAdminTransfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64[]\",\"name\":\"remoteChainSelectors\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config[]\",\"name\":\"outboundConfigs\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config[]\",\"name\":\"inboundConfigs\",\"type\":\"tuple[]\"}],\"internalType\":\"struct CCIPAdmin.ChainRateLimiterUpdate\",\"name\":\"_update\",\"type\":\"tuple\"},{\"internalType\":\"address[]\",\"name\":\"_helpers\",\"type\":\"address[]\"}],\"name\":\"proposeChainRateLimiterUpdate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64[]\",\"name\":\"chainsToRemove\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"remoteChainSelector\",\"type\":\"uint64\"},{\"internalType\":\"bytes[]\",\"name\":\"remotePoolAddresses\",\"type\":\"bytes[]\"},{\"internalType\":\"bytes\",\"name\":\"remoteTokenAddress\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config\",\"name\":\"outboundRateLimiterConfig\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"isEnabled\",\"type\":\"bool\"},{\"internalType\":\"uint128\",\"name\":\"capacity\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"rate\",\"type\":\"uint128\"}],\"internalType\":\"struct RateLimiter.Config\",\"name\":\"inboundRateLimiterConfig\",\"type\":\"tuple\"}],\"internalType\":\"struct ITokenPool.ChainUpdate[]\",\"name\":\"chainsToAdd\",\"type\":\"tuple[]\"}],\"internalType\":\"struct CCIPAdmin.RemoteChainUpdate\",\"name\":\"_update\",\"type\":\"tuple\"},{\"internalType\":\"address[]\",\"name\":\"_helpers\",\"type\":\"address[]\"}],\"name\":\"proposeRemoteChainUpdate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"remoteChainSelector\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"remotePoolAddress\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"add\",\"type\":\"bool\"}],\"internalType\":\"struct CCIPAdmin.RemotePoolUpdate\",\"name\":\"_update\",\"type\":\"tuple\"},{\"internalType\":\"address[]\",\"name\":\"_helpers\",\"type\":\"address[]\"}],\"name\":\"proposeRemotePoolUpdate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proposedAdmin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proposedChainRateLimiterUpdate\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proposedRemoteChainUpdate\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proposedRemotePoolUpdate\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"remoteChainDeadline\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"remotePoolUpdateDeadline\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract ITokenPool\",\"name\":\"_tokenPool\",\"type\":\"address\"}],\"name\":\"setTokenPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenPool\",\"outputs\":[{\"internalType\":\"contract ITokenPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enum CCIPAdmin.ProposalType\",\"name\":\"_proposalType\",\"type\":\"uint8\"},{\"internalType\":\"address[]\",\"name\":\"_helpers\",\"type\":\"address[]\"}],\"name\":\"vetoProposal\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"applyProposal(uint8,bytes)\":{\"params\":{\"_proposalType\":\"What type of proposal gets vetoed\",\"_updateData\":\"Abi encoded data required to perform the update.\"}},\"proposeAdminTransfer(address,address[])\":{\"details\":\"Useful to transfer to a new CCIPAdmin contract\",\"params\":{\"_helpers\":\"Helpers needed to be qualified\",\"_newAdmin\":\"The address of the new admin\"}},\"proposeChainRateLimiterUpdate((uint64[],(bool,uint128,uint128)[],(bool,uint128,uint128)[]),address[])\":{\"details\":\"The contract only stores the hash. So the data has to be passed in during apply again\",\"params\":{\"_helpers\":\"Helpers needed to be qualified\",\"_update\":\"The update proposal\"}},\"proposeRemoteChainUpdate((uint64[],(uint64,bytes[],bytes,(bool,uint128,uint128),(bool,uint128,uint128))[]),address[])\":{\"details\":\"The contract only stores the hash. So the data has to be passed in during apply again\",\"params\":{\"_helpers\":\"Helpers needed to be qualified\",\"_update\":\"The update proposal\"}},\"proposeRemotePoolUpdate((uint64,bytes,bool),address[])\":{\"details\":\"The contract only stores the hash. So the data has to be passed in during apply again\",\"params\":{\"_helpers\":\"Helpers needed to be qualified\",\"_update\":\"The update proposal\"}},\"vetoProposal(uint8,address[])\":{\"params\":{\"_helpers\":\"Helpers needed to be qualified\",\"_proposalType\":\"What type of proposal gets vetoed\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"applyProposal(uint8,bytes)\":{\"notice\":\"Apply a proposal. Only works if VETO_PERIOD has been awaited.\"},\"proposeAdminTransfer(address,address[])\":{\"notice\":\"Proposed a new admin for the TokenPool and Admin on the Token registry\"},\"proposeChainRateLimiterUpdate((uint64[],(bool,uint128,uint128)[],(bool,uint128,uint128)[]),address[])\":{\"notice\":\"Proposed a rate limit update\"},\"proposeRemoteChainUpdate((uint64[],(uint64,bytes[],bytes,(bool,uint128,uint128),(bool,uint128,uint128))[]),address[])\":{\"notice\":\"Propose to add or remove remote chains\"},\"proposeRemotePoolUpdate((uint64,bytes,bool),address[])\":{\"notice\":\"Proposed a remote pool update\"},\"vetoProposal(uint8,address[])\":{\"notice\":\"Veto a proposal\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/bridge/CCIPAdmin.sol\":\"CCIPAdmin\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol\":{\"content\":\"// SPDX-License-Identifier: BUSL-1.1\\npragma solidity ^0.8.0;\\n\\ninterface ITokenAdminRegistry {\\n  /// @notice Returns the pool for the given token.\\n  function getPool(\\n    address token\\n  ) external view returns (address);\\n\\n  /// @notice Proposes an administrator for the given token as pending administrator.\\n  /// @param localToken The token to register the administrator for.\\n  /// @param administrator The administrator to register.\\n  function proposeAdministrator(address localToken, address administrator) external;\\n\\n  /// @notice Accepts the administrator role for a token.\\n  /// @param localToken The token to accept the administrator role for.\\n  /// @dev This function can only be called by the pending administrator.\\n  function acceptAdminRole(\\n    address localToken\\n  ) external;\\n\\n  /// @notice Sets the pool for a token. Setting the pool to address(0) effectively delists the token\\n  /// from CCIP. Setting the pool to any other address enables the token on CCIP.\\n  /// @param localToken The token to set the pool for.\\n  /// @param pool The pool to set for the token.\\n  function setPool(address localToken, address pool) external;\\n\\n  /// @notice Transfers the administrator role for a token to a new address with a 2-step process.\\n  /// @param localToken The token to transfer the administrator role for.\\n  /// @param newAdmin The address to transfer the administrator role to. Can be address(0) to cancel\\n  /// a pending transfer.\\n  /// @dev The new admin must call `acceptAdminRole` to accept the role.\\n  function transferAdminRole(address localToken, address newAdmin) external;\\n}\\n\",\"keccak256\":\"0xbaf636acea653acae0832636a675f2a830088b4ff7d0a5193daa6f583ba966ae\",\"license\":\"BUSL-1.1\"},\"@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol\":{\"content\":\"// SPDX-License-Identifier: BUSL-1.1\\npragma solidity ^0.8.4;\\n\\n/// @notice Implements Token Bucket rate limiting.\\n/// @dev uint128 is safe for rate limiter state.\\n/// For USD value rate limiting, it can adequately store USD value in 18 decimals.\\n/// For ERC20 token amount rate limiting, all tokens that will be listed will have at most\\n/// a supply of uint128.max tokens, and it will therefore not overflow the bucket.\\n/// In exceptional scenarios where tokens consumed may be larger than uint128,\\n/// e.g. compromised issuer, an enabled RateLimiter will check and revert.\\nlibrary RateLimiter {\\n  error BucketOverfilled();\\n  error OnlyCallableByAdminOrOwner();\\n  error TokenMaxCapacityExceeded(uint256 capacity, uint256 requested, address tokenAddress);\\n  error TokenRateLimitReached(uint256 minWaitInSeconds, uint256 available, address tokenAddress);\\n  error AggregateValueMaxCapacityExceeded(uint256 capacity, uint256 requested);\\n  error AggregateValueRateLimitReached(uint256 minWaitInSeconds, uint256 available);\\n  error InvalidRateLimitRate(Config rateLimiterConfig);\\n  error DisabledNonZeroRateLimit(Config config);\\n  error RateLimitMustBeDisabled();\\n\\n  event TokensConsumed(uint256 tokens);\\n  event ConfigChanged(Config config);\\n\\n  struct TokenBucket {\\n    uint128 tokens; // \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u256e Current number of tokens that are in the bucket.\\n    uint32 lastUpdated; //   \\u2502 Timestamp in seconds of the last token refill, good for 100+ years.\\n    bool isEnabled; // \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u256f Indication whether the rate limiting is enabled or not\\n    uint128 capacity; // \\u2500\\u2500\\u2500\\u2500\\u256e Maximum number of tokens that can be in the bucket.\\n    uint128 rate; // \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u256f Number of tokens per second that the bucket is refilled.\\n  }\\n\\n  struct Config {\\n    bool isEnabled; // Indication whether the rate limiting should be enabled\\n    uint128 capacity; // \\u2500\\u2500\\u2500\\u2500\\u256e Specifies the capacity of the rate limiter\\n    uint128 rate; //  \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u256f Specifies the rate of the rate limiter\\n  }\\n\\n  /// @notice _consume removes the given tokens from the pool, lowering the\\n  /// rate tokens allowed to be consumed for subsequent calls.\\n  /// @param requestTokens The total tokens to be consumed from the bucket.\\n  /// @param tokenAddress The token to consume capacity for, use 0x0 to indicate aggregate value capacity.\\n  /// @dev Reverts when requestTokens exceeds bucket capacity or available tokens in the bucket\\n  /// @dev emits removal of requestTokens if requestTokens is > 0\\n  function _consume(TokenBucket storage s_bucket, uint256 requestTokens, address tokenAddress) internal {\\n    // If there is no value to remove or rate limiting is turned off, skip this step to reduce gas usage\\n    if (!s_bucket.isEnabled || requestTokens == 0) {\\n      return;\\n    }\\n\\n    uint256 tokens = s_bucket.tokens;\\n    uint256 capacity = s_bucket.capacity;\\n    uint256 timeDiff = block.timestamp - s_bucket.lastUpdated;\\n\\n    if (timeDiff != 0) {\\n      if (tokens > capacity) revert BucketOverfilled();\\n\\n      // Refill tokens when arriving at a new block time\\n      tokens = _calculateRefill(capacity, tokens, timeDiff, s_bucket.rate);\\n\\n      s_bucket.lastUpdated = uint32(block.timestamp);\\n    }\\n\\n    if (capacity < requestTokens) {\\n      // Token address 0 indicates consuming aggregate value rate limit capacity.\\n      if (tokenAddress == address(0)) revert AggregateValueMaxCapacityExceeded(capacity, requestTokens);\\n      revert TokenMaxCapacityExceeded(capacity, requestTokens, tokenAddress);\\n    }\\n    if (tokens < requestTokens) {\\n      uint256 rate = s_bucket.rate;\\n      // Wait required until the bucket is refilled enough to accept this value, round up to next higher second\\n      // Consume is not guaranteed to succeed after wait time passes if there is competing traffic.\\n      // This acts as a lower bound of wait time.\\n      uint256 minWaitInSeconds = ((requestTokens - tokens) + (rate - 1)) / rate;\\n\\n      if (tokenAddress == address(0)) revert AggregateValueRateLimitReached(minWaitInSeconds, tokens);\\n      revert TokenRateLimitReached(minWaitInSeconds, tokens, tokenAddress);\\n    }\\n    tokens -= requestTokens;\\n\\n    // Downcast is safe here, as tokens is not larger than capacity\\n    s_bucket.tokens = uint128(tokens);\\n    emit TokensConsumed(requestTokens);\\n  }\\n\\n  /// @notice Gets the token bucket with its values for the block it was requested at.\\n  /// @return The token bucket.\\n  function _currentTokenBucketState(\\n    TokenBucket memory bucket\\n  ) internal view returns (TokenBucket memory) {\\n    // We update the bucket to reflect the status at the exact time of the\\n    // call. This means we might need to refill a part of the bucket based\\n    // on the time that has passed since the last update.\\n    bucket.tokens =\\n      uint128(_calculateRefill(bucket.capacity, bucket.tokens, block.timestamp - bucket.lastUpdated, bucket.rate));\\n    bucket.lastUpdated = uint32(block.timestamp);\\n    return bucket;\\n  }\\n\\n  /// @notice Sets the rate limited config.\\n  /// @param s_bucket The token bucket\\n  /// @param config The new config\\n  function _setTokenBucketConfig(TokenBucket storage s_bucket, Config memory config) internal {\\n    // First update the bucket to make sure the proper rate is used for all the time\\n    // up until the config change.\\n    uint256 timeDiff = block.timestamp - s_bucket.lastUpdated;\\n    if (timeDiff != 0) {\\n      s_bucket.tokens = uint128(_calculateRefill(s_bucket.capacity, s_bucket.tokens, timeDiff, s_bucket.rate));\\n\\n      s_bucket.lastUpdated = uint32(block.timestamp);\\n    }\\n\\n    s_bucket.tokens = uint128(_min(config.capacity, s_bucket.tokens));\\n    s_bucket.isEnabled = config.isEnabled;\\n    s_bucket.capacity = config.capacity;\\n    s_bucket.rate = config.rate;\\n\\n    emit ConfigChanged(config);\\n  }\\n\\n  /// @notice Validates the token bucket config\\n  function _validateTokenBucketConfig(Config memory config, bool mustBeDisabled) internal pure {\\n    if (config.isEnabled) {\\n      if (config.rate >= config.capacity || config.rate == 0) {\\n        revert InvalidRateLimitRate(config);\\n      }\\n      if (mustBeDisabled) {\\n        revert RateLimitMustBeDisabled();\\n      }\\n    } else {\\n      if (config.rate != 0 || config.capacity != 0) {\\n        revert DisabledNonZeroRateLimit(config);\\n      }\\n    }\\n  }\\n\\n  /// @notice Calculate refilled tokens\\n  /// @param capacity bucket capacity\\n  /// @param tokens current bucket tokens\\n  /// @param timeDiff block time difference since last refill\\n  /// @param rate bucket refill rate\\n  /// @return the value of tokens after refill\\n  function _calculateRefill(\\n    uint256 capacity,\\n    uint256 tokens,\\n    uint256 timeDiff,\\n    uint256 rate\\n  ) private pure returns (uint256) {\\n    return _min(capacity, tokens + timeDiff * rate);\\n  }\\n\\n  /// @notice Return the smallest of two integers\\n  /// @param a first int\\n  /// @param b second int\\n  /// @return smallest\\n  function _min(uint256 a, uint256 b) internal pure returns (uint256) {\\n    return a < b ? a : b;\\n  }\\n}\\n\",\"keccak256\":\"0xd279954d3429598e5b8513c90e42805195bc29780abb8350007285626333809d\",\"license\":\"BUSL-1.1\"},\"contracts/bridge/CCIPAdmin.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\nimport {IGovernance} from \\\"../equity/IGovernance.sol\\\";\\nimport {ITokenPool} from \\\"./ITokenPool.sol\\\";\\nimport {IRegistryModuleOwner} from \\\"./IRegistryModuleOwner.sol\\\";\\nimport {ITokenAdminRegistry} from \\\"@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol\\\";\\nimport {RateLimiter} from \\\"@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol\\\";\\n\\ncontract CCIPAdmin {\\n    uint256 public immutable VETO_PERIOD;\\n    IGovernance public immutable GOVERNANCE;\\n    ITokenPool public tokenPool;\\n    ITokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;\\n    address public immutable ZCHF;\\n\\n    enum ProposalType {\\n        REMOTE_POOL,\\n        CHAIN_RATE_LIMIT,\\n        REMOTE_CHAINS,\\n        ADMIN_TRANSFER\\n    }\\n\\n    struct RemotePoolUpdate {\\n        uint64 remoteChainSelector;\\n        bytes remotePoolAddress;\\n        bool add; // true if adding, false if removing\\n    }\\n\\n    struct ChainRateLimiterUpdate {\\n        uint64[] remoteChainSelectors;\\n        RateLimiter.Config[] outboundConfigs;\\n        RateLimiter.Config[] inboundConfigs;\\n    }\\n\\n    struct RemoteChainUpdate {\\n        uint64[] chainsToRemove;\\n        ITokenPool.ChainUpdate[] chainsToAdd;\\n    }\\n\\n    bytes32 public proposedRemotePoolUpdate;\\n    bytes32 public proposedChainRateLimiterUpdate;\\n    bytes32 public proposedRemoteChainUpdate;\\n    address public proposedAdmin;\\n\\n    uint64 public remotePoolUpdateDeadline;\\n    uint64 public chainRateLimiterDeadline;\\n    uint64 public remoteChainDeadline;\\n    uint64 public adminDeadline;\\n\\n    error NotAppliable();\\n    error InvalidUpdate(bytes32 expected, bytes32 given);\\n\\n    event RemotePoolUpdateProposed(\\n        RemotePoolUpdate update,\\n        bytes32 updateHash,\\n        uint64 indexed vetoDeadline,\\n        address indexed proposer\\n    );\\n    event ChainRateLimitUpdateProposed(\\n        ChainRateLimiterUpdate update,\\n        bytes32 updateHash,\\n        uint64 indexed vetoDeadline,\\n        address indexed proposer\\n    );\\n    event RemoteChainUpdateProposed(\\n        RemoteChainUpdate update,\\n        bytes32 updateHash,\\n        uint64 indexed vetoDeadline,\\n        address indexed proposer\\n    );\\n    event AdminTransferProposed(address newAdmin, uint64 indexed deadline, address indexed proposer);\\n    event ProposalVetoed(ProposalType proposalType);\\n\\n    event RemotePoolUpdateApplied(bool add, uint64 indexed remoteChainSelector, bytes indexed remotePoolAddress);\\n    event ChainRateLimiterUpdateApplied(\\n        uint64[] remoteChainSelectors,\\n        RateLimiter.Config[] outboundConfigs,\\n        RateLimiter.Config[] inboundConfigs\\n    );\\n    event RemoteChainUpdateApplied(uint64[] remoteChainSelectorsRemoved, ITokenPool.ChainUpdate[] remoteChainsAdded);\\n    event AdminTransfered(address newAdmin);\\n\\n    modifier onlyQualified(address sender, address[] calldata helpers) {\\n        GOVERNANCE.checkQualified(sender, helpers);\\n        _;\\n    }\\n\\n    constructor(\\n        IGovernance _governance,\\n        ITokenAdminRegistry _tokenAdminRegistry,\\n        uint64 _vetoPeriod,\\n        address _zchf,\\n        IRegistryModuleOwner _registryOwner\\n    ) {\\n        GOVERNANCE = _governance;\\n        VETO_PERIOD = _vetoPeriod;\\n        TOKEN_ADMIN_REGISTRY = _tokenAdminRegistry;\\n        ZCHF = _zchf;\\n        if (address(_registryOwner) != address(0)) {\\n            _registryOwner.registerAdminViaGetCCIPAdmin(_zchf);\\n        }\\n    }\\n\\n    function setTokenPool(ITokenPool _tokenPool) external {\\n        require(address(tokenPool) == address(0));\\n        tokenPool = _tokenPool;\\n        TOKEN_ADMIN_REGISTRY.setPool(ZCHF, address(_tokenPool));\\n    }\\n\\n    function acceptAdmin() public {\\n        TOKEN_ADMIN_REGISTRY.acceptAdminRole(ZCHF);\\n    }\\n\\n    function acceptOwnership() public {\\n        tokenPool.acceptOwnership();\\n    }\\n\\n    function acceptCCIPAll() external {\\n        acceptAdmin();\\n        acceptOwnership();\\n    }\\n\\n    /**\\n     * @notice Proposed a remote pool update\\n     * @dev The contract only stores the hash. So the data has to be passed in during apply again\\n     * @param _update  The update proposal\\n     * @param _helpers Helpers needed to be qualified\\n     */\\n    function proposeRemotePoolUpdate(\\n        RemotePoolUpdate memory _update,\\n        address[] calldata _helpers\\n    ) external onlyQualified(msg.sender, _helpers) {\\n        bytes32 updateHash = keccak256(abi.encode(_update));\\n        proposedRemotePoolUpdate = updateHash;\\n        remotePoolUpdateDeadline = uint64(block.timestamp + VETO_PERIOD);\\n\\n        emit RemotePoolUpdateProposed({\\n            update: _update,\\n            updateHash: updateHash,\\n            vetoDeadline: uint64(block.timestamp + VETO_PERIOD),\\n            proposer: msg.sender\\n        });\\n    }\\n\\n    /**\\n     * @notice Proposed a rate limit update\\n     * @dev The contract only stores the hash. So the data has to be passed in during apply again\\n     * @param _update  The update proposal\\n     * @param _helpers Helpers needed to be qualified\\n     */\\n    function proposeChainRateLimiterUpdate(\\n        ChainRateLimiterUpdate calldata _update,\\n        address[] calldata _helpers\\n    ) external onlyQualified(msg.sender, _helpers) {\\n        bytes32 updateHash = keccak256(abi.encode(_update));\\n        proposedChainRateLimiterUpdate = keccak256(abi.encode(_update));\\n        chainRateLimiterDeadline = uint64(block.timestamp + VETO_PERIOD);\\n\\n        emit ChainRateLimitUpdateProposed({\\n            update: _update,\\n            updateHash: updateHash,\\n            vetoDeadline: uint64(block.timestamp + VETO_PERIOD),\\n            proposer: msg.sender\\n        });\\n    }\\n\\n    /**\\n     * @notice Propose to add or remove remote chains\\n     * @dev The contract only stores the hash. So the data has to be passed in during apply again\\n     * @param _update  The update proposal\\n     * @param _helpers Helpers needed to be qualified\\n     */\\n    function proposeRemoteChainUpdate(\\n        RemoteChainUpdate calldata _update,\\n        address[] calldata _helpers\\n    ) external onlyQualified(msg.sender, _helpers) {\\n        bytes32 updateHash = keccak256(abi.encode(_update));\\n        proposedRemoteChainUpdate = updateHash;\\n        remoteChainDeadline = uint64(block.timestamp + VETO_PERIOD);\\n\\n        emit RemoteChainUpdateProposed({\\n            update: _update,\\n            updateHash: updateHash,\\n            vetoDeadline: uint64(block.timestamp + VETO_PERIOD),\\n            proposer: msg.sender\\n        });\\n    }\\n\\n    /**\\n     * @notice Proposed a new admin for the TokenPool and Admin on the Token registry\\n     * @dev Useful to transfer to a new CCIPAdmin contract\\n     * @param _newAdmin  The address of the new admin\\n     * @param _helpers Helpers needed to be qualified\\n     */\\n    function proposeAdminTransfer(\\n        address _newAdmin,\\n        address[] calldata _helpers\\n    ) external onlyQualified(msg.sender, _helpers) {\\n        proposedAdmin = _newAdmin;\\n        adminDeadline = uint64(block.timestamp + VETO_PERIOD);\\n\\n        emit AdminTransferProposed({\\n            newAdmin: _newAdmin,\\n            deadline: uint64(block.timestamp + VETO_PERIOD),\\n            proposer: msg.sender\\n        });\\n    }\\n\\n    /**\\n     * @notice Veto a proposal\\n     * @param _proposalType What type of proposal gets vetoed\\n     * @param _helpers Helpers needed to be qualified\\n     */\\n    function vetoProposal(\\n        ProposalType _proposalType,\\n        address[] calldata _helpers\\n    ) external onlyQualified(msg.sender, _helpers) {\\n        if (_proposalType == ProposalType.REMOTE_POOL) {\\n            remotePoolUpdateDeadline = 0;\\n        } else if (_proposalType == ProposalType.CHAIN_RATE_LIMIT) {\\n            chainRateLimiterDeadline = 0;\\n        } else if (_proposalType == ProposalType.REMOTE_CHAINS) {\\n            remoteChainDeadline = 0;\\n        } else if (_proposalType == ProposalType.ADMIN_TRANSFER) {\\n            adminDeadline = 0;\\n        }\\n\\n        emit ProposalVetoed(_proposalType);\\n    }\\n\\n    /**\\n     * @notice Apply a proposal. Only works if VETO_PERIOD has been awaited.\\n     * @param _proposalType What type of proposal gets vetoed\\n     * @param _updateData Abi encoded data required to perform the update.\\n     */\\n    function applyProposal(ProposalType _proposalType, bytes calldata _updateData) external {\\n        if (_proposalType == ProposalType.REMOTE_POOL) {\\n            _checkAppliable(remotePoolUpdateDeadline);\\n            _checkHash(proposedRemotePoolUpdate, keccak256(_updateData));\\n            _applyRemotePoolUpdate(abi.decode(_updateData, (RemotePoolUpdate)));\\n        } else if (_proposalType == ProposalType.CHAIN_RATE_LIMIT) {\\n            _checkAppliable(chainRateLimiterDeadline);\\n            _checkHash(proposedChainRateLimiterUpdate, keccak256(_updateData));\\n            _applyChainRateLimiterUpdate(abi.decode(_updateData, (ChainRateLimiterUpdate)));\\n        } else if (_proposalType == ProposalType.REMOTE_CHAINS) {\\n            _checkAppliable(remoteChainDeadline);\\n            _checkHash(proposedRemoteChainUpdate, keccak256(_updateData));\\n            _applyRemoteChainUpdate(abi.decode(_updateData, (RemoteChainUpdate)));\\n        } else if (_proposalType == ProposalType.ADMIN_TRANSFER) {\\n            _checkAppliable(adminDeadline);\\n            _applyAdminTransfer();\\n        }\\n    }\\n\\n    /**\\n     * @notice Applies the update on the TokenPool\\n     * @param update RemotePoolUpdate information\\n     */\\n    function _applyRemotePoolUpdate(RemotePoolUpdate memory update) private {\\n        if (update.add) {\\n            tokenPool.addRemotePool(update.remoteChainSelector, update.remotePoolAddress);\\n        } else {\\n            tokenPool.removeRemotePool(update.remoteChainSelector, update.remotePoolAddress);\\n        }\\n        remotePoolUpdateDeadline = 0;\\n        emit RemotePoolUpdateApplied(update.add, update.remoteChainSelector, update.remotePoolAddress);\\n    }\\n\\n    /**\\n     * @notice Applies the rate limit update\\n     * @dev Bulk function that allows multiple updates at once\\n     * @param update ChainRateLimiterUpdate information\\n     */\\n    function _applyChainRateLimiterUpdate(ChainRateLimiterUpdate memory update) private {\\n        tokenPool.setChainRateLimiterConfigs(\\n            update.remoteChainSelectors,\\n            update.outboundConfigs,\\n            update.inboundConfigs\\n        );\\n        chainRateLimiterDeadline = 0;\\n        emit ChainRateLimiterUpdateApplied({\\n            remoteChainSelectors: update.remoteChainSelectors,\\n            outboundConfigs: update.outboundConfigs,\\n            inboundConfigs: update.inboundConfigs\\n        });\\n    }\\n\\n    /**\\n     * @notice Applies the remote chain updates\\n     * @dev Bulk function that allows multiple updates at once\\n     * @param update RemoteChainUpdate information\\n     */\\n    function _applyRemoteChainUpdate(RemoteChainUpdate memory update) private {\\n        tokenPool.applyChainUpdates(update.chainsToRemove, update.chainsToAdd);\\n        remoteChainDeadline = 0;\\n        emit RemoteChainUpdateApplied({\\n            remoteChainSelectorsRemoved: update.chainsToRemove,\\n            remoteChainsAdded: update.chainsToAdd\\n        });\\n    }\\n\\n    /**\\n     * @notice Applies the admin transfer\\n     * @dev Transfers admin on the TokenPool and ownership on the ZCHF token on the TokenAdminRegistry\\n     */\\n    function _applyAdminTransfer() private {\\n        address newAdmin = proposedAdmin;\\n        TOKEN_ADMIN_REGISTRY.transferAdminRole(ZCHF, newAdmin);\\n        tokenPool.transferOwnership(newAdmin);\\n        adminDeadline = 0;\\n        emit AdminTransfered({newAdmin: newAdmin});\\n    }\\n\\n    /**\\n     * @notice Checks if a proposal is appliable\\n     */\\n    function _checkAppliable(uint64 _deadline) private view {\\n        if (_deadline > block.timestamp || _deadline == 0) {\\n            revert NotAppliable();\\n        }\\n    }\\n\\n    /**\\n     * @notice Checks if a given hash matches the expected hash\\n     * @dev Used by applyProposal to verify the input data\\n     * @param _expected Hash to match against\\n     * @param _given Given hash to match the expected hash\\n     */\\n    function _checkHash(bytes32 _expected, bytes32 _given) private pure {\\n        if (_expected != _given) {\\n            revert InvalidUpdate(_expected, _given);\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x8226a3ac17ad9480283fc5acda0818028637ff4f39cda42f534cd02dcab265ad\",\"license\":\"MIT\"},\"contracts/bridge/IRegistryModuleOwner.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\ninterface IRegistryModuleOwner {\\n    function registerAdminViaGetCCIPAdmin(address token) external;\\n    function registerAdminViaOwner(address token) external;\\n}\",\"keccak256\":\"0x00613b9ce89bc1ecd91cbc8d2efe9625eb8dbc59a8cb3b7f1be2f573139f15b8\",\"license\":\"MIT\"},\"contracts/bridge/ITokenPool.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\nimport {RateLimiter} from \\\"@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol\\\";\\ninterface ITokenPool {\\n    struct ChainUpdate {\\n        uint64 remoteChainSelector; // Remote chain selector\\n        bytes[] remotePoolAddresses; // Address of the remote pool, ABI encoded in the case of a remote EVM chain.\\n        bytes remoteTokenAddress; // Address of the remote token, ABI encoded in the case of a remote EVM chain.\\n        RateLimiter.Config outboundRateLimiterConfig; // Outbound rate limited config, meaning the rate limits for all of the onRamps for the given chain\\n        RateLimiter.Config inboundRateLimiterConfig; // Inbound rate limited config, meaning the rate limits for all of the offRamps for the given chain\\n    }\\n\\n    function addRemotePool(uint64 remoteChainSelector, bytes calldata remotePoolAddress) external;\\n    function removeRemotePool(uint64 remoteChainSelector, bytes calldata remotePoolAddress) external;\\n    function setChainRateLimiterConfigs(\\n        uint64[] calldata remoteChainSelectors,\\n        RateLimiter.Config[] calldata outboundConfigs,\\n        RateLimiter.Config[] calldata inboundConfigs\\n    ) external;\\n    function applyChainUpdates(\\n        uint64[] calldata remoteChainSelectorsToRemove,\\n        ChainUpdate[] calldata chainsToAdd\\n    ) external;\\n\\n    function acceptOwnership() external;\\n    function transferOwnership(address to) external;\\n}\\n\",\"keccak256\":\"0xe085e077369cb0ffdccd43657f54d9f3ee05b311c0ab179cdbf981a493d3edcc\",\"license\":\"MIT\"},\"contracts/equity/IGovernance.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IGovernance {\\n   function checkQualified(address sender, address[] calldata helpers) external view;\\n}\",\"keccak256\":\"0x7b41d66c02ba4f39b371bcbfd0456c233574b38cbc31031d6a22ad8ecf99a934\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x6101006040523480156200001257600080fd5b5060405162002573380380620025738339810160408190526200003591620000e9565b6001600160a01b0380861660a0526001600160401b03841660805284811660c05282811660e052811615620000c5576040516001623b4f2b60e21b031981526001600160a01b03838116600483015282169063ff12c35490602401600060405180830381600087803b158015620000ab57600080fd5b505af1158015620000c0573d6000803e3d6000fd5b505050505b505050505062000174565b6001600160a01b0381168114620000e657600080fd5b50565b600080600080600060a086880312156200010257600080fd5b85516200010f81620000d0565b60208701519095506200012281620000d0565b60408701519094506001600160401b03811681146200014057600080fd5b60608701519093506200015381620000d0565b60808701519092506200016681620000d0565b809150509295509295909350565b60805160a05160c05160e05161234062000233600039600081816101f201528181610389015281816108bb015261117c015260008181610157015281816103b1015281816108eb01526111b10152600081816101cb01528181610414015281816105950152818161099201528181610b1c0152610ca6015260008181610347015281816104c9015281816105200152818161064a015281816106a101528181610a6c01528181610ab801528181610d450152610d9c01526123406000f3fe608060405234801561001057600080fd5b506004361061014d5760003560e01c80637764b4d2116100c35780639c613c471161007c5780639c613c47146102f9578063c45d97f614610313578063de47d0b414610326578063e7865c9a1461032f578063e861dc8514610342578063f3a58c731461036957600080fd5b80637764b4d21461028757806377b6214e1461029a57806379ba5097146102b4578063872e7653146102bc5780638d61d570146102d357806391706b5c146102e657600080fd5b80631836e0da116101155780631836e0da146101ed5780631e61f68c14610214578063282db5211461022757806332f751ec1461023a57806340689c9d1461024d57806377051b921461025557600080fd5b80630618da0e146101525780630e18b681146101965780630ebad1a4146101a0578063104e9929146101b357806314627834146101c6575b600080fd5b6101797f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020015b60405180910390f35b61019e610372565b005b61019e6101ae3660046114ba565b61040f565b600054610179906001600160a01b031681565b6101797f000000000000000000000000000000000000000000000000000000000000000081565b6101797f000000000000000000000000000000000000000000000000000000000000000081565b61019e610222366004611522565b610590565b61019e610235366004611587565b610700565b600454610179906001600160a01b031681565b61019e610865565b60045461026f90600160a01b90046001600160401b031681565b6040516001600160401b03909116815260200161018d565b61019e61029536600461161e565b610877565b60055461026f90600160801b90046001600160401b031681565b61019e61094c565b6102c560015481565b60405190815260200161018d565b61019e6102e1366004611642565b61098d565b61019e6102f4366004611682565b610b17565b60055461026f90600160401b90046001600160401b031681565b60055461026f906001600160401b031681565b6102c560025481565b61019e61033d3660046116c7565b610ca1565b6102c57f000000000000000000000000000000000000000000000000000000000000000081565b6102c560035481565b604051630ab0ca6d60e11b81526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000811660048301527f0000000000000000000000000000000000000000000000000000000000000000169063156194da90602401600060405180830381600087803b1580156103f557600080fd5b505af1158015610409573d6000803e3d6000fd5b50505050565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b8152600401610462939291906116e7565b60006040518083038186803b15801561047a57600080fd5b505afa15801561048e573d6000803e3d6000fd5b505050506000866040516020016104a591906117d1565b60408051601f198184030181529190528051602090910120600181905590506104ee7f0000000000000000000000000000000000000000000000000000000000000000426117e4565b600480546001600160401b0392909216600160a01b0267ffffffffffffffff60a01b19909216919091179055336105457f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6001600160401b03167fbe14b2e10953379be6c16478ed22134f479abf662bb6707bd403233447ae89ba898460405161057f92919061180b565b60405180910390a350505050505050565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b81526004016105e3939291906116e7565b60006040518083038186803b1580156105fb57600080fd5b505afa15801561060f573d6000803e3d6000fd5b505050506000866040516020016106269190611aeb565b60408051601f1981840301815291905280516020909101206003819055905061066f7f0000000000000000000000000000000000000000000000000000000000000000426117e4565b600580546001600160401b0392909216600160401b0267ffffffffffffffff60401b19909216919091179055336106c67f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6001600160401b03167f62599bb2c8a034871e938fed33d190928e39d91ecf6829cf0564659d5c3687e4898460405161057f929190611afe565b600083600381111561071457610714611b11565b036107715760045461073590600160a01b90046001600160401b0316610e12565b610758600154838360405161074b929190611b27565b6040518091039020610e51565b61076c61076782840184611b37565b610e83565b505050565b600183600381111561078557610785611b11565b036107c95760055461079f906001600160401b0316610e12565b6107b5600254838360405161074b929190611b27565b61076c6107c482840184611cc6565b610fe3565b60028360038111156107dd576107dd611b11565b03610828576005546107fe90600160401b90046001600160401b0316610e12565b610814600354838360405161074b929190611b27565b61076c61082382840184611d7a565b6110ad565b600383600381111561083c5761083c611b11565b0361076c5760055461085d90600160801b90046001600160401b0316610e12565b61076c611161565b61086d610372565b61087561094c565b565b6000546001600160a01b03161561088d57600080fd5b600080546001600160a01b0319166001600160a01b03838116918217909255604051634e847fc760e01b81527f00000000000000000000000000000000000000000000000000000000000000008316600482015260248101919091527f000000000000000000000000000000000000000000000000000000000000000090911690634e847fc790604401600060405180830381600087803b15801561093157600080fd5b505af1158015610945573d6000803e3d6000fd5b5050505050565b60008054604080516379ba509760e01b815290516001600160a01b03909216926379ba50979260048084019382900301818387803b1580156103f557600080fd5b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b81526004016109e0939291906116e7565b60006040518083038186803b1580156109f857600080fd5b505afa158015610a0c573d6000803e3d6000fd5b50505050600086604051602001610a239190612089565b60405160208183030381529060405280519060200120905086604051602001610a4c9190612089565b60408051601f198184030181529190528051602090910120600255610a917f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6005805467ffffffffffffffff19166001600160401b039290921691909117905533610add7f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6001600160401b03167fd6f9cc85947f69de915de2a9bf67a5ec0d49ce08a42b53235de1e5b77dba99ce898460405161057f92919061209c565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b8152600401610b6a939291906116e7565b60006040518083038186803b158015610b8257600080fd5b505afa158015610b96573d6000803e3d6000fd5b5060009250610ba3915050565b866003811115610bb557610bb5611b11565b03610bd3576004805467ffffffffffffffff60a01b19169055610c62565b6001866003811115610be757610be7611b11565b03610c02576005805467ffffffffffffffff19169055610c62565b6002866003811115610c1657610c16611b11565b03610c34576005805467ffffffffffffffff60401b19169055610c62565b6003866003811115610c4857610c48611b11565b03610c62576005805467ffffffffffffffff60801b191690555b7fe142b079e8a2f13581ddedac50fb19ce84513e598cec542e0ab8d60447d6549a86604051610c9191906120af565b60405180910390a1505050505050565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b8152600401610cf4939291906116e7565b60006040518083038186803b158015610d0c57600080fd5b505afa158015610d20573d6000803e3d6000fd5b5050600480546001600160a01b0319166001600160a01b038a1617905550610d6a90507f0000000000000000000000000000000000000000000000000000000000000000426117e4565b600580546001600160401b0392909216600160801b0267ffffffffffffffff60801b1990921691909117905533610dc17f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6040516001600160a01b03891681526001600160401b0391909116907f169811dfe7a816c17e18f4110bd5bd0613e9d38e88e2a0d67164138e9f3b13699060200160405180910390a3505050505050565b42816001600160401b03161180610e3057506001600160401b038116155b15610e4e576040516304660e9d60e51b815260040160405180910390fd5b50565b808214610e7f576040516349269d2960e11b8152600481018390526024810182905260440160405180910390fd5b5050565b806040015115610efb57600054815160208301516040516318b774f160e21b81526001600160a01b03909316926362ddd3c492610ec49290916004016120d7565b600060405180830381600087803b158015610ede57600080fd5b505af1158015610ef2573d6000803e3d6000fd5b50505050610f65565b6000548151602083015160405163acfecf9160e01b81526001600160a01b039093169263acfecf9192610f329290916004016120d7565b600060405180830381600087803b158015610f4c57600080fd5b505af1158015610f60573d6000803e3d6000fd5b505050505b6004805467ffffffffffffffff60a01b191690556020810151604051610f8b91906120f9565b604051809103902081600001516001600160401b03167f9bc07fb9aff9843fe77b2adbaedb2e2c6b31ff3da293fc3dface61126c735e158360400151604051610fd8911515815260200190565b60405180910390a350565b6000548151602083015160408085015190516304b16a0160e51b81526001600160a01b039094169363962d40209361102193909290916004016121b4565b600060405180830381600087803b15801561103b57600080fd5b505af115801561104f573d6000803e3d6000fd5b50506005805467ffffffffffffffff1916905550508051602082015160408084015190517fa24731e2ccf1b274297b872b363e1cba147336cf32afad7631cae1c0abd9879f936110a293909290916121b4565b60405180910390a150565b6000548151602083015160405163e8a1da1760e01b81526001600160a01b039093169263e8a1da17926110e49290916004016121ed565b600060405180830381600087803b1580156110fe57600080fd5b505af1158015611112573d6000803e3d6000fd5b50506005805467ffffffffffffffff60401b191690555050805160208201516040517f1a72c04a73d88b967e79d722be65123a65a97068e8d243fe89f46641d06bd34c926110a29290916121ed565b60048054604051636ed6fd4760e11b81526001600160a01b037f000000000000000000000000000000000000000000000000000000000000000081169382019390935290821660248201819052917f0000000000000000000000000000000000000000000000000000000000000000169063ddadfa8e90604401600060405180830381600087803b1580156111f557600080fd5b505af1158015611209573d6000803e3d6000fd5b505060005460405163f2fde38b60e01b81526001600160a01b038581166004830152909116925063f2fde38b9150602401600060405180830381600087803b15801561125457600080fd5b505af1158015611268573d6000803e3d6000fd5b50506005805467ffffffffffffffff60801b1916905550506040516001600160a01b03821681527f87eedd0e13e9fb80060a41db0a20ab3848c96b515a386eace4d1c22c19f64ba0906020016110a2565b634e487b7160e01b600052604160045260246000fd5b604051606081016001600160401b03811182821017156112f1576112f16112b9565b60405290565b604080519081016001600160401b03811182821017156112f1576112f16112b9565b60405160a081016001600160401b03811182821017156112f1576112f16112b9565b604051601f8201601f191681016001600160401b0381118282101715611363576113636112b9565b604052919050565b80356001600160401b038116811461138257600080fd5b919050565b600082601f83011261139857600080fd5b81356001600160401b038111156113b1576113b16112b9565b6113c4601f8201601f191660200161133b565b8181528460208386010111156113d957600080fd5b816020850160208301376000918101602001919091529392505050565b8035801515811461138257600080fd5b60006060828403121561141857600080fd5b6114206112cf565b905061142b8261136b565b815260208201356001600160401b0381111561144657600080fd5b61145284828501611387565b602083015250611464604083016113f6565b604082015292915050565b60008083601f84011261148157600080fd5b5081356001600160401b0381111561149857600080fd5b6020830191508360208260051b85010111156114b357600080fd5b9250929050565b6000806000604084860312156114cf57600080fd5b83356001600160401b03808211156114e657600080fd5b6114f287838801611406565b9450602086013591508082111561150857600080fd5b506115158682870161146f565b9497909650939450505050565b60008060006040848603121561153757600080fd5b83356001600160401b038082111561154e57600080fd5b908501906040828803121561156257600080fd5b9093506020850135908082111561150857600080fd5b80356004811061138257600080fd5b60008060006040848603121561159c57600080fd5b6115a584611578565b925060208401356001600160401b03808211156115c157600080fd5b818601915086601f8301126115d557600080fd5b8135818111156115e457600080fd5b8760208285010111156115f657600080fd5b6020830194508093505050509250925092565b6001600160a01b0381168114610e4e57600080fd5b60006020828403121561163057600080fd5b813561163b81611609565b9392505050565b60008060006040848603121561165757600080fd5b83356001600160401b038082111561166e57600080fd5b908501906060828803121561156257600080fd5b60008060006040848603121561169757600080fd5b6116a084611578565b925060208401356001600160401b038111156116bb57600080fd5b6115158682870161146f565b6000806000604084860312156116dc57600080fd5b83356116a081611609565b6001600160a01b03848116825260406020808401829052908301849052600091859160608501845b8781101561173657843561172281611609565b84168252938201939082019060010161170f565b5098975050505050505050565b60005b8381101561175e578181015183820152602001611746565b50506000910152565b6000815180845261177f816020860160208601611743565b601f01601f19169290920160200192915050565b6001600160401b03815116825260006020820151606060208501526117bb6060850182611767565b6040938401511515949093019390935250919050565b60208152600061163b6020830184611793565b8082018082111561180557634e487b7160e01b600052601160045260246000fd5b92915050565b60408152600061181e6040830185611793565b90508260208301529392505050565b6000808335601e1984360301811261184457600080fd5b83016020810192503590506001600160401b0381111561186357600080fd5b8060051b36038213156114b357600080fd5b8183526000602080850194508260005b858110156118b1576001600160401b0361189e8361136b565b1687529582019590820190600101611885565b509495945050505050565b81835281816020850137506000828201602090810191909152601f909101601f19169091010190565b6000808335601e198436030181126118fc57600080fd5b83016020810192503590506001600160401b0381111561191b57600080fd5b8036038213156114b357600080fd5b80356001600160801b038116811461138257600080fd5b61194a816113f6565b1515825261195a6020820161192a565b6001600160801b038082166020850152806119776040850161192a565b16604085015250505050565b60006040611991838461182d565b604086526119a3604087018284611875565b91505060206119b48186018661182d565b87840383890152808452828401600582811b860185018460005b85811015611ada57888303601f1901855281353688900361011e190181126119f557600080fd5b87016101208481016001600160401b03611a0e8461136b565b168652611a1d8b84018461182d565b878d0193909352908290526101408087019280891b880190910191908160005b82811015611a7d5789850361013f19018652611a5982856118e5565b611a648782846118bc565b965050508e820191508e86019550600181019050611a3d565b50505050611a8d8d8401846118e5565b92508682038e880152611aa18284836118bc565b925050506060611ab5818701828501611941565b5060c0611ac6818701828501611941565b5095890195935050908701906001016119ce565b50909b9a5050505050505050505050565b60208152600061163b6020830184611983565b60408152600061181e6040830185611983565b634e487b7160e01b600052602160045260246000fd5b8183823760009101908152919050565b600060208284031215611b4957600080fd5b81356001600160401b03811115611b5f57600080fd5b611b6b84828501611406565b949350505050565b60006001600160401b03821115611b8c57611b8c6112b9565b5060051b60200190565b600082601f830112611ba757600080fd5b81356020611bbc611bb783611b73565b61133b565b8083825260208201915060208460051b870101935086841115611bde57600080fd5b602086015b84811015611c0157611bf48161136b565b8352918301918301611be3565b509695505050505050565b600060608284031215611c1e57600080fd5b611c266112cf565b9050611c31826113f6565b8152611c3f6020830161192a565b60208201526114646040830161192a565b600082601f830112611c6157600080fd5b81356020611c71611bb783611b73565b808382526020820191506060602060608602880101945087851115611c9557600080fd5b602087015b85811015611cb957611cac8982611c0c565b8452928401928101611c9a565b5090979650505050505050565b600060208284031215611cd857600080fd5b81356001600160401b0380821115611cef57600080fd5b9083019060608286031215611d0357600080fd5b611d0b6112cf565b823582811115611d1a57600080fd5b611d2687828601611b96565b825250602083013582811115611d3b57600080fd5b611d4787828601611c50565b602083015250604083013582811115611d5f57600080fd5b611d6b87828601611c50565b60408301525095945050505050565b600060208284031215611d8c57600080fd5b6001600160401b038083351115611da257600080fd5b8235830160408186031215611db657600080fd5b611dbe6112f7565b8282351115611dcc57600080fd5b611dd98683358401611b96565b81528260208301351115611dec57600080fd5b60208201358201915085601f830112611e0457600080fd5b611e11611bb78335611b73565b82358082526020808301929160051b850101881015611e2f57600080fd5b602084015b6020853560051b860101811015611f84578581351115611e5357600080fd5b80358501610120818b03601f19011215611e6c57600080fd5b611e74611319565b611e806020830161136b565b81528760408301351115611e9357600080fd5b604082013582018b603f820112611ea957600080fd5b611eb9611bb76020830135611b73565b602082810135808352908201919060051b83016040018e1015611edb57600080fd5b604083015b6040602085013560051b850101811015611f20578b81351115611f0257600080fd5b611f128f60408335870101611387565b835260209283019201611ee0565b50602084015250506060820135881015611f3957600080fd5b611f4c8b60206060850135850101611387565b6040820152611f5e8b60808401611c0c565b6060820152611f708b60e08401611c0c565b608082015284525060209283019201611e34565b5060208301525095945050505050565b6000808335601e19843603018112611fab57600080fd5b83016020810192503590506001600160401b03811115611fca57600080fd5b6060810236038213156114b357600080fd5b81835260208301925060008160005b8481101561201057611ffd8683611941565b6060958601959190910190600101611feb565b5093949350505050565b6000612026828361182d565b60608552612038606086018284611875565b9150506120486020840184611f94565b858303602087015261205b838284611fdc565b9250505061206c6040840184611f94565b858303604087015261207f838284611fdc565b9695505050505050565b60208152600061163b602083018461201a565b60408152600061181e604083018561201a565b60208101600483106120d157634e487b7160e01b600052602160045260246000fd5b91905290565b6001600160401b0383168152604060208201526000611b6b6040830184611767565b6000825161210b818460208701611743565b9190910192915050565b60008151808452602080850194506020840160005b838110156118b15781516001600160401b03168752958201959082019060010161212a565b8051151582526020808201516001600160801b039081169184019190915260409182015116910152565b60008151808452602080850194506020840160005b838110156118b1576121a187835161214f565b606096909601959082019060010161218e565b6060815260006121c76060830186612115565b82810360208401526121d98186612179565b9050828103604084015261207f8185612179565b600060408083526122016040840186612115565b60208482038186015281865180845282840191506005838260051b860101848a016000805b858110156122f857888403601f19018752825180516001600160401b03168552888101516101208a8701819052815190870181905261014080880192828a1b890190910191908c0190865b818110156122a05761013f198a850301855261228e848451611767565b948e01949350918d0191600101612271565b5050508c83015191508681038d8801526122ba8183611767565b9150506060808301516122cf8289018261214f565b5050608082015191506122e560c087018361214f565b9789019794505091870191600101612226565b50919c9b50505050505050505050505056fea26469706673582212206c7140a186128e5c9d3256a12ed54cd65c2eb734c83be13daed5919a1290bbd864736f6c63430008180033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061014d5760003560e01c80637764b4d2116100c35780639c613c471161007c5780639c613c47146102f9578063c45d97f614610313578063de47d0b414610326578063e7865c9a1461032f578063e861dc8514610342578063f3a58c731461036957600080fd5b80637764b4d21461028757806377b6214e1461029a57806379ba5097146102b4578063872e7653146102bc5780638d61d570146102d357806391706b5c146102e657600080fd5b80631836e0da116101155780631836e0da146101ed5780631e61f68c14610214578063282db5211461022757806332f751ec1461023a57806340689c9d1461024d57806377051b921461025557600080fd5b80630618da0e146101525780630e18b681146101965780630ebad1a4146101a0578063104e9929146101b357806314627834146101c6575b600080fd5b6101797f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020015b60405180910390f35b61019e610372565b005b61019e6101ae3660046114ba565b61040f565b600054610179906001600160a01b031681565b6101797f000000000000000000000000000000000000000000000000000000000000000081565b6101797f000000000000000000000000000000000000000000000000000000000000000081565b61019e610222366004611522565b610590565b61019e610235366004611587565b610700565b600454610179906001600160a01b031681565b61019e610865565b60045461026f90600160a01b90046001600160401b031681565b6040516001600160401b03909116815260200161018d565b61019e61029536600461161e565b610877565b60055461026f90600160801b90046001600160401b031681565b61019e61094c565b6102c560015481565b60405190815260200161018d565b61019e6102e1366004611642565b61098d565b61019e6102f4366004611682565b610b17565b60055461026f90600160401b90046001600160401b031681565b60055461026f906001600160401b031681565b6102c560025481565b61019e61033d3660046116c7565b610ca1565b6102c57f000000000000000000000000000000000000000000000000000000000000000081565b6102c560035481565b604051630ab0ca6d60e11b81526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000811660048301527f0000000000000000000000000000000000000000000000000000000000000000169063156194da90602401600060405180830381600087803b1580156103f557600080fd5b505af1158015610409573d6000803e3d6000fd5b50505050565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b8152600401610462939291906116e7565b60006040518083038186803b15801561047a57600080fd5b505afa15801561048e573d6000803e3d6000fd5b505050506000866040516020016104a591906117d1565b60408051601f198184030181529190528051602090910120600181905590506104ee7f0000000000000000000000000000000000000000000000000000000000000000426117e4565b600480546001600160401b0392909216600160a01b0267ffffffffffffffff60a01b19909216919091179055336105457f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6001600160401b03167fbe14b2e10953379be6c16478ed22134f479abf662bb6707bd403233447ae89ba898460405161057f92919061180b565b60405180910390a350505050505050565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b81526004016105e3939291906116e7565b60006040518083038186803b1580156105fb57600080fd5b505afa15801561060f573d6000803e3d6000fd5b505050506000866040516020016106269190611aeb565b60408051601f1981840301815291905280516020909101206003819055905061066f7f0000000000000000000000000000000000000000000000000000000000000000426117e4565b600580546001600160401b0392909216600160401b0267ffffffffffffffff60401b19909216919091179055336106c67f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6001600160401b03167f62599bb2c8a034871e938fed33d190928e39d91ecf6829cf0564659d5c3687e4898460405161057f929190611afe565b600083600381111561071457610714611b11565b036107715760045461073590600160a01b90046001600160401b0316610e12565b610758600154838360405161074b929190611b27565b6040518091039020610e51565b61076c61076782840184611b37565b610e83565b505050565b600183600381111561078557610785611b11565b036107c95760055461079f906001600160401b0316610e12565b6107b5600254838360405161074b929190611b27565b61076c6107c482840184611cc6565b610fe3565b60028360038111156107dd576107dd611b11565b03610828576005546107fe90600160401b90046001600160401b0316610e12565b610814600354838360405161074b929190611b27565b61076c61082382840184611d7a565b6110ad565b600383600381111561083c5761083c611b11565b0361076c5760055461085d90600160801b90046001600160401b0316610e12565b61076c611161565b61086d610372565b61087561094c565b565b6000546001600160a01b03161561088d57600080fd5b600080546001600160a01b0319166001600160a01b03838116918217909255604051634e847fc760e01b81527f00000000000000000000000000000000000000000000000000000000000000008316600482015260248101919091527f000000000000000000000000000000000000000000000000000000000000000090911690634e847fc790604401600060405180830381600087803b15801561093157600080fd5b505af1158015610945573d6000803e3d6000fd5b5050505050565b60008054604080516379ba509760e01b815290516001600160a01b03909216926379ba50979260048084019382900301818387803b1580156103f557600080fd5b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b81526004016109e0939291906116e7565b60006040518083038186803b1580156109f857600080fd5b505afa158015610a0c573d6000803e3d6000fd5b50505050600086604051602001610a239190612089565b60405160208183030381529060405280519060200120905086604051602001610a4c9190612089565b60408051601f198184030181529190528051602090910120600255610a917f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6005805467ffffffffffffffff19166001600160401b039290921691909117905533610add7f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6001600160401b03167fd6f9cc85947f69de915de2a9bf67a5ec0d49ce08a42b53235de1e5b77dba99ce898460405161057f92919061209c565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b8152600401610b6a939291906116e7565b60006040518083038186803b158015610b8257600080fd5b505afa158015610b96573d6000803e3d6000fd5b5060009250610ba3915050565b866003811115610bb557610bb5611b11565b03610bd3576004805467ffffffffffffffff60a01b19169055610c62565b6001866003811115610be757610be7611b11565b03610c02576005805467ffffffffffffffff19169055610c62565b6002866003811115610c1657610c16611b11565b03610c34576005805467ffffffffffffffff60401b19169055610c62565b6003866003811115610c4857610c48611b11565b03610c62576005805467ffffffffffffffff60801b191690555b7fe142b079e8a2f13581ddedac50fb19ce84513e598cec542e0ab8d60447d6549a86604051610c9191906120af565b60405180910390a1505050505050565b3382827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663352e3a838484846040518463ffffffff1660e01b8152600401610cf4939291906116e7565b60006040518083038186803b158015610d0c57600080fd5b505afa158015610d20573d6000803e3d6000fd5b5050600480546001600160a01b0319166001600160a01b038a1617905550610d6a90507f0000000000000000000000000000000000000000000000000000000000000000426117e4565b600580546001600160401b0392909216600160801b0267ffffffffffffffff60801b1990921691909117905533610dc17f0000000000000000000000000000000000000000000000000000000000000000426117e4565b6040516001600160a01b03891681526001600160401b0391909116907f169811dfe7a816c17e18f4110bd5bd0613e9d38e88e2a0d67164138e9f3b13699060200160405180910390a3505050505050565b42816001600160401b03161180610e3057506001600160401b038116155b15610e4e576040516304660e9d60e51b815260040160405180910390fd5b50565b808214610e7f576040516349269d2960e11b8152600481018390526024810182905260440160405180910390fd5b5050565b806040015115610efb57600054815160208301516040516318b774f160e21b81526001600160a01b03909316926362ddd3c492610ec49290916004016120d7565b600060405180830381600087803b158015610ede57600080fd5b505af1158015610ef2573d6000803e3d6000fd5b50505050610f65565b6000548151602083015160405163acfecf9160e01b81526001600160a01b039093169263acfecf9192610f329290916004016120d7565b600060405180830381600087803b158015610f4c57600080fd5b505af1158015610f60573d6000803e3d6000fd5b505050505b6004805467ffffffffffffffff60a01b191690556020810151604051610f8b91906120f9565b604051809103902081600001516001600160401b03167f9bc07fb9aff9843fe77b2adbaedb2e2c6b31ff3da293fc3dface61126c735e158360400151604051610fd8911515815260200190565b60405180910390a350565b6000548151602083015160408085015190516304b16a0160e51b81526001600160a01b039094169363962d40209361102193909290916004016121b4565b600060405180830381600087803b15801561103b57600080fd5b505af115801561104f573d6000803e3d6000fd5b50506005805467ffffffffffffffff1916905550508051602082015160408084015190517fa24731e2ccf1b274297b872b363e1cba147336cf32afad7631cae1c0abd9879f936110a293909290916121b4565b60405180910390a150565b6000548151602083015160405163e8a1da1760e01b81526001600160a01b039093169263e8a1da17926110e49290916004016121ed565b600060405180830381600087803b1580156110fe57600080fd5b505af1158015611112573d6000803e3d6000fd5b50506005805467ffffffffffffffff60401b191690555050805160208201516040517f1a72c04a73d88b967e79d722be65123a65a97068e8d243fe89f46641d06bd34c926110a29290916121ed565b60048054604051636ed6fd4760e11b81526001600160a01b037f000000000000000000000000000000000000000000000000000000000000000081169382019390935290821660248201819052917f0000000000000000000000000000000000000000000000000000000000000000169063ddadfa8e90604401600060405180830381600087803b1580156111f557600080fd5b505af1158015611209573d6000803e3d6000fd5b505060005460405163f2fde38b60e01b81526001600160a01b038581166004830152909116925063f2fde38b9150602401600060405180830381600087803b15801561125457600080fd5b505af1158015611268573d6000803e3d6000fd5b50506005805467ffffffffffffffff60801b1916905550506040516001600160a01b03821681527f87eedd0e13e9fb80060a41db0a20ab3848c96b515a386eace4d1c22c19f64ba0906020016110a2565b634e487b7160e01b600052604160045260246000fd5b604051606081016001600160401b03811182821017156112f1576112f16112b9565b60405290565b604080519081016001600160401b03811182821017156112f1576112f16112b9565b60405160a081016001600160401b03811182821017156112f1576112f16112b9565b604051601f8201601f191681016001600160401b0381118282101715611363576113636112b9565b604052919050565b80356001600160401b038116811461138257600080fd5b919050565b600082601f83011261139857600080fd5b81356001600160401b038111156113b1576113b16112b9565b6113c4601f8201601f191660200161133b565b8181528460208386010111156113d957600080fd5b816020850160208301376000918101602001919091529392505050565b8035801515811461138257600080fd5b60006060828403121561141857600080fd5b6114206112cf565b905061142b8261136b565b815260208201356001600160401b0381111561144657600080fd5b61145284828501611387565b602083015250611464604083016113f6565b604082015292915050565b60008083601f84011261148157600080fd5b5081356001600160401b0381111561149857600080fd5b6020830191508360208260051b85010111156114b357600080fd5b9250929050565b6000806000604084860312156114cf57600080fd5b83356001600160401b03808211156114e657600080fd5b6114f287838801611406565b9450602086013591508082111561150857600080fd5b506115158682870161146f565b9497909650939450505050565b60008060006040848603121561153757600080fd5b83356001600160401b038082111561154e57600080fd5b908501906040828803121561156257600080fd5b9093506020850135908082111561150857600080fd5b80356004811061138257600080fd5b60008060006040848603121561159c57600080fd5b6115a584611578565b925060208401356001600160401b03808211156115c157600080fd5b818601915086601f8301126115d557600080fd5b8135818111156115e457600080fd5b8760208285010111156115f657600080fd5b6020830194508093505050509250925092565b6001600160a01b0381168114610e4e57600080fd5b60006020828403121561163057600080fd5b813561163b81611609565b9392505050565b60008060006040848603121561165757600080fd5b83356001600160401b038082111561166e57600080fd5b908501906060828803121561156257600080fd5b60008060006040848603121561169757600080fd5b6116a084611578565b925060208401356001600160401b038111156116bb57600080fd5b6115158682870161146f565b6000806000604084860312156116dc57600080fd5b83356116a081611609565b6001600160a01b03848116825260406020808401829052908301849052600091859160608501845b8781101561173657843561172281611609565b84168252938201939082019060010161170f565b5098975050505050505050565b60005b8381101561175e578181015183820152602001611746565b50506000910152565b6000815180845261177f816020860160208601611743565b601f01601f19169290920160200192915050565b6001600160401b03815116825260006020820151606060208501526117bb6060850182611767565b6040938401511515949093019390935250919050565b60208152600061163b6020830184611793565b8082018082111561180557634e487b7160e01b600052601160045260246000fd5b92915050565b60408152600061181e6040830185611793565b90508260208301529392505050565b6000808335601e1984360301811261184457600080fd5b83016020810192503590506001600160401b0381111561186357600080fd5b8060051b36038213156114b357600080fd5b8183526000602080850194508260005b858110156118b1576001600160401b0361189e8361136b565b1687529582019590820190600101611885565b509495945050505050565b81835281816020850137506000828201602090810191909152601f909101601f19169091010190565b6000808335601e198436030181126118fc57600080fd5b83016020810192503590506001600160401b0381111561191b57600080fd5b8036038213156114b357600080fd5b80356001600160801b038116811461138257600080fd5b61194a816113f6565b1515825261195a6020820161192a565b6001600160801b038082166020850152806119776040850161192a565b16604085015250505050565b60006040611991838461182d565b604086526119a3604087018284611875565b91505060206119b48186018661182d565b87840383890152808452828401600582811b860185018460005b85811015611ada57888303601f1901855281353688900361011e190181126119f557600080fd5b87016101208481016001600160401b03611a0e8461136b565b168652611a1d8b84018461182d565b878d0193909352908290526101408087019280891b880190910191908160005b82811015611a7d5789850361013f19018652611a5982856118e5565b611a648782846118bc565b965050508e820191508e86019550600181019050611a3d565b50505050611a8d8d8401846118e5565b92508682038e880152611aa18284836118bc565b925050506060611ab5818701828501611941565b5060c0611ac6818701828501611941565b5095890195935050908701906001016119ce565b50909b9a5050505050505050505050565b60208152600061163b6020830184611983565b60408152600061181e6040830185611983565b634e487b7160e01b600052602160045260246000fd5b8183823760009101908152919050565b600060208284031215611b4957600080fd5b81356001600160401b03811115611b5f57600080fd5b611b6b84828501611406565b949350505050565b60006001600160401b03821115611b8c57611b8c6112b9565b5060051b60200190565b600082601f830112611ba757600080fd5b81356020611bbc611bb783611b73565b61133b565b8083825260208201915060208460051b870101935086841115611bde57600080fd5b602086015b84811015611c0157611bf48161136b565b8352918301918301611be3565b509695505050505050565b600060608284031215611c1e57600080fd5b611c266112cf565b9050611c31826113f6565b8152611c3f6020830161192a565b60208201526114646040830161192a565b600082601f830112611c6157600080fd5b81356020611c71611bb783611b73565b808382526020820191506060602060608602880101945087851115611c9557600080fd5b602087015b85811015611cb957611cac8982611c0c565b8452928401928101611c9a565b5090979650505050505050565b600060208284031215611cd857600080fd5b81356001600160401b0380821115611cef57600080fd5b9083019060608286031215611d0357600080fd5b611d0b6112cf565b823582811115611d1a57600080fd5b611d2687828601611b96565b825250602083013582811115611d3b57600080fd5b611d4787828601611c50565b602083015250604083013582811115611d5f57600080fd5b611d6b87828601611c50565b60408301525095945050505050565b600060208284031215611d8c57600080fd5b6001600160401b038083351115611da257600080fd5b8235830160408186031215611db657600080fd5b611dbe6112f7565b8282351115611dcc57600080fd5b611dd98683358401611b96565b81528260208301351115611dec57600080fd5b60208201358201915085601f830112611e0457600080fd5b611e11611bb78335611b73565b82358082526020808301929160051b850101881015611e2f57600080fd5b602084015b6020853560051b860101811015611f84578581351115611e5357600080fd5b80358501610120818b03601f19011215611e6c57600080fd5b611e74611319565b611e806020830161136b565b81528760408301351115611e9357600080fd5b604082013582018b603f820112611ea957600080fd5b611eb9611bb76020830135611b73565b602082810135808352908201919060051b83016040018e1015611edb57600080fd5b604083015b6040602085013560051b850101811015611f20578b81351115611f0257600080fd5b611f128f60408335870101611387565b835260209283019201611ee0565b50602084015250506060820135881015611f3957600080fd5b611f4c8b60206060850135850101611387565b6040820152611f5e8b60808401611c0c565b6060820152611f708b60e08401611c0c565b608082015284525060209283019201611e34565b5060208301525095945050505050565b6000808335601e19843603018112611fab57600080fd5b83016020810192503590506001600160401b03811115611fca57600080fd5b6060810236038213156114b357600080fd5b81835260208301925060008160005b8481101561201057611ffd8683611941565b6060958601959190910190600101611feb565b5093949350505050565b6000612026828361182d565b60608552612038606086018284611875565b9150506120486020840184611f94565b858303602087015261205b838284611fdc565b9250505061206c6040840184611f94565b858303604087015261207f838284611fdc565b9695505050505050565b60208152600061163b602083018461201a565b60408152600061181e604083018561201a565b60208101600483106120d157634e487b7160e01b600052602160045260246000fd5b91905290565b6001600160401b0383168152604060208201526000611b6b6040830184611767565b6000825161210b818460208701611743565b9190910192915050565b60008151808452602080850194506020840160005b838110156118b15781516001600160401b03168752958201959082019060010161212a565b8051151582526020808201516001600160801b039081169184019190915260409182015116910152565b60008151808452602080850194506020840160005b838110156118b1576121a187835161214f565b606096909601959082019060010161218e565b6060815260006121c76060830186612115565b82810360208401526121d98186612179565b9050828103604084015261207f8185612179565b600060408083526122016040840186612115565b60208482038186015281865180845282840191506005838260051b860101848a016000805b858110156122f857888403601f19018752825180516001600160401b03168552888101516101208a8701819052815190870181905261014080880192828a1b890190910191908c0190865b818110156122a05761013f198a850301855261228e848451611767565b948e01949350918d0191600101612271565b5050508c83015191508681038d8801526122ba8183611767565b9150506060808301516122cf8289018261214f565b5050608082015191506122e560c087018361214f565b9789019794505091870191600101612226565b50919c9b50505050505050505050505056fea26469706673582212206c7140a186128e5c9d3256a12ed54cd65c2eb734c83be13daed5919a1290bbd864736f6c63430008180033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "applyProposal(uint8,bytes)": {
+        "params": {
+          "_proposalType": "What type of proposal gets vetoed",
+          "_updateData": "Abi encoded data required to perform the update."
+        }
+      },
+      "proposeAdminTransfer(address,address[])": {
+        "details": "Useful to transfer to a new CCIPAdmin contract",
+        "params": {
+          "_helpers": "Helpers needed to be qualified",
+          "_newAdmin": "The address of the new admin"
+        }
+      },
+      "proposeChainRateLimiterUpdate((uint64[],(bool,uint128,uint128)[],(bool,uint128,uint128)[]),address[])": {
+        "details": "The contract only stores the hash. So the data has to be passed in during apply again",
+        "params": {
+          "_helpers": "Helpers needed to be qualified",
+          "_update": "The update proposal"
+        }
+      },
+      "proposeRemoteChainUpdate((uint64[],(uint64,bytes[],bytes,(bool,uint128,uint128),(bool,uint128,uint128))[]),address[])": {
+        "details": "The contract only stores the hash. So the data has to be passed in during apply again",
+        "params": {
+          "_helpers": "Helpers needed to be qualified",
+          "_update": "The update proposal"
+        }
+      },
+      "proposeRemotePoolUpdate((uint64,bytes,bool),address[])": {
+        "details": "The contract only stores the hash. So the data has to be passed in during apply again",
+        "params": {
+          "_helpers": "Helpers needed to be qualified",
+          "_update": "The update proposal"
+        }
+      },
+      "vetoProposal(uint8,address[])": {
+        "params": {
+          "_helpers": "Helpers needed to be qualified",
+          "_proposalType": "What type of proposal gets vetoed"
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "applyProposal(uint8,bytes)": {
+        "notice": "Apply a proposal. Only works if VETO_PERIOD has been awaited."
+      },
+      "proposeAdminTransfer(address,address[])": {
+        "notice": "Proposed a new admin for the TokenPool and Admin on the Token registry"
+      },
+      "proposeChainRateLimiterUpdate((uint64[],(bool,uint128,uint128)[],(bool,uint128,uint128)[]),address[])": {
+        "notice": "Proposed a rate limit update"
+      },
+      "proposeRemoteChainUpdate((uint64[],(uint64,bytes[],bytes,(bool,uint128,uint128),(bool,uint128,uint128))[]),address[])": {
+        "notice": "Propose to add or remove remote chains"
+      },
+      "proposeRemotePoolUpdate((uint64,bytes,bool),address[])": {
+        "notice": "Proposed a remote pool update"
+      },
+      "vetoProposal(uint8,address[])": {
+        "notice": "Veto a proposal"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 9328,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "tokenPool",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_contract(ITokenPool)10219"
+      },
+      {
+        "astId": 9367,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "proposedRemotePoolUpdate",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_bytes32"
+      },
+      {
+        "astId": 9369,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "proposedChainRateLimiterUpdate",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_bytes32"
+      },
+      {
+        "astId": 9371,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "proposedRemoteChainUpdate",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_bytes32"
+      },
+      {
+        "astId": 9373,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "proposedAdmin",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_address"
+      },
+      {
+        "astId": 9375,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "remotePoolUpdateDeadline",
+        "offset": 20,
+        "slot": "4",
+        "type": "t_uint64"
+      },
+      {
+        "astId": 9377,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "chainRateLimiterDeadline",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_uint64"
+      },
+      {
+        "astId": 9379,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "remoteChainDeadline",
+        "offset": 8,
+        "slot": "5",
+        "type": "t_uint64"
+      },
+      {
+        "astId": 9381,
+        "contract": "contracts/bridge/CCIPAdmin.sol:CCIPAdmin",
+        "label": "adminDeadline",
+        "offset": 16,
+        "slot": "5",
+        "type": "t_uint64"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_contract(ITokenPool)10219": {
+        "encoding": "inplace",
+        "label": "contract ITokenPool",
+        "numberOfBytes": "20"
+      },
+      "t_uint64": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    }
+  }
+}

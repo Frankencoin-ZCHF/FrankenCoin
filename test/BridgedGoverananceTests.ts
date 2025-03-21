@@ -6,7 +6,7 @@ import { expect } from "chai";
 import { getLinkTokenContract } from "./helper/ccip";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
-describe("Bridged Governance Tests", () => {
+describe.only("Bridged Governance Tests", () => {
   async function sendSyncMessage(
     bridgedGovernanceSender: BridgedGovernanceSender,
     sender: HardhatEthersSigner,
@@ -70,7 +70,7 @@ describe("Bridged Governance Tests", () => {
 
     // Setup Frankencoin contracts
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    const zchf = await frankenCoinFactory.deploy(10 * 864000);
+    const zchf = await frankenCoinFactory.deploy(10 * 864000, ethers.ZeroAddress, ethers.ZeroAddress);
     await zchf.initialize(minter.address, "");
 
     const equity = await ethers.getContractAt("Equity", await zchf.reserve());

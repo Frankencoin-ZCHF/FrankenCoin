@@ -10,7 +10,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const positionFactoryDeployment = await get("PositionFactory");
   console.log(
-    `Verify PositionFactory:\nnpx hardhat verify --network sepolia ${positionFactoryDeployment.address}\n`
+    `Verify PositionFactory:\nnpx hardhat verify --network ${hre.network.name} ${positionFactoryDeployment.address}\n`
   );
 };
 export default deploy;
