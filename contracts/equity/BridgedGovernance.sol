@@ -43,7 +43,9 @@ contract BridgedGovernance is CCIPReceiver, Governance {
         return _totalVotes;
     }
 
-    // Required for frankencoin contract
+    /**
+     * @notice Required for frankencoin contract
+    */
     function totalSupply() public view returns (uint256) {
         return totalVotes();
     }

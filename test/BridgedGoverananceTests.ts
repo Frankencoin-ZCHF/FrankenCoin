@@ -70,7 +70,7 @@ describe("Bridged Governance Tests", () => {
 
     // Setup Frankencoin contracts
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    const zchf = await frankenCoinFactory.deploy(10 * 864000, ethers.ZeroAddress, ethers.ZeroAddress);
+    const zchf = await frankenCoinFactory.deploy(10 * 864000, ethers.ZeroAddress);
     await zchf.initialize(minter.address, "");
 
     const equity = await ethers.getContractAt("Equity", await zchf.reserve());

@@ -19,7 +19,7 @@ describe("FrankenCoin", () => {
     // create contracts
     // 10 day application period
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress, ethers.ZeroAddress);
+    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
   });
 
   describe("Basic initialization", () => {
@@ -102,7 +102,7 @@ describe("FrankenCoin", () => {
   describe("Minting & Burning", () => {
     before(async () => {
       const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress, ethers.ZeroAddress);
+      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
       const xchfFactory = await ethers.getContractFactory("TestToken");
       mockXCHF = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
       const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
@@ -232,23 +232,21 @@ describe("FrankenCoin", () => {
       ).to.be.revertedWithCustomError(zchf, "NotMinter");
     });
     it("should revert covering loss from non minters", async () => {
-      await expect(zchf.coverLoss(owner.address, 0)).to.be.revertedWithCustomError(
-        zchf,
-        "NotMinter"
-      );
+      await expect(
+        zchf.coverLoss(owner.address, 0)
+      ).to.be.revertedWithCustomError(zchf, "NotMinter");
     });
     it("should revert collecting profits from non minters", async () => {
-      await expect(zchf.collectProfits(owner.address, 7)).to.be.revertedWithCustomError(
-        zchf,
-        "NotMinter"
-      );
+      await expect(
+        zchf.collectProfits(owner.address, 7)
+      ).to.be.revertedWithCustomError(zchf, "NotMinter");
     });
   });
 
   describe("view func", () => {
     before(async () => {
       const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress, ethers.ZeroAddress);
+      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
 
       const xchfFactory = await ethers.getContractFactory("TestToken");
       mockXCHF = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
@@ -261,5 +259,23 @@ describe("FrankenCoin", () => {
       );
     });
     it("calculateAssignedReserve", async () => {});
+  });
+
+  describe("Equity", () => {
+    it("should create one", async () => {
+      const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
+      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
+
+      expect(await zchf.reserve()).to.be.not.eq(ethers.ZeroAddress);
+    });
+
+    it("should use the provided", async () => {
+      const equityAddress = ethers.getAddress(
+        "0x0000000000000000000000000000000000000001"
+      );
+      const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
+      zchf = await frankenCoinFactory.deploy(10 * 86400, equityAddress);
+      expect(await zchf.reserve()).to.be.eq(equityAddress);
+    });
   });
 });

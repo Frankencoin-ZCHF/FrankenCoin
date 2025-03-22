@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import {IGovernance} from "../equity/IGovernance.sol";
 import {ITokenPool} from "./ITokenPool.sol";
-import {IRegistryModuleOwner} from "./IRegistryModuleOwner.sol";
 import {ITokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol";
 import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
 
@@ -51,6 +50,7 @@ contract CCIPAdmin {
 
     error NotAppliable();
     error InvalidUpdate(bytes32 expected, bytes32 given);
+    error AlreadySet();
 
     event RemotePoolUpdateProposed(
         RemotePoolUpdate update,
@@ -72,7 +72,6 @@ contract CCIPAdmin {
     );
     event AdminTransferProposed(address newAdmin, uint64 indexed deadline, address indexed proposer);
     event ProposalVetoed(ProposalType proposalType);
-
     event RemotePoolUpdateApplied(bool add, uint64 indexed remoteChainSelector, bytes indexed remotePoolAddress);
     event ChainRateLimiterUpdateApplied(
         uint64[] remoteChainSelectors,
@@ -87,36 +86,43 @@ contract CCIPAdmin {
         _;
     }
 
-    constructor(
-        IGovernance _governance,
-        ITokenAdminRegistry _tokenAdminRegistry,
-        uint64 _vetoPeriod,
-        address _zchf,
-        IRegistryModuleOwner _registryOwner
-    ) {
+    constructor(IGovernance _governance, ITokenAdminRegistry _tokenAdminRegistry, uint64 _vetoPeriod, address _zchf) {
         GOVERNANCE = _governance;
         VETO_PERIOD = _vetoPeriod;
         TOKEN_ADMIN_REGISTRY = _tokenAdminRegistry;
         ZCHF = _zchf;
-        if (address(_registryOwner) != address(0)) {
-            _registryOwner.registerAdminViaGetCCIPAdmin(_zchf);
-        }
     }
 
+    /**
+     * @notice Sets the token pool to administer and sets in in the TokenAdminRegistry
+     * @dev The token pool can only be set once
+     * @param _tokenPool The token pool to set
+     */
     function setTokenPool(ITokenPool _tokenPool) external {
-        require(address(tokenPool) == address(0));
+        if (address(tokenPool) != address(0)) {
+            revert AlreadySet();
+        }
         tokenPool = _tokenPool;
         TOKEN_ADMIN_REGISTRY.setPool(ZCHF, address(_tokenPool));
     }
 
+    /**
+     * @notice Accepts the admin role transfer on the TokenAdminRegistry
+     */
     function acceptAdmin() public {
         TOKEN_ADMIN_REGISTRY.acceptAdminRole(ZCHF);
     }
 
+    /**
+     * @notice Accepts ownership transfer on the TokenPool
+     */
     function acceptOwnership() public {
         tokenPool.acceptOwnership();
     }
 
+    /**
+     * @notice Accepts ownership and admin role transfer
+     */
     function acceptCCIPAll() external {
         acceptAdmin();
         acceptOwnership();

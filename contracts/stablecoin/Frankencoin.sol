@@ -18,7 +18,6 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      */
     uint256 public constant MIN_FEE = 1000 * (10 ** 18);
     uint256 public immutable MIN_APPLICATION_PERIOD; // for example 10 days
-    address public immutable CCIP_ADMIN;
 
     /**
      * @notice The contract that holds the reserve.
@@ -63,14 +62,9 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(uint256 _minApplicationPeriod, address _ccipAdmin, address _reserve) ERC20(18) {
+    constructor(uint256 _minApplicationPeriod, address _reserve) ERC20(18) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
-        CCIP_ADMIN = _ccipAdmin;
         reserve = address(_reserve) == address(0) ? new Equity(this) : Equity(_reserve);
-    }
-
-    function getCCIPAdmin() external view returns (address) {
-        return CCIP_ADMIN;
     }
 
     function name() external pure override returns (string memory) {

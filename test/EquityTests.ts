@@ -31,7 +31,7 @@ describe("Equity Tests", () => {
 
   beforeEach(async () => {
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress, ethers.ZeroAddress);
+    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
 
     let supply = floatToDec18(1000_000);
     const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");

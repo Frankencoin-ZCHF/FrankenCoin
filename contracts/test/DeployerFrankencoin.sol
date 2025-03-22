@@ -18,7 +18,7 @@ contract DeployerFrankencoin {
     event Log(address sender, string message);
 
     constructor() {
-        zchf = new Frankencoin(1, address(0), address(0));
+        zchf = new Frankencoin(1, address(0));
         factory = new PositionFactory();
         roller = new PositionRoller(address(zchf));
         leadrate = new Leadrate(zchf.reserve(), 20000);
