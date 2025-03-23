@@ -121,14 +121,6 @@ contract CCIPAdmin {
     }
 
     /**
-     * @notice Accepts ownership and admin role transfer
-     */
-    function acceptCCIPAll() external {
-        acceptAdmin();
-        acceptOwnership();
-    }
-
-    /**
      * @notice Proposed a remote pool update
      * @dev The contract only stores the hash. So the data has to be passed in during apply again
      * @param _update  The update proposal

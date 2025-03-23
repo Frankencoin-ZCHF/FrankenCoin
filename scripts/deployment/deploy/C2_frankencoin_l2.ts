@@ -20,21 +20,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let minApplicationPeriod = params["minApplicationPeriod"];
   console.log("\nMin application period =", minApplicationPeriod);
 
-  const deployer = (await hre.getNamedAccounts())["deployer"];
-  const nonce = await hre.ethers.provider.getTransactionCount(deployer);
-  const adminAddress = hre.ethers.getCreateAddress({
-    from: deployer,
-    nonce: nonce + 1,
-  });
   const bridgedGovernance = await get("BridgedGovernance");
   const zchf = await deployContract(hre, "Frankencoin", [
     minApplicationPeriod,
-    adminAddress,
     bridgedGovernance.address,
   ]);
 
   console.log(`Verify zchf: 
-    npx hardhat verify --network ${hre.network.name} ${await zchf.getAddress()} ${minApplicationPeriod} ${adminAddress} ${
+    npx hardhat verify --network ${hre.network.name} ${await zchf.getAddress()} ${minApplicationPeriod} ${
     bridgedGovernance.address
   }
   `);

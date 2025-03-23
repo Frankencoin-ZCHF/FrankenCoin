@@ -280,57 +280,6 @@ describe("CCIP Admin Tests", () => {
     });
   });
 
-  describe("accept ownership and admin", () => {
-    it("should call acceptAdminRole", async () => {
-      const { ccipAdmin, tokenAdminRegistry, zchf } = await loadFixture(
-        deployFixture
-      );
-
-      const tx = await ccipAdmin.acceptCCIPAll();
-      const receipt = await tx.wait();
-
-      const decodedFunctionCalls = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenAdminRegistry.interface
-      );
-      let found = 0;
-      const functionArgs = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["address"],
-        [await zchf.getAddress()]
-      );
-      for (const functionCall of decodedFunctionCalls) {
-        if (
-          functionCall.args[0] == "acceptAdminRole" &&
-          functionCall.args[1] == functionArgs
-        ) {
-          found++;
-        }
-      }
-    });
-
-    it("should call acceptOwnership", async () => {
-      const { ccipAdmin, tokenPool } = await loadFixture(deployFixture);
-
-      const tx = await ccipAdmin.acceptCCIPAll();
-      const receipt = await tx.wait();
-
-      const decodedFunctionCalls = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      let found = 0;
-      const functionArgs = ethers.AbiCoder.defaultAbiCoder().encode([], []);
-      for (const functionCall of decodedFunctionCalls) {
-        if (
-          functionCall.args[0] == "acceptOwnership" &&
-          functionCall.args[1] == functionArgs
-        ) {
-          found++;
-        }
-      }
-    });
-  });
-
   describe("Propose Remote Pool Update", async () => {
     const updateTypes =
       "(uint64 remoteChainSelector, bytes remotePoolAddress, bool add)";

@@ -19,7 +19,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const tokenAdminRegistry = params["tokenAdminRegistry"];
   const vetoPeriod = params["vetoPeriod"];
-  const registryModuleOwner = params["registryModuleOwner"];
   const zchfDeployment = await get("Frankencoin");
   let zchfContract = await ethers.getContractAt(
     "Frankencoin",
@@ -32,18 +31,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     tokenAdminRegistry,
     vetoPeriod,
     zchfDeployment.address,
-    registryModuleOwner
   ]);
 
   console.log(`Verify ccipadmin: 
     npx hardhat verify --network ${hre.network.name} ${await ccipAdmin.getAddress()} ${reserve} ${tokenAdminRegistry} ${vetoPeriod} ${
     zchfDeployment.address
-  } ${registryModuleOwner}
+  }
   `);
-
-  console.log('Accepting token admin');
-  const tx = await ccipAdmin.acceptAdmin();
-  await tx.wait()
 };
 
 export default deploy;

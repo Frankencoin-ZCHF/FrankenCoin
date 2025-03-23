@@ -61,7 +61,7 @@ const config: HardhatUserConfig = {
       timeout: 50_000,
     },
     amoy: {
-      url: `https://polygon-amoy.g.alchemy.com/v2/${alchemy}`,
+      url: `https://rpc.tenderly.co/fork/a7a16f55-3e69-4f60-9f13-3f91ed143931`,
       chainId: 80002,
       gas: "auto",
       gasPrice: "auto",

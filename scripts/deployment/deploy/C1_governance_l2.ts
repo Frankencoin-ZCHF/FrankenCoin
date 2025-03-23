@@ -3,11 +3,7 @@ import { DeployFunction } from "hardhat-deploy/types";
 import { deployContract } from "../deployUtils";
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const {
-    deployments: { get },
-    ethers,
-    network
-  } = hre;
+  const { network } = hre;
   const paramFile = "paramsCCIP.json";
   let chainId = hre.network.config["chainId"];
   let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
@@ -19,17 +15,19 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
 
   const router = params["router"];
-  const mainnetChainSelector = params["mainnetChainSelector"]
-  const mainnetGovernanceSender = params["mainnetGovernanceSender"]
+  const mainnetChainSelector = params["mainnetChainSelector"];
+  const mainnetGovernanceSender = params["mainnetGovernanceSender"];
 
-  const bridgedGovernance = await deployContract(
-    hre,
-    "BridgedGovernance",
-    [router, mainnetChainSelector, mainnetGovernanceSender]
-  );
+  const bridgedGovernance = await deployContract(hre, "BridgedGovernance", [
+    router,
+    mainnetChainSelector,
+    mainnetGovernanceSender,
+  ]);
 
   console.log(`Verify bridgedGovernance: 
-    npx hardhat verify --network ${network.name} ${await bridgedGovernance.getAddress()} ${router} ${mainnetChainSelector} ${mainnetGovernanceSender}`);
+    npx hardhat verify --network ${
+      network.name
+    } ${await bridgedGovernance.getAddress()} ${router} ${mainnetChainSelector} ${mainnetGovernanceSender}`);
 };
 
 export default deploy;

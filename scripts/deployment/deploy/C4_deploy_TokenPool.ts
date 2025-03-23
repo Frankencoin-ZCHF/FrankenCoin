@@ -60,14 +60,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await ccipAdminContract.getAddress()
   );
   await txOwnerTransfer.wait();
-  const txAcceptOwner = await ccipAdminContract.acceptOwnership();
-  await txAcceptOwner.wait();
-
-  console.log("Setting token pool");
-  const tx = await ccipAdminContract.setTokenPool(
-    await burnMintTokenPool.getAddress()
-  );
-  await tx.wait();
 
   console.log("Add pool as minter");
   const txMinter = await zchfContract.initialize(
@@ -75,6 +67,18 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "CCIP Token Pool"
   );
   await txMinter.wait();
+
+  console.log("Deployment done");
+  console.log("");
+  console.log("NEXT STEPS:")
+  console.log(
+    `Ping now the Chainlink team to propose CCIPAdmin (${ccipAdminDeployment.address}) as admin for ZCHF (${zchfDeployment.address})`
+  );
+  console.log(
+    `After they have confirmed the proposal, call acceptAdmin(), setTokenPool(${await burnMintTokenPool.getAddress()}) and acceptOwnership() on CCIPAdmin (${
+      ccipAdminDeployment.address
+    }) in this order.`
+  );
 };
 
 export default deploy;

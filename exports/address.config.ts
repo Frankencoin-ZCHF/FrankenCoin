@@ -1,4 +1,4 @@
-import { mainnet, polygon } from "viem/chains";
+import { mainnet, polygon, sepolia, polygonAmoy } from "viem/chains";
 import { Address, zeroAddress } from "viem";
 
 export interface ChainAddress {
@@ -20,6 +20,15 @@ export interface ChainAddress {
   bridgeArbitrumWfps?: Address;
   bridgeOptimismFrankencoin?: Address;
   bridgeOptimismWfps?: Address;
+
+  // ccip addresses
+  router: Address;
+  chainSelector: string;
+  rmnProxy: Address;
+  tokenAdminRegistry: Address;
+  registryModuleOwner: Address;
+  ccipAdmin: Address;
+  tokenPool: Address;
 
   // accept any optional key
   // [key: string]: Address | undefined;
@@ -49,6 +58,15 @@ export const ADDRESS: Record<number, ChainAddress> = {
     bridgePolygonWfps: "0x54Cc50D5CC4914F0c5DA8b0581938dC590d29b3D",
     bridgeArbitrumWfps: zeroAddress,
     bridgeOptimismWfps: zeroAddress,
+
+    // CCIP addresses
+    router: "0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D",
+    chainSelector: "5009297550715157269",
+    rmnProxy: "0x411dE17f12D1A34ecC7F45f49844626267c75e81",
+    tokenAdminRegistry: "0xb22764f98dD05c789929716D677382Df22C05Cb6",
+    registryModuleOwner: "0x4855174E9479E211337832E109E7721d43A4CA64",
+    ccipAdmin: zeroAddress,
+    tokenPool: zeroAddress,
   },
   [polygon.id]: {
     // For test deployment only
@@ -63,5 +81,37 @@ export const ADDRESS: Record<number, ChainAddress> = {
     positionFactoryV1: "0x56Fa604fD5F96e456798F2dB50c88528A8a81F57",
     mintingHubV2: "0xf214ea93D12F425F71Fc28b5D15F38E700e2daeC",
     positionFactoryV2: "0x151E58D4dAA67EC33f4809491441791e48d1Fe56",
+
+    // CCIP addresses
+    router: "0x849c5ED5a80F5B408Dd4969b78c2C8fdf0565Bfe",
+    chainSelector: "4051577828743386545",
+    rmnProxy: "0xf1ceAa46D8d13Cac9fC38aaEF3d3d14754C5A9c2",
+    tokenAdminRegistry: "0x00F027eA6D0fb03256A15E9182B2B9227A4931d8",
+    registryModuleOwner: "0xc751E86208F0F8aF2d5CD0e29716cA7AD98B5eF5",
+    ccipAdmin: zeroAddress,
+    tokenPool: zeroAddress,
+  },
+  [sepolia.id]: {
+    // For test deployment only
+    frankenCoin: "0x28c4efd564103730160ad1E6A241b30808445363",
+    equity: "0x22f3b4CEED90207620C5631b748f65f805bc774f",
+    wFPS: zeroAddress,
+    bridge: zeroAddress, // not used
+    xchf: zeroAddress, // not used
+    savings: zeroAddress,
+    roller: zeroAddress,
+    mintingHubV1: "0x6f43400A93c222666351c05A4e36Ec6A51a5b49B",
+    positionFactoryV1: "0x6ad579D11349d70704df66bc78f84Ae5BBce8D4A",
+    mintingHubV2: zeroAddress,
+    positionFactoryV2: zeroAddress,
+
+    // CCIP addresses
+    router: "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
+    chainSelector: "16015286601757825753",
+    rmnProxy: "0xba3f6251de62dED61Ff98590cB2fDf6871FbB991",
+    tokenAdminRegistry: "0x95F29FEE11c5C55d26cCcf1DB6772DE953B37B82",
+    registryModuleOwner: "0x62e731218d0D47305aba2BE3751E7EE9E5520790",
+    ccipAdmin: "0x800b47444a905BE45a20Ab19051F7dAA35d18234",
+    tokenPool: "0xBC4F96208f7f0561b5698f7aCaf8c54f51B5B544",
   },
 };
