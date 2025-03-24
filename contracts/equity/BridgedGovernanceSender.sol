@@ -3,71 +3,24 @@
 pragma solidity ^0.8.0;
 
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {SyncVote, SyncMessage} from "./BridgedGovernanceTypes.sol";
+import {SyncVote, SyncMessage} from "./IGovernance.sol";
 import {Governance} from "./Governance.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {IERC20} from "../erc20/IERC20.sol";
+import {CCIPSender} from "../bridge/CCIPSender.sol";
 
-contract BridgedGovernanceSender {
-    
+contract BridgedGovernanceSender is CCIPSender {
     Governance public immutable GOVERNANCE;
-    IRouterClient public immutable ROUTER;
 
-    event MessageSent(
+    event VotesSynced(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
-        bytes indexed receiver, // The address of the receiver on the destination chain.
-        address feeToken, // the token address used to pay CCIP fees.
-        uint256 fees, // The fees paid for sending the CCIP message.
         address[] syncedVoters
     );
 
     error InsufficientBalance(uint256 available, uint256 required);
-    constructor(Governance _governance, IRouterClient _router) {
+    constructor(Governance _governance, IRouterClient _router) CCIPSender(_router) {
         GOVERNANCE = _governance;
-        ROUTER = _router;
-    }
-
-    /**
-     * @notice Sync governance votes to destination paying with ERC20 token
-     * @dev extraArgs for CCIP can be provided such as gasLimit or out-of-order execution
-     *
-     * @param _receiver                 Address of the recipient on the destination chain
-     * @param _destinationChainSelector Chain selector of the destination chain
-     * @param _ccipFeeToken             Token used to pay the ccip fees
-     * @param _voters                   Collection of addresses which votes and delegation should be synced
-     * @param _extraArgs                Extra args for ccip message
-     *
-     * @return messageId bytes32 MessageID of the sent message
-     */
-    function syncVotesPayToken(
-        bytes calldata _receiver,
-        uint64 _destinationChainSelector,
-        IERC20 _ccipFeeToken,
-        address[] calldata _voters,
-        bytes calldata _extraArgs
-    ) external returns (bytes32 messageId) {
-        Client.EVM2AnyMessage memory message = getCCIPMessage(_receiver, address(_ccipFeeToken), _voters, _extraArgs);
-        uint256 fees = ROUTER.getFee(_destinationChainSelector, message);
-        uint256 availableBalance = _ccipFeeToken.balanceOf(msg.sender);
-
-        if (fees > availableBalance) {
-            revert InsufficientBalance({available: availableBalance, required: fees});
-        }
-
-        _ccipFeeToken.transferFrom(msg.sender, address(this), fees);
-        _ccipFeeToken.approve(address(ROUTER), fees);
-
-        messageId = ROUTER.ccipSend(_destinationChainSelector, message);
-
-        emit MessageSent({
-            messageId: messageId,
-            destinationChainSelector: _destinationChainSelector,
-            receiver: _receiver,
-            feeToken: address(_ccipFeeToken),
-            fees: fees,
-            syncedVoters: _voters
-        });
     }
 
     /**
@@ -81,28 +34,27 @@ contract BridgedGovernanceSender {
      *
      * @return messageId bytes32 MessageID of the sent message
      */
-    function syncVotesPayNative(
-        bytes calldata _receiver,
+    function syncVotes(
         uint64 _destinationChainSelector,
+        bytes calldata _receiver,
+        address _feeTokenAddress,
         address[] calldata _voters,
         bytes calldata _extraArgs
     ) external payable returns (bytes32 messageId) {
-        Client.EVM2AnyMessage memory message = getCCIPMessage(_receiver, address(0), _voters, _extraArgs);
-        uint256 fees = ROUTER.getFee(_destinationChainSelector, message);
-        uint256 availableBalance = address(this).balance;
+        SyncMessage memory syncMessage = _buildSyncMessage(_voters);
+        Client.EVM2AnyMessage memory message = _getCCIPMessage(
+            _receiver,
+            _feeTokenAddress,
+            abi.encode(syncMessage),
+            new Client.EVMTokenAmount[](0),
+            _extraArgs
+        );
 
-        if (fees > availableBalance) {
-            revert InsufficientBalance({available: availableBalance, required: fees});
-        }
+        messageId = _send(_destinationChainSelector, message);
 
-        messageId = ROUTER.ccipSend{value: fees}(_destinationChainSelector, message);
-
-        emit MessageSent({
+        emit VotesSynced({
             messageId: messageId,
             destinationChainSelector: _destinationChainSelector,
-            receiver: _receiver,
-            feeToken: address(0),
-            fees: fees,
             syncedVoters: _voters
         });
     }
@@ -124,18 +76,15 @@ contract BridgedGovernanceSender {
         address[] calldata _voters,
         bytes calldata _extraArgs
     ) public view returns (Client.EVM2AnyMessage memory) {
-        SyncVote[] memory syncVotes = new SyncVote[](_voters.length);
-
-        // omitted unchecked optimization for readability
-        for (uint256 i = 0; i < _voters.length; i++) {
-            syncVotes[i] = SyncVote({
-                voter: _voters[i],
-                votes: GOVERNANCE.votes(_voters[i]),
-                delegatee: GOVERNANCE.delegates(_voters[i])
-            });
-        }
-
-        return _buildCCIPMessage(_receiver, _feeTokenAddress, GOVERNANCE.totalVotes(), syncVotes, _extraArgs);
+        SyncMessage memory syncMessage = _buildSyncMessage(_voters);
+        return
+            _getCCIPMessage(
+                _receiver,
+                _feeTokenAddress,
+                abi.encode(syncMessage),
+                new Client.EVMTokenAmount[](0),
+                _extraArgs
+            );
     }
 
     /**
@@ -154,8 +103,16 @@ contract BridgedGovernanceSender {
         address[] calldata _voters,
         bytes calldata _extraArgs
     ) public view returns (uint256) {
-        Client.EVM2AnyMessage memory message = getCCIPMessage(_receiver, _feeTokenAddress, _voters, _extraArgs);
-        return ROUTER.getFee(_destinationChainSelector, message);
+        SyncMessage memory syncMessage = _buildSyncMessage(_voters);
+        return
+            _getCCIPFee(
+                _destinationChainSelector,
+                _receiver,
+                _feeTokenAddress,
+                abi.encode(syncMessage),
+                new Client.EVMTokenAmount[](0),
+                _extraArgs
+            );
     }
 
     /**
@@ -170,23 +127,18 @@ contract BridgedGovernanceSender {
      *
      * @return Client.EVM2AnyMessage The CCIP message to be sent
      */
-    function _buildCCIPMessage(
-        bytes calldata _receiver,
-        address _feeTokenAddress,
-        uint256 _totalVotes,
-        SyncVote[] memory _votes,
-        bytes calldata _extraArgs
-    ) private pure returns (Client.EVM2AnyMessage memory) {
-        SyncMessage memory _syncMessage = SyncMessage({votes: _votes, totalVotes: _totalVotes});
+    function _buildSyncMessage(address[] calldata _voters) private pure returns (SyncMessage memory) {
+        SyncVote[] memory _syncVotes = new SyncVote[](_voters.length);
 
-        return
-            Client.EVM2AnyMessage({
-                receiver: _receiver,
-                data: abi.encode(_syncMessage),
-                tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array as no tokens are transferred
-                extraArgs: _extraArgs,
-                // Set the feeToken to a feeTokenAddress, indicating specific asset will be used for fees
-                feeToken: _feeTokenAddress
+        // omitted unchecked optimization for readability
+        for (uint256 i = 0; i < _voters.length; i++) {
+            _syncVotes[i] = SyncVote({
+                voter: _voters[i],
+                votes: GOVERNANCE.votes(_voters[i]),
+                delegatee: GOVERNANCE.delegates(_voters[i])
             });
+        }
+
+        return SyncMessage({votes: _syncVotes, totalVotes: GOVERNANCE.totalVotes()});
     }
 }

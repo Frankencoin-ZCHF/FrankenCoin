@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {SyncVote, SyncMessage} from "./BridgedGovernanceTypes.sol";
+import {SyncVote, SyncMessage} from "./IGovernance.sol";
 import {Governance} from "./Governance.sol";
 
 contract BridgedGovernance is CCIPReceiver, Governance {
