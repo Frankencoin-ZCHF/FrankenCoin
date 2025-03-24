@@ -91,7 +91,7 @@ abstract contract AbstractSavings is AbstractLeadrate {
         return calculateInterest(account, ticks(timestamp));
     }
 
-    function calculateInterest(Account memory account, uint64 ticks) public view returns (uint192) {
+    function calculateInterest(Account memory account, uint64 ticks) public pure returns (uint192) {
         if (ticks <= account.ticks || account.ticks == 0) {
             return 0;
         } else {
