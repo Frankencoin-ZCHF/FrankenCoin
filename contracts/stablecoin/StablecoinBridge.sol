@@ -11,6 +11,7 @@ import "./IFrankencoin.sol";
  * @author Frankencoin
  */
 contract StablecoinBridge {
+    
     IERC20 public immutable chf; // the source stablecoin
     IFrankencoin public immutable zchf; // the Frankencoin
 

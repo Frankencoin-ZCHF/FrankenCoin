@@ -203,17 +203,15 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     /**
      * Uses a multichain call to send home all accrued profits, if any
      */
-    function sendProfitsHome() external {
+    function synchronizeAccounting() external {
         uint256 reserveLeft = balanceOf(address(reserve));
         if (reserveLeft > 0) {
-            // TODO: transfer(mainnet, equityContract, reserveLeft);
+            // TODO: call receiveProfits(reserveLeft); on mainnet contract and send tokens along with it
             emit SentProfitsHome(reserveLeft);
+        } else {
+            // TODO: call receiveLosses(accruedLoss); on mainnet contract
+            accruedLoss = 0;
         }
-    }
-
-    function reportLosses() external {
-        // TODO: burn accruedLoss tokens on the mainnet equity contract
-        accruedLoss = 0;
     }
 
     /**
