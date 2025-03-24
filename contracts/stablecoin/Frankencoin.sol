@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "../erc20/ERC20PermitLight.sol";
 import "../equity/IGovernance.sol";
 import "../equity/Equity.sol";
+import "./IBasicFrankencoin.sol";
 import "./IFrankencoin.sol";
 
 /**

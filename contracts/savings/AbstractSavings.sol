@@ -181,6 +181,16 @@ abstract contract AbstractSavings is AbstractLeadrate {
     }
 
     /**
+     * Withdraw the given amount and set the referrer to earn a fee on the collected interest.
+     * 
+     * Referral fee is given in parts per million and can be at most 250'000, which is 25%.
+     */
+    function withdraw(uint192 amount, address referrer, uint24 referralFeePPM) public {
+        withdraw(msg.sender, amount);
+        setReferrer(referrer, referralFeePPM);
+    }
+
+    /**
      * Adjust to the given amount and set the referrer to earn a fee on the collected interest.
      * 
      * Referral fee is given in parts per million and can be at most 250'000, which is 25%.

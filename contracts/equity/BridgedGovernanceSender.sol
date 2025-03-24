@@ -9,6 +9,7 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {IERC20} from "../erc20/IERC20.sol";
 
 contract BridgedGovernanceSender {
+    
     Governance public immutable GOVERNANCE;
     IRouterClient public immutable ROUTER;
 

@@ -14,10 +14,10 @@ contract TestTokenPool is ITokenPool {
     function removeRemotePool(uint64 remoteChainSelector, bytes calldata remotePoolAddress) external {
         emit FunctionCalled("removeRemotePool", abi.encode(remoteChainSelector, remotePoolAddress));
     }
-    function setChainRateLimiterConfigs(
-        uint64[] calldata remoteChainSelectors,
-        RateLimiter.Config[] calldata outboundConfigs,
-        RateLimiter.Config[] calldata inboundConfigs
+    function setChainRateLimiterConfig(
+        uint64 remoteChainSelectors,
+        RateLimiter.Config calldata outboundConfigs,
+        RateLimiter.Config calldata inboundConfigs
     ) external {
         emit FunctionCalled(
             "setChainRateLimiterConfigs",

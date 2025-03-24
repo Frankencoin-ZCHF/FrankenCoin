@@ -15,6 +15,7 @@ import "./AbstractLeadrate.sol";
  *
  **/
 contract BridgedLeadrate is AbstractLeadrate, CCIPReceiver {
+    
     constructor(address router_, uint24 initialRatePPM) AbstractLeadrate(initialRatePPM) CCIPReceiver(router_) {}
 
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {}

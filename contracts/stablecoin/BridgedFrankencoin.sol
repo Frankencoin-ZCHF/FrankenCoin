@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import "../erc20/ERC20PermitLight.sol";
-import "../equity/Equity.sol";
 import "../equity/BridgedGovernance.sol";
+import "../erc20/ERC20PermitLight.sol";
+import "../equity/IGovernance.sol";
+import "../equity/Equity.sol";
+import "./IBasicFrankencoin.sol";
 
 /**
  * @title Bridged Frankencoin ERC-20 Token
@@ -16,14 +16,17 @@ import "../equity/BridgedGovernance.sol";
  * However, there is only one FPS, the one on mainnet and voting power has to be projected onto the
  * side chains.
  */
-contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
+contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankencoin {
     /**
      * @notice Minimal fee and application period when suggesting a new minter.
      */
     uint256 public constant MIN_FEE = 1000 * (10 ** 18);
     uint256 public immutable MIN_APPLICATION_PERIOD; // for example 10 days
 
-    uint256 internal constant DISABLE_MINTER_ALLOWANCE = INFINITY + 1;
+    /**
+     * @notice The contract that holds the reserve.
+     */
+    IGovernance public immutable override reserve;
 
     /**
      * @notice Map of minters to approval time stamps. If the time stamp is in the past, the minter contract is allowed
@@ -36,15 +39,13 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
      */
     mapping(address position => address registeringMinter) public positions;
 
-    IGovernance public immutable reserve;
-
     uint256 public accruedLoss;
 
+    event SentProfitsHome(uint256 amount);
     event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
     event MinterDenied(address indexed minter, string message);
     event Loss(address indexed reportingMinter, uint256 amount);
     event Profit(address indexed reportingMinter, uint256 amount);
-    event SentProfitsHome(uint256 amount);
 
     error PeriodTooShort();
     error FeeTooLow();
@@ -65,7 +66,7 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
         IGovernance reserve_,
         address router_,
         uint256 _minApplicationPeriod
-    ) ERC20(18) CCIPReceiver(router_) {
+    ) ERC20(18) CrossChainERC20(router_) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = reserve_;
     }
@@ -97,7 +98,7 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
         uint256 _applicationPeriod,
         uint256 _applicationFee,
         string calldata _message
-    ) external {
+    ) external override {
         if (_applicationPeriod < MIN_APPLICATION_PERIOD) revert PeriodTooShort();
         if (_applicationFee < MIN_FEE) revert FeeTooLow();
         if (minters[_minter] != 0) revert AlreadyRegistered();
@@ -113,18 +114,20 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
      */
     function _allowance(address owner, address spender) internal view override returns (uint256) {
         uint256 explicit = super._allowance(owner, spender);
-        if ((explicit == 0 || explicit == DISABLE_MINTER_ALLOWANCE) && canMint(spender)) {
-            // if there is no allowance set (or minters explicitely disabled), we check for minter's allowance
-            return explicit == DISABLE_MINTER_ALLOWANCE ? 0 : INFINITY;
+        if (explicit > 0) {
+            return explicit; // don't waste gas checking minter
+        } else if (isMinter(spender) || isMinter(getPositionParent(spender)) || spender == address(reserve)) {
+            return INFINITY;
+        } else {
+            return 0;
         }
-        return explicit;
     }
 
     /**
      * @notice Allows minters to register collateralized debt positions, thereby giving them the ability to mint Frankencoins.
      * @dev It is assumed that the responsible minter that registers the position ensures that the position can be trusted.
      */
-    function registerPosition(address _position) external {
+    function registerPosition(address _position) external override {
         if (!isMinter(msg.sender)) revert NotMinter();
         positions[_position] = msg.sender;
     }
@@ -133,14 +136,14 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
      * @notice Qualified pool share holders can deny minters during the application period.
      * @dev Calling this function is relatively cheap thanks to the deletion of a storage slot.
      */
-    function denyMinter(address _minter, address[] calldata _helpers, string calldata _message) external {
+    function denyMinter(address _minter, address[] calldata _helpers, string calldata _message) external override {
         if (block.timestamp > minters[_minter]) revert TooLate();
         reserve.checkQualified(msg.sender, _helpers);
         delete minters[_minter];
         emit MinterDenied(_minter, _message);
     }
 
-    function mint(address _target, uint256 _amount) external minterOnly {
+    function mint(address _target, uint256 _amount) external override minterOnly {
         _mint(_target, _amount);
     }
 
@@ -154,7 +157,7 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
     /**
      * @notice Burn someone elses ZCHF.
      */
-    function burnFrom(address _owner, uint256 _amount) external minterOnly {
+    function burnFrom(address _owner, uint256 _amount) external override minterOnly {
         _burn(_owner, _amount);
     }
 
@@ -181,7 +184,7 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
         emit Loss(source, _amount);
     }
 
-    function collectProfits(address source, uint256 _amount) external minterOnly {
+    function collectProfits(address source, uint256 _amount) external override minterOnly {
         _collectProfits(msg.sender, source, _amount);
     }
 
@@ -227,5 +230,4 @@ contract BridgedFrankencoin is ERC20PermitLight, CCIPReceiver {
         return positions[_position];
     }
 
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {}
 }
