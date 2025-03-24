@@ -7,19 +7,20 @@ import {ITokenPool} from "./ITokenPool.sol";
 import {IRegistryModuleOwner} from "./IRegistryModuleOwner.sol";
 import {ITokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol";
 import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
+import {BridgeAccounting} from "../equity/BridgeAccounting.sol";
 
 /**
  * The admin for briding Frankencoins using CCIP.
  * Each chain needs an instance of this administrator.
  */
 contract CCIPAdmin {
-
     uint64 public constant DAY = 24 * 60 * 60;
 
     IGovernance public immutable GOVERNANCE;
     ITokenPool public tokenPool;
     ITokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;
     address public immutable ZCHF;
+    BridgeAccounting public immutable BRIDGE_ACCOUNTING;
 
     struct RemotePoolUpdate {
         bool add; // true if adding, false if removing
@@ -27,7 +28,7 @@ contract CCIPAdmin {
         bytes remotePoolAddress;
     }
 
-    mapping (bytes32 hash => uint64 deadline) public proposals;
+    mapping(bytes32 hash => uint64 deadline) public proposals;
 
     error TooEarly(uint64 deadline);
     error UnknownProposal(bytes32 hash);
@@ -42,6 +43,7 @@ contract CCIPAdmin {
     event RemoveChainProposed(bytes32 hash, address indexed proposer, uint64 chain);
     event AddChainProposed(bytes32 hash, address indexed proposer, ITokenPool.ChainUpdate update);
     event AdminTransferProposed(bytes32 hash, address indexed proposer, address newAdmin);
+    event AccountingSenderProposed(bytes32 hash, uint64 indexed chainSelector, bytes indexed sender);
 
     event RemotePoolAdded(uint64 indexed remoteChainSelector, bytes indexed remotePoolAddress);
     event RemotePoolRemoved(uint64 indexed remoteChainSelector, bytes indexed remotePoolAddress);
@@ -49,16 +51,23 @@ contract CCIPAdmin {
     event ChainAdded(ITokenPool.ChainUpdate config);
     event AdminTransfered(address newAdmin);
     event RateLimit(uint64 remoteChain, RateLimiter.Config inboundConfigs, RateLimiter.Config outboundConfig);
+    event AccountingSenderAdded(uint64 indexed chainSelector, bytes indexed sender);
 
     modifier onlyQualified(address[] calldata helpers) {
         GOVERNANCE.checkQualified(msg.sender, helpers);
         _;
     }
 
-    constructor(IGovernance _governance, ITokenAdminRegistry _tokenAdminRegistry, address _zchf) {
+    constructor(
+        IGovernance _governance,
+        ITokenAdminRegistry _tokenAdminRegistry,
+        address _zchf,
+        BridgeAccounting _bridgedAccounting
+    ) {
         GOVERNANCE = _governance;
         TOKEN_ADMIN_REGISTRY = _tokenAdminRegistry;
         ZCHF = _zchf;
+        BRIDGE_ACCOUNTING = _bridgedAccounting;
     }
 
     /**
@@ -138,12 +147,17 @@ contract CCIPAdmin {
      * applied during emergencies, e.g. when a chain has been hacked. Therefore, it is desirable to ensure that
      * they can be applied quickly. Nonetheless, the proposal fee is still charged to discourage shenenigans.
      */
-    function applyRateLimit(uint64 chain, RateLimiter.Config calldata inbound, RateLimiter.Config calldata outbound, address[] calldata helpers) external onlyQualified(helpers) {
+    function applyRateLimit(
+        uint64 chain,
+        RateLimiter.Config calldata inbound,
+        RateLimiter.Config calldata outbound,
+        address[] calldata helpers
+    ) external onlyQualified(helpers) {
         tokenPool.setChainRateLimiterConfig(chain, inbound, outbound);
         emit RateLimit(chain, inbound, outbound);
     }
 
-        /**
+    /**
      * @notice Propose to add or remove remote chains
      * @dev The contract only stores the hash. So the data has to be passed in during apply again
      * @param chainId The chain to remove
@@ -214,4 +228,19 @@ contract CCIPAdmin {
         emit AdminTransfered(newAdmin);
     }
 
+    function proposeAccountingSender(
+        uint64 _chainSelector,
+        bytes calldata _sender,
+        address[] calldata helpers
+    ) external {
+        bytes32 hash = keccak256(abi.encode("accountingSender", _chainSelector, _sender));
+        propose(hash, 7, helpers);
+        emit AccountingSenderProposed(hash, _chainSelector, _sender);
+    }
+
+    function applyAccountSender(uint64 _chainSelector, bytes calldata _sender) external {
+        enact(keccak256(abi.encode("accountingSender", _chainSelector, _sender)));
+        BRIDGE_ACCOUNTING.addSender(_chainSelector, _sender);
+        emit AccountingSenderAdded(_chainSelector, _sender);
+    }
 }

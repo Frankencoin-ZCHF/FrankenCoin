@@ -7,7 +7,6 @@ import "../erc20/IERC20.sol";
 import "../stablecoin/IFrankencoin.sol";
 import "../minting/IPosition.sol";
 import "./AbstractLeadrate.sol";
-import {LeadrateSyncMessage} from "./ILeadrate.sol";
 
 /**
  * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')
@@ -36,11 +35,7 @@ contract BridgedLeadrate is AbstractLeadrate, CCIPReceiver {
         if (any2EvmMessage.sourceChainSelector != MAINNET_CHAIN_SELECTOR) revert InvalidSourceChain();
         if (abi.decode(any2EvmMessage.sender, (address)) != MAINNET_LEADRATE_ADDRESS) revert InvalidSender();
 
-        LeadrateSyncMessage memory message = abi.decode(any2EvmMessage.data, (LeadrateSyncMessage));
-        _reportRate(message.newRatePPM);
-    }
-
-    function _reportRate(uint24 newRatePPM_) internal {
-        super.updateRate(newRatePPM_);
+        uint24 newRate = abi.decode(any2EvmMessage.data, (uint24));
+        super.updateRate(newRate);
     }
 }

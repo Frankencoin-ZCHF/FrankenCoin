@@ -22,6 +22,8 @@ interface IBasicFrankencoin is IERC20 {
 
     function burnFrom(address target, uint256 amount) external;
 
+    function burn(uint256 amount) external;
+
     function coverLoss(address source, uint256 amount) external;
 
     function collectProfits(address source, uint256 _amount) external;

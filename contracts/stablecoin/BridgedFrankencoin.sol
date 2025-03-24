@@ -66,8 +66,9 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     constructor(
         IGovernance reserve_,
         address router_,
-        uint256 _minApplicationPeriod
-    ) ERC20(18) CrossChainERC20(router_) {
+        uint256 _minApplicationPeriod,
+        address _linkToken
+    ) ERC20(18) CrossChainERC20(router_, _linkToken) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = reserve_;
     }
