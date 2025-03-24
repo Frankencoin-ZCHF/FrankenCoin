@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {LeadrateSyncMessage} from "./ILeadrate.sol";
 import {Leadrate} from "./Leadrate.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {CCIPSender} from "../bridge/CCIPSender.sol";
@@ -33,11 +32,11 @@ contract LeadrateSender is CCIPSender {
         }
 
         _applyPendingChanges();
-        LeadrateSyncMessage memory syncMessage = _getLeadrateInfos();
+        uint24 currentRate = LEADRATE.currentRatePPM();
         for (uint256 i; i < _destinationChainSelectors.length; i++) {
-            Client.EVM2AnyMessage memory message = _buildCCIPMessage(_bridgedLeadrates[i], syncMessage, _extraArgs);
+            Client.EVM2AnyMessage memory message = _buildCCIPMessage(_bridgedLeadrates[i], currentRate, _extraArgs);
             (, uint256 fee) = _ccipSend(_destinationChainSelectors[i], message);
-            emit Pushed(_destinationChainSelectors[i], _bridgedLeadrates[i], fee, syncMessage.newRatePPM);
+            emit Pushed(_destinationChainSelectors[i], _bridgedLeadrates[i], fee, currentRate);
         }
     }
 
@@ -47,10 +46,10 @@ contract LeadrateSender is CCIPSender {
         bytes calldata _extraArgs
     ) external {
         _applyPendingChanges();
-        LeadrateSyncMessage memory syncMessage = _getLeadrateInfos();
-        Client.EVM2AnyMessage memory message = _buildCCIPMessage(_bridgedLeadrate, syncMessage, _extraArgs);
+        uint24 currentRate = LEADRATE.currentRatePPM();
+        Client.EVM2AnyMessage memory message = _buildCCIPMessage(_bridgedLeadrate, currentRate, _extraArgs);
         (, uint256 fee) = _ccipSend(_destinationChainSelector, message);
-        emit Pushed(_destinationChainSelector, _bridgedLeadrate, fee, syncMessage.newRatePPM);
+        emit Pushed(_destinationChainSelector, _bridgedLeadrate, fee, currentRate);
     }
 
     function _applyPendingChanges() internal {
@@ -59,20 +58,15 @@ contract LeadrateSender is CCIPSender {
         }
     }
 
-    function _getLeadrateInfos() private view returns (LeadrateSyncMessage memory) {
-        uint24 currentRatePPM = LEADRATE.currentRatePPM();
-        return LeadrateSyncMessage({newRatePPM: currentRatePPM});
-    }
-
     function _buildCCIPMessage(
         bytes calldata _receiver,
-        LeadrateSyncMessage memory _syncMessage,
+        uint24 _currentRate,
         bytes calldata _extraArgs
     ) private view returns (Client.EVM2AnyMessage memory) {
         return
             Client.EVM2AnyMessage({
                 receiver: _receiver,
-                data: abi.encode(_syncMessage),
+                data: abi.encode(_currentRate),
                 tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array as no tokens are transferred
                 extraArgs: _extraArgs,
                 // Set the feeToken to a feeTokenAddress, indicating specific asset will be used for fees
