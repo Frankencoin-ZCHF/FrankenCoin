@@ -8,6 +8,7 @@ import {IERC20} from "../erc20/IERC20.sol";
 
 abstract contract CCIPSender {
     IRouterClient public immutable ROUTER;
+    address public immutable LINK;
 
     event CCIPMessageSent(
         bytes32 indexed messageId,
@@ -16,38 +17,36 @@ abstract contract CCIPSender {
         Client.EVM2AnyMessage message
     );
 
-    constructor(IRouterClient _router) {
+    constructor(IRouterClient _router, address _link) {
         ROUTER = _router;
+        LINK = _link;
     }
 
     function _getCCIPMessage(
         bytes calldata _receiver,
-        address _feeTokenAddress,
         bytes memory _payload,
         Client.EVMTokenAmount[] memory _tokenAmounts,
         bytes calldata _extraArgs
-    ) internal pure returns (Client.EVM2AnyMessage memory) {
+    ) internal view returns (Client.EVM2AnyMessage memory) {
         return
             Client.EVM2AnyMessage({
                 receiver: _receiver,
                 data: _payload,
                 tokenAmounts: _tokenAmounts,
                 extraArgs: _extraArgs,
-                feeToken: _feeTokenAddress
+                feeToken: _getFeeToken()
             });
     }
 
     function _getCCIPFee(
         uint64 _destinationChainSelector,
         bytes calldata _receiver,
-        address _feeTokenAddress,
         bytes memory _payload,
         Client.EVMTokenAmount[] memory _tokenAmounts,
         bytes calldata _extraArgs
     ) internal view returns (uint256) {
         Client.EVM2AnyMessage memory message = _getCCIPMessage(
             _receiver,
-            _feeTokenAddress,
             _payload,
             _tokenAmounts,
             _extraArgs
@@ -77,5 +76,12 @@ abstract contract CCIPSender {
         }
 
         emit CCIPMessageSent(messageId, _destinationChainSelector, fee, _message);
+    }
+
+    function _getFeeToken() internal view returns (address) {
+        if(msg.value > 0) {
+            return address(0);
+        }
+        return LINK;
     }
 }

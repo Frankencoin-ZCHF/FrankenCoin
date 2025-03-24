@@ -15,11 +15,12 @@ contract BridgedGovernanceSender is CCIPSender {
     event VotesSynced(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
+        uint256 fee,
         address[] syncedVoters
     );
 
     error InsufficientBalance(uint256 available, uint256 required);
-    constructor(Governance _governance, IRouterClient _router) CCIPSender(_router) {
+    constructor(Governance _governance, IRouterClient _router, address _linkToken) CCIPSender(_router, _linkToken) {
         GOVERNANCE = _governance;
     }
 
@@ -37,24 +38,23 @@ contract BridgedGovernanceSender is CCIPSender {
     function syncVotes(
         uint64 _destinationChainSelector,
         bytes calldata _receiver,
-        address _feeTokenAddress,
         address[] calldata _voters,
         bytes calldata _extraArgs
-    ) external payable returns (bytes32 messageId) {
+    ) external payable returns (bytes32 messageId, uint256 fee) {
         SyncMessage memory syncMessage = _buildSyncMessage(_voters);
         Client.EVM2AnyMessage memory message = _getCCIPMessage(
             _receiver,
-            _feeTokenAddress,
             abi.encode(syncMessage),
             new Client.EVMTokenAmount[](0),
             _extraArgs
         );
 
-        messageId = _send(_destinationChainSelector, message);
+        (messageId, fee) = _ccipSend(_destinationChainSelector, message);
 
         emit VotesSynced({
             messageId: messageId,
             destinationChainSelector: _destinationChainSelector,
+            fee: fee,
             syncedVoters: _voters
         });
     }
@@ -64,7 +64,6 @@ contract BridgedGovernanceSender is CCIPSender {
      * @dev Gets the necessary information for voters from governance
      *
      * @param _receiver                 Address of the recipient on the destination chain
-     * @param _feeTokenAddress          Token used to pay the ccip fees
      * @param _voters                   Collection of addresses which votes and delegation should be synced
      * @param _extraArgs                Extra args for ccip message
      *
@@ -72,7 +71,6 @@ contract BridgedGovernanceSender is CCIPSender {
      */
     function getCCIPMessage(
         bytes calldata _receiver,
-        address _feeTokenAddress,
         address[] calldata _voters,
         bytes calldata _extraArgs
     ) public view returns (Client.EVM2AnyMessage memory) {
@@ -80,7 +78,6 @@ contract BridgedGovernanceSender is CCIPSender {
         return
             _getCCIPMessage(
                 _receiver,
-                _feeTokenAddress,
                 abi.encode(syncMessage),
                 new Client.EVMTokenAmount[](0),
                 _extraArgs
@@ -90,7 +87,6 @@ contract BridgedGovernanceSender is CCIPSender {
     /**
      * @notice Get the fee required to send a CCIP message.
      * @param _destinationChainSelector The selector of the destination chain.
-     * @param _feeTokenAddress          The address of the fee token.
      * @param _voters                   Collection of addresses which votes and delegation should be synced
      * @param _extraArgs                Extra args for ccip message
      *
@@ -99,7 +95,6 @@ contract BridgedGovernanceSender is CCIPSender {
     function getCCIPFee(
         bytes calldata _receiver,
         uint64 _destinationChainSelector,
-        address _feeTokenAddress,
         address[] calldata _voters,
         bytes calldata _extraArgs
     ) public view returns (uint256) {
@@ -108,7 +103,6 @@ contract BridgedGovernanceSender is CCIPSender {
             _getCCIPFee(
                 _destinationChainSelector,
                 _receiver,
-                _feeTokenAddress,
                 abi.encode(syncMessage),
                 new Client.EVMTokenAmount[](0),
                 _extraArgs
@@ -116,18 +110,13 @@ contract BridgedGovernanceSender is CCIPSender {
     }
 
     /**
-     * @notice Builds the CCIP message to be sent
+     * @notice Builds the CCIP payload to be sent
      * @dev Gets the necessary information for voters from governance
+     * @param _voters           Voters to be synced
      *
-     * @param _receiver         Address of the recipient on the destination chain
-     * @param _feeTokenAddress  Token used to pay the ccip fees
-     * @param _totalVotes       Total votes available in governance
-     * @param _votes            Collection of SyncVote
-     * @param _extraArgs        Extra args for ccip message
-     *
-     * @return Client.EVM2AnyMessage The CCIP message to be sent
+     * @return SyncMessage The payload to be sent
      */
-    function _buildSyncMessage(address[] calldata _voters) private pure returns (SyncMessage memory) {
+    function _buildSyncMessage(address[] calldata _voters) private view returns (SyncMessage memory) {
         SyncVote[] memory _syncVotes = new SyncVote[](_voters.length);
 
         // omitted unchecked optimization for readability

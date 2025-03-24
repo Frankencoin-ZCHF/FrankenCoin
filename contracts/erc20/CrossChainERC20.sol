@@ -12,15 +12,14 @@ import {CCIPSender} from "../bridge/CCIPSender.sol";
 abstract contract CrossChainERC20 is ERC20, CCIPSender {
     event Transfer(address indexed from, uint64 toChain, address indexed to, uint256 value);
 
-    constructor(address router) CCIPSender(IRouterClient(router)) {}
+    constructor(address router, address linkToken) CCIPSender(IRouterClient(router), linkToken) {}
 
     function transfer(
         uint64 destinationChainSelector,
         address target,
-        uint256 amount,
-        address feeTokenAddress
+        uint256 amount
     ) external payable {
-        Client.EVM2AnyMessage memory message = _buildCCIPMessage(target, amount, feeTokenAddress);
+        Client.EVM2AnyMessage memory message = _buildCCIPMessage(target, amount);
 
         _ccipSend(destinationChainSelector, message);
         emit Transfer(msg.sender, destinationChainSelector, target, amount);
@@ -30,12 +29,10 @@ abstract contract CrossChainERC20 is ERC20, CCIPSender {
     /// @dev This function will create an EVM2AnyMessage struct with all the necessary information for tokens transfer.
     /// @param _receiver The address of the receiver.
     /// @param _amount The amount of the token to be transferred.
-    /// @param feeToken The address of the token used for fees. Set address(0) for native gas.
     /// @return Client.EVM2AnyMessage Returns an EVM2AnyMessage struct which contains information for sending a CCIP message.
     function _buildCCIPMessage(
         address _receiver,
-        uint256 _amount,
-        address _feeTokenAddress
+        uint256 _amount
     ) private view returns (Client.EVM2AnyMessage memory) {
         // Set the token amounts
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
@@ -54,7 +51,7 @@ abstract contract CrossChainERC20 is ERC20, CCIPSender {
                     })
                 ),
                 // Set the feeToken to a feeTokenAddress, indicating specific asset will be used for fees
-                feeToken: _feeTokenAddress
+                feeToken: _getFeeToken()
             });
     }
 }
