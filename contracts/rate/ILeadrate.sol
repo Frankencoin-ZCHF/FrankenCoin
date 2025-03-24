@@ -5,3 +5,9 @@ interface ILeadrate {
    function currentRatePPM() external view returns (uint24);
    function currentTicks() external view returns (uint64);
 }
+
+struct LeadrateSyncMessage {
+   uint24 currentRatePPM;
+   uint40 anchorTime;
+   uint64 ticksAnchor;
+}
