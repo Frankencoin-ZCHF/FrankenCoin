@@ -7,7 +7,5 @@ interface ILeadrate {
 }
 
 struct LeadrateSyncMessage {
-   uint24 currentRatePPM;
-   uint40 anchorTime;
-   uint64 ticksAnchor;
+   uint24 newRatePPM;
 }

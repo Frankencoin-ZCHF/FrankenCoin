@@ -6,6 +6,7 @@ import "../erc20/ERC20PermitLight.sol";
 import "../equity/IGovernance.sol";
 import "../equity/Equity.sol";
 import "./IBasicFrankencoin.sol";
+import "../erc20/CrossChainERC20.sol";
 
 /**
  * @title Bridged Frankencoin ERC-20 Token

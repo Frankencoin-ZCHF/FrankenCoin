@@ -7,6 +7,7 @@ import "../erc20/IERC20.sol";
 import "../stablecoin/IFrankencoin.sol";
 import "../minting/IPosition.sol";
 import "./AbstractLeadrate.sol";
+import {LeadrateSyncMessage} from "./ILeadrate.sol";
 
 /**
  * @title Leadrate (attempt at translating the nicely concise German term 'Leitzins')
@@ -15,10 +16,29 @@ import "./AbstractLeadrate.sol";
  *
  **/
 contract BridgedLeadrate is AbstractLeadrate, CCIPReceiver {
-    
-    constructor(address router_, uint24 initialRatePPM) AbstractLeadrate(initialRatePPM) CCIPReceiver(router_) {}
+    uint64 public immutable MAINNET_CHAIN_SELECTOR;
+    address public immutable MAINNET_LEADRATE_ADDRESS;
 
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {}
+    error InvalidSourceChain();
+    error InvalidSender();
+
+    constructor(
+        address router_,
+        uint24 initialRatePPM,
+        uint64 mainnetChainSelector,
+        address mainnetLeadrate
+    ) AbstractLeadrate(initialRatePPM) CCIPReceiver(router_) {
+        MAINNET_CHAIN_SELECTOR = mainnetChainSelector;
+        MAINNET_LEADRATE_ADDRESS = mainnetLeadrate;
+    }
+
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
+        if (any2EvmMessage.sourceChainSelector != MAINNET_CHAIN_SELECTOR) revert InvalidSourceChain();
+        if (abi.decode(any2EvmMessage.sender, (address)) != MAINNET_LEADRATE_ADDRESS) revert InvalidSender();
+
+        LeadrateSyncMessage memory message = abi.decode(any2EvmMessage.data, (LeadrateSyncMessage));
+        _reportRate(message.newRatePPM);
+    }
 
     function _reportRate(uint24 newRatePPM_) internal {
         super.updateRate(newRatePPM_);
