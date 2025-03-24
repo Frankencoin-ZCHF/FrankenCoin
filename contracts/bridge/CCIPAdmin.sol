@@ -86,11 +86,6 @@ contract CCIPAdmin {
         tokenPool.acceptOwnership();
     }
 
-    function acceptCCIPAll() external {
-        acceptAdmin();
-        acceptOwnership();
-    }
-
     function propose(bytes32 hash, uint64 delayInDays, address[] calldata _helpers) internal onlyQualified(_helpers) {
         if (proposals[hash] > 0) revert ProposalAlreadyMade(hash);
         proposals[hash] = uint64(block.timestamp) + delayInDays * DAY;
