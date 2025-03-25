@@ -23,7 +23,7 @@ abstract contract CCIPSender {
     }
 
     function _getCCIPMessage(
-        bytes calldata _receiver,
+        bytes memory _receiver,
         bytes memory _payload,
         Client.EVMTokenAmount[] memory _tokenAmounts,
         bytes calldata _extraArgs

@@ -7,6 +7,7 @@ import "../equity/IGovernance.sol";
 import "../equity/Equity.sol";
 import "./IBasicFrankencoin.sol";
 import "../erc20/CrossChainERC20.sol";
+import "../bridge/CCIPSender.sol";
 
 /**
  * @title Bridged Frankencoin ERC-20 Token
@@ -23,6 +24,8 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
      */
     uint256 public constant MIN_FEE = 1000 * (10 ** 18);
     uint256 public immutable MIN_APPLICATION_PERIOD; // for example 10 days
+    address public immutable BRIDGE_ACCOUNTING;
+    uint64 public immutable MAINNET_CHAIN_SELECTOR;
 
     /**
      * @notice The contract that holds the reserve.
@@ -42,7 +45,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
 
     uint256 public accruedLoss;
 
-    event SentProfitsHome(uint256 amount);
+    event AccountingSynchronized(uint256 profit, uint256 losses);
     event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
     event MinterDenied(address indexed minter, string message);
     event Loss(address indexed reportingMinter, uint256 amount);
@@ -67,10 +70,12 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
         IGovernance reserve_,
         address router_,
         uint256 _minApplicationPeriod,
-        address _linkToken
+        address _linkToken,
+        uint64 _mainnetChainSelector
     ) ERC20(18) CrossChainERC20(router_, _linkToken) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = reserve_;
+        MAINNET_CHAIN_SELECTOR = _mainnetChainSelector;
     }
 
     function name() external pure override returns (string memory) {
@@ -205,15 +210,26 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     /**
      * Uses a multichain call to send home all accrued profits, if any
      */
-    function synchronizeAccounting() external {
+    function synchronizeAccounting(bytes calldata _extraArgs) external {
         uint256 reserveLeft = balanceOf(address(reserve));
+        uint256 _accuredLoss = accruedLoss;
+        accruedLoss = 0;
+
         if (reserveLeft > 0) {
-            // TODO: call receiveProfits(reserveLeft); on mainnet contract and send tokens along with it
-            emit SentProfitsHome(reserveLeft);
-        } else {
-            // TODO: call receiveLosses(accruedLoss); on mainnet contract
-            accruedLoss = 0;
+            _transfer(address(reserve), address(this), reserveLeft);
+            _approve(address(this), address(ROUTER), reserveLeft);
         }
+
+        Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+        tokenAmounts[0] = Client.EVMTokenAmount({token: address(this), amount: reserveLeft});
+        Client.EVM2AnyMessage memory message = _getCCIPMessage(
+            abi.encode(BRIDGE_ACCOUNTING),
+            abi.encode(reserveLeft, _accuredLoss),
+            tokenAmounts,
+            _extraArgs
+        );
+        _ccipSend(MAINNET_CHAIN_SELECTOR, message);
+        emit AccountingSynchronized(reserveLeft, _accuredLoss);
     }
 
     /**
@@ -229,5 +245,4 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     function getPositionParent(address _position) public view returns (address) {
         return positions[_position];
     }
-
 }

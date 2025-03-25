@@ -63,9 +63,9 @@ contract Frankencoin is ERC20PermitLight, IFrankencoin {
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(uint256 _minApplicationPeriod, address _reserve) ERC20(18) {
+    constructor(uint256 _minApplicationPeriod) ERC20(18) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
-        reserve = address(_reserve) == address(0) ? new Equity(this) : Equity(_reserve);
+        reserve = new Equity(this);
     }
 
     function name() external pure override returns (string memory) {
