@@ -210,7 +210,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     /**
      * Uses a multichain call to send home all accrued profits, if any
      */
-    function synchronizeAccounting(bytes calldata _extraArgs) external {
+    function synchronizeAccounting(bytes calldata _extraArgs) external payable {
         uint256 reserveLeft = balanceOf(address(reserve));
         uint256 _accuredLoss = accruedLoss;
         accruedLoss = 0;

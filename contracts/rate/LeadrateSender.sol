@@ -26,7 +26,7 @@ contract LeadrateSender is CCIPSender {
         uint64[] calldata _destinationChainSelectors,
         bytes[] calldata _bridgedLeadrates,
         bytes calldata _extraArgs
-    ) external {
+    ) external payable {
         if (_destinationChainSelectors.length != _bridgedLeadrates.length) {
             revert LengthMismatch(_destinationChainSelectors.length, _bridgedLeadrates.length);
         }
@@ -44,7 +44,7 @@ contract LeadrateSender is CCIPSender {
         uint64 _destinationChainSelector,
         bytes calldata _bridgedLeadrate,
         bytes calldata _extraArgs
-    ) external {
+    ) external payable {
         _applyPendingChanges();
         uint24 currentRate = LEADRATE.currentRatePPM();
         Client.EVM2AnyMessage memory message = _buildCCIPMessage(_bridgedLeadrate, currentRate, _extraArgs);
