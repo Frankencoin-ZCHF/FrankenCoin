@@ -210,7 +210,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     /**
      * Uses a multichain call to send home all accrued profits, if any
      */
-    function synchronizeAccounting(bytes calldata _extraArgs) external payable {
+    function synchronizeAccounting() external payable {
         uint256 reserveLeft = balanceOf(address(reserve));
         uint256 _accuredLoss = accruedLoss;
         accruedLoss = 0;
@@ -222,13 +222,12 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
 
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(this), amount: reserveLeft});
-        Client.EVM2AnyMessage memory message = _getCCIPMessage(
+        Client.EVM2AnyMessage memory message = _constructMessage(
             abi.encode(BRIDGE_ACCOUNTING),
             abi.encode(reserveLeft, _accuredLoss),
-            tokenAmounts,
-            _extraArgs
+            tokenAmounts
         );
-        _ccipSend(MAINNET_CHAIN_SELECTOR, message);
+        _send(MAINNET_CHAIN_SELECTOR, message);
         emit AccountingSynchronized(reserveLeft, _accuredLoss);
     }
 

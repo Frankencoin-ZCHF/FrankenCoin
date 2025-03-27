@@ -7,81 +7,53 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {IERC20} from "../erc20/IERC20.sol";
 
 abstract contract CCIPSender {
+
     IRouterClient public immutable ROUTER;
     address public immutable LINK;
 
-    event CCIPMessageSent(
-        bytes32 indexed messageId,
-        uint64 indexed destinationChainSelector,
-        uint256 fee,
-        Client.EVM2AnyMessage message
-    );
+    error InsufficientFeeTokens(address token, uint256 fee);
+    error InsufficientFeeTokenAllowance(address token, uint256 fee);
 
     constructor(IRouterClient _router, address _link) {
         ROUTER = _router;
         LINK = _link;
     }
 
-    function _getCCIPMessage(
-        bytes memory _receiver,
-        bytes memory _payload,
-        Client.EVMTokenAmount[] memory _tokenAmounts,
-        bytes calldata _extraArgs
-    ) internal view returns (Client.EVM2AnyMessage memory) {
-        return
-            Client.EVM2AnyMessage({
-                receiver: _receiver,
-                data: _payload,
-                tokenAmounts: _tokenAmounts,
-                extraArgs: _extraArgs,
-                feeToken: _getFeeToken()
-            });
+    function _toReceiver(address target) internal returns (bytes memory) {
+        return abi.encode(target);
     }
 
-    function _getCCIPFee(
-        uint64 _destinationChainSelector,
-        bytes calldata _receiver,
-        bytes memory _payload,
-        Client.EVMTokenAmount[] memory _tokenAmounts,
-        bytes calldata _extraArgs
-    ) internal view returns (uint256) {
-        Client.EVM2AnyMessage memory message = _getCCIPMessage(
-            _receiver,
-            _payload,
-            _tokenAmounts,
-            _extraArgs
-        );
-        return ROUTER.getFee(_destinationChainSelector, message);
+    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts) internal view returns (Client.EVM2AnyMessage memory) {
+        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, "", _guessFeeToken());
+    }
+
+    function _calculateFee(uint64 chain, Client.EVM2AnyMessage calldata message, bool nativeToken) internal returns (uint256) {
+        message.feeToken = nativeToken ? address(0) : LINK;
+        return ROUTER.getFee(chain, message);
     }
 
     /**
      * @dev External call to msg.sender if fees are paid in native token
      */
-    function _ccipSend(
-        uint64 _destinationChainSelector,
-        Client.EVM2AnyMessage memory _message
-    ) internal returns (bytes32 messageId, uint256 fee) {
-        fee = ROUTER.getFee(_destinationChainSelector, _message);
-
+    function _send(uint64 chain, Client.EVM2AnyMessage memory _message) internal returns (bytes32 messageId, uint256 fee) {
+        fee = _calculateFee(chain, _message);
         if (_message.feeToken != address(0)) {
             // We trust the feeToken to be not malicious.
             // ROUTER.getFee() verifies that the feeToken is supported by CCIP and thus vetted.
+            if (IERC20(_message.feeToken).balanceOf(msg.sender) < fee) revert InsufficientFeeTokens(_message.feeToken, fee);
+            if (IERC20(_message.feeToken).allowance(msg.sender, address(this)) < fee) revert InsufficientFeeTokenAllowance(_message.feeToken, fee);
             IERC20(_message.feeToken).transferFrom(msg.sender, address(this), fee);
             IERC20(_message.feeToken).approve(address(ROUTER), fee);
-            messageId = ROUTER.ccipSend(_destinationChainSelector, _message);
+            messageId = ROUTER.ccipSend(chain, _message);
         } else {
-            messageId = ROUTER.ccipSend{value: fee}(_destinationChainSelector, _message);
-            // return overpaid fee to sender
-            payable(msg.sender).call{value: msg.value - fee}("");
+            if (msg.value < fee) revert InsufficientFeeTokens(_message.feeToken, fee);
+            messageId = ROUTER.ccipSend{value: fee}(chain, _message);
+            payable(msg.sender).call{value: msg.value - fee}(""); // return overpaid fee to sender
         }
-
-        emit CCIPMessageSent(messageId, _destinationChainSelector, fee, _message);
+        // emit MessageSent(..) no necessity to emit a message, ccip does that already
     }
 
-    function _getFeeToken() internal view returns (address) {
-        if(msg.value > 0) {
-            return address(0);
-        }
-        return LINK;
+    function _guessFeeToken() internal view returns (address) {
+        return (msg.value > 0) ? address(0) : LINK;
     }
 }

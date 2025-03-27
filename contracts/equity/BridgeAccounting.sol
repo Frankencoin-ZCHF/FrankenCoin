@@ -6,6 +6,7 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {IBasicFrankencoin} from "../stablecoin/IBasicFrankencoin.sol";
 
 contract BridgeAccounting is CCIPReceiver {
+    
     IBasicFrankencoin public immutable ZCHF;
     address public immutable CCIP_ADMIN;
 

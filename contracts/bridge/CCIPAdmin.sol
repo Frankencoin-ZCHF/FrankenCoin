@@ -14,6 +14,7 @@ import {BridgeAccounting} from "../equity/BridgeAccounting.sol";
  * Each chain needs an instance of this administrator.
  */
 contract CCIPAdmin {
+
     uint64 public constant DAY = 24 * 60 * 60;
 
     IGovernance public immutable GOVERNANCE;
@@ -228,11 +229,7 @@ contract CCIPAdmin {
         emit AdminTransfered(newAdmin);
     }
 
-    function proposeAccountingSender(
-        uint64 _chainSelector,
-        bytes calldata _sender,
-        address[] calldata helpers
-    ) external {
+    function proposeAccountingSender(uint64 _chainSelector, bytes calldata _sender, address[] calldata helpers) external {
         bytes32 hash = keccak256(abi.encode("accountingSender", _chainSelector, _sender));
         propose(hash, 7, helpers);
         emit AccountingSenderProposed(hash, _chainSelector, _sender);

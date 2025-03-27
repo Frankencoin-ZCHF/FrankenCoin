@@ -10,46 +10,34 @@ import {CCIPSender} from "../bridge/CCIPSender.sol";
 contract LeadrateSender is CCIPSender {
     Leadrate public immutable LEADRATE;
 
-    event Pushed(
-        uint64 indexed destinationChainSelectors,
-        bytes indexed bridgedLeadrate,
-        uint256 fee,
-        uint24 newRatePPM
-    );
+    event Pushed(uint64 chain, bytes indexed bridgedLeadrate, uint24 newRatePPM);
+
     error LengthMismatch(uint256 expected, uint256 given);
 
     constructor(Leadrate _leadrate, IRouterClient _router, address _linkToken) CCIPSender(_router, _linkToken) {
         LEADRATE = _leadrate;
     }
 
-    function pushLeadrate(
-        uint64[] calldata _destinationChainSelectors,
-        bytes[] calldata _bridgedLeadrates,
-        bytes calldata _extraArgs
-    ) external payable {
-        if (_destinationChainSelectors.length != _bridgedLeadrates.length) {
-            revert LengthMismatch(_destinationChainSelectors.length, _bridgedLeadrates.length);
-        }
-
+    function pushLeadrate(uint64[] calldata chains, bytes[] calldata targets) external payable {
+        if (chains.length != targets.length) revert LengthMismatch(chains.length, targets.length);
         _applyPendingChanges();
         uint24 currentRate = LEADRATE.currentRatePPM();
-        for (uint256 i; i < _destinationChainSelectors.length; i++) {
-            Client.EVM2AnyMessage memory message = _buildCCIPMessage(_bridgedLeadrates[i], currentRate, _extraArgs);
-            (, uint256 fee) = _ccipSend(_destinationChainSelectors[i], message);
-            emit Pushed(_destinationChainSelectors[i], _bridgedLeadrates[i], fee, currentRate);
+        for (uint256 i; i < chains.length; i++) {
+            _send(chains[i], _constructMessage(targets[i], buildSyncMessage(currentRate), ""));
+            emit Pushed(chains[i], targets[i], currentRate);
         }
     }
 
-    function pushLeadrate(
-        uint64 _destinationChainSelector,
-        bytes calldata _bridgedLeadrate,
-        bytes calldata _extraArgs
-    ) external payable {
+    function pushLeadrate(uint64 chain, address target) external payable {
+        pushLeadrate(chain, _toReceiver(target));
+    }
+
+    function pushLeadrate(uint64 chain, bytes memory target) public payable {
         _applyPendingChanges();
         uint24 currentRate = LEADRATE.currentRatePPM();
-        Client.EVM2AnyMessage memory message = _buildCCIPMessage(_bridgedLeadrate, currentRate, _extraArgs);
-        (, uint256 fee) = _ccipSend(_destinationChainSelector, message);
-        emit Pushed(_destinationChainSelector, _bridgedLeadrate, fee, currentRate);
+        Client.EVM2AnyMessage memory message = _constructMessage(target, buildSyncMessage(currentRate), "");
+        (, uint256 fee) = _send(chain, message);
+        emit Pushed(chain, target, currentRate);
     }
 
     function _applyPendingChanges() internal {
@@ -58,19 +46,8 @@ contract LeadrateSender is CCIPSender {
         }
     }
 
-    function _buildCCIPMessage(
-        bytes calldata _receiver,
-        uint24 _currentRate,
-        bytes calldata _extraArgs
-    ) private view returns (Client.EVM2AnyMessage memory) {
-        return
-            Client.EVM2AnyMessage({
-                receiver: _receiver,
-                data: abi.encode(_currentRate),
-                tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array as no tokens are transferred
-                extraArgs: _extraArgs,
-                // Set the feeToken to a feeTokenAddress, indicating specific asset will be used for fees
-                feeToken: _getFeeToken()
-            });
+    function buildSyncMessage(uint24 currentRate) internal returns (bytes memory) {
+        return abi.encode(currentRate);
     }
+
 }
