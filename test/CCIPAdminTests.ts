@@ -4,7 +4,7 @@ import { Interface, Log } from "ethers";
 import { ethers } from "hardhat";
 import { evm_increaseTime } from "./helper";
 
-describe.only("CCIP Admin Tests", () => {
+describe("CCIP Admin Tests", () => {
   const remotePoolUpdate = {
     chain: 1234,
     poolAddress: "0x",
