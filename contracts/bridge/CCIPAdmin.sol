@@ -55,10 +55,10 @@ contract CCIPAdmin {
         _;
     }
 
-    constructor(IGovernance _governance, ITokenAdminRegistry _tokenAdminRegistry, address _zchf) {
-        GOVERNANCE = _governance;
-        TOKEN_ADMIN_REGISTRY = _tokenAdminRegistry;
-        ZCHF = _zchf;
+    constructor(IGovernance governance, ITokenAdminRegistry tokenAdminRegistry, address zchf) {
+        GOVERNANCE = governance;
+        TOKEN_ADMIN_REGISTRY = tokenAdminRegistry;
+        ZCHF = zchf;
     }
 
     /**
@@ -86,18 +86,35 @@ contract CCIPAdmin {
         tokenPool.acceptOwnership();
     }
 
-    function propose(bytes32 hash, uint64 delayInDays, address[] calldata _helpers) internal onlyQualified(_helpers) {
+    /**
+     * @notice Creates a new proposal with a delay period
+     * @dev Only qualified voters can create proposals
+     * @param hash The hash of the proposal data
+     * @param delayInDays Number of days to delay the proposal execution
+     * @param helpers Array of helper addresses for qualification check
+     */
+    function propose(bytes32 hash, uint64 delayInDays, address[] calldata helpers) internal onlyQualified(helpers) {
         if (proposals[hash] > 0) revert ProposalAlreadyMade(hash);
         proposals[hash] = uint64(block.timestamp) + delayInDays * DAY;
         emit ProposalMade(hash, proposals[hash]);
     }
 
-    function deny(bytes32 hash, address[] calldata _helpers) external onlyQualified(_helpers) {
+    /**
+     * @notice Denies and removes a pending proposal
+     * @dev Only qualified voters can deny proposals
+     * @param hash The hash of the proposal to deny
+     * @param helpers Array of helper addresses for qualification check
+     */
+    function deny(bytes32 hash, address[] calldata helpers) external onlyQualified(helpers) {
         if (proposals[hash] == 0) revert UnknownProposal(hash);
         delete proposals[hash];
         emit ProposalDenied(hash);
     }
 
+    /**
+     * @notice Enacts a pending proposal
+     * @param hash The hash of the proposal to enact
+     */
     function enact(bytes32 hash) internal {
         uint64 deadline = proposals[hash];
         if (deadline == 0) revert UnknownProposal(hash);
@@ -137,6 +154,10 @@ contract CCIPAdmin {
      * Rate limits can only do limited harm, so it is acceptable to be very permissive. At the same time, rate limits are typically
      * applied during emergencies, e.g. when a chain has been hacked. Therefore, it is desirable to ensure that
      * they can be applied quickly. Nonetheless, the proposal fee is still charged to discourage shenenigans.
+     * @param chain The chain to set the rate limits for
+     * @param inbound The inbound rate limits
+     * @param outbound The outbound rate limits
+     * @param helpers Array of helper addresses for qualification check
      */
     function applyRateLimit(uint64 chain, RateLimiter.Config calldata inbound, RateLimiter.Config calldata outbound, address[] calldata helpers) external onlyQualified(helpers) {
         tokenPool.setChainRateLimiterConfig(chain, inbound, outbound);
@@ -147,6 +168,7 @@ contract CCIPAdmin {
      * @notice Propose to add or remove remote chains
      * @dev The contract only stores the hash. So the data has to be passed in during apply again
      * @param chainId The chain to remove
+     * @param helpers Array of helper addresses for qualification check
      */
     function proposeRemoveChain(uint64 chainId, address[] calldata helpers) external {
         bytes32 hash = keccak256(abi.encode("removeChain", chainId));
@@ -157,6 +179,7 @@ contract CCIPAdmin {
     /**
      * @notice Applies the remote chain updates
      * @dev Bulk function that allows multiple updates at once
+     * @param chainsToRemove The chains to remove
      */
     function applyRemoveChain(uint64 chainId) external {
         enact(keccak256(abi.encode("removeChain", chainId)));
@@ -171,6 +194,7 @@ contract CCIPAdmin {
      * @notice Propose to add or remove remote chains
      * @dev The contract only stores the hash. So the data has to be passed in during apply again
      * @param config The chain configuration
+     * @param helpers Array of helper addresses for qualification check
      */
     function proposeAddChain(ITokenPool.ChainUpdate calldata config, address[] calldata helpers) external {
         bytes32 hash = keccak256(abi.encode("addChain", config));
@@ -195,17 +219,19 @@ contract CCIPAdmin {
     /**
      * @notice Proposed a new admin for the TokenPool and Admin on the Token registry
      * @dev Useful to transfer to a new CCIPAdmin contract
-     * @param _newAdmin  The address of the new admin
+     * @param newAdmin  The address of the new admin
+     * @param helpers Array of helper addresses for qualification check
      */
-    function proposeAdminTransfer(address _newAdmin, address[] calldata helpers) external {
-        bytes32 hash = keccak256(abi.encode("adminTransfer", _newAdmin));
+    function proposeAdminTransfer(address newAdmin, address[] calldata helpers) external {
+        bytes32 hash = keccak256(abi.encode("adminTransfer", newAdmin));
         propose(hash, 21, helpers);
-        emit AdminTransferProposed(hash, msg.sender, _newAdmin);
+        emit AdminTransferProposed(hash, msg.sender, newAdmin);
     }
 
     /**
      * @notice Applies the admin transfer
      * @dev Transfers admin on the TokenPool and ownership on the ZCHF token on the TokenAdminRegistry
+     * @param newAdmin The address of the new admin
      */
     function applyAdminTransfer(address newAdmin) external {
         enact(keccak256(abi.encode("adminTransfer", newAdmin)));
