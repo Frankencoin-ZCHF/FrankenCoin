@@ -3,32 +3,25 @@ pragma solidity ^0.8.0;
 
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {ITokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol";
+import {TokenPool} from "@chainlink/contracts-ccip/src/v0.8/ccip/pools/TokenPool.sol";
 import {IBasicFrankencoin} from "../stablecoin/IBasicFrankencoin.sol";
 
 contract BridgeAccounting is CCIPReceiver {
     
     IBasicFrankencoin public immutable ZCHF;
-    address public immutable CCIP_ADMIN;
+    ITokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;
 
-    mapping(uint64 => bytes) public approvedSenders;
-
-    error InvalidSender(bytes expected, bytes given);
-    error NotAdmin();
 
     event ReceivedProfits(uint256 amount);
     event ReceivedLosses(uint256 losses);
     event SenderAdded(uint64 indexed chain, bytes indexed sender);
 
-    constructor(IBasicFrankencoin zchf, address ccipAdmin, address router) CCIPReceiver(router) {
+    error InvalidSender(uint64 chain, bytes sender);
+
+    constructor(IBasicFrankencoin zchf, ITokenAdminRegistry _registry ,address router) CCIPReceiver(router) {
         ZCHF = zchf;
-        CCIP_ADMIN = ccipAdmin;
-    }
-
-    function addSender(uint64 _chain, bytes memory _sender) external {
-        if (msg.sender != CCIP_ADMIN) revert NotAdmin();
-        approvedSenders[_chain] = _sender;
-
-        emit SenderAdded(_chain, _sender);
+        TOKEN_ADMIN_REGISTRY = _registry;
     }
 
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
@@ -45,9 +38,10 @@ contract BridgeAccounting is CCIPReceiver {
     }
 
     function _validateSender(Client.Any2EVMMessage memory any2EvmMessage) internal view {
-        bytes memory approvedSender = approvedSenders[any2EvmMessage.sourceChainSelector];
-        if (keccak256(any2EvmMessage.sender) != keccak256(approvedSender)) {
-            revert InvalidSender(approvedSender, any2EvmMessage.sender);
+        TokenPool pool = TokenPool(TOKEN_ADMIN_REGISTRY.getTokenPool(ZCHF));
+        address _remoteToken = pool.getRemoteToken(any2EvmMessage.sourceChainSelector);
+        if(any2EvmMessage.sender != _remoteToken) {
+            revert InvalidSender(any2EvmMessage.sourceChainSelector, any2EvmMessage.sender);
         }
     }
 

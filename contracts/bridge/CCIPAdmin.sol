@@ -21,7 +21,6 @@ contract CCIPAdmin {
     ITokenPool public tokenPool;
     ITokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;
     address public immutable ZCHF;
-    BridgeAccounting public immutable BRIDGE_ACCOUNTING;
 
     struct RemotePoolUpdate {
         bool add; // true if adding, false if removing
@@ -44,7 +43,6 @@ contract CCIPAdmin {
     event RemoveChainProposed(bytes32 hash, address indexed proposer, uint64 chain);
     event AddChainProposed(bytes32 hash, address indexed proposer, ITokenPool.ChainUpdate update);
     event AdminTransferProposed(bytes32 hash, address indexed proposer, address newAdmin);
-    event AccountingSenderProposed(bytes32 hash, uint64 indexed chain, bytes indexed sender);
 
     event RemotePoolAdded(uint64 indexed chain, bytes indexed poolAddress);
     event RemotePoolRemoved(uint64 indexed chain, bytes indexed poolAddress);
@@ -52,7 +50,6 @@ contract CCIPAdmin {
     event ChainAdded(ITokenPool.ChainUpdate config);
     event AdminTransfered(address newAdmin);
     event RateLimit(uint64 remoteChain, RateLimiter.Config inboundConfigs, RateLimiter.Config outboundConfig);
-    event AccountingSenderAdded(uint64 indexed chain, bytes indexed sender);
 
     modifier onlyQualified(address[] calldata helpers) {
         GOVERNANCE.checkQualified(msg.sender, helpers);
@@ -62,13 +59,11 @@ contract CCIPAdmin {
     constructor(
         IGovernance _governance,
         ITokenAdminRegistry _tokenAdminRegistry,
-        address _zchf,
-        BridgeAccounting _bridgedAccounting
+        address _zchf
     ) {
         GOVERNANCE = _governance;
         TOKEN_ADMIN_REGISTRY = _tokenAdminRegistry;
         ZCHF = _zchf;
-        BRIDGE_ACCOUNTING = _bridgedAccounting;
     }
 
     /**
@@ -227,17 +222,5 @@ contract CCIPAdmin {
         TOKEN_ADMIN_REGISTRY.transferAdminRole(ZCHF, newAdmin);
         tokenPool.transferOwnership(newAdmin);
         emit AdminTransfered(newAdmin);
-    }
-
-    function proposeAccountingSender(uint64 _chain, bytes calldata _sender, address[] calldata helpers) external {
-        bytes32 hash = keccak256(abi.encode("accountingSender", _chain, _sender));
-        propose(hash, 7, helpers);
-        emit AccountingSenderProposed(hash, _chain, _sender);
-    }
-
-    function applyAccountSender(uint64 _chain, bytes calldata _sender) external {
-        enact(keccak256(abi.encode("accountingSender", _chain, _sender)));
-        BRIDGE_ACCOUNTING.addSender(_chain, _sender);
-        emit AccountingSenderAdded(_chain, _sender);
     }
 }
