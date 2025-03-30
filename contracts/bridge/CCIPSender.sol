@@ -7,7 +7,6 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {IERC20} from "../erc20/IERC20.sol";
 
 abstract contract CCIPSender {
-
     IRouterClient public immutable ROUTER;
     address public immutable LINK;
 
@@ -27,7 +26,7 @@ abstract contract CCIPSender {
         return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, _guessFeeToken(), "");
     }
 
-    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts, bool nativeToken)  internal view returns (Client.EVM2AnyMessage memory) {
+    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts, bool nativeToken) internal view returns (Client.EVM2AnyMessage memory) {
         return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, nativeToken ? address(0) : LINK, "");
     }
 
@@ -38,8 +37,9 @@ abstract contract CCIPSender {
     /**
      * @dev External call to msg.sender if fees are paid in native token
      */
-    function _send(uint64 chain, Client.EVM2AnyMessage memory _message) internal returns (bytes32 messageId, uint256 fee) {
-        fee = _calculateFee(chain, _message);
+    function _send(uint64 chain, Client.EVM2AnyMessage memory _message) internal returns (bytes32, uint256) {
+        uint256 fee = _calculateFee(chain, _message);
+        bytes32 messageId;
         if (_message.feeToken != address(0)) {
             // We trust the feeToken to be not malicious.
             // ROUTER.getFee() verifies that the feeToken is supported by CCIP and thus vetted.
@@ -53,6 +53,7 @@ abstract contract CCIPSender {
             messageId = ROUTER.ccipSend{value: fee}(chain, _message);
             payable(msg.sender).call{value: msg.value - fee}(""); // return overpaid fee to sender
         }
+        return (messageId, fee);
         // emit MessageSent(..) no necessity to emit a message, ccip does that already
     }
 

@@ -8,10 +8,8 @@ import {TokenPool} from "@chainlink/contracts-ccip/src/v0.8/ccip/pools/TokenPool
 import {IBasicFrankencoin} from "../stablecoin/IBasicFrankencoin.sol";
 
 contract BridgeAccounting is CCIPReceiver {
-    
     IBasicFrankencoin public immutable ZCHF;
     ITokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;
-
 
     event ReceivedProfits(uint256 amount);
     event ReceivedLosses(uint256 losses);
@@ -19,7 +17,7 @@ contract BridgeAccounting is CCIPReceiver {
 
     error InvalidSender(uint64 chain, bytes sender);
 
-    constructor(IBasicFrankencoin zchf, ITokenAdminRegistry _registry ,address router) CCIPReceiver(router) {
+    constructor(IBasicFrankencoin zchf, ITokenAdminRegistry _registry, address router) CCIPReceiver(router) {
         ZCHF = zchf;
         TOKEN_ADMIN_REGISTRY = _registry;
     }
@@ -40,7 +38,7 @@ contract BridgeAccounting is CCIPReceiver {
     function _validateSender(Client.Any2EVMMessage memory any2EvmMessage) internal view {
         TokenPool pool = TokenPool(TOKEN_ADMIN_REGISTRY.getTokenPool(ZCHF));
         address _remoteToken = pool.getRemoteToken(any2EvmMessage.sourceChainSelector);
-        if(any2EvmMessage.sender != _remoteToken) {
+        if (any2EvmMessage.sender != _remoteToken) {
             revert InvalidSender(any2EvmMessage.sourceChainSelector, any2EvmMessage.sender);
         }
     }

@@ -14,7 +14,6 @@ import {BridgeAccounting} from "../equity/BridgeAccounting.sol";
  * Each chain needs an instance of this administrator.
  */
 contract CCIPAdmin {
-
     uint64 public constant DAY = 24 * 60 * 60;
 
     IGovernance public immutable GOVERNANCE;
@@ -56,11 +55,7 @@ contract CCIPAdmin {
         _;
     }
 
-    constructor(
-        IGovernance _governance,
-        ITokenAdminRegistry _tokenAdminRegistry,
-        address _zchf
-    ) {
+    constructor(IGovernance _governance, ITokenAdminRegistry _tokenAdminRegistry, address _zchf) {
         GOVERNANCE = _governance;
         TOKEN_ADMIN_REGISTRY = _tokenAdminRegistry;
         ZCHF = _zchf;
@@ -143,12 +138,7 @@ contract CCIPAdmin {
      * applied during emergencies, e.g. when a chain has been hacked. Therefore, it is desirable to ensure that
      * they can be applied quickly. Nonetheless, the proposal fee is still charged to discourage shenenigans.
      */
-    function applyRateLimit(
-        uint64 chain,
-        RateLimiter.Config calldata inbound,
-        RateLimiter.Config calldata outbound,
-        address[] calldata helpers
-    ) external onlyQualified(helpers) {
+    function applyRateLimit(uint64 chain, RateLimiter.Config calldata inbound, RateLimiter.Config calldata outbound, address[] calldata helpers) external onlyQualified(helpers) {
         tokenPool.setChainRateLimiterConfig(chain, inbound, outbound);
         emit RateLimit(chain, inbound, outbound);
     }

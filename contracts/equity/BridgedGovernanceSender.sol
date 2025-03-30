@@ -10,7 +10,6 @@ import {IERC20} from "../erc20/IERC20.sol";
 import {CCIPSender} from "../bridge/CCIPSender.sol";
 
 contract BridgedGovernanceSender is CCIPSender {
-
     Governance public immutable GOVERNANCE;
 
     event VotesSynced(
@@ -72,11 +71,7 @@ contract BridgedGovernanceSender is CCIPSender {
 
         // omitted unchecked optimization for readability
         for (uint256 i = 0; i < _voters.length; i++) {
-            _syncVotes[i] = SyncVote({
-                voter: _voters[i],
-                votes: GOVERNANCE.votes(_voters[i]),
-                delegatee: GOVERNANCE.delegates(_voters[i])
-            });
+            _syncVotes[i] = SyncVote({voter: _voters[i], votes: GOVERNANCE.votes(_voters[i]), delegatee: GOVERNANCE.delegates(_voters[i])});
         }
 
         return SyncMessage({votes: _syncVotes, totalVotes: GOVERNANCE.totalVotes()});

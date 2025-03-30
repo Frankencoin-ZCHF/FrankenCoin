@@ -19,11 +19,7 @@ contract BridgedGovernance is CCIPReceiver, Governance {
     error InvalidSourceChain();
     error InvalidSender();
 
-    constructor(
-        address _router,
-        uint64 _mainnetChainSelector,
-        address _mainnetGovernanceAddress
-    ) CCIPReceiver(_router) {
+    constructor(address _router, uint64 _mainnetChainSelector, address _mainnetGovernanceAddress) CCIPReceiver(_router) {
         MAINNET_CHAIN_SELECTOR = _mainnetChainSelector;
         MAINNET_GOVERNANCE_ADDRESS = _mainnetGovernanceAddress;
     }
@@ -45,7 +41,7 @@ contract BridgedGovernance is CCIPReceiver, Governance {
 
     /**
      * @notice Required for frankencoin contract
-    */
+     */
     function totalSupply() public view returns (uint256) {
         return totalVotes();
     }
@@ -62,12 +58,7 @@ contract BridgedGovernance is CCIPReceiver, Governance {
 
         _processSyncMessage(syncMessage);
 
-        emit MessageReceived({
-            messageId: any2EvmMessage.messageId,
-            sourceChain: any2EvmMessage.sourceChainSelector,
-            totalVotes: syncMessage.totalVotes,
-            syncedVotes: syncMessage.votes
-        });
+        emit MessageReceived({messageId: any2EvmMessage.messageId, sourceChain: any2EvmMessage.sourceChainSelector, totalVotes: syncMessage.totalVotes, syncedVotes: syncMessage.votes});
     }
 
     /**

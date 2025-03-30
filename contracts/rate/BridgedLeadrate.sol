@@ -21,12 +21,7 @@ contract BridgedLeadrate is AbstractLeadrate, CCIPReceiver {
     error InvalidSourceChain();
     error InvalidSender();
 
-    constructor(
-        address router_,
-        uint24 initialRatePPM,
-        uint64 mainnetChainSelector,
-        address mainnetLeadrate
-    ) AbstractLeadrate(initialRatePPM) CCIPReceiver(router_) {
+    constructor(address router_, uint24 initialRatePPM, uint64 mainnetChainSelector, address mainnetLeadrate) AbstractLeadrate(initialRatePPM) CCIPReceiver(router_) {
         MAINNET_CHAIN_SELECTOR = mainnetChainSelector;
         MAINNET_LEADRATE_ADDRESS = mainnetLeadrate;
     }

@@ -10,7 +10,6 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {CCIPSender} from "../bridge/CCIPSender.sol";
 
 abstract contract CrossChainERC20 is ERC20, CCIPSender {
-
     event Transfer(address indexed from, uint64 toChain, bytes indexed to, uint256 value);
 
     constructor(address router, address linkToken) CCIPSender(IRouterClient(router), linkToken) {}
