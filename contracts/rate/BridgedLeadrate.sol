@@ -31,6 +31,6 @@ contract BridgedLeadrate is AbstractLeadrate, CCIPReceiver {
         if (abi.decode(any2EvmMessage.sender, (address)) != MAINNET_LEADRATE_ADDRESS) revert InvalidSender();
 
         uint24 newRate = abi.decode(any2EvmMessage.data, (uint24));
-        super.updateRate(newRate);
+        updateRate(newRate);
     }
 }
