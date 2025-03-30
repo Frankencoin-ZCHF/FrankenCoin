@@ -87,43 +87,6 @@ contract CCIPAdmin {
     }
 
     /**
-     * @notice Creates a new proposal with a delay period
-     * @dev Only qualified voters can create proposals
-     * @param hash The hash of the proposal data
-     * @param delayInDays Number of days to delay the proposal execution
-     * @param helpers Array of helper addresses for qualification check
-     */
-    function propose(bytes32 hash, uint64 delayInDays, address[] calldata helpers) internal onlyQualified(helpers) {
-        if (proposals[hash] > 0) revert ProposalAlreadyMade(hash);
-        proposals[hash] = uint64(block.timestamp) + delayInDays * DAY;
-        emit ProposalMade(hash, proposals[hash]);
-    }
-
-    /**
-     * @notice Denies and removes a pending proposal
-     * @dev Only qualified voters can deny proposals
-     * @param hash The hash of the proposal to deny
-     * @param helpers Array of helper addresses for qualification check
-     */
-    function deny(bytes32 hash, address[] calldata helpers) external onlyQualified(helpers) {
-        if (proposals[hash] == 0) revert UnknownProposal(hash);
-        delete proposals[hash];
-        emit ProposalDenied(hash);
-    }
-
-    /**
-     * @notice Enacts a pending proposal
-     * @param hash The hash of the proposal to enact
-     */
-    function enact(bytes32 hash) internal {
-        uint64 deadline = proposals[hash];
-        if (deadline == 0) revert UnknownProposal(hash);
-        if (deadline < block.timestamp) revert TooEarly(deadline);
-        delete proposals[hash];
-        emit ProposalEnacted(hash);
-    }
-
-    /**
      * @notice Proposed a remote pool update
      * @dev The contract only stores the hash. So the data has to be passed in during apply again
      * @param update  The update proposal
@@ -177,9 +140,8 @@ contract CCIPAdmin {
     }
 
     /**
-     * @notice Applies the remote chain updates
-     * @dev Bulk function that allows multiple updates at once
-     * @param chainsToRemove The chains to remove
+     * @notice Applies the remove chain proposal
+     * @param chainId The chain to remove
      */
     function applyRemoveChain(uint64 chainId) external {
         enact(keccak256(abi.encode("removeChain", chainId)));
@@ -238,5 +200,42 @@ contract CCIPAdmin {
         TOKEN_ADMIN_REGISTRY.transferAdminRole(ZCHF, newAdmin);
         tokenPool.transferOwnership(newAdmin);
         emit AdminTransfered(newAdmin);
+    }
+
+    /**
+     * @notice Denies and removes a pending proposal
+     * @dev Only qualified voters can deny proposals
+     * @param hash The hash of the proposal to deny
+     * @param helpers Array of helper addresses for qualification check
+     */
+    function deny(bytes32 hash, address[] calldata helpers) external onlyQualified(helpers) {
+        if (proposals[hash] == 0) revert UnknownProposal(hash);
+        delete proposals[hash];
+        emit ProposalDenied(hash);
+    }
+
+    /**
+     * @notice Enacts a pending proposal
+     * @param hash The hash of the proposal to enact
+     */
+    function enact(bytes32 hash) internal {
+        uint64 deadline = proposals[hash];
+        if (deadline == 0) revert UnknownProposal(hash);
+        if (deadline > block.timestamp) revert TooEarly(deadline);
+        delete proposals[hash];
+        emit ProposalEnacted(hash);
+    }
+
+    /**
+     * @notice Creates a new proposal with a delay period
+     * @dev Only qualified voters can create proposals
+     * @param hash The hash of the proposal data
+     * @param delayInDays Number of days to delay the proposal execution
+     * @param helpers Array of helper addresses for qualification check
+     */
+    function propose(bytes32 hash, uint64 delayInDays, address[] calldata helpers) internal onlyQualified(helpers) {
+        if (proposals[hash] > 0) revert ProposalAlreadyMade(hash);
+        proposals[hash] = uint64(block.timestamp) + delayInDays * DAY;
+        emit ProposalMade(hash, proposals[hash]);
     }
 }
