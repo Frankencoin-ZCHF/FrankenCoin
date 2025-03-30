@@ -40,7 +40,7 @@ describe("ForceSale Tests", () => {
     [owner, alice, bob] = await ethers.getSigners();
 
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(5 * 86400, ethers.ZeroAddress);
+    zchf = await frankenCoinFactory.deploy(5 * 86400);
 
     const equityAddr = await zchf.reserve();
     equity = await ethers.getContractAt("Equity", equityAddr);

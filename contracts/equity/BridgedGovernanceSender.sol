@@ -46,12 +46,12 @@ contract BridgedGovernanceSender is CCIPSender {
         emit VotesSynced(chain, _receiver, _voters);
     }
 
-    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken) external view {
-        getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, "");
+    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken) external view returns (uint256) {
+        return getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, "");
     }
 
-    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken, Client.EVMExtraArgsV2 calldata extraArgs) external view {
-        getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, Client._argsToBytes(extraArgs));
+    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken, Client.EVMExtraArgsV2 calldata extraArgs) external view returns (uint256) {
+        return getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, Client._argsToBytes(extraArgs));
     }
 
     /**

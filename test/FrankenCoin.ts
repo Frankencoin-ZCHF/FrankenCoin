@@ -19,7 +19,7 @@ describe("FrankenCoin", () => {
     // create contracts
     // 10 day application period
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
+    zchf = await frankenCoinFactory.deploy(10 * 86400);
   });
 
   describe("Basic initialization", () => {
@@ -102,7 +102,7 @@ describe("FrankenCoin", () => {
   describe("Minting & Burning", () => {
     before(async () => {
       const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
+      zchf = await frankenCoinFactory.deploy(10 * 86400);
       const xchfFactory = await ethers.getContractFactory("TestToken");
       mockXCHF = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
       const bridgeFactory = await ethers.getContractFactory("StablecoinBridge");
@@ -246,7 +246,7 @@ describe("FrankenCoin", () => {
   describe("view func", () => {
     before(async () => {
       const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
+      zchf = await frankenCoinFactory.deploy(10 * 86400);
 
       const xchfFactory = await ethers.getContractFactory("TestToken");
       mockXCHF = await xchfFactory.deploy("CryptoFranc", "XCHF", 18);
@@ -264,18 +264,9 @@ describe("FrankenCoin", () => {
   describe("Equity", () => {
     it("should create one", async () => {
       const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-      zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
+      zchf = await frankenCoinFactory.deploy(10 * 86400);
 
       expect(await zchf.reserve()).to.be.not.eq(ethers.ZeroAddress);
-    });
-
-    it("should use the provided", async () => {
-      const equityAddress = ethers.getAddress(
-        "0x0000000000000000000000000000000000000001"
-      );
-      const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-      zchf = await frankenCoinFactory.deploy(10 * 86400, equityAddress);
-      expect(await zchf.reserve()).to.be.eq(equityAddress);
     });
   });
 });

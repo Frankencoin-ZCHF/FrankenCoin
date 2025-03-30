@@ -13,47 +13,22 @@ describe("Bridged Governance Tests", () => {
     receiver: string,
     chainSelector: bigint,
     feeToken: string,
-    voters: string[],
-    extraArgs: string = "0x"
+    voters: string[]
   ) {
-    const fee = await bridgedGovernanceSender.getCCIPFee(
-      ethers.AbiCoder.defaultAbiCoder().encode(["address"], [receiver]),
-      chainSelector,
-      feeToken,
-      voters,
-      extraArgs
-    );
+    const fee = await bridgedGovernanceSender[
+      "getSyncFee(uint64,address,address[],bool)"
+    ](chainSelector, receiver, voters, feeToken === ethers.ZeroAddress);
 
     if (feeToken !== ethers.ZeroAddress) {
       const linkTokenContract = await getLinkTokenContract(feeToken);
       await linkTokenContract
         .connect(sender)
-        .approve(await bridgedGovernanceSender, fee);
-
-      const tx = await bridgedGovernanceSender
-        .connect(sender)
-        .syncVotesPayToken(
-          ethers.AbiCoder.defaultAbiCoder().encode(["address"], [receiver]),
-          chainSelector,
-          feeToken,
-          voters,
-          extraArgs
-        );
-      await tx.wait();
-    } else {
-      const tx = await bridgedGovernanceSender
-        .connect(sender)
-        .syncVotesPayNative(
-          ethers.AbiCoder.defaultAbiCoder().encode(["address"], [receiver]),
-          chainSelector,
-          voters,
-          extraArgs,
-          {
-            value: fee,
-          }
-        );
-      await tx.wait();
+        .approve(await bridgedGovernanceSender.getAddress(), fee);
     }
+    const tx = await bridgedGovernanceSender
+      .connect(sender)
+      ["syncVotes(uint64,address,address[])"](chainSelector, receiver, voters);
+    await tx.wait();
   }
 
   async function deployFixture() {
@@ -70,7 +45,9 @@ describe("Bridged Governance Tests", () => {
 
     // Setup Frankencoin contracts
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    const zchf = await frankenCoinFactory.deploy(10 * 864000, ethers.ZeroAddress);
+    const zchf = await frankenCoinFactory.deploy(
+      10 * 864000,
+    );
     await zchf.initialize(minter.address, "");
 
     const equity = await ethers.getContractAt("Equity", await zchf.reserve());
@@ -81,7 +58,8 @@ describe("Bridged Governance Tests", () => {
     );
     const bridgedGovernanceSender = await bridgedGovernanceSenderFactory.deploy(
       await equity.getAddress(),
-      ccipLocalSimulatorConfig.sourceRouter_
+      ccipLocalSimulatorConfig.sourceRouter_,
+      ccipLocalSimulatorConfig.ccipLnM_
     );
 
     const bridgedGovernanceFactory = await ethers.getContractFactory(

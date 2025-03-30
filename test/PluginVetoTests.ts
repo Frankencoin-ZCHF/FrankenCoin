@@ -19,7 +19,7 @@ describe("Plugin Veto Tests", () => {
     [owner, alice] = await ethers.getSigners();
     // create contracts
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
+    zchf = await frankenCoinFactory.deploy(10 * 86400);
 
     // mocktoken
     const xchfFactory = await ethers.getContractFactory("TestToken");

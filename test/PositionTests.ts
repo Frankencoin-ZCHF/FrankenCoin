@@ -38,7 +38,7 @@ describe("Position Tests", () => {
     [owner, alice, bob, charles] = await ethers.getSigners();
     // create contracts
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
-    zchf = await frankenCoinFactory.deploy(10 * 86400, ethers.ZeroAddress);
+    zchf = await frankenCoinFactory.deploy(10 * 86400);
     equity = await ethers.getContractAt("Equity", await zchf.reserve());
 
     const positionFactoryFactory = await ethers.getContractFactory(
