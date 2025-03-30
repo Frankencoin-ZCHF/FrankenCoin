@@ -3,56 +3,45 @@ import { expect } from "chai";
 import { Interface, Log } from "ethers";
 import { ethers } from "hardhat";
 import { evm_increaseTime } from "./helper";
-import {
-  CCIPAdmin,
-  CCIPAdmin__factory,
-  TestTokenAdminRegistry,
-  TestTokenAdminRegistry__factory,
-} from "../typechain";
 
-describe("CCIP Admin Tests", () => {
+describe.only("CCIP Admin Tests", () => {
   const remotePoolUpdate = {
     chain: 1234,
     poolAddress: "0x",
     add: false,
   };
   const chainLimiterUpdate = {
-    chain: [1234],
-    outboundConfigs: [
-      {
-        isEnabled: true,
-        capacity: 1234,
-        rate: 5678,
-      },
-    ],
-    inboundConfigs: [
-      {
-        isEnabled: true,
-        capacity: 1234,
-        rate: 5678,
-      },
-    ],
+    chain: 1234,
+    outboundConfig: {
+      isEnabled: true,
+      capacity: 1234,
+      rate: 5678,
+    },
+    inboundConfig: {
+      isEnabled: true,
+      capacity: 1234,
+      rate: 5678,
+    },
   };
   const remoteChainUpdate = {
-    chainsToRemove: [1234],
-    chainsToAdd: [
-      {
-        remoteChainSelector: 1234,
-        remotePoolAddresses: ["0x"],
-        remoteTokenAddress: "0x",
-        outboundRateLimiterConfig: {
-          isEnabled: true,
-          capacity: 1234,
-          rate: 5678,
-        },
-        inboundRateLimiterConfig: {
-          isEnabled: true,
-          capacity: 1234,
-          rate: 5678,
-        },
+    chainToRemove: 1234,
+    chainToAdd: {
+      remoteChainSelector: 1234,
+      remotePoolAddresses: ["0x"],
+      remoteTokenAddress: "0x",
+      outboundRateLimiterConfig: {
+        isEnabled: true,
+        capacity: 1234,
+        rate: 5678,
       },
-    ],
+      inboundRateLimiterConfig: {
+        isEnabled: true,
+        capacity: 1234,
+        rate: 5678,
+      },
+    },
   };
+  const newAdmin = "0xc6ea8445A781a78be5892fA6c7F1856f0E44333F";
 
   async function deployFixture() {
     const [minter, singleVoter, delegatee, delegator] =
@@ -407,6 +396,455 @@ describe("CCIP Admin Tests", () => {
       await evm_increaseTime(7 * 24 * 3600);
       await ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate);
       expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+  });
+
+  describe("applyRateLimit", () => {
+    it("should apply", async () => {
+      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
+        deployFixture
+      );
+      const tx = await ccipAdmin
+        .connect(singleVoter)
+        .applyRateLimit(
+          chainLimiterUpdate.chain,
+          chainLimiterUpdate.inboundConfig,
+          chainLimiterUpdate.outboundConfig,
+          []
+        );
+
+      const receipt = await tx.wait();
+      const decoded = decodeFunctionCalledEvents(
+        receipt?.logs ?? [],
+        tokenPool.interface
+      );
+      expect(decoded.length).to.equal(1);
+      expect(decoded[0].args.name).to.equal("setChainRateLimiterConfig");
+    });
+
+    it("should forward helpers", async () => {
+      const { ccipAdmin, delegatee, delegator, tokenPool } = await loadFixture(
+        deployFixture
+      );
+      const tx = await ccipAdmin
+        .connect(delegatee)
+        .applyRateLimit(
+          chainLimiterUpdate.chain,
+          chainLimiterUpdate.inboundConfig,
+          chainLimiterUpdate.outboundConfig,
+          [delegator.address]
+        );
+
+      const receipt = await tx.wait();
+      const decoded = decodeFunctionCalledEvents(
+        receipt?.logs ?? [],
+        tokenPool.interface
+      );
+      expect(decoded.length).to.equal(1);
+      expect(decoded[0].args.name).to.equal("setChainRateLimiterConfig");
+    });
+
+    it("should revert if not qualified", async () => {
+      const { ccipAdmin, equity } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin.applyRateLimit(
+          chainLimiterUpdate.chain,
+          chainLimiterUpdate.inboundConfig,
+          chainLimiterUpdate.outboundConfig,
+          []
+        )
+      ).to.revertedWithCustomError(equity, "NotQualified");
+    });
+  });
+
+  describe("proposeRemoveChain", async () => {
+    const hash = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["string", "uint64"],
+        ["removeChain", remoteChainUpdate.chainToRemove]
+      )
+    );
+
+    it("should propose", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+    });
+
+    it("should revert if already proposed", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
+      await expect(
+        ccipAdmin
+          .connect(singleVoter)
+          .proposeRemoveChain(remoteChainUpdate.chainToRemove, [])
+      ).to.revertedWithCustomError(ccipAdmin, "ProposalAlreadyMade");
+    });
+
+    it("should forward helpers", async () => {
+      const { ccipAdmin, delegatee, delegator } = await loadFixture(
+        deployFixture
+      );
+      await ccipAdmin
+        .connect(delegatee)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, [delegator]);
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+    });
+
+    it("should revert if not qualified", async () => {
+      const { ccipAdmin, equity } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin.proposeRemoveChain(remoteChainUpdate.chainToRemove, [])
+      ).to.revertedWithCustomError(equity, "NotQualified");
+    });
+
+    it("should set the correct deadline", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const tx = await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
+      const block = await tx.getBlock();
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(
+        block?.timestamp ?? 0 + 7 * 24 * 3600
+      );
+    });
+  });
+
+  describe("applyRemoveChain", () => {
+    it("should apply", async () => {
+      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
+        deployFixture
+      );
+      remotePoolUpdate.add = true;
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
+      await evm_increaseTime(7 * 24 * 3600);
+      const tx = await ccipAdmin.applyRemoveChain(
+        remoteChainUpdate.chainToRemove
+      );
+      const receipt = await tx.wait();
+      const decoded = decodeFunctionCalledEvents(
+        receipt?.logs ?? [],
+        tokenPool.interface
+      );
+      expect(decoded.length).to.equal(1);
+      expect(decoded[0].args.name).to.equal("applyChainUpdates");
+    });
+
+    it("should revert if deadline not passed", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
+      await expect(
+        ccipAdmin
+          .connect(singleVoter)
+          .applyRemoveChain(remoteChainUpdate.chainToRemove)
+      ).to.revertedWithCustomError(ccipAdmin, "TooEarly");
+    });
+
+    it("should revert if proposal is not known", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin
+          .connect(singleVoter)
+          .applyRemoveChain(remoteChainUpdate.chainToRemove)
+      ).to.revertedWithCustomError(ccipAdmin, "UnknownProposal");
+    });
+
+    it("should remove the deadline", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const hash = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ["string", "uint64"],
+          ["removeChain", remoteChainUpdate.chainToRemove]
+        )
+      );
+
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
+      await evm_increaseTime(7 * 24 * 3600);
+      await ccipAdmin.applyRemoveChain(remoteChainUpdate.chainToRemove);
+      expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+  });
+
+  describe("proposeAddChain", async () => {
+    const hash = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        [
+          "string",
+          "(uint64 remoteChainSelector,bytes[] remotePoolAddresses,bytes remoteTokenAddress,(bool isEnabled,uint128 capacity,uint128 rate) outboundRateLimiterConfig,(bool isEnabled,uint128 capacity,uint128 rate) inboundRateLimiterConfig)",
+        ],
+        ["addChain", remoteChainUpdate.chainToAdd]
+      )
+    );
+
+    it("should propose", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+    });
+
+    it("should revert if already proposed", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+      await expect(
+        ccipAdmin
+          .connect(singleVoter)
+          .proposeAddChain(remoteChainUpdate.chainToAdd, [])
+      ).to.revertedWithCustomError(ccipAdmin, "ProposalAlreadyMade");
+    });
+
+    it("should forward helpers", async () => {
+      const { ccipAdmin, delegatee, delegator } = await loadFixture(
+        deployFixture
+      );
+      await ccipAdmin
+        .connect(delegatee)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, [delegator]);
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+    });
+
+    it("should revert if not qualified", async () => {
+      const { ccipAdmin, equity } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin.proposeAddChain(remoteChainUpdate.chainToAdd, [])
+      ).to.revertedWithCustomError(equity, "NotQualified");
+    });
+
+    it("should set the correct deadline", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const tx = await ccipAdmin
+        .connect(singleVoter)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+      const block = await tx.getBlock();
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(
+        block?.timestamp ?? 0 + 7 * 24 * 3600
+      );
+    });
+  });
+
+  describe("applyAddChain", () => {
+    it("should apply", async () => {
+      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
+        deployFixture
+      );
+      remotePoolUpdate.add = true;
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+      await evm_increaseTime(7 * 24 * 3600);
+      const tx = await ccipAdmin.applyAddChain(remoteChainUpdate.chainToAdd);
+      const receipt = await tx.wait();
+      const decoded = decodeFunctionCalledEvents(
+        receipt?.logs ?? [],
+        tokenPool.interface
+      );
+      expect(decoded.length).to.equal(1);
+      expect(decoded[0].args.name).to.equal("applyChainUpdates");
+    });
+
+    it("should revert if deadline not passed", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+      await expect(
+        ccipAdmin
+          .connect(singleVoter)
+          .applyAddChain(remoteChainUpdate.chainToAdd)
+      ).to.revertedWithCustomError(ccipAdmin, "TooEarly");
+    });
+
+    it("should revert if proposal is not known", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin
+          .connect(singleVoter)
+          .applyAddChain(remoteChainUpdate.chainToAdd)
+      ).to.revertedWithCustomError(ccipAdmin, "UnknownProposal");
+    });
+
+    it("should remove the deadline", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const hash = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          [
+            "string",
+            "(uint64 remoteChainSelector,bytes[] remotePoolAddresses,bytes remoteTokenAddress,(bool isEnabled,uint128 capacity,uint128 rate) outboundRateLimiterConfig,(bool isEnabled,uint128 capacity,uint128 rate) inboundRateLimiterConfig)",
+          ],
+          ["addChain", remoteChainUpdate.chainToAdd]
+        )
+      );
+
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+      await evm_increaseTime(7 * 24 * 3600);
+      await ccipAdmin.applyAddChain(remoteChainUpdate.chainToAdd);
+      expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+  });
+
+  describe("proposeAdminTransfer", async () => {
+    const hash = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["string", "address"],
+        ["adminTransfer", newAdmin]
+      )
+    );
+
+    it("should propose", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+    });
+
+    it("should revert if already proposed", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
+      await expect(
+        ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, [])
+      ).to.revertedWithCustomError(ccipAdmin, "ProposalAlreadyMade");
+    });
+
+    it("should forward helpers", async () => {
+      const { ccipAdmin, delegatee, delegator } = await loadFixture(
+        deployFixture
+      );
+      await ccipAdmin
+        .connect(delegatee)
+        .proposeAdminTransfer(newAdmin, [delegator]);
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+    });
+
+    it("should revert if not qualified", async () => {
+      const { ccipAdmin, equity } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin.proposeAdminTransfer(newAdmin, [])
+      ).to.revertedWithCustomError(equity, "NotQualified");
+    });
+
+    it("should set the correct deadline", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const tx = await ccipAdmin
+        .connect(singleVoter)
+        .proposeAdminTransfer(newAdmin, []);
+      const block = await tx.getBlock();
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(
+        block?.timestamp ?? 0 + 21 * 24 * 3600
+      );
+    });
+  });
+
+  describe("applyAdminTransfer", () => {
+    it("should apply", async () => {
+      const { ccipAdmin, singleVoter, tokenPool, zchf } = await loadFixture(
+        deployFixture
+      );
+      remotePoolUpdate.add = true;
+      await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
+      await evm_increaseTime(21 * 24 * 3600);
+      const tx = await ccipAdmin.applyAdminTransfer(newAdmin);
+      const receipt = await tx.wait();
+      const decoded = decodeFunctionCalledEvents(
+        receipt?.logs ?? [],
+        tokenPool.interface
+      );
+      expect(decoded.length).to.equal(2);
+      expect(decoded[0].args.name).to.equal("transferAdminRole");
+      expect(decoded[1].args.name).to.equal("transferOwnership");
+    });
+
+    it("should revert if deadline not passed", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
+      await expect(
+        ccipAdmin.connect(singleVoter).applyAdminTransfer(newAdmin)
+      ).to.revertedWithCustomError(ccipAdmin, "TooEarly");
+    });
+
+    it("should revert if proposal is not known", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin.connect(singleVoter).applyAdminTransfer(newAdmin)
+      ).to.revertedWithCustomError(ccipAdmin, "UnknownProposal");
+    });
+
+    it("should remove the deadline", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const hash = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ["string", "address"],
+          ["adminTransfer", newAdmin]
+        )
+      );
+
+      await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
+      await evm_increaseTime(21 * 24 * 3600);
+      await ccipAdmin.applyAdminTransfer(newAdmin);
+      expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+  });
+
+  describe("deny", () => {
+    const hash = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["string", "address"],
+        ["adminTransfer", newAdmin]
+      )
+    );
+
+    it("should deny", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
+
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+      await expect(ccipAdmin.connect(singleVoter).deny(hash, [])).to.emit(
+        ccipAdmin,
+        "ProposalDenied"
+      );
+      expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+
+    it("should forward helpers", async () => {
+      const { ccipAdmin, delegatee, delegator } = await loadFixture(
+        deployFixture
+      );
+      await ccipAdmin
+        .connect(delegatee)
+        .proposeAdminTransfer(newAdmin, [delegator]);
+      expect(await ccipAdmin.proposals(hash)).to.be.greaterThan(0);
+      await expect(
+        ccipAdmin.connect(delegatee).deny(hash, [delegator])
+      ).to.emit(ccipAdmin, "ProposalDenied");
+      expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+
+    it("should revert if proposal is unknown", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin.connect(singleVoter).deny(hash, [])
+      ).to.revertedWithCustomError(ccipAdmin, "UnknownProposal");
+    });
+
+    it("should revert if not qualified", async () => {
+      const { ccipAdmin, equity } = await loadFixture(deployFixture);
+      await expect(ccipAdmin.deny(hash, [])).to.revertedWithCustomError(
+        equity,
+        "NotQualified"
+      );
     });
   });
 });

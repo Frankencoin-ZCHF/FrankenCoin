@@ -20,7 +20,7 @@ contract TestTokenPool is ITokenPool {
         RateLimiter.Config calldata inboundConfigs
     ) external {
         emit FunctionCalled(
-            "setChainRateLimiterConfigs",
+            "setChainRateLimiterConfig",
             abi.encode(remoteChainSelectors, outboundConfigs, inboundConfigs)
         );
     }
