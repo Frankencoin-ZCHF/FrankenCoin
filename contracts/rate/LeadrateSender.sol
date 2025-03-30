@@ -23,8 +23,7 @@ contract LeadrateSender is CCIPSender {
         _applyPendingChanges();
         uint24 currentRate = LEADRATE.currentRatePPM();
         for (uint256 i; i < chains.length; i++) {
-            _send(chains[i], _constructMessage(targets[i], buildSyncMessage(currentRate), ""));
-            emit Pushed(chains[i], targets[i], currentRate);
+            _sendLeadrate(chains[i], targets[i], currentRate);
         }
     }
 
@@ -34,10 +33,12 @@ contract LeadrateSender is CCIPSender {
 
     function pushLeadrate(uint64 chain, bytes memory target) public payable {
         _applyPendingChanges();
-        uint24 currentRate = LEADRATE.currentRatePPM();
-        Client.EVM2AnyMessage memory message = _constructMessage(target, buildSyncMessage(currentRate), "");
-        (, uint256 fee) = _send(chain, message);
-        emit Pushed(chain, target, currentRate);
+        _sendLeadrate(chain, target, LEADRATE.currentRatePPM());
+    }
+
+    function _sendLeadrate(uint64 chain, bytes memory target, uint24 newRatePPM) internal {
+        _send(chain, _constructMessage(target, abi.encode(newRatePPM), new Client.EVMTokenAmount[](0)));
+        emit Pushed(chain, target, newRatePPM);
     }
 
     function _applyPendingChanges() internal {
@@ -45,9 +46,4 @@ contract LeadrateSender is CCIPSender {
             LEADRATE.applyChange(); // there is a pending change to apply
         }
     }
-
-    function buildSyncMessage(uint24 currentRate) internal returns (bytes memory) {
-        return abi.encode(currentRate);
-    }
-
 }

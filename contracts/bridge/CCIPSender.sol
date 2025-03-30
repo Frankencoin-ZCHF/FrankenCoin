@@ -19,16 +19,19 @@ abstract contract CCIPSender {
         LINK = _link;
     }
 
-    function _toReceiver(address target) internal returns (bytes memory) {
+    function _toReceiver(address target) internal pure returns (bytes memory) {
         return abi.encode(target);
     }
 
     function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts) internal view returns (Client.EVM2AnyMessage memory) {
-        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, "", _guessFeeToken());
+        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, _guessFeeToken(), "");
     }
 
-    function _calculateFee(uint64 chain, Client.EVM2AnyMessage calldata message, bool nativeToken) internal returns (uint256) {
-        message.feeToken = nativeToken ? address(0) : LINK;
+    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts, bool nativeToken)  internal view returns (Client.EVM2AnyMessage memory) {
+        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, nativeToken ? address(0) : LINK, "");
+    }
+
+    function _calculateFee(uint64 chain, Client.EVM2AnyMessage memory message) internal view returns (uint256) {
         return ROUTER.getFee(chain, message);
     }
 

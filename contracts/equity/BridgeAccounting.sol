@@ -17,18 +17,18 @@ contract BridgeAccounting is CCIPReceiver {
 
     event ReceivedProfits(uint256 amount);
     event ReceivedLosses(uint256 losses);
-    event SenderAdded(uint64 indexed chainSelector, bytes indexed sender);
+    event SenderAdded(uint64 indexed chain, bytes indexed sender);
 
     constructor(IBasicFrankencoin zchf, address ccipAdmin, address router) CCIPReceiver(router) {
         ZCHF = zchf;
         CCIP_ADMIN = ccipAdmin;
     }
 
-    function addSender(uint64 _chainSelector, bytes memory _sender) external {
+    function addSender(uint64 _chain, bytes memory _sender) external {
         if (msg.sender != CCIP_ADMIN) revert NotAdmin();
-        approvedSenders[_chainSelector] = _sender;
+        approvedSenders[_chain] = _sender;
 
-        emit SenderAdded(_chainSelector, _sender);
+        emit SenderAdded(_chain, _sender);
     }
 
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {

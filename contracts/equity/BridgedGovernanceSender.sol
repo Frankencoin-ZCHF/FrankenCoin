@@ -35,16 +35,15 @@ contract BridgedGovernanceSender is CCIPSender {
      * @param chain Chain selector of the destination chain
      * @param _voters                   Collection of addresses which votes and delegation should be synced
      *
-     * @return messageId bytes32 MessageID of the sent message
      */
-    function syncVotes(uint64 chain, bytes calldata _receiver, address[] calldata _voters) public payable {
+    function syncVotes(uint64 chain, bytes memory _receiver, address[] calldata _voters) public payable {
         SyncMessage memory syncMessage = _buildSyncMessage(_voters);
         Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0));
         _send(chain, message);
         emit VotesSynced(chain, _receiver, _voters);
     }
 
-    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken) external {
+    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken) external view {
         getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken);
     }
 
@@ -55,10 +54,10 @@ contract BridgedGovernanceSender is CCIPSender {
      *
      * @return uint256 The fee required to send the CCIP message.
      */
-    function getSyncFee(uint64 chain, bytes calldata _receiver, address[] calldata _voters, bool nativeToken) public view returns (uint256) {
+    function getSyncFee(uint64 chain, bytes memory _receiver, address[] calldata _voters, bool nativeToken) public view returns (uint256) {
         SyncMessage memory syncMessage = _buildSyncMessage(_voters);
-        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0));
-        return _calculateFee(chain, message, nativeToken);
+        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), nativeToken);
+        return _calculateFee(chain, message);
     }
 
     /**

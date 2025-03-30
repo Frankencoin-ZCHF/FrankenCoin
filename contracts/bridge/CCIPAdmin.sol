@@ -25,8 +25,8 @@ contract CCIPAdmin {
 
     struct RemotePoolUpdate {
         bool add; // true if adding, false if removing
-        uint64 remoteChainSelector;
-        bytes remotePoolAddress;
+        uint64 chain;
+        bytes poolAddress;
     }
 
     mapping(bytes32 hash => uint64 deadline) public proposals;
@@ -44,15 +44,15 @@ contract CCIPAdmin {
     event RemoveChainProposed(bytes32 hash, address indexed proposer, uint64 chain);
     event AddChainProposed(bytes32 hash, address indexed proposer, ITokenPool.ChainUpdate update);
     event AdminTransferProposed(bytes32 hash, address indexed proposer, address newAdmin);
-    event AccountingSenderProposed(bytes32 hash, uint64 indexed chainSelector, bytes indexed sender);
+    event AccountingSenderProposed(bytes32 hash, uint64 indexed chain, bytes indexed sender);
 
-    event RemotePoolAdded(uint64 indexed remoteChainSelector, bytes indexed remotePoolAddress);
-    event RemotePoolRemoved(uint64 indexed remoteChainSelector, bytes indexed remotePoolAddress);
+    event RemotePoolAdded(uint64 indexed chain, bytes indexed poolAddress);
+    event RemotePoolRemoved(uint64 indexed chain, bytes indexed poolAddress);
     event ChainRemoved(uint64 id);
     event ChainAdded(ITokenPool.ChainUpdate config);
     event AdminTransfered(address newAdmin);
     event RateLimit(uint64 remoteChain, RateLimiter.Config inboundConfigs, RateLimiter.Config outboundConfig);
-    event AccountingSenderAdded(uint64 indexed chainSelector, bytes indexed sender);
+    event AccountingSenderAdded(uint64 indexed chain, bytes indexed sender);
 
     modifier onlyQualified(address[] calldata helpers) {
         GOVERNANCE.checkQualified(msg.sender, helpers);
@@ -134,11 +134,11 @@ contract CCIPAdmin {
     function applyRemotePoolUpdate(RemotePoolUpdate memory update) external {
         enact(keccak256(abi.encode("remotePoolUpdate", update)));
         if (update.add) {
-            tokenPool.addRemotePool(update.remoteChainSelector, update.remotePoolAddress);
-            emit RemotePoolAdded(update.remoteChainSelector, update.remotePoolAddress);
+            tokenPool.addRemotePool(update.chain, update.poolAddress);
+            emit RemotePoolAdded(update.chain, update.poolAddress);
         } else {
-            tokenPool.removeRemotePool(update.remoteChainSelector, update.remotePoolAddress);
-            emit RemotePoolRemoved(update.remoteChainSelector, update.remotePoolAddress);
+            tokenPool.removeRemotePool(update.chain, update.poolAddress);
+            emit RemotePoolRemoved(update.chain, update.poolAddress);
         }
     }
 
@@ -229,15 +229,15 @@ contract CCIPAdmin {
         emit AdminTransfered(newAdmin);
     }
 
-    function proposeAccountingSender(uint64 _chainSelector, bytes calldata _sender, address[] calldata helpers) external {
-        bytes32 hash = keccak256(abi.encode("accountingSender", _chainSelector, _sender));
+    function proposeAccountingSender(uint64 _chain, bytes calldata _sender, address[] calldata helpers) external {
+        bytes32 hash = keccak256(abi.encode("accountingSender", _chain, _sender));
         propose(hash, 7, helpers);
-        emit AccountingSenderProposed(hash, _chainSelector, _sender);
+        emit AccountingSenderProposed(hash, _chain, _sender);
     }
 
-    function applyAccountSender(uint64 _chainSelector, bytes calldata _sender) external {
-        enact(keccak256(abi.encode("accountingSender", _chainSelector, _sender)));
-        BRIDGE_ACCOUNTING.addSender(_chainSelector, _sender);
-        emit AccountingSenderAdded(_chainSelector, _sender);
+    function applyAccountSender(uint64 _chain, bytes calldata _sender) external {
+        enact(keccak256(abi.encode("accountingSender", _chain, _sender)));
+        BRIDGE_ACCOUNTING.addSender(_chain, _sender);
+        emit AccountingSenderAdded(_chain, _sender);
     }
 }
