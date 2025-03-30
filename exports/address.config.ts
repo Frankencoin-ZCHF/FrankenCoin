@@ -29,6 +29,7 @@ export interface ChainAddress {
   registryModuleOwner: Address;
   ccipAdmin: Address;
   tokenPool: Address;
+  linkToken: Address;
 
   // accept any optional key
   // [key: string]: Address | undefined;
@@ -67,6 +68,7 @@ export const ADDRESS: Record<number, ChainAddress> = {
     registryModuleOwner: "0x4855174E9479E211337832E109E7721d43A4CA64",
     ccipAdmin: zeroAddress,
     tokenPool: zeroAddress,
+    linkToken: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
   },
   [polygon.id]: {
     // For test deployment only
@@ -90,6 +92,7 @@ export const ADDRESS: Record<number, ChainAddress> = {
     registryModuleOwner: "0xc751E86208F0F8aF2d5CD0e29716cA7AD98B5eF5",
     ccipAdmin: zeroAddress,
     tokenPool: zeroAddress,
+    linkToken: "0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904",
   },
   [sepolia.id]: {
     // For test deployment only
@@ -111,7 +114,8 @@ export const ADDRESS: Record<number, ChainAddress> = {
     rmnProxy: "0xba3f6251de62dED61Ff98590cB2fDf6871FbB991",
     tokenAdminRegistry: "0x95F29FEE11c5C55d26cCcf1DB6772DE953B37B82",
     registryModuleOwner: "0x62e731218d0D47305aba2BE3751E7EE9E5520790",
-    ccipAdmin: "0x800b47444a905BE45a20Ab19051F7dAA35d18234",
-    tokenPool: "0xBC4F96208f7f0561b5698f7aCaf8c54f51B5B544",
+    ccipAdmin: zeroAddress,
+    tokenPool: zeroAddress,
+    linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
   },
 };

@@ -48,18 +48,61 @@ console.log(tokenPoolArgs);
 
 // governance sender
 export const bridgedGovernanceSenderArgs = [ADDR.equity, ADDR.router];
-storeConstructorArgs("BridgedGovernanceSender", bridgedGovernanceSenderArgs, true);
-console.log("BridgedGovernanceSender Constructor Aargs");
+storeConstructorArgs(
+  "BridgedGovernanceSender",
+  bridgedGovernanceSenderArgs,
+  true
+);
+console.log("BridgedGovernanceSender Constructor Args");
 console.log(bridgedGovernanceSenderArgs);
+
+// leadrate sender
+export const leadrateSenderArgs = [ADDR.savings, ADDR.router, ADDR.linkToken];
+storeConstructorArgs("LeadrateSender", leadrateSenderArgs, true);
+console.log("LeadrateSender Constructor Args");
+console.log(leadrateSenderArgs);
+
+// bridge accounting
+export const bridgeAccountArgs = [
+  ADDR.frankenCoin,
+  ADDR.tokenAdminRegistry,
+  ADDR.router,
+];
+storeConstructorArgs("BridgeAccounting", bridgeAccountArgs, true);
+console.log("BridgeAccounting Constructor Args");
+console.log(bridgeAccountArgs);
 
 const CCIPPrepareModule = buildModule("CCIPPrepare", (m) => {
   const ccipAdmin = m.contract("CCIPAdmin", ccipAdminArgs); // @dev: it uses the Contract name as an identifier
   const tokenPool = m.contract("BurnMintTokenPool", tokenPoolArgs);
-  const bridgedGovernanceSender = m.contract("BridgedGovernanceSender", bridgedGovernanceSenderArgs);
-
   m.call(tokenPool, "transferOwnership", [ccipAdmin]);
 
-  return { ccipAdmin, tokenPool, bridgedGovernanceSender };
+  const bridgedGovernanceSender = m.contract(
+    "BridgedGovernanceSender",
+    bridgedGovernanceSenderArgs
+  );
+  const leadrateSender = m.contract("LeadrateSender", leadrateSenderArgs);
+  const bridgeAccounting = m.contract("BridgeAccounting", bridgeAccountArgs);
+  const frankencoin = m.contractAt("Frankencoin", ADDR.frankenCoin);
+  const minApplicationPeriod = m.staticCall(
+    frankencoin,
+    "MIN_APPLICATION_PERIOD"
+  );
+  const minFee = m.staticCall(frankencoin, "MIN_FEE");
+  m.call(frankencoin, "suggestMinter", [
+    bridgeAccounting,
+    minApplicationPeriod,
+    minFee,
+    "Bridge Accounting",
+  ]);
+
+  return {
+    ccipAdmin,
+    tokenPool,
+    bridgedGovernanceSender,
+    leadrateSender,
+    bridgeAccounting,
+  };
 });
 
 export default CCIPPrepareModule;
