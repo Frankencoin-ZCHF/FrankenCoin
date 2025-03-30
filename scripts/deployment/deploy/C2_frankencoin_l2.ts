@@ -7,29 +7,36 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployments: { get },
   } = hre;
 
-  const paramFile = "paramsFrankencoin.json";
   let chainId = hre.network.config["chainId"];
-  let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
+  let frankenCoinParamsFile = require(__dirname +
+    `/../parameters/paramsFrankencoin.json`);
   // find config for current chain
-  for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
-  let params = paramsArr[k];
-  if (chainId != params.chainId) {
-    throw new Error("ChainId doesn't match");
-  }
+  const frankenCoinParams = frankenCoinParamsFile.find((x: { chainId: number }) => x.chainId == chainId);
+  let ccipParamsFile = require(__dirname + `/../parameters/paramsCCIP.json`);
+  // find config for current chain
+  const ccipParams = ccipParamsFile.find((x: { chainId: number }) => x.chainId == chainId);
 
-  let minApplicationPeriod = params["minApplicationPeriod"];
+  let minApplicationPeriod = frankenCoinParams["minApplicationPeriod"];
   console.log("\nMin application period =", minApplicationPeriod);
 
   const bridgedGovernance = await get("BridgedGovernance");
-  const zchf = await deployContract(hre, "Frankencoin", [
-    minApplicationPeriod,
+  const zchf = await deployContract(hre, "BridgedFrankencoin", [
     bridgedGovernance.address,
+    ccipParams.router,
+    minApplicationPeriod,
+    ccipParams.link,
+    ccipParams.mainnetChainSelector,
+    ccipParams.bridgeAccounting
   ]);
 
   console.log(`Verify zchf: 
-    npx hardhat verify --network ${hre.network.name} ${await zchf.getAddress()} ${minApplicationPeriod} ${
-    bridgedGovernance.address
-  }
+    npx hardhat verify --network ${
+      hre.network.name
+    } ${await zchf.getAddress()} ${bridgedGovernance.address} ${
+    ccipParams.router
+  } ${minApplicationPeriod} ${ccipParams.link} ${
+    ccipParams.mainnetChainSelector
+  } ${ccipParams.bridgeAccounting}
   `);
 };
 

@@ -7,21 +7,16 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployments: { get },
     ethers,
   } = hre;
-  const paramFile = "paramsCCIP.json";
   let chainId = hre.network.config["chainId"];
-  let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
+  let ccipParamsFile = require(__dirname + `/../parameters/paramsCCIP.json`);
   // find config for current chain
-  for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
-  let params = paramsArr[k];
-  if (chainId != params.chainId) {
-    throw new Error("ChainId doesn't match");
-  }
+  const ccipParams = ccipParamsFile.find((x: { chainId: number }) => x.chainId == chainId);
 
-  const router = params["router"];
-  const rmnProxy = params["rmnProxy"];
-  const zchfDeployment = await get("Frankencoin");
+  const router = ccipParams["router"];
+  const rmnProxy = ccipParams["rmnProxy"];
+  const zchfDeployment = await get("BridgedFrankencoin");
   let zchfContract = await ethers.getContractAt(
-    "Frankencoin",
+    "BridgedFrankencoin",
     zchfDeployment.address
   );
   const decimals = await zchfContract.decimals();

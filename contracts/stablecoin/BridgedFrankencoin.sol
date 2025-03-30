@@ -44,6 +44,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     mapping(address position => address registeringMinter) public positions;
 
     uint256 public accruedLoss;
+    bool public initialized;
 
     event AccountingSynchronized(uint256 profit, uint256 losses);
     event MinterApplied(address indexed minter, uint256 applicationPeriod, uint256 applicationFee, string message);
@@ -56,6 +57,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     error AlreadyRegistered();
     error NotMinter();
     error TooLate();
+    error AlreadyInitialized();
 
     modifier minterOnly() {
         if (!isMinter(msg.sender) && !isMinter(positions[msg.sender])) revert NotMinter();
@@ -66,10 +68,11 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(IGovernance reserve_, address router_, uint256 _minApplicationPeriod, address _linkToken, uint64 _mainnetChainSelector) ERC20(18) CrossChainERC20(router_, _linkToken) {
+    constructor(IGovernance reserve_, address router_, uint256 _minApplicationPeriod, address _linkToken, uint64 _mainnetChainSelector, address _bridgeAccounting) ERC20(18) CrossChainERC20(router_, _linkToken) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = reserve_;
         MAINNET_CHAIN_SELECTOR = _mainnetChainSelector;
+        BRIDGE_ACCOUNTING = _bridgeAccounting;
     }
 
     function name() external pure override returns (string memory) {
@@ -78,6 +81,13 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
 
     function symbol() external pure override returns (string memory) {
         return "ZCHF";
+    }
+
+    function initialize(address _minter, string calldata _message) external {
+        if (initialized) revert AlreadyInitialized();
+        minters[_minter] = block.timestamp;
+        initialized = true;
+        emit MinterApplied(_minter, 0, 0, _message);
     }
 
     /**

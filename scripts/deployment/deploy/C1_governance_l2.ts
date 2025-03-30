@@ -4,15 +4,10 @@ import { deployContract } from "../deployUtils";
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { network } = hre;
-  const paramFile = "paramsCCIP.json";
   let chainId = hre.network.config["chainId"];
-  let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
+  let paramsArr = require(__dirname + `/../parameters/paramsCCIP.json`);
   // find config for current chain
-  for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
-  let params = paramsArr[k];
-  if (chainId != params.chainId) {
-    throw new Error("ChainId doesn't match");
-  }
+  const params = paramsArr.find((x: { chainId: number }) => x.chainId == chainId);
 
   const router = params["router"];
   const mainnetChainSelector = params["mainnetChainSelector"];

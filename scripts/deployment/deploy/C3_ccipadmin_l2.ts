@@ -7,21 +7,15 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployments: { get },
     ethers,
   } = hre;
-  const paramFile = "paramsCCIP.json";
   let chainId = hre.network.config["chainId"];
-  let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
+  let ccipParamsFile = require(__dirname + `/../parameters/paramsCCIP.json`);
   // find config for current chain
-  for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
-  let params = paramsArr[k];
-  if (chainId != params.chainId) {
-    throw new Error("ChainId doesn't match");
-  }
+  const ccipParams = ccipParamsFile.find((x: { chainId: number }) => x.chainId == chainId);
 
-  const tokenAdminRegistry = params["tokenAdminRegistry"];
-  const vetoPeriod = params["vetoPeriod"];
-  const zchfDeployment = await get("Frankencoin");
+  const tokenAdminRegistry = ccipParams["tokenAdminRegistry"];
+  const zchfDeployment = await get("BridgedFrankencoin");
   let zchfContract = await ethers.getContractAt(
-    "Frankencoin",
+    "BridgedFrankencoin",
     zchfDeployment.address
   );
   const reserve = await zchfContract.reserve();
@@ -29,12 +23,11 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const ccipAdmin = await deployContract(hre, "CCIPAdmin", [
     reserve,
     tokenAdminRegistry,
-    vetoPeriod,
     zchfDeployment.address,
   ]);
 
   console.log(`Verify ccipadmin: 
-    npx hardhat verify --network ${hre.network.name} ${await ccipAdmin.getAddress()} ${reserve} ${tokenAdminRegistry} ${vetoPeriod} ${
+    npx hardhat verify --network ${hre.network.name} ${await ccipAdmin.getAddress()} ${reserve} ${tokenAdminRegistry} ${
     zchfDeployment.address
   }
   `);
