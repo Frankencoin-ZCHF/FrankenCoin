@@ -28,19 +28,6 @@ const CCIPFinalizeModule = buildModule("CCIPFinalize", (m) => {
     after: [setPool],
   });
 
-  const frankencoin = m.contractAt("Frankencoin", ADDR.frankenCoin);
-  const minApplicationPeriod = m.staticCall(
-    frankencoin,
-    "MIN_APPLICATION_PERIOD"
-  );
-  const minFee = m.staticCall(frankencoin, "MIN_FEE");
-  m.call(frankencoin, "suggestMinter", [
-    ADDR.tokenPool,
-    minApplicationPeriod,
-    minFee,
-    "CCIP TokenPool",
-  ]);
-
   return {};
 });
 

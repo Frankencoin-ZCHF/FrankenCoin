@@ -25,7 +25,6 @@ console.log(config);
 export const ccipAdminArgs = [
   ADDR.equity,
   ADDR.tokenAdminRegistry,
-  300,
   ADDR.frankenCoin,
 ];
 storeConstructorArgs("CCIPAdmin", ccipAdminArgs, true);
@@ -47,7 +46,7 @@ console.log("BurnMintTokenPool Construcotr Args");
 console.log(tokenPoolArgs);
 
 // governance sender
-export const bridgedGovernanceSenderArgs = [ADDR.equity, ADDR.router];
+export const bridgedGovernanceSenderArgs = [ADDR.equity, ADDR.router, ADDR.linkToken];
 storeConstructorArgs(
   "BridgedGovernanceSender",
   bridgedGovernanceSenderArgs,
@@ -94,7 +93,20 @@ const CCIPPrepareModule = buildModule("CCIPPrepare", (m) => {
     minApplicationPeriod,
     minFee,
     "Bridge Accounting",
-  ]);
+  ], {id: "suggestBridgeAccounting"});
+  m.call(frankencoin, "suggestMinter", [
+    tokenPool,
+    minApplicationPeriod,
+    minFee,
+    "CCIP TokenPool",
+  ], {id: "suggestTokenPool"});
+
+  console.log('')
+  console.log("NEXT STEPS:")
+  console.log(
+    `Ping the Chainlink team to propose CCIPAdmin as admin for ZCHF`
+  );
+
 
   return {
     ccipAdmin,
