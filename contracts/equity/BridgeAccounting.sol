@@ -36,9 +36,10 @@ contract BridgeAccounting is CCIPReceiver {
     }
 
     function _validateSender(Client.Any2EVMMessage memory any2EvmMessage) internal view {
-        TokenPool pool = TokenPool(TOKEN_ADMIN_REGISTRY.getTokenPool(ZCHF));
-        address _remoteToken = pool.getRemoteToken(any2EvmMessage.sourceChainSelector);
-        if (any2EvmMessage.sender != _remoteToken) {
+        TokenPool pool = TokenPool(TOKEN_ADMIN_REGISTRY.getPool(address(ZCHF)));
+        bytes memory remoteToken = pool.getRemoteToken(any2EvmMessage.sourceChainSelector);
+        bytes32 senderHash = keccak256(abi.encode(any2EvmMessage.sender));
+        if (senderHash != keccak256(remoteToken)) {
             revert InvalidSender(any2EvmMessage.sourceChainSelector, any2EvmMessage.sender);
         }
     }

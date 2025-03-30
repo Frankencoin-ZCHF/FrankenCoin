@@ -23,7 +23,11 @@ contract BridgedGovernanceSender is CCIPSender {
     }
 
     function syncVotes(uint64 chain, address _receiver, address[] calldata _voters) external payable {
-        syncVotes(chain, _toReceiver(_receiver), _voters);
+        syncVotes(chain, _toReceiver(_receiver), _voters, "");
+    }
+
+    function syncVotes(uint64 chain, address _receiver, address[] calldata _voters, Client.EVMExtraArgsV2 calldata _extraArgs) public payable {
+        syncVotes(chain, _toReceiver(_receiver), _voters, Client._argsToBytes(_extraArgs));
     }
 
     /**
@@ -35,15 +39,19 @@ contract BridgedGovernanceSender is CCIPSender {
      * @param _voters                   Collection of addresses which votes and delegation should be synced
      *
      */
-    function syncVotes(uint64 chain, bytes memory _receiver, address[] calldata _voters) public payable {
+    function syncVotes(uint64 chain, bytes memory _receiver, address[] calldata _voters, bytes memory _extraArgs) public payable {
         SyncMessage memory syncMessage = _buildSyncMessage(_voters);
-        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0));
+        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), _extraArgs);
         _send(chain, message);
         emit VotesSynced(chain, _receiver, _voters);
     }
 
     function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken) external view {
-        getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken);
+        getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, "");
+    }
+
+    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken, Client.EVMExtraArgsV2 calldata extraArgs) external view {
+        getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, Client._argsToBytes(extraArgs));
     }
 
     /**
@@ -53,9 +61,9 @@ contract BridgedGovernanceSender is CCIPSender {
      *
      * @return uint256 The fee required to send the CCIP message.
      */
-    function getSyncFee(uint64 chain, bytes memory _receiver, address[] calldata _voters, bool nativeToken) public view returns (uint256) {
+    function getSyncFee(uint64 chain, bytes memory _receiver, address[] calldata _voters, bool nativeToken, bytes memory extraArgs) public view returns (uint256) {
         SyncMessage memory syncMessage = _buildSyncMessage(_voters);
-        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), nativeToken);
+        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), nativeToken, extraArgs);
         return _calculateFee(chain, message);
     }
 

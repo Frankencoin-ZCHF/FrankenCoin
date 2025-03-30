@@ -19,25 +19,34 @@ contract LeadrateSender is CCIPSender {
     }
 
     function pushLeadrate(uint64[] calldata chains, bytes[] calldata targets) external payable {
+        pushLeadrate(chains, targets, new bytes[](chains.length));
+    }
+
+    function pushLeadrate(uint64[] calldata chains, bytes[] calldata targets, bytes[] memory extraArgs) public payable {
         if (chains.length != targets.length) revert LengthMismatch(chains.length, targets.length);
+        if (chains.length != extraArgs.length) revert LengthMismatch(chains.length, extraArgs.length);
         _applyPendingChanges();
         uint24 currentRate = LEADRATE.currentRatePPM();
         for (uint256 i; i < chains.length; i++) {
-            _sendLeadrate(chains[i], targets[i], currentRate);
+            _sendLeadrate(chains[i], targets[i], currentRate, extraArgs[i]);
         }
     }
 
     function pushLeadrate(uint64 chain, address target) external payable {
-        pushLeadrate(chain, _toReceiver(target));
+        pushLeadrate(chain, _toReceiver(target), "");
     }
 
-    function pushLeadrate(uint64 chain, bytes memory target) public payable {
+    function pushLeadrate(uint64 chain, address target, Client.EVMExtraArgsV2 calldata extraArgs) external payable {
+        pushLeadrate(chain, _toReceiver(target), Client._argsToBytes(extraArgs));
+    }
+
+    function pushLeadrate(uint64 chain, bytes memory target, bytes memory extraArgs) public payable {
         _applyPendingChanges();
-        _sendLeadrate(chain, target, LEADRATE.currentRatePPM());
+        _sendLeadrate(chain, target, LEADRATE.currentRatePPM(), extraArgs);
     }
 
-    function _sendLeadrate(uint64 chain, bytes memory target, uint24 newRatePPM) internal {
-        _send(chain, _constructMessage(target, abi.encode(newRatePPM), new Client.EVMTokenAmount[](0)));
+    function _sendLeadrate(uint64 chain, bytes memory target, uint24 newRatePPM, bytes memory extraArgs) internal {
+        _send(chain, _constructMessage(target, abi.encode(newRatePPM), new Client.EVMTokenAmount[](0), extraArgs));
         emit Pushed(chain, target, newRatePPM);
     }
 

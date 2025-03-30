@@ -22,12 +22,12 @@ abstract contract CCIPSender {
         return abi.encode(target);
     }
 
-    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts) internal view returns (Client.EVM2AnyMessage memory) {
-        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, _guessFeeToken(), "");
+    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts, bytes memory _extraArgs) internal view returns (Client.EVM2AnyMessage memory) {
+        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, _guessFeeToken(), _extraArgs);
     }
 
-    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts, bool nativeToken) internal view returns (Client.EVM2AnyMessage memory) {
-        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, nativeToken ? address(0) : LINK, "");
+    function _constructMessage(bytes memory _receiver, bytes memory _payload, Client.EVMTokenAmount[] memory _tokenAmounts, bool nativeToken,  bytes memory _extraArgs) internal view returns (Client.EVM2AnyMessage memory) {
+        return Client.EVM2AnyMessage(_receiver, _payload, _tokenAmounts, nativeToken ? address(0) : LINK, _extraArgs);
     }
 
     function _calculateFee(uint64 chain, Client.EVM2AnyMessage memory message) internal view returns (uint256) {

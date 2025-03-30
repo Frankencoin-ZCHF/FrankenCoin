@@ -66,13 +66,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(
-        IGovernance reserve_,
-        address router_,
-        uint256 _minApplicationPeriod,
-        address _linkToken,
-        uint64 _mainnetChainSelector
-    ) ERC20(18) CrossChainERC20(router_, _linkToken) {
+    constructor(IGovernance reserve_, address router_, uint256 _minApplicationPeriod, address _linkToken, uint64 _mainnetChainSelector) ERC20(18) CrossChainERC20(router_, _linkToken) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = reserve_;
         MAINNET_CHAIN_SELECTOR = _mainnetChainSelector;
@@ -100,12 +94,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
      * @param _applicationFee      The fee paid by the caller, at least MIN_FEE
      * @param _message             An optional human readable message to everyone watching this contract
      */
-    function suggestMinter(
-        address _minter,
-        uint256 _applicationPeriod,
-        uint256 _applicationFee,
-        string calldata _message
-    ) external override {
+    function suggestMinter(address _minter, uint256 _applicationPeriod, uint256 _applicationFee, string calldata _message) external override {
         if (_applicationPeriod < MIN_APPLICATION_PERIOD) revert PeriodTooShort();
         if (_applicationFee < MIN_FEE) revert FeeTooLow();
         if (minters[_minter] != 0) revert AlreadyRegistered();
@@ -207,10 +196,18 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
         emit Profit(minter, _amount);
     }
 
+    function synchronizeAccounting() public payable {
+        synchronizeAccounting("");
+    }
+
+    function synchronizeAccounting(Client.EVMExtraArgsV2 calldata extraArgs) public payable {
+        synchronizeAccounting(Client._argsToBytes(extraArgs));
+    }
+
     /**
      * Uses a multichain call to send home all accrued profits, if any
      */
-    function synchronizeAccounting() external payable {
+    function synchronizeAccounting(bytes memory extraArgs) public payable {
         uint256 reserveLeft = balanceOf(address(reserve));
         uint256 _accuredLoss = accruedLoss;
         accruedLoss = 0;
@@ -222,11 +219,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
 
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(this), amount: reserveLeft});
-        Client.EVM2AnyMessage memory message = _constructMessage(
-            abi.encode(BRIDGE_ACCOUNTING),
-            abi.encode(reserveLeft, _accuredLoss),
-            tokenAmounts
-        );
+        Client.EVM2AnyMessage memory message = _constructMessage(abi.encode(BRIDGE_ACCOUNTING), abi.encode(reserveLeft, _accuredLoss), tokenAmounts, extraArgs);
         _send(MAINNET_CHAIN_SELECTOR, message);
         emit AccountingSynchronized(reserveLeft, _accuredLoss);
     }

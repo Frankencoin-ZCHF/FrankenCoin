@@ -15,11 +15,15 @@ abstract contract CrossChainERC20 is ERC20, CCIPSender {
     constructor(address router, address linkToken) CCIPSender(IRouterClient(router), linkToken) {}
 
     function transfer(uint64 targetChain, address target, uint256 amount) external payable {
-        transfer(targetChain, _toReceiver(target), amount);
+        transfer(targetChain, _toReceiver(target), amount, "");
     }
 
-    function transfer(uint64 targetChain, bytes memory target, uint256 amount) public payable {
-        _send(targetChain, constructTransferMessage(target, amount));
+    function transfer(uint64 targetChain, address target, uint256 amount, Client.EVMExtraArgsV2 calldata extraArgs) external payable {
+        transfer(targetChain, _toReceiver(target), amount, Client._argsToBytes(extraArgs));
+    }
+
+    function transfer(uint64 targetChain, bytes memory target, uint256 amount, bytes memory extraArgs) public payable {
+        _send(targetChain, constructTransferMessage(target, amount, extraArgs));
         emit Transfer(msg.sender, targetChain, target, amount);
     }
 
@@ -28,9 +32,9 @@ abstract contract CrossChainERC20 is ERC20, CCIPSender {
     /// @param receiver The address of the receiver.
     /// @param amount The amount of the token to be transferred.
     /// @return Client.EVM2AnyMessage Returns an EVM2AnyMessage struct which contains information for sending a CCIP message.
-    function constructTransferMessage(bytes memory receiver, uint256 amount) private view returns (Client.EVM2AnyMessage memory) {
+    function constructTransferMessage(bytes memory receiver, uint256 amount, bytes memory extraArgs) private view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount(address(this), amount);
-        return _constructMessage(receiver, "", tokenAmounts);
+        return _constructMessage(receiver, "", tokenAmounts, extraArgs);
     }
 }
