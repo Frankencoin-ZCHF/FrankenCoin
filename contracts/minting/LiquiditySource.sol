@@ -19,8 +19,6 @@ contract LiquiditySource is Ownable {
     uint256 public immutable MATURITY;
     
     uint256 public minted;
-
-    string public termsHash;
     string public termsUrl;
 
     error InvalidParameters();
@@ -48,21 +46,21 @@ contract LiquiditySource is Ownable {
      * outstanding amount in time, that they would owe the repaid amount plus a penalty to anyone
      * who repaid some or all of the outstanding amount using the 'repay' function.
      * 
-     * Initialization requires 1000 ZCHF to be sent to this contract to cover the application fee.
+     * Initialization requires this contract to be funded with 1000 ZCHF to cover the application fee.
+     * 
+     * It is the responsibility of the governance token holders verify the legal commitment made
+     * by the applicants and to deny minting privileges if the commitments are deemed insufficient.
      */
-    function initialize(string calldata termsHash_, string calldata termsUrl_) external onlyOwner {
-        if (bytes(termsHash).length > 0) revert AlreadyInitialized();
-        if (bytes(termsHash_).length == 0 || bytes(termsUrl_).length == 0) revert InvalidParameters();
-        termsHash = termsHash_;
+    function initialize(string calldata termsUrl_) external onlyOwner {
+        if (bytes(termsUrl).length > 0) revert AlreadyInitialized();
+        if (bytes(termsUrl_).length == 0) revert InvalidParameters();
         termsUrl = termsUrl_;
-        uint256 applicationPeriod = ZCHF.MIN_APPLICATION_PERIOD();
-        uint256 fee = ZCHF.MIN_FEE();
-        ZCHF.suggestMinter(address(this), applicationPeriod, fee, termsUrl_);
+        ZCHF.suggestMinter(address(this), ZCHF.MIN_APPLICATION_PERIOD(), ZCHF.MIN_FEE(), termsUrl_);
     }
 
     /**
      * Update the URL where the terms pdf can be found.
-     * The terms themselves cannot be changed and the hash of the terms should still be the same.
+     * The terms themselves cannot be changed.
      */
     function updateTermsUrl(string calldata termsUrl_) external onlyOwner {
         if (bytes(termsUrl_).length == 0) revert InvalidParameters();
