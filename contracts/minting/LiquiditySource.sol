@@ -13,10 +13,11 @@ import "../utils/Ownable.sol";
 contract LiquiditySource is Ownable {
 
     IFrankencoin public constant ZCHF = IFrankencoin(0xB58E61C3098d85632Df34EecfB899A1Ed80921cB);
-    uint256 public constant MATURITY = 1759269600; // 2025-09-30
     uint256 public constant MIN_EXTERNAL_REPAYMENT = 100_000 * 1e18; // 100k ZCHF
 
     uint256 public immutable LIMIT;
+    uint256 public immutable MATURITY;
+    
     uint256 public minted;
 
     string public termsHash;
@@ -33,9 +34,10 @@ contract LiquiditySource is Ownable {
     event Repaid(uint256 amount, uint256 newTotal);
     event CompensationOwed(address owner, string ref, uint256 amount);
 
-    constructor(address owner, uint256 limit){
+    constructor(address owner, uint256 limit, uint256 maturityDate){
         _setOwner(owner);
         LIMIT = limit;
+        MATURITY = maturityDate;
         minted = 0;
     }
 
