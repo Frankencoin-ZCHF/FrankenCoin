@@ -32,8 +32,8 @@ contract LiquiditySource is Ownable {
     event Repaid(uint256 amount, uint256 newTotal);
     event CompensationOwed(address owner, string ref, uint256 amount);
 
-    constructor(address owner, uint256 limit, uint256 maturityDate){
-        _setOwner(owner);
+    constructor(uint256 limit, uint256 maturityDate){
+        _setOwner(msg.sender);
         LIMIT = limit;
         MATURITY = maturityDate;
         minted = 0;
