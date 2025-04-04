@@ -54,7 +54,6 @@ abstract contract CCIPSender {
             payable(msg.sender).call{value: msg.value - fee}(""); // return overpaid fee to sender
         }
         return (messageId, fee);
-        // emit MessageSent(..) no necessity to emit a message, ccip does that already
     }
 
     function _guessFeeToken() internal view returns (address) {

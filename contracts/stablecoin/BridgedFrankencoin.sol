@@ -229,7 +229,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
 
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(this), amount: reserveLeft});
-        Client.EVM2AnyMessage memory message = _constructMessage(abi.encode(BRIDGE_ACCOUNTING), abi.encode(reserveLeft, _accuredLoss), tokenAmounts, extraArgs);
+        Client.EVM2AnyMessage memory message = _constructMessage(_toReceiver(BRIDGE_ACCOUNTING), abi.encode(reserveLeft, _accuredLoss), tokenAmounts, extraArgs);
         _send(MAINNET_CHAIN_SELECTOR, message);
         emit AccountingSynchronized(reserveLeft, _accuredLoss);
     }

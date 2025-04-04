@@ -52,7 +52,10 @@ contract BridgeAccounting is CCIPReceiver {
 
     function _handleLosses(uint256 amount) internal {
         ZCHF.coverLoss(address(this), amount); // to trigger the Loss event
-        ZCHF.burn(amount);
+        // the BridgedFrankencoin already minted new tokens and made the minter whole.
+        // the tokens minted by the main Frankencoin are therefore a duplicate and need to be burned
+        // otherwise a loss would have double the impact
+        ZCHF.burn(amount); 
         emit ReceivedLosses(amount);
     }
 }
