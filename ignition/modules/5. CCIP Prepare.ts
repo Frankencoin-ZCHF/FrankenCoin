@@ -23,7 +23,6 @@ console.log(config);
 
 // ccip admin constructor args
 export const ccipAdminArgs = [
-  ADDR.equity,
   ADDR.tokenAdminRegistry,
   ADDR.frankenCoin,
 ];
@@ -46,14 +45,14 @@ console.log("BurnMintTokenPool Construcotr Args");
 console.log(tokenPoolArgs);
 
 // governance sender
-export const bridgedGovernanceSenderArgs = [ADDR.equity, ADDR.router, ADDR.linkToken];
+export const governanceSenderArgs = [ADDR.equity, ADDR.router, ADDR.linkToken];
 storeConstructorArgs(
-  "BridgedGovernanceSender",
-  bridgedGovernanceSenderArgs,
+  "GovernanceSender",
+  governanceSenderArgs,
   true
 );
-console.log("BridgedGovernanceSender Constructor Args");
-console.log(bridgedGovernanceSenderArgs);
+console.log("GovernanceSender Constructor Args");
+console.log(governanceSenderArgs);
 
 // leadrate sender
 export const leadrateSenderArgs = [ADDR.savings, ADDR.router, ADDR.linkToken];
@@ -76,9 +75,9 @@ const CCIPPrepareModule = buildModule("CCIPPrepare", (m) => {
   const tokenPool = m.contract("BurnMintTokenPool", tokenPoolArgs);
   m.call(tokenPool, "transferOwnership", [ccipAdmin]);
 
-  const bridgedGovernanceSender = m.contract(
-    "BridgedGovernanceSender",
-    bridgedGovernanceSenderArgs
+  const governanceSender = m.contract(
+    "GovernanceSender",
+    governanceSenderArgs
   );
   const leadrateSender = m.contract("LeadrateSender", leadrateSenderArgs);
   const bridgeAccounting = m.contract("BridgeAccounting", bridgeAccountArgs);
@@ -111,7 +110,7 @@ const CCIPPrepareModule = buildModule("CCIPPrepare", (m) => {
   return {
     ccipAdmin,
     tokenPool,
-    bridgedGovernanceSender,
+    governanceSender,
     leadrateSender,
     bridgeAccounting,
   };

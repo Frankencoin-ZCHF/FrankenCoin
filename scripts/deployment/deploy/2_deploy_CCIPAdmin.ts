@@ -28,11 +28,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const reserve = await zchfContract.reserve();
 
   const ccipAdmin = await deployContract(hre, "CCIPAdmin", [
-    reserve,
     tokenAdminRegistry,
-    vetoPeriod,
     zchfDeployment.address,
-    registryModuleOwner
   ]);
 
   console.log(`Verify ccipadmin: 

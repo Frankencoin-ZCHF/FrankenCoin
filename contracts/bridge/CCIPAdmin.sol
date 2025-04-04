@@ -8,6 +8,7 @@ import {IRegistryModuleOwner} from "./IRegistryModuleOwner.sol";
 import {ITokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol";
 import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
 import {BridgeAccounting} from "../equity/BridgeAccounting.sol";
+import {IBasicFrankencoin} from "../stablecoin/IBasicFrankencoin.sol";
 
 /**
  * The admin for briding Frankencoins using CCIP.
@@ -55,10 +56,10 @@ contract CCIPAdmin {
         _;
     }
 
-    constructor(IGovernance governance, ITokenAdminRegistry tokenAdminRegistry, address zchf) {
-        GOVERNANCE = governance;
+    constructor(ITokenAdminRegistry tokenAdminRegistry, IBasicFrankencoin zchf) {
+        GOVERNANCE = zchf.reserve();
         TOKEN_ADMIN_REGISTRY = tokenAdminRegistry;
-        ZCHF = zchf;
+        ZCHF = address(zchf);
     }
 
     /**

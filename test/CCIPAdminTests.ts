@@ -63,7 +63,6 @@ describe("CCIP Admin Tests", () => {
 
     const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
     const ccipAdmin = await ccipAdminFactory.deploy(
-      await zchf.reserve(),
       await tokenAdminRegistry.getAddress(),
       await zchf.getAddress()
     );
@@ -141,7 +140,6 @@ describe("CCIP Admin Tests", () => {
       );
       const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
       const ccipAdmin = await ccipAdminFactory.deploy(
-        await zchf.reserve(),
         await tokenAdminRegistry.getAddress(),
         await zchf.getAddress()
       );
@@ -158,7 +156,6 @@ describe("CCIP Admin Tests", () => {
       );
       const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
       const ccipAdmin = await ccipAdminFactory.deploy(
-        await zchf.reserve(),
         await tokenAdminRegistry.getAddress(),
         await zchf.getAddress()
       );
@@ -175,7 +172,6 @@ describe("CCIP Admin Tests", () => {
       );
       const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
       const ccipAdmin = await ccipAdminFactory.deploy(
-        await zchf.reserve(),
         await tokenAdminRegistry.getAddress(),
         await zchf.getAddress()
       );
