@@ -23,6 +23,8 @@ abstract contract CrossChainERC20 is ERC20, CCIPSender {
     }
 
     function transfer(uint64 targetChain, bytes memory target, uint256 amount, bytes memory extraArgs) public payable {
+        _transfer(msg.sender, address(this), amount);
+        _approve(address(this), address(ROUTER), amount);
         _send(targetChain, constructTransferMessage(target, amount, extraArgs));
         emit Transfer(msg.sender, targetChain, target, amount);
     }
