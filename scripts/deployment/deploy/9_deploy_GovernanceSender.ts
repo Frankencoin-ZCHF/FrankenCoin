@@ -25,14 +25,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
   const reserve = await zchfContract.reserve();
 
-  const bridgedGovernanceSender = await deployContract(
+  const governanceSender = await deployContract(
     hre,
-    "BridgedGovernanceSender",
+    "GovernanceSender",
     [reserve, router]
   );
 
-  console.log(`Verify bridgedGovernanceSender: 
-    npx hardhat verify --network ${hre.network.name} ${await bridgedGovernanceSender.getAddress()} ${reserve} ${router}`);
+  console.log(`Verify governanceSender: 
+    npx hardhat verify --network ${hre.network.name} ${await governanceSender.getAddress()} ${reserve} ${router}`);
 };
 
 export default deploy;

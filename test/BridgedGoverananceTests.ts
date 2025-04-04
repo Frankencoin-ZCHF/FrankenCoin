@@ -1,4 +1,4 @@
-import { BridgedGovernanceSender, CCIPLocalSimulator } from "../typechain";
+import { GovernanceSender, CCIPLocalSimulator } from "../typechain";
 import { ethers } from "hardhat";
 import { evm_increaseTime } from "./helper";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
@@ -8,14 +8,14 @@ import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Bridged Governance Tests", () => {
   async function sendSyncMessage(
-    bridgedGovernanceSender: BridgedGovernanceSender,
+    governanceSender: GovernanceSender,
     sender: HardhatEthersSigner,
     receiver: string,
     chainSelector: bigint,
     feeToken: string,
     voters: string[]
   ) {
-    const fee = await bridgedGovernanceSender[
+    const fee = await governanceSender[
       "getSyncFee(uint64,address,address[],bool)"
     ](chainSelector, receiver, voters, feeToken === ethers.ZeroAddress);
 
@@ -23,9 +23,9 @@ describe("Bridged Governance Tests", () => {
       const linkTokenContract = await getLinkTokenContract(feeToken);
       await linkTokenContract
         .connect(sender)
-        .approve(await bridgedGovernanceSender.getAddress(), fee);
+        .approve(await governanceSender.getAddress(), fee);
     }
-    const tx = await bridgedGovernanceSender
+    const tx = await governanceSender
       .connect(sender)
       ["syncVotes(uint64,address,address[])"](chainSelector, receiver, voters);
     await tx.wait();
@@ -53,10 +53,10 @@ describe("Bridged Governance Tests", () => {
     const equity = await ethers.getContractAt("Equity", await zchf.reserve());
 
     // Setup bridged contracts
-    const bridgedGovernanceSenderFactory = await ethers.getContractFactory(
-      "BridgedGovernanceSender"
+    const governanceSenderFactory = await ethers.getContractFactory(
+      "GovernanceSender"
     );
-    const bridgedGovernanceSender = await bridgedGovernanceSenderFactory.deploy(
+    const governanceSender = await governanceSenderFactory.deploy(
       await equity.getAddress(),
       ccipLocalSimulatorConfig.sourceRouter_,
       ccipLocalSimulatorConfig.ccipLnM_
@@ -68,7 +68,7 @@ describe("Bridged Governance Tests", () => {
     const bridgedGovernance = await bridgedGovernanceFactory.deploy(
       ccipLocalSimulatorConfig.destinationRouter_,
       ccipLocalSimulatorConfig.chainSelector_,
-      await bridgedGovernanceSender.getAddress()
+      await governanceSender.getAddress()
     );
 
     // Setup users
@@ -116,7 +116,7 @@ describe("Bridged Governance Tests", () => {
       ccipLocalSimulatorConfig,
       zchf,
       equity,
-      bridgedGovernanceSender,
+      governanceSender,
       bridgedGovernance,
       minter,
       user1,
@@ -130,14 +130,14 @@ describe("Bridged Governance Tests", () => {
   describe("syncVotesPayNative", () => {
     it("should transfer single user votes", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         ccipLocalSimulatorConfig,
         equity,
       } = await loadFixture(deployFixture);
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -153,7 +153,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer single user delegation", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -163,7 +163,7 @@ describe("Bridged Governance Tests", () => {
       await equity.connect(user1).delegateVoteTo(await user2.getAddress());
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -178,14 +178,14 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer totalVotes along", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         ccipLocalSimulatorConfig,
         equity,
       } = await loadFixture(deployFixture);
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -201,7 +201,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer multiple users", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -211,7 +211,7 @@ describe("Bridged Governance Tests", () => {
         equity,
       } = await loadFixture(deployFixture);
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -241,7 +241,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer multiple user delegation", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -256,7 +256,7 @@ describe("Bridged Governance Tests", () => {
       await equity.connect(user4).delegateVoteTo(await user2.getAddress());
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -286,7 +286,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should update votes", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         ccipLocalSimulatorConfig,
@@ -297,7 +297,7 @@ describe("Bridged Governance Tests", () => {
 
       // transfer initial votes
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -318,7 +318,7 @@ describe("Bridged Governance Tests", () => {
 
       // transfer updated votes
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -333,7 +333,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should update delegation", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -347,7 +347,7 @@ describe("Bridged Governance Tests", () => {
 
       // transfer delegation
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -364,7 +364,7 @@ describe("Bridged Governance Tests", () => {
 
       // transfer redelegation
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -381,14 +381,14 @@ describe("Bridged Governance Tests", () => {
   describe("syncVotesPayToken", () => {
     it("should transfer single user votes", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         ccipLocalSimulatorConfig,
         equity,
       } = await loadFixture(deployFixture);
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -404,7 +404,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer single user delegation", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -415,7 +415,7 @@ describe("Bridged Governance Tests", () => {
       await equity.connect(user1).delegateVoteTo(await user2.getAddress());
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -431,14 +431,14 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer totalVotes along", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         ccipLocalSimulatorConfig,
         equity,
       } = await loadFixture(deployFixture);
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -454,7 +454,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer multiple users", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -464,7 +464,7 @@ describe("Bridged Governance Tests", () => {
         equity,
       } = await loadFixture(deployFixture);
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -494,7 +494,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should transfer multiple user delegation", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -509,7 +509,7 @@ describe("Bridged Governance Tests", () => {
       await equity.connect(user4).delegateVoteTo(await user2.getAddress());
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -539,7 +539,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should update votes", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         ccipLocalSimulatorConfig,
@@ -549,7 +549,7 @@ describe("Bridged Governance Tests", () => {
       const votesBefore = await equity.votes(await user1.getAddress());
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -569,7 +569,7 @@ describe("Bridged Governance Tests", () => {
       expect(votesAfter).to.lessThan(votesBefore);
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -584,7 +584,7 @@ describe("Bridged Governance Tests", () => {
 
     it("should update delegation", async () => {
       const {
-        bridgedGovernanceSender,
+        governanceSender,
         bridgedGovernance,
         user1,
         user2,
@@ -597,7 +597,7 @@ describe("Bridged Governance Tests", () => {
       // transfer delegation
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,
@@ -611,7 +611,7 @@ describe("Bridged Governance Tests", () => {
       // transfer redelegation
 
       await sendSyncMessage(
-        bridgedGovernanceSender,
+        governanceSender,
         user1,
         await bridgedGovernance.getAddress(),
         ccipLocalSimulatorConfig.chainSelector_,

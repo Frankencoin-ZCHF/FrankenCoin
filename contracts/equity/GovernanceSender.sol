@@ -9,7 +9,7 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {IERC20} from "../erc20/IERC20.sol";
 import {CCIPSender} from "../bridge/CCIPSender.sol";
 
-contract BridgedGovernanceSender is CCIPSender {
+contract GovernanceSender is CCIPSender {
     Governance public immutable GOVERNANCE;
 
     event VotesSynced(

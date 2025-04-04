@@ -6,7 +6,7 @@ import fs from "fs/promises";
 import ccipParams from "../deployment/parameters/paramsCCIP.json";
 import {
   BridgedGovernance__factory,
-  BridgedGovernanceSender__factory,
+  GovernanceSender__factory,
 } from "../../typechain";
 import { getRpc } from "./rpcs";
 
@@ -32,10 +32,10 @@ async function main() {
   );
 
   const senderFile = await fs.readFile(
-    `scripts/deployment/deployments/${sourceChainName}/BridgedGovernanceSender.json`
+    `scripts/deployment/deployments/${sourceChainName}/GovernanceSender.json`
   );
   const senderParsed = JSON.parse(senderFile.toString());
-  console.log(`Using BridgedGovernanceSender ${senderParsed.address}`);
+  console.log(`Using GovernanceSender ${senderParsed.address}`);
 
   const receiverFile = await fs.readFile(
     `scripts/deployment/deployments/${targetChainName}/BridgedGovernance.json`
@@ -45,7 +45,7 @@ async function main() {
     `Using BridgedGovernance (${receiverParsed.address}) on ${targetChainName} `
   );
 
-  const bridgedGovernanceSender = BridgedGovernanceSender__factory.connect(
+  const governanceSender = GovernanceSender__factory.connect(
     senderParsed.address,
     sourceWallet
   );
@@ -53,7 +53,7 @@ async function main() {
     receiverParsed.address,
     targetProvider
   );
-  const ccipMessage = await bridgedGovernanceSender.getCCIPMessage(
+  const ccipMessage = await governanceSender.getCCIPMessage(
     receiverParsed.address,
     ethers.ZeroAddress,
     voters,
@@ -92,7 +92,7 @@ async function main() {
     `
   );
 
-  const ccipFee = await bridgedGovernanceSender.getCCIPFee(
+  const ccipFee = await governanceSender.getCCIPFee(
     receiverParsed.address,
     targetParams?.chainSelector ?? "",
     ethers.ZeroAddress,
@@ -101,7 +101,7 @@ async function main() {
   );
   console.log(`CCIP Fee: ${ccipFee}`);
 
-  const syncTx = await bridgedGovernanceSender.syncVotesPayNative(
+  const syncTx = await governanceSender.syncVotesPayNative(
     ethers.AbiCoder.defaultAbiCoder().encode(
       ["address"],
       [receiverParsed.address]
