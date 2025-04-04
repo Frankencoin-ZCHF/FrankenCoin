@@ -1,7 +1,4 @@
-import {
-  setBalance,
-  loadFixture,
-} from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
@@ -14,11 +11,6 @@ describe("CCIPSender", () => {
     );
     const ccipLocalSimulator = await ccipLocalSimualtorFactory.deploy();
     const ccipLocalSimulatorConfig = await ccipLocalSimulator.configuration();
-
-    await setBalance(
-      ccipLocalSimulatorConfig.destinationRouter_,
-      ethers.parseEther("10.0")
-    );
 
     const ccipSenderFactory = await ethers.getContractFactory("CCIPSenderTest");
     const ccipSender = await ccipSenderFactory.deploy(
@@ -107,9 +99,7 @@ describe("CCIPSender", () => {
   });
 
   it("should pass the token amounts", async () => {
-    const { ccipSender, ccipLocalSimulatorConfig } = await loadFixture(
-      deployFixture
-    );
+    const { ccipSender } = await loadFixture(deployFixture);
     const receiver = "0x1234567890123456789012345678901234567890";
     const tokenAddress = "0x5678901234567890123456789012345678901234";
     const abiEncodedReceiver = ethers.AbiCoder.defaultAbiCoder().encode(
@@ -177,8 +167,7 @@ describe("CCIPSender", () => {
       ccipLocalSimulatorConfig.sourceRouter_
     );
     await mockRouter.setFee(1000);
-    const balanceBefore = await ethers.provider.getBalance(owner);
-    const tx = await ccipSender.send(
+    const tx = ccipSender.send(
       ccipLocalSimulatorConfig.chainSelector_,
       {
         receiver: abiEncodedReceiver,
@@ -191,9 +180,7 @@ describe("CCIPSender", () => {
         value: ethers.parseEther("1"),
       }
     );
-    const receipt = await tx.wait();
-    const balanceAfter = await ethers.provider.getBalance(owner);
-    expect(balanceBefore - balanceAfter - (receipt?.fee || 0n)).to.equal(1000);
+    expect(tx).changeEtherBalance(owner, -1000);
   });
 
   it("should throw if feetoken balance is too low", async () => {
@@ -287,25 +274,21 @@ describe("CCIPSender", () => {
       ethers.parseEther("10")
     );
 
-    const balanceBefore = await linkContract.balanceOf(
-      await owner.getAddress()
-    );
     await mockRouter.setFee(1000);
-    await ccipSender.send(
-      ccipLocalSimulatorConfig.chainSelector_,
-      {
-        receiver: abiEncodedReceiver,
-        data: "0x",
-        tokenAmounts: [],
-        feeToken: ccipLocalSimulatorConfig.linkToken_,
-        extraArgs: "0x",
-      },
-      {
-        value: ethers.parseEther("1"),
-      }
-    );
-
-    const balanceAfter = await linkContract.balanceOf(await owner.getAddress());
-    expect(balanceBefore - balanceAfter).to.equal(1000);
+    await expect(
+      ccipSender.send(
+        ccipLocalSimulatorConfig.chainSelector_,
+        {
+          receiver: abiEncodedReceiver,
+          data: "0x",
+          tokenAmounts: [],
+          feeToken: ccipLocalSimulatorConfig.linkToken_,
+          extraArgs: "0x",
+        },
+        {
+          value: ethers.parseEther("1"),
+        }
+      )
+    ).changeEtherBalance(owner, -1000);
   });
 });

@@ -1,7 +1,4 @@
-import {
-  loadFixture,
-  setBalance,
-} from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { ethers } from "hardhat";
 import { CCIPLocalSimulator } from "../typechain";
 import { expect } from "chai";
@@ -17,11 +14,6 @@ describe("LeaderateSender", () => {
     const ccipLocalSimulator: CCIPLocalSimulator =
       await ccipLocalSimualtorFactory.deploy();
     const ccipLocalSimulatorConfig = await ccipLocalSimulator.configuration();
-
-    await setBalance(
-      ccipLocalSimulatorConfig.destinationRouter_,
-      ethers.parseEther("10.0")
-    );
 
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
     const zchf = await frankenCoinFactory.deploy(10 * 86400);
@@ -146,14 +138,14 @@ describe("LeaderateSender", () => {
     });
 
     it("should revert if chains and targets are not aligned", async () => {
-      const { bridgedLeadrate, leadrateSender, ccipLocalSimulatorConfig } =
-        await loadFixture(deployFixture);
+      const { leadrateSender, ccipLocalSimulatorConfig } = await loadFixture(
+        deployFixture
+      );
 
       await expect(
         leadrateSender["pushLeadrate(uint64[],bytes[])"](
           [ccipLocalSimulatorConfig.chainSelector_],
-          [
-          ],
+          [],
           { value: 100 }
         )
       ).revertedWithCustomError(leadrateSender, "LengthMismatch");

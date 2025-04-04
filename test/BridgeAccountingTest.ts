@@ -1,23 +1,12 @@
 import { ethers } from "hardhat";
-import { CCIPLocalSimulator } from "../typechain";
-import {
-  impersonateAccount,
-  loadFixture,
-  setBalance,
-  stopImpersonatingAccount,
-} from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 
 describe("BridgeAccounting", () => {
   async function deployFixture() {
-    const [owner, remoteFrankencoin, remotePool] = await ethers.getSigners();
-
-    const ccipLocalSimualtorFactory = await ethers.getContractFactory(
-      "CCIPLocalSimulator"
-    );
-    const ccipLocalSimulator: CCIPLocalSimulator =
-      await ccipLocalSimualtorFactory.deploy();
-    const ccipLocalSimulatorConfig = await ccipLocalSimulator.configuration();
+    const [owner, remoteFrankencoin, remotePool, router] =
+      await ethers.getSigners();
+    const chainSelector = 123456789;
 
     const frankencoinFactory = await ethers.getContractFactory("Frankencoin");
     const frankencoin = await frankencoinFactory.deploy(0);
@@ -33,7 +22,7 @@ describe("BridgeAccounting", () => {
     const bridgeAccounting = await bridgeAccountingFactory.deploy(
       await frankencoin.getAddress(),
       await tokenAdminRegistry.getAddress(),
-      ccipLocalSimulatorConfig.destinationRouter_
+      await router.getAddress()
     );
 
     const tokenPoolFactory = await ethers.getContractFactory(
@@ -44,7 +33,7 @@ describe("BridgeAccounting", () => {
       18,
       [],
       await owner.getAddress(),
-      ccipLocalSimulatorConfig.destinationRouter_
+      await router.getAddress()
     );
 
     await tokenAdminRegistry.proposeAdministrator(
@@ -75,7 +64,7 @@ describe("BridgeAccounting", () => {
             rate: 0,
             isEnabled: false,
           },
-          remoteChainSelector: ccipLocalSimulatorConfig.chainSelector_,
+          remoteChainSelector: chainSelector,
           remoteTokenAddress: ethers.AbiCoder.defaultAbiCoder().encode(
             ["address"],
             [await remoteFrankencoin.getAddress()]
@@ -90,16 +79,12 @@ describe("BridgeAccounting", () => {
       ]
     );
 
-    await setBalance(
-      ccipLocalSimulatorConfig.destinationRouter_,
-      ethers.parseEther("10.0")
-    );
-
     return {
       frankencoin,
       tokenAdminRegistry,
       bridgeAccounting,
-      ccipLocalSimulatorConfig,
+      router,
+      chainSelector,
       tokenPool,
       remotePool,
       remoteFrankencoin,
@@ -108,101 +93,107 @@ describe("BridgeAccounting", () => {
   }
 
   it("should validate the sender", async () => {
-    const { owner, bridgeAccounting, ccipLocalSimulatorConfig } =
+    const { owner, bridgeAccounting, router, chainSelector } =
       await loadFixture(deployFixture);
     const abicoder = ethers.AbiCoder.defaultAbiCoder();
 
-    await impersonateAccount(ccipLocalSimulatorConfig.destinationRouter_);
-    const routerSigner = await ethers.getSigner(
-      ccipLocalSimulatorConfig.destinationRouter_
-    );
     await expect(
-      bridgeAccounting.connect(routerSigner).ccipReceive({
+      bridgeAccounting.connect(router).ccipReceive({
         messageId:
           "0x0000000000000000000000000000000000000000000000000000000000000001",
-        sourceChainSelector: ccipLocalSimulatorConfig.chainSelector_,
+        sourceChainSelector: chainSelector,
         sender: abicoder.encode(["address"], [await owner.getAddress()]),
         data: abicoder.encode(["uint256", "uint256"], [0, 0]),
         destTokenAmounts: [],
       })
     ).revertedWithCustomError(bridgeAccounting, "InvalidSender");
-    await stopImpersonatingAccount(ccipLocalSimulatorConfig.destinationRouter_);
   });
 
   it("should handle profits", async () => {
     const {
       bridgeAccounting,
-      ccipLocalSimulatorConfig,
+      router,
+      chainSelector,
       remoteFrankencoin,
       frankencoin,
     } = await loadFixture(deployFixture);
     const abicoder = ethers.AbiCoder.defaultAbiCoder();
     await frankencoin.mint(
       await bridgeAccounting.getAddress(),
-      ethers.parseEther("10.0")
+      ethers.parseEther("10")
     );
-    await impersonateAccount(ccipLocalSimulatorConfig.destinationRouter_);
-    const routerSigner = await ethers.getSigner(
-      ccipLocalSimulatorConfig.destinationRouter_
-    );
-    await expect(
-      bridgeAccounting.connect(routerSigner).ccipReceive({
-        messageId:
-          "0x0000000000000000000000000000000000000000000000000000000000000001",
-        sourceChainSelector: ccipLocalSimulatorConfig.chainSelector_,
-        sender: abicoder.encode(
-          ["address"],
-          [await remoteFrankencoin.getAddress()]
-        ),
-        data: abicoder.encode(["uint256", "uint256"], [50, 0]),
-        destTokenAmounts: [],
-      })
-    )
+    const tx = bridgeAccounting.connect(router).ccipReceive({
+      messageId:
+        "0x0000000000000000000000000000000000000000000000000000000000000001",
+      sourceChainSelector: chainSelector,
+      sender: abicoder.encode(
+        ["address"],
+        [await remoteFrankencoin.getAddress()]
+      ),
+      data: abicoder.encode(["uint256", "uint256"], [50, 0]),
+      destTokenAmounts: [],
+    });
+
+    await expect(tx)
       .to.emit(bridgeAccounting, "ReceivedProfits")
-      .withArgs(ethers.parseEther("10.0"))
+      .withArgs(ethers.parseEther("10"))
       .emit(frankencoin, "Profit")
-      .withArgs(
-        await bridgeAccounting.getAddress(),
-        ethers.parseEther("10.0")
-      );
-    await stopImpersonatingAccount(ccipLocalSimulatorConfig.destinationRouter_);
+      .withArgs(await bridgeAccounting.getAddress(), ethers.parseEther("10"));
+    await expect(tx).changeTokenBalance(
+      frankencoin,
+      await bridgeAccounting.getAddress(),
+      ethers.parseEther("-10")
+    );
+    await expect(tx).changeTokenBalance(
+      frankencoin,
+      await frankencoin.reserve(),
+      ethers.parseEther("10")
+    );
   });
 
   it("should handle losses", async () => {
     const {
       bridgeAccounting,
-      ccipLocalSimulatorConfig,
+      router,
+      chainSelector,
       remoteFrankencoin,
       frankencoin,
     } = await loadFixture(deployFixture);
     const abicoder = ethers.AbiCoder.defaultAbiCoder();
     await frankencoin.mint(
-      await bridgeAccounting.getAddress(),
+      await frankencoin.reserve(),
       ethers.parseEther("10.0")
     );
-    await impersonateAccount(ccipLocalSimulatorConfig.destinationRouter_);
-    const routerSigner = await ethers.getSigner(
-      ccipLocalSimulatorConfig.destinationRouter_
-    );
-    await expect(
-      bridgeAccounting.connect(routerSigner).ccipReceive({
-        messageId:
-          "0x0000000000000000000000000000000000000000000000000000000000000001",
-        sourceChainSelector: ccipLocalSimulatorConfig.chainSelector_,
-        sender: abicoder.encode(
-          ["address"],
-          [await remoteFrankencoin.getAddress()]
-        ),
-        data: abicoder.encode(["uint256", "uint256"], [0, 50]),
-        destTokenAmounts: [],
-      })
-    )
+
+    const tx = bridgeAccounting.connect(router).ccipReceive({
+      messageId:
+        "0x0000000000000000000000000000000000000000000000000000000000000001",
+      sourceChainSelector: chainSelector,
+      sender: abicoder.encode(
+        ["address"],
+        [await remoteFrankencoin.getAddress()]
+      ),
+      data: abicoder.encode(
+        ["uint256", "uint256"],
+        [0, ethers.parseEther("50.0")]
+      ),
+      destTokenAmounts: [],
+    });
+
+    await expect(tx)
       .to.emit(bridgeAccounting, "ReceivedLosses")
-      .withArgs(50)
+      .withArgs(ethers.parseEther("50.0"))
       .emit(frankencoin, "Loss")
-      .withArgs(await bridgeAccounting.getAddress(), 50)
-      .emit(frankencoin, "Transfer")
-      .withArgs(await bridgeAccounting.getAddress(), ethers.ZeroAddress, 50);
-    await stopImpersonatingAccount(ccipLocalSimulatorConfig.destinationRouter_);
+      .withArgs(await bridgeAccounting.getAddress(), ethers.parseEther("50.0"));
+    await expect(tx).changeTokenBalance(
+      frankencoin,
+      await frankencoin.reserve(),
+      ethers.parseEther("-10.0")
+    );
+    await expect(tx).changeTokenBalance(
+      frankencoin,
+      await bridgeAccounting.getAddress(),
+      0
+    );
   });
 });

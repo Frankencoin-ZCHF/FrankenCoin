@@ -186,7 +186,7 @@ describe("BridgedFrankencoin", () => {
     });
 
     it("should set the minter pending", async () => {
-      const { bridgedFrankencoin, owner, newMinter, bridgedGovernance } =
+      const { bridgedFrankencoin, owner, newMinter } =
         await loadFixture(deployFixture);
       await bridgedFrankencoin.initialize(await owner.getAddress(), "");
       await bridgedFrankencoin.mint(
@@ -418,7 +418,7 @@ describe("BridgedFrankencoin", () => {
 
   describe("canMint", () => {
     it("should return false", async () => {
-      const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
+      const { bridgedFrankencoin, newMinter } = await loadFixture(
         deployFixture
       );
       expect(
@@ -427,7 +427,7 @@ describe("BridgedFrankencoin", () => {
     });
 
     it("should return true (minter)", async () => {
-      const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
+      const { bridgedFrankencoin, owner } = await loadFixture(
         deployFixture
       );
       await bridgedFrankencoin.initialize(await owner.getAddress(), "");
@@ -672,7 +672,7 @@ describe("BridgedFrankencoin", () => {
     });
 
     it("should return true", async () => {
-      const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
+      const { bridgedFrankencoin, owner } = await loadFixture(
         deployFixture
       );
       await bridgedFrankencoin.initialize(await owner.getAddress(), "");
