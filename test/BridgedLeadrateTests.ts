@@ -10,7 +10,7 @@ import { expect } from "chai";
 
 describe("BridgedLeadrate", () => {
   async function deployFixture() {
-    const [owner, mainnetLeadrate] = await ethers.getSigners();
+    const [owner, leadreateMock, singleVoter] = await ethers.getSigners();
 
     const ccipLocalSimualtorFactory = await ethers.getContractFactory(
       "CCIPLocalSimulator"
@@ -19,12 +19,14 @@ describe("BridgedLeadrate", () => {
       await ccipLocalSimualtorFactory.deploy();
     const ccipLocalSimulatorConfig = await ccipLocalSimulator.configuration();
 
-    const bridgedLeadrateFactory = await ethers.getContractFactory("BridgedLeadrate");
+    const bridgedLeadrateFactory = await ethers.getContractFactory(
+      "BridgedLeadrate"
+    );
     const bridgedLeadrate = await bridgedLeadrateFactory.deploy(
       ccipLocalSimulatorConfig.destinationRouter_,
       5,
       ccipLocalSimulatorConfig.chainSelector_,
-      await mainnetLeadrate.getAddress()
+      await leadreateMock.getAddress()
     );
 
     await setBalance(
@@ -36,7 +38,8 @@ describe("BridgedLeadrate", () => {
       ccipLocalSimulatorConfig,
       owner,
       bridgedLeadrate,
-      mainnetLeadrate,
+      leadreateMock,
+      singleVoter,
     };
   }
 
@@ -85,9 +88,9 @@ describe("BridgedLeadrate", () => {
 
     await stopImpersonatingAccount(ccipLocalSimulatorConfig.destinationRouter_);
   });
-  
+
   it("should update the rate", async () => {
-    const { owner, bridgedLeadrate, ccipLocalSimulatorConfig, mainnetLeadrate } =
+    const { owner, bridgedLeadrate, ccipLocalSimulatorConfig, leadreateMock } =
       await loadFixture(deployFixture);
     const abicoder = ethers.AbiCoder.defaultAbiCoder();
     expect(await bridgedLeadrate.currentRatePPM()).to.not.equal(50);
@@ -100,10 +103,10 @@ describe("BridgedLeadrate", () => {
       messageId:
         "0x0000000000000000000000000000000000000000000000000000000000000001",
       sourceChainSelector: ccipLocalSimulatorConfig.chainSelector_,
-      sender: abicoder.encode(["address"], [await mainnetLeadrate.getAddress()]),
+      sender: abicoder.encode(["address"], [await leadreateMock.getAddress()]),
       data: abicoder.encode(["uint64"], [50]),
       destTokenAmounts: [],
-    })
+    });
     expect(await bridgedLeadrate.currentRatePPM()).to.equal(50);
 
     await stopImpersonatingAccount(ccipLocalSimulatorConfig.destinationRouter_);
