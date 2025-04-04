@@ -275,20 +275,14 @@ describe("CCIPSender", () => {
     );
 
     await mockRouter.setFee(1000);
-    await expect(
-      ccipSender.send(
-        ccipLocalSimulatorConfig.chainSelector_,
-        {
-          receiver: abiEncodedReceiver,
-          data: "0x",
-          tokenAmounts: [],
-          feeToken: ccipLocalSimulatorConfig.linkToken_,
-          extraArgs: "0x",
-        },
-        {
-          value: ethers.parseEther("1"),
-        }
-      )
-    ).changeEtherBalance(owner, -1000);
+    const tx = ccipSender.send(ccipLocalSimulatorConfig.chainSelector_, {
+      receiver: abiEncodedReceiver,
+      data: "0x",
+      tokenAmounts: [],
+      feeToken: ccipLocalSimulatorConfig.linkToken_,
+      extraArgs: "0x",
+    });
+    await expect(tx).changeEtherBalance(owner, 0);
+    await expect(tx).changeTokenBalance(linkContract, owner, -1000);
   });
 });

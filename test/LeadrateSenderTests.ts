@@ -85,7 +85,7 @@ describe("LeaderateSender", () => {
       bridgedLeadrate,
     } = await loadFixture(deployFixture);
     await leadrate.connect(singleVoter).proposeChange(500, []);
-    evm_increaseTime(7 * 24 * 3600 + 1);
+    await evm_increaseTime(7 * 24 * 3600 + 1);
     await leadrateSender["pushLeadrate(uint64,address)"](
       ccipLocalSimulatorConfig.chainSelector_,
       await bridgedLeadrate.getAddress(),
@@ -103,7 +103,7 @@ describe("LeaderateSender", () => {
       leadrate,
     } = await loadFixture(deployFixture);
     await leadrate.connect(singleVoter).proposeChange(500, []);
-    evm_increaseTime(7 * 24 * 3600 + 1);
+    await evm_increaseTime(7 * 24 * 3600 + 1);
     await leadrateSender["pushLeadrate(uint64,address)"](
       ccipLocalSimulatorConfig.chainSelector_,
       await bridgedLeadrate.getAddress(),
@@ -122,8 +122,8 @@ describe("LeaderateSender", () => {
         leadrate,
       } = await loadFixture(deployFixture);
       await leadrate.connect(singleVoter).proposeChange(500, []);
+      await evm_increaseTime(7 * 24 * 3600 + 1);
 
-      evm_increaseTime(7 * 24 * 3600 + 1);
       await leadrateSender["pushLeadrate(uint64[],bytes[])"](
         [ccipLocalSimulatorConfig.chainSelector_],
         [
