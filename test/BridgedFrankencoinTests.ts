@@ -507,6 +507,33 @@ describe("BridgedFrankencoin", () => {
         .withArgs(await owner.getAddress(), ethers.parseEther("10000"));
       expect(await bridgedFrankencoin.accruedLoss()).to.equal(0);
     });
+
+    it("should empty the reserve and accure the rest", async () => {
+      const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
+      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.mint(
+        await bridgedFrankencoin.reserve(),
+        ethers.parseEther("10000")
+      );
+      const tx = bridgedFrankencoin.coverLoss(
+        await owner.getAddress(),
+        ethers.parseEther("20000")
+      );
+      await expect(tx).changeTokenBalance(
+        bridgedFrankencoin,
+        await owner.getAddress(),
+        ethers.parseEther("20000")
+      );
+      await expect(tx).changeTokenBalance(
+        bridgedFrankencoin,
+        await bridgedFrankencoin.reserve(),
+        ethers.parseEther("-10000")
+      );
+      await expect(tx)
+        .emit(bridgedFrankencoin, "Loss")
+        .withArgs(await owner.getAddress(), ethers.parseEther("20000"));
+      expect(await bridgedFrankencoin.accruedLoss()).to.equal(ethers.parseEther("10000"));
+    })
   });
 
   describe("collectProfits", () => {
@@ -578,7 +605,7 @@ describe("BridgedFrankencoin", () => {
       );
     });
 
-    it("should set accuredLoss to 0", async () => {
+    it("should set accuredLoss to 0 and put the rest in the reserve", async () => {
       const { bridgedFrankencoin, newMinter, owner } = await loadFixture(
         deployFixture
       );
@@ -589,7 +616,7 @@ describe("BridgedFrankencoin", () => {
       );
       await bridgedFrankencoin.coverLoss(
         await owner.getAddress(),
-        ethers.parseEther("10000")
+        ethers.parseEther("5000")
       );
       const tx = bridgedFrankencoin.collectProfits(
         await newMinter.getAddress(),
@@ -598,7 +625,7 @@ describe("BridgedFrankencoin", () => {
       await expect(tx).changeTokenBalance(
         bridgedFrankencoin,
         await bridgedFrankencoin.reserve(),
-        0
+        ethers.parseEther("5000")
       );
       expect(await bridgedFrankencoin.accruedLoss()).to.equal(0);
     });
