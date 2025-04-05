@@ -5,6 +5,7 @@ import { deployContract } from "../deployUtils";
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
     deployments: { get },
+    ethers
   } = hre;
 
   let chainId = hre.network.config["chainId"];
@@ -19,6 +20,13 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let minApplicationPeriod = frankenCoinParams["minApplicationPeriod"];
   console.log("\nMin application period =", minApplicationPeriod);
 
+  const deployer = await ethers.provider.getSigner()
+  const nonce = await ethers.provider.getTransactionCount(await deployer.getAddress())
+  const ccipAdminAddress = await ethers.getCreateAddress({
+    from: await deployer.getAddress(),
+    nonce: nonce + 1
+  })
+
   const bridgedGovernance = await get("BridgedGovernance");
   const zchf = await deployContract(hre, "BridgedFrankencoin", [
     bridgedGovernance.address,
@@ -26,7 +34,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     minApplicationPeriod,
     ccipParams.link,
     ccipParams.mainnetChainSelector,
-    ccipParams.bridgeAccounting
+    ccipParams.bridgeAccounting,
+    ccipAdminAddress
   ]);
 
   console.log(`Verify zchf: 
@@ -36,7 +45,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     ccipParams.router
   } ${minApplicationPeriod} ${ccipParams.link} ${
     ccipParams.mainnetChainSelector
-  } ${ccipParams.bridgeAccounting}
+  } ${ccipParams.bridgeAccounting} ${ccipAdminAddress}
   `);
 };
 

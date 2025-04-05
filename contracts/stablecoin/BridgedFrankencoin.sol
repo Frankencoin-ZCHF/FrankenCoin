@@ -26,6 +26,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     uint256 public immutable MIN_APPLICATION_PERIOD; // for example 10 days
     address public immutable BRIDGE_ACCOUNTING;
     uint64 public immutable MAINNET_CHAIN_SELECTOR;
+    address public immutable CCIP_ADMIN;
 
     /**
      * @notice The contract that holds the reserve.
@@ -68,11 +69,12 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
      * @notice Initiates the Frankencoin with the provided minimum application period for new plugins
      * in seconds, for example 10 days, i.e. 3600*24*10 = 864000
      */
-    constructor(IGovernance reserve_, address router_, uint256 _minApplicationPeriod, address _linkToken, uint64 _mainnetChainSelector, address _bridgeAccounting) ERC20(18) CrossChainERC20(router_, _linkToken) {
+    constructor(IGovernance reserve_, address router_, uint256 _minApplicationPeriod, address _linkToken, uint64 _mainnetChainSelector, address _bridgeAccounting, address _ccipAdmin) ERC20(18) CrossChainERC20(router_, _linkToken) {
         MIN_APPLICATION_PERIOD = _minApplicationPeriod;
         reserve = reserve_;
         MAINNET_CHAIN_SELECTOR = _mainnetChainSelector;
         BRIDGE_ACCOUNTING = _bridgeAccounting;
+        CCIP_ADMIN = _ccipAdmin;
     }
 
     function name() external pure override returns (string memory) {
@@ -246,5 +248,12 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
      */
     function getPositionParent(address _position) public view returns (address) {
         return positions[_position];
+    }
+
+    /*
+     * @notice Used to register the token initialially in the CCIP environment
+     */
+    function getCCIPAdmin() external view returns(address) {
+        return CCIP_ADMIN;
     }
 }

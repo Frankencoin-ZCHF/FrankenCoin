@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 
 import {IGovernance} from "../equity/IGovernance.sol";
 import {ITokenPool} from "./ITokenPool.sol";
-import {IRegistryModuleOwner} from "./IRegistryModuleOwner.sol";
 import {ITokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol";
 import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
 import {BridgeAccounting} from "../equity/BridgeAccounting.sol";
 import {IBasicFrankencoin} from "../stablecoin/IBasicFrankencoin.sol";
+import {RegistryModuleOwnerCustom} from "@chainlink/contracts-ccip/src/v0.8/ccip/tokenAdminRegistry/RegistryModuleOwnerCustom.sol";
 
 /**
  * The admin for briding Frankencoins using CCIP.
@@ -60,6 +60,13 @@ contract CCIPAdmin {
         GOVERNANCE = zchf.reserve();
         TOKEN_ADMIN_REGISTRY = tokenAdminRegistry;
         ZCHF = address(zchf);
+    }
+
+    function registerToken(RegistryModuleOwnerCustom registerModule) external {
+        if(TOKEN_ADMIN_REGISTRY.getPool(ZCHF) != address(0)) {
+            revert AlreadySet();
+        }
+        registerModule.registerAdminViaGetCCIPAdmin(ZCHF);
     }
 
     /**
