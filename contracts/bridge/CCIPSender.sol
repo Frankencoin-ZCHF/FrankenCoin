@@ -35,7 +35,8 @@ abstract contract CCIPSender {
     }
 
     /**
-     * @dev External call to msg.sender if fees are paid in native token
+     * @dev External call to msg.sender if fees are paid in native token. This function has a potential reentrancy.
+     *      Thus use it wisely.
      */
     function _send(uint64 chain, Client.EVM2AnyMessage memory _message) internal returns (bytes32, uint256) {
         uint256 fee = _calculateFee(chain, _message);
@@ -48,6 +49,8 @@ abstract contract CCIPSender {
             IERC20(_message.feeToken).transferFrom(msg.sender, address(this), fee);
             IERC20(_message.feeToken).approve(address(ROUTER), fee);
             messageId = ROUTER.ccipSend(chain, _message);
+            uint256 leftover = IERC20(_message.feeToken).balanceOf(address(this));
+            if (leftover > 0) IERC20(_message.feeToken).transfer(msg.sender, leftover);
         } else {
             if (msg.value < fee) revert InsufficientFeeTokens(_message.feeToken, fee);
             messageId = ROUTER.ccipSend{value: fee}(chain, _message);
