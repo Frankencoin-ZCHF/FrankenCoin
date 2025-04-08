@@ -10,7 +10,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const positionFactoryDeployment = await get("PositionFactory");
   const positionRollerDeployment = await get("PositionRoller");
-  const leadreateDeployment = await get("Leadrate");
+  const savingsDeployment = await get("Savings");
 
   const zchfDeployment = await get("Frankencoin");
   let zchfContract = await ethers.getContractAt(
@@ -20,7 +20,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   let mintingHubContract = await deployContract(hre, "MintingHub", [
     zchfDeployment.address,
-    leadreateDeployment.address,
+    savingsDeployment.address,
     positionRollerDeployment.address,
     positionFactoryDeployment.address,
   ]);
@@ -30,7 +30,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(`Verify mintingHubContract:
 npx hardhat verify --network ${hre.network.name} ${await mintingHubContract.getAddress()} ${
     zchfDeployment.address
-  } ${leadreateDeployment.address} ${positionRollerDeployment.address} ${
+  } ${savingsDeployment.address} ${positionRollerDeployment.address} ${
     positionFactoryDeployment.address
   }
 `);

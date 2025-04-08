@@ -27,22 +27,12 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   let minApplicationPeriod = params["minApplicationPeriod"];
   console.log("\nMin application period =", minApplicationPeriod);
-  const deployer = (await hre.getNamedAccounts())["deployer"];
-  const nonce = await hre.ethers.provider.getTransactionCount(deployer);
-  const adminAddress = hre.ethers.getCreateAddress({
-    from: deployer,
-    nonce: nonce + 1,
-  });
+
   let FC = await deployContract(hre, "Frankencoin", [
-    minApplicationPeriod,
-    adminAddress,
-    hre.ethers.ZeroAddress,
+    minApplicationPeriod
   ]);
   console.log(`Verify zchf: 
-      npx hardhat verify --network ${hre.network.name} ${await FC.getAddress()} ${minApplicationPeriod} ${adminAddress} ${
-    hre.ethers.ZeroAddress
-  }
-    `);
+      npx hardhat verify --network ${hre.network.name} ${await FC.getAddress()} ${minApplicationPeriod}`);
 
   let reserve = await FC.reserve();
   console.log(

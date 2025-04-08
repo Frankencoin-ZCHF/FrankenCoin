@@ -7,41 +7,36 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployments: { get },
     ethers,
   } = hre;
-  const paramFile = "paramsCCIP.json";
+
+  const paramFile = "paramsLeadrate.json";
   let chainId = hre.network.config["chainId"];
   let paramsArr = require(__dirname + `/../parameters/${paramFile}`);
+
   // find config for current chain
   for (var k = 0; k < paramsArr.length && paramsArr[k].chainId != chainId; k++);
   let params = paramsArr[k];
   if (chainId != params.chainId) {
     throw new Error("ChainId doesn't match");
   }
-
-  const tokenAdminRegistry = params["tokenAdminRegistry"];
-  const vetoPeriod = params["vetoPeriod"];
-  const registryModuleOwner = params["registryModuleOwner"];
   const zchfDeployment = await get("Frankencoin");
   let zchfContract = await ethers.getContractAt(
     "Frankencoin",
     zchfDeployment.address
   );
-  const reserve = await zchfContract.reserve();
+  let equity = await zchfContract.reserve();
 
-  const ccipAdmin = await deployContract(hre, "CCIPAdmin", [
-    tokenAdminRegistry,
+  let initialRate = params["initialRatePPM"];
+  console.log(`\nInitial lead reate in PPM = ${initialRate}`);
+
+  let savingsContract = await deployContract(hre, "Savings", [
     zchfDeployment.address,
+    initialRate,
   ]);
 
-  console.log(`Verify ccipadmin: 
-    npx hardhat verify --network ${hre.network.name} ${await ccipAdmin.getAddress()} ${reserve} ${tokenAdminRegistry} ${vetoPeriod} ${
-    zchfDeployment.address
-  } ${registryModuleOwner}
-  `);
-
-  console.log('Accepting token admin');
-  const tx = await ccipAdmin.acceptAdmin();
-  await tx.wait()
+  console.log(`Verify Savings:
+    npx hardhat verify --network ${hre.network.name} ${await savingsContract.getAddress()} ${zchfDeployment.address} ${initialRate}
+    `);
 };
 
 export default deploy;
-deploy.tags = ["main", "CCIPAdmin"];
+deploy.tags = ["main", "Savings"];

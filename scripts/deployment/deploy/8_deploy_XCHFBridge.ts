@@ -74,7 +74,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log(
       "Apply for the bridge ",
       bridgeDeployment.address,
-      "to be minter via zchf.suggestMinter"
+      "to be minter via zchf.initialize"
     );
     let tx = await zchfContract.initialize(bridgeDeployment.address, msg);
     console.log("tx hash = ", tx.hash);
