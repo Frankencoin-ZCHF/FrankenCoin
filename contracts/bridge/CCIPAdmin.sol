@@ -62,8 +62,12 @@ contract CCIPAdmin {
         ZCHF = address(zchf);
     }
 
+    /**
+    * @notice Registers the token in the CCIP system
+    * @dev Can only be called while the token admin is not set
+    */
     function registerToken(RegistryModuleOwnerCustom registerModule) external {
-        if(TOKEN_ADMIN_REGISTRY.getPool(ZCHF) != address(0)) {
+        if(TOKEN_ADMIN_REGISTRY.getTokenConfig(ZCHF).administrator != address(0)) {
             revert AlreadySet();
         }
         registerModule.registerAdminViaGetCCIPAdmin(ZCHF);
