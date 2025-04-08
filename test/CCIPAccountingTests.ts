@@ -2,7 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-describe("CCIP E2E", () => {
+describe("CCIPAccountingTests", () => {
   async function deployFixture() {
     const [owner, rnmProxy, minter, mainnetUser, bridgedUser] =
       await ethers.getSigners();
@@ -84,16 +84,40 @@ describe("CCIP E2E", () => {
       await frankencoin.reserve()
     );
 
+    const bridgedTokenAdminRegistry = await tokenAdminRegistryFactory.deploy();
+    const registryModuleFactory = await ethers.getContractFactory(
+      "RegistryModuleOwnerCustom"
+    );
+    const bridgedRegistryModule = await registryModuleFactory.deploy(
+      await bridgedTokenAdminRegistry.getAddress()
+    );
+    await bridgedTokenAdminRegistry.addRegistryModule(
+      await bridgedRegistryModule.getAddress()
+    );
+
     const bridgedFrankencoinFactory = await ethers.getContractFactory(
       "BridgedFrankencoin"
     );
+    const deployerNonce = await ethers.provider.getTransactionCount(
+      await owner.getAddress()
+    );
+    const bridgedCcipAdminAddress = await ethers.getCreateAddress({
+      from: await owner.getAddress(),
+      nonce: deployerNonce + 1,
+    });
     const bridgedFrankencoin = await bridgedFrankencoinFactory.deploy(
       await bridgedGovernance.getAddress(),
       ccipLocalSimulatorConfig.destinationRouter_,
       10 * 86400,
       ccipLocalSimulatorConfig.linkToken_,
       ccipLocalSimulatorConfig.chainSelector_,
-      await bridgeAccounting.getAddress()
+      await bridgeAccounting.getAddress(),
+      bridgedCcipAdminAddress
+    );
+
+    const bridgedCcipAdmin = await ccipAdminFactory.deploy(
+      await bridgedTokenAdminRegistry.getAddress(),
+      await bridgedFrankencoin.getAddress()
     );
 
     const bridgedLeadrateFactory = await ethers.getContractFactory(
@@ -106,7 +130,6 @@ describe("CCIP E2E", () => {
       await leadrate.getAddress()
     );
 
-    const bridgedTokenAdminRegistry = await tokenAdminRegistryFactory.deploy();
     const bridgedTokenPool = await tokenPoolFactory.deploy(
       await bridgedFrankencoin.getAddress(),
       18,
@@ -114,20 +137,13 @@ describe("CCIP E2E", () => {
       await rnmProxy.getAddress(),
       ccipLocalSimulatorConfig.destinationRouter_
     );
-    const bridgedCcipAdmin = await ccipAdminFactory.deploy(
-      await bridgedTokenAdminRegistry.getAddress(),
-      await bridgedFrankencoin.getAddress()
-    );
+
     await bridgedFrankencoin.initialize(await minter.getAddress(), "");
 
     // setup tokenpools
     await mainnetTokenAdminRegistry.proposeAdministrator(
       await frankencoin.getAddress(),
       await mainnetCcipAdmin.getAddress()
-    );
-    await bridgedTokenAdminRegistry.proposeAdministrator(
-      await bridgedFrankencoin.getAddress(),
-      await bridgedCcipAdmin.getAddress()
     );
 
     const abicoder = ethers.AbiCoder.defaultAbiCoder();
@@ -211,6 +227,7 @@ describe("CCIP E2E", () => {
       bridgedTokenPool,
       bridgedTokenAdminRegistry,
       bridgedCcipAdmin,
+      bridgedRegistryModule,
     };
   }
 
@@ -249,11 +266,19 @@ describe("CCIP E2E", () => {
           bridgedTokenPool,
           bridgedTokenAdminRegistry,
           bridgedFrankencoin,
+          bridgedRegistryModule,
         } = await loadFixture(deployFixture);
         const frankencoinAddress = await bridgedFrankencoin.getAddress();
         const ccipAdminAddress = await bridgedCcipAdmin.getAddress();
         const tokenPoolAddress = await bridgedTokenPool.getAddress();
 
+        await expect(
+          bridgedCcipAdmin.registerToken(
+            await bridgedRegistryModule.getAddress()
+          )
+        )
+          .emit(bridgedRegistryModule, "AdministratorRegistered")
+          .withArgs(frankencoinAddress, ccipAdminAddress);
         await expect(bridgedCcipAdmin.acceptAdmin())
           .emit(bridgedTokenAdminRegistry, "AdministratorTransferred")
           .withArgs(frankencoinAddress, ccipAdminAddress);
@@ -317,8 +342,12 @@ describe("CCIP E2E", () => {
           bridgedCcipAdmin,
           mainnetTokenPool,
           bridgedTokenPool,
+          bridgedRegistryModule,
         } = await loadFixture(deployFixture);
 
+        await bridgedCcipAdmin.registerToken(
+          await bridgedRegistryModule.getAddress()
+        );
         await mainnetCcipAdmin.acceptAdmin();
         await bridgedCcipAdmin.acceptAdmin();
         await mainnetCcipAdmin.setTokenPool(
@@ -405,8 +434,12 @@ describe("CCIP E2E", () => {
           bridgedCcipAdmin,
           mainnetTokenPool,
           bridgedTokenPool,
+          bridgedRegistryModule,
         } = await loadFixture(deployFixture);
 
+        await bridgedCcipAdmin.registerToken(
+          await bridgedRegistryModule.getAddress()
+        );
         await mainnetCcipAdmin.acceptAdmin();
         await bridgedCcipAdmin.acceptAdmin();
         await mainnetCcipAdmin.setTokenPool(

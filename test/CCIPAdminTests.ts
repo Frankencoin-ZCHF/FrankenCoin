@@ -44,7 +44,7 @@ describe("CCIP Admin Tests", () => {
   const newAdmin = "0xc6ea8445A781a78be5892fA6c7F1856f0E44333F";
 
   async function deployFixture() {
-    const [minter, singleVoter, delegatee, delegator] =
+    const [minter, singleVoter, delegatee, delegator, registryModule] =
       await ethers.getSigners();
 
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
@@ -115,6 +115,7 @@ describe("CCIP Admin Tests", () => {
       tokenAdminRegistry,
       ccipAdmin,
       equity,
+      registryModule,
     };
   }
 
@@ -132,6 +133,29 @@ describe("CCIP Admin Tests", () => {
 
     return decoded;
   }
+
+  describe("registerToken", () => {
+    it("should register a token", async () => {
+      const { ccipAdmin, registryModule } = await loadFixture(deployFixture);
+      await expect(ccipAdmin.registerToken(await registryModule.getAddress()))
+        .to.be.eventually.rejected.and.have.property("message")
+        // This is fine because the registry module is not deployed in this test setup
+        .that.include("function call to a non-contract account");
+    });
+
+    it("should revert with AlreadySet", async () => {
+      const { ccipAdmin, registryModule, tokenAdminRegistry, zchf, tokenPool } =
+        await loadFixture(deployFixture);
+      await tokenAdminRegistry.setTokenConfig(await zchf.getAddress(), {
+        administrator: await ccipAdmin.getAddress(),
+        tokenPool: await tokenPool.getAddress(),
+        pendingAdministrator: ethers.ZeroAddress,
+      });
+      await expect(
+        ccipAdmin.registerToken(await registryModule.getAddress())
+      ).revertedWithCustomError(ccipAdmin, "AlreadySet");
+    });
+  });
 
   describe("setTokenPool", () => {
     it("should set the token pool", async () => {

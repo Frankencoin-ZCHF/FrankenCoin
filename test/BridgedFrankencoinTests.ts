@@ -5,7 +5,7 @@ import { ethers } from "hardhat";
 
 describe("BridgedFrankencoin", () => {
   async function deployFixture() {
-    const [owner, bridgeAccounting, mainnetGovernance, newMinter] =
+    const [owner, bridgeAccounting, mainnetGovernance, newMinter, ccipAdmin] =
       await ethers.getSigners();
 
     const ccipLocalSimualtorFactory = await ethers.getContractFactory(
@@ -31,7 +31,8 @@ describe("BridgedFrankencoin", () => {
       864000,
       ccipLocalSimulatorConfig.linkToken_,
       ccipLocalSimulatorConfig.chainSelector_,
-      await bridgeAccounting.getAddress()
+      await bridgeAccounting.getAddress(),
+      await ccipAdmin.getAddress()
     );
 
     return {
@@ -42,6 +43,7 @@ describe("BridgedFrankencoin", () => {
       bridgedFrankencoin,
       bridgedGovernance,
       newMinter,
+      ccipAdmin,
     };
   }
 
@@ -186,8 +188,9 @@ describe("BridgedFrankencoin", () => {
     });
 
     it("should set the minter pending", async () => {
-      const { bridgedFrankencoin, owner, newMinter } =
-        await loadFixture(deployFixture);
+      const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
+        deployFixture
+      );
       await bridgedFrankencoin.initialize(await owner.getAddress(), "");
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
@@ -427,9 +430,7 @@ describe("BridgedFrankencoin", () => {
     });
 
     it("should return true (minter)", async () => {
-      const { bridgedFrankencoin, owner } = await loadFixture(
-        deployFixture
-      );
+      const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
       await bridgedFrankencoin.initialize(await owner.getAddress(), "");
       expect(
         await bridgedFrankencoin.canMint(await owner.getAddress())
@@ -532,8 +533,10 @@ describe("BridgedFrankencoin", () => {
       await expect(tx)
         .emit(bridgedFrankencoin, "Loss")
         .withArgs(await owner.getAddress(), ethers.parseEther("20000"));
-      expect(await bridgedFrankencoin.accruedLoss()).to.equal(ethers.parseEther("10000"));
-    })
+      expect(await bridgedFrankencoin.accruedLoss()).to.equal(
+        ethers.parseEther("10000")
+      );
+    });
   });
 
   describe("collectProfits", () => {
@@ -699,9 +702,7 @@ describe("BridgedFrankencoin", () => {
     });
 
     it("should return true", async () => {
-      const { bridgedFrankencoin, owner } = await loadFixture(
-        deployFixture
-      );
+      const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
       await bridgedFrankencoin.initialize(await owner.getAddress(), "");
       expect(
         await bridgedFrankencoin.isMinter(await owner.getAddress())
@@ -734,6 +735,17 @@ describe("BridgedFrankencoin", () => {
         bridgedFrankencoin,
         await newMinter.getAddress(),
         ethers.parseEther("100")
+      );
+    });
+  });
+
+  describe("getCCIPAdmin", () => {
+    it("should return the CCIP admin", async () => {
+      const { bridgedFrankencoin, owner, ccipAdmin } =
+        await loadFixture(deployFixture);
+      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      expect(await bridgedFrankencoin.getCCIPAdmin()).to.equal(
+        await ccipAdmin.getAddress()
       );
     });
   });

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {IGovernance} from "../equity/IGovernance.sol";
 import {ITokenPool} from "./ITokenPool.sol";
-import {ITokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/ITokenAdminRegistry.sol";
+import {TokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/tokenAdminRegistry/TokenAdminRegistry.sol";
 import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
 import {BridgeAccounting} from "../equity/BridgeAccounting.sol";
 import {IBasicFrankencoin} from "../stablecoin/IBasicFrankencoin.sol";
@@ -19,7 +19,7 @@ contract CCIPAdmin {
 
     IGovernance public immutable GOVERNANCE;
     ITokenPool public tokenPool;
-    ITokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;
+    TokenAdminRegistry public immutable TOKEN_ADMIN_REGISTRY;
     address public immutable ZCHF;
 
     struct RemotePoolUpdate {
@@ -56,7 +56,7 @@ contract CCIPAdmin {
         _;
     }
 
-    constructor(ITokenAdminRegistry tokenAdminRegistry, IBasicFrankencoin zchf) {
+    constructor(TokenAdminRegistry tokenAdminRegistry, IBasicFrankencoin zchf) {
         GOVERNANCE = zchf.reserve();
         TOKEN_ADMIN_REGISTRY = tokenAdminRegistry;
         ZCHF = address(zchf);
@@ -65,12 +65,13 @@ contract CCIPAdmin {
     /**
     * @notice Registers the token in the CCIP system
     * @dev Can only be called while the token admin is not set
+    * @param registry The registry to register the token with
     */
-    function registerToken(RegistryModuleOwnerCustom registerModule) external {
+    function registerToken(RegistryModuleOwnerCustom registry) external {
         if(TOKEN_ADMIN_REGISTRY.getTokenConfig(ZCHF).administrator != address(0)) {
             revert AlreadySet();
         }
-        registerModule.registerAdminViaGetCCIPAdmin(ZCHF);
+        registry.registerAdminViaGetCCIPAdmin(ZCHF);
     }
 
     /**
