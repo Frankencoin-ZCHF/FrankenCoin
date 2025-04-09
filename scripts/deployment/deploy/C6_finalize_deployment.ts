@@ -1,5 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
+import { ethers } from "ethers";
 
 function getChainUpdate(ccipParams: any, chainName: string) {
   const chainCcipParams = ccipParams.find(
@@ -11,10 +12,16 @@ function getChainUpdate(ccipParams: any, chainName: string) {
     chainCcipParams["tokenPool"] &&
     chainCcipParams["chainSelector"]
   ) {
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
     return {
       remoteChainSelector: chainCcipParams["chainSelector"],
-      remotePoolAddresses: [chainCcipParams["tokenPool"]],
-      remoteTokenAddress: chainCcipParams["zchf"],
+      remotePoolAddresses: [
+        abiCoder.encode(["address"], [chainCcipParams["tokenPool"]]),
+      ],
+      remoteTokenAddress: abiCoder.encode(
+        ["address"],
+        [chainCcipParams["zchf"]]
+      ),
       outboundRateLimiterConfig: {
         isEnabled: false,
         capacity: 0,

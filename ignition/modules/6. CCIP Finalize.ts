@@ -3,6 +3,7 @@ import { getChildFromSeed } from "../../helper/wallet";
 import { ADDRESS } from "../../exports/address.config";
 import { Chain } from "viem";
 import { polygon, polygonAmoy } from "viem/chains";
+import { ethers } from "ethers";
 
 const seed = process.env.DEPLOYER_ACCOUNT_SEED;
 if (!seed) throw new Error("Failed to import the seed string from .env");
@@ -30,7 +31,7 @@ if (id === 1) {
 chainUpdates = chainUpdates.filter((x) => x !== undefined);
 
 console.log("Chain Updates");
-console.log(chainUpdates)
+console.log(chainUpdates);
 
 const CCIPFinalizeModule = buildModule("CCIPFinalize", (m) => {
   const ccipAdmin = m.contractAt("CCIPAdmin", ADDR.ccipAdmin);
@@ -43,10 +44,11 @@ const CCIPFinalizeModule = buildModule("CCIPFinalize", (m) => {
 function getChainUpdate(chainId: Chain["id"]) {
   const ADDR = ADDRESS[chainId];
   if (ADDR && ADDR.frankenCoin && ADDR.chainSelector && ADDR.tokenPool) {
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
     return {
       remoteChainSelector: ADDR.chainSelector,
-      remotePoolAddresses: [ADDR.tokenPool],
-      remoteTokenAddress: ADDR.frankenCoin,
+      remotePoolAddresses: [abiCoder.encode(["address"], [ADDR.tokenPool])],
+      remoteTokenAddress: abiCoder.encode(["address"], [ADDR.frankenCoin]),
       outboundRateLimiterConfig: {
         isEnabled: false,
         capacity: 0,
