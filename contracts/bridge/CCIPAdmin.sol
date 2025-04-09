@@ -76,14 +76,17 @@ contract CCIPAdmin {
     }
 
     /**
-     * @notice Sets the token pool to administer and sets in in the TokenAdminRegistry
+     * @notice Sets the token pool to administer, sets in in the TokenAdminRegistry, accept ownership, and applies the chain updates
      * @dev The token pool can only be set once
      * @param _tokenPool The token pool to set
+     * @param chainsToAdd The chains to add to the token pool
      */
-    function setTokenPool(ITokenPool _tokenPool) external {
+    function setTokenPool(ITokenPool _tokenPool, ITokenPool.ChainUpdate[] calldata chainsToAdd) external {
         if (address(tokenPool) != address(0)) revert AlreadySet();
         tokenPool = _tokenPool;
         TOKEN_ADMIN_REGISTRY.setPool(ZCHF, address(_tokenPool));
+        tokenPool.acceptOwnership();
+        tokenPool.applyChainUpdates(new uint64[](0), chainsToAdd);
     }
 
     /**

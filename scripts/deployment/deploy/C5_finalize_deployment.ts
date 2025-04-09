@@ -1,6 +1,34 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { deployContract } from "../deployUtils";
+
+function getChainUpdate(ccipParams: any, chainName: string) {
+  const chainCcipParams = ccipParams.find(
+    (x: { chainName: string }) =>
+      x.chainName.toLowerCase() == chainName.toLowerCase()
+  );
+  if (
+    chainCcipParams["zchf"] &&
+    chainCcipParams["tokenPool"] &&
+    chainCcipParams["chainSelector"]
+  ) {
+    return {
+      remoteChainSelector: chainCcipParams["chainSelector"],
+      remotePoolAddresses: [chainCcipParams["tokenPool"]],
+      remoteTokenAddress: chainCcipParams["zchf"],
+      outboundRateLimiterConfig: {
+        isEnabled: false,
+        capacity: 0,
+        rate: 0,
+      },
+      inboundRateLimiterConfig: {
+        isEnabled: false,
+        capacity: 0,
+        rate: 0,
+      },
+    };
+  }
+  return undefined;
+}
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
@@ -18,28 +46,31 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const ccipAdminDeployment = await get("CCIPAdmin");
   const tokenPoolDeployment = await get("BurnMintTokenPool");
 
-  const ccipAdmin = await ethers.getContractAt("CCIPAdmin", ccipAdminDeployment.address)
+  const ccipAdmin = await ethers.getContractAt(
+    "CCIPAdmin",
+    ccipAdminDeployment.address
+  );
+
+  const chainUpdates = [getChainUpdate(ccipParamsFile, "sepolia")].filter(
+    (x) => x !== undefined
+  );
 
   console.log("Registering CCIPAdmin as admin...");
-  const adminRegisterTx = await ccipAdmin.registerToken(registryModuleOwnerAddress)
+  const adminRegisterTx = await ccipAdmin.registerToken(
+    registryModuleOwnerAddress
+  );
   console.log(`TX: ${adminRegisterTx.hash}`);
   await adminRegisterTx.wait();
   console.log("Registering CCIPAdmin as admin... Done");
-  console.log("Accepting admin...");
-  const acceptAdminTx = await ccipAdmin.acceptAdmin();
-  console.log(`TX: ${acceptAdminTx.hash}`);
-  await acceptAdminTx.wait();
   console.log("Accepting admin... Done");
   console.log(`Setting token pool ${tokenPoolDeployment.address}...`);
-  const setTokenPoolTx = await ccipAdmin.setTokenPool(tokenPoolDeployment.address);
+  const setTokenPoolTx = await ccipAdmin.setTokenPool(
+    tokenPoolDeployment.address,
+    chainUpdates
+  );
   console.log(`TX: ${setTokenPoolTx.hash}`);
   await setTokenPoolTx.wait();
   console.log("Setting token pool... Done");
-  console.log("Accepting ownership...");
-  const acceptOwnershipTx = await ccipAdmin.acceptOwnership();
-  console.log(`TX: ${acceptOwnershipTx.hash}`);
-  await acceptOwnershipTx.wait();
-  console.log("Accepting ownership... Done");
 };
 
 export default deploy;

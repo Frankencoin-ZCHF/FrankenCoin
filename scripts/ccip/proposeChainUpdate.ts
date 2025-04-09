@@ -33,34 +33,29 @@ async function main() {
     (param) => param.chainName.toLowerCase() === targetChainName.toLowerCase()
   );
 
-  const tx = await ccipAdmin.proposeRemoteChainUpdate(
+  const tx = await ccipAdmin.proposeAddChain(
     {
-      chainsToRemove: [],
-      chainsToAdd: [
-        {
-          inboundRateLimiterConfig: {
-            capacity: 0,
-            isEnabled: false,
-            rate: 0,
-          },
-          outboundRateLimiterConfig: {
-            capacity: 0,
-            isEnabled: false,
-            rate: 0,
-          },
-          remoteChainSelector: targetParams?.chainSelector ?? 0,
-          remotePoolAddresses: [
-            ethers.AbiCoder.defaultAbiCoder().encode(
-              ["address"],
-              [targetParams?.tokenPool ?? ""]
-            ),
-          ],
-          remoteTokenAddress: ethers.AbiCoder.defaultAbiCoder().encode(
-            ["address"],
-            [targetParams?.zchf ?? ""]
-          ),
-        },
+      inboundRateLimiterConfig: {
+        capacity: 0,
+        isEnabled: false,
+        rate: 0,
+      },
+      outboundRateLimiterConfig: {
+        capacity: 0,
+        isEnabled: false,
+        rate: 0,
+      },
+      remoteChainSelector: targetParams?.chainSelector ?? 0,
+      remotePoolAddresses: [
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ["address"],
+          [targetParams?.tokenPool ?? ""]
+        ),
       ],
+      remoteTokenAddress: ethers.AbiCoder.defaultAbiCoder().encode(
+        ["address"],
+        [targetParams?.zchf ?? ""]
+      ),
     },
     []
   );

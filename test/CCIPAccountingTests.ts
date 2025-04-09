@@ -248,10 +248,9 @@ describe("CCIPAccountingTests", () => {
         await expect(mainnetCcipAdmin.acceptAdmin())
           .emit(mainnetTokenAdminRegistry, "AdministratorTransferred")
           .withArgs(frankencoinAddress, ccipAdminAddress);
-        await expect(mainnetCcipAdmin.setTokenPool(tokenPoolAddress))
+        await expect(mainnetCcipAdmin.setTokenPool(tokenPoolAddress, []))
           .emit(mainnetTokenAdminRegistry, "PoolSet")
-          .withArgs(frankencoinAddress, ethers.ZeroAddress, tokenPoolAddress);
-        await expect(mainnetCcipAdmin.acceptOwnership())
+          .withArgs(frankencoinAddress, ethers.ZeroAddress, tokenPoolAddress)
           .emit(mainnetTokenPool, "OwnershipTransferred")
           .withArgs(await owner.getAddress(), ccipAdminAddress);
         expect(
@@ -278,14 +277,12 @@ describe("CCIPAccountingTests", () => {
           )
         )
           .emit(bridgedRegistryModule, "AdministratorRegistered")
-          .withArgs(frankencoinAddress, ccipAdminAddress);
-        await expect(bridgedCcipAdmin.acceptAdmin())
+          .withArgs(frankencoinAddress, ccipAdminAddress)
           .emit(bridgedTokenAdminRegistry, "AdministratorTransferred")
           .withArgs(frankencoinAddress, ccipAdminAddress);
-        await expect(bridgedCcipAdmin.setTokenPool(tokenPoolAddress))
+        await expect(bridgedCcipAdmin.setTokenPool(tokenPoolAddress, []))
           .emit(bridgedTokenAdminRegistry, "PoolSet")
-          .withArgs(frankencoinAddress, ethers.ZeroAddress, tokenPoolAddress);
-        await expect(bridgedCcipAdmin.acceptOwnership())
+          .withArgs(frankencoinAddress, ethers.ZeroAddress, tokenPoolAddress)
           .emit(bridgedTokenPool, "OwnershipTransferred")
           .withArgs(await owner.getAddress(), ccipAdminAddress);
         expect(
@@ -349,15 +346,14 @@ describe("CCIPAccountingTests", () => {
           await bridgedRegistryModule.getAddress()
         );
         await mainnetCcipAdmin.acceptAdmin();
-        await bridgedCcipAdmin.acceptAdmin();
         await mainnetCcipAdmin.setTokenPool(
-          await mainnetTokenPool.getAddress()
+          await mainnetTokenPool.getAddress(),
+          []
         );
         await bridgedCcipAdmin.setTokenPool(
-          await bridgedTokenPool.getAddress()
+          await bridgedTokenPool.getAddress(),
+          []
         );
-        await mainnetCcipAdmin.acceptOwnership();
-        await bridgedCcipAdmin.acceptOwnership();
 
         // report a loss
         const lossTx = bridgedFrankencoin
@@ -441,15 +437,14 @@ describe("CCIPAccountingTests", () => {
           await bridgedRegistryModule.getAddress()
         );
         await mainnetCcipAdmin.acceptAdmin();
-        await bridgedCcipAdmin.acceptAdmin();
         await mainnetCcipAdmin.setTokenPool(
-          await mainnetTokenPool.getAddress()
+          await mainnetTokenPool.getAddress(),
+          []
         );
         await bridgedCcipAdmin.setTokenPool(
-          await bridgedTokenPool.getAddress()
+          await bridgedTokenPool.getAddress(),
+          []
         );
-        await mainnetCcipAdmin.acceptOwnership();
-        await bridgedCcipAdmin.acceptOwnership();
         // mint profits
         await bridgedFrankencoin
           .connect(minter)

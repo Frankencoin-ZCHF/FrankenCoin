@@ -33,43 +33,29 @@ async function main() {
     (param) => param.chainName.toLowerCase() === targetChainName.toLowerCase()
   );
 
-  const updateData = ethers.AbiCoder.defaultAbiCoder().encode(
-    [
-      "(uint64[] chainsToRemove, (uint64 remoteChainSelector, bytes[] remotePoolAddresses, bytes remoteTokenAddress, (bool isEnabled, uint128 capacity, uint128 rate) outboundRateLimiterConfig, (bool isEnabled, uint128 capacity, uint128 rate) inboundRateLimiterConfig)[] chainsToAdd)",
+  const tx = await ccipAdmin.applyAddChain({
+    inboundRateLimiterConfig: {
+      capacity: 0,
+      isEnabled: false,
+      rate: 0,
+    },
+    outboundRateLimiterConfig: {
+      capacity: 0,
+      isEnabled: false,
+      rate: 0,
+    },
+    remoteChainSelector: targetParams?.chainSelector ?? 0,
+    remotePoolAddresses: [
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["address"],
+        [targetParams?.tokenPool ?? ""]
+      ),
     ],
-    [
-      {
-        chainsToRemove: [],
-        chainsToAdd: [
-          {
-            inboundRateLimiterConfig: {
-              capacity: 0,
-              isEnabled: false,
-              rate: 0,
-            },
-            outboundRateLimiterConfig: {
-              capacity: 0,
-              isEnabled: false,
-              rate: 0,
-            },
-            remoteChainSelector: targetParams?.chainSelector ?? 0,
-            remotePoolAddresses: [
-              ethers.AbiCoder.defaultAbiCoder().encode(
-                ["address"],
-                [targetParams?.tokenPool ?? ""]
-              ),
-            ],
-            remoteTokenAddress: ethers.AbiCoder.defaultAbiCoder().encode(
-              ["address"],
-              [targetParams?.zchf ?? ""]
-            ),
-          },
-        ],
-      },
-    ]
-  );
-
-  const tx = await ccipAdmin.applyProposal(2, updateData);
+    remoteTokenAddress: ethers.AbiCoder.defaultAbiCoder().encode(
+      ["address"],
+      [targetParams?.zchf ?? ""]
+    ),
+  });
   await tx.wait();
   console.log(`Proposal applied ${tx.hash}`);
 }

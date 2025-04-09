@@ -2,6 +2,7 @@ import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { getChildFromSeed } from "../../helper/wallet";
 import { ADDRESS } from "../../exports/address.config";
 import { Chain } from "viem";
+import { polygon, polygonAmoy } from "viem/chains";
 
 const seed = process.env.DEPLOYER_ACCOUNT_SEED;
 if (!seed) throw new Error("Failed to import the seed string from .env");
@@ -20,15 +21,45 @@ export const config = {
 console.log("Config Info");
 console.log(config);
 
+let chainUpdates: any[] = [];
+if (id === 1) {
+  chainUpdates = [getChainUpdate(polygon.id)];
+} else {
+  chainUpdates = [getChainUpdate(polygonAmoy.id)];
+}
+chainUpdates = chainUpdates.filter((x) => x !== undefined);
+
+console.log("Chain Updates");
+console.log(chainUpdates)
+
 const CCIPFinalizeModule = buildModule("CCIPFinalize", (m) => {
   const ccipAdmin = m.contractAt("CCIPAdmin", ADDR.ccipAdmin);
   m.call(ccipAdmin, "acceptAdmin", []);
-  const setPool = m.call(ccipAdmin, "setTokenPool", [ADDR.tokenPool]);
-  m.call(ccipAdmin, "acceptOwnership", [], {
-    after: [setPool],
-  });
+  m.call(ccipAdmin, "setTokenPool", [ADDR.tokenPool, chainUpdates]);
 
   return {};
 });
+
+function getChainUpdate(chainId: Chain["id"]) {
+  const ADDR = ADDRESS[chainId];
+  if (ADDR && ADDR.frankenCoin && ADDR.chainSelector && ADDR.tokenPool) {
+    return {
+      remoteChainSelector: ADDR.chainSelector,
+      remotePoolAddresses: [ADDR.tokenPool],
+      remoteTokenAddress: ADDR.frankenCoin,
+      outboundRateLimiterConfig: {
+        isEnabled: false,
+        capacity: 0,
+        rate: 0,
+      },
+      inboundRateLimiterConfig: {
+        isEnabled: false,
+        capacity: 0,
+        rate: 0,
+      },
+    };
+  }
+  return undefined;
+}
 
 export default CCIPFinalizeModule;

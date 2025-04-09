@@ -66,7 +66,9 @@ describe("CCIP Admin Tests", () => {
       await tokenAdminRegistry.getAddress(),
       await zchf.getAddress()
     );
-    await (await ccipAdmin.setTokenPool(await tokenPool.getAddress())).wait();
+    await (
+      await ccipAdmin.setTokenPool(await tokenPool.getAddress(), [])
+    ).wait();
 
     // Setup users
     await zchf.mintWithReserve(
@@ -168,7 +170,7 @@ describe("CCIP Admin Tests", () => {
         await zchf.getAddress()
       );
 
-      await ccipAdmin.setTokenPool(await tokenPool.getAddress());
+      await ccipAdmin.setTokenPool(await tokenPool.getAddress(), []);
       expect(await ccipAdmin.tokenPool()).to.equal(
         await tokenPool.getAddress()
       );
@@ -184,9 +186,9 @@ describe("CCIP Admin Tests", () => {
         await zchf.getAddress()
       );
 
-      await ccipAdmin.setTokenPool(await tokenPool.getAddress());
+      await ccipAdmin.setTokenPool(await tokenPool.getAddress(), []);
       await expect(
-        ccipAdmin.setTokenPool(await tokenPool.getAddress())
+        ccipAdmin.setTokenPool(await tokenPool.getAddress(), [])
       ).to.be.revertedWithCustomError(ccipAdmin, "AlreadySet");
     });
 
@@ -200,14 +202,34 @@ describe("CCIP Admin Tests", () => {
         await zchf.getAddress()
       );
 
-      const tx = await ccipAdmin.setTokenPool(await tokenPool.getAddress());
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenAdminRegistry.interface
+      const tx = ccipAdmin.setTokenPool(await tokenPool.getAddress(), []);
+      await expect(tx)
+        .emit(tokenAdminRegistry, "FunctionCalled")
+        .withArgs(
+          "setPool",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["address", "address"],
+            [await zchf.getAddress(), await tokenPool.getAddress()]
+          )
+        );
+    });
+
+    it("should apply the chain update", async () => {
+      const { zchf, tokenAdminRegistry, tokenPool } = await loadFixture(
+        deployFixture
       );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("setPool");
+      const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
+      const ccipAdmin = await ccipAdminFactory.deploy(
+        await tokenAdminRegistry.getAddress(),
+        await zchf.getAddress()
+      );
+
+      const tx = ccipAdmin.setTokenPool(await tokenPool.getAddress(), [
+        remoteChainUpdate.chainToAdd,
+      ]);
+      expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs("applyChainUpdates");
     });
   });
 
