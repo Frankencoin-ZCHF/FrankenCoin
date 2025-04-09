@@ -8,5 +8,10 @@
     "chainName": "Local",
     "chainId": 31337,
     "initialRatePPM": 4000
+  },
+  {
+    "chainName": "Amoy",
+    "chainId": 80002,
+    "initialRatePPM": 4000
   }
 ]

@@ -96,17 +96,17 @@ export const ADDRESS: Record<number, ChainAddress> = {
   },
   [sepolia.id]: {
     // For test deployment only
-    frankenCoin: "0x28c4efd564103730160ad1E6A241b30808445363",
-    equity: "0x22f3b4CEED90207620C5631b748f65f805bc774f",
+    frankenCoin: "0x8Ae0F967d59e2aEdF884248aF68bEc1932eb0435",
+    equity: "0x266f09eD17B7B7A8D1725Fd61B3935Ab02bA5f2b",
     wFPS: zeroAddress,
     bridge: zeroAddress, // not used
     xchf: zeroAddress, // not used
-    savings: zeroAddress,
-    roller: zeroAddress,
-    mintingHubV1: "0x6f43400A93c222666351c05A4e36Ec6A51a5b49B",
-    positionFactoryV1: "0x6ad579D11349d70704df66bc78f84Ae5BBce8D4A",
-    mintingHubV2: zeroAddress,
-    positionFactoryV2: zeroAddress,
+    savings: "0xc6AEE9905648dB57ed700b1666650C5d8daE0d9F",
+    roller: "0x34683eD1E0332d17E11C35f0eA90DC6C91f819AB",
+    mintingHubV1: zeroAddress,
+    positionFactoryV1: zeroAddress,
+    mintingHubV2: "0x4a45B1B5308669ebA4D353f7291ccB2cE6632Eb6",
+    positionFactoryV2: "0x8B256a5d65959Df60C72648153842909128f17F3",
 
     // CCIP addresses
     router: "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
@@ -114,8 +114,32 @@ export const ADDRESS: Record<number, ChainAddress> = {
     rmnProxy: "0xba3f6251de62dED61Ff98590cB2fDf6871FbB991",
     tokenAdminRegistry: "0x95F29FEE11c5C55d26cCcf1DB6772DE953B37B82",
     registryModuleOwner: "0x62e731218d0D47305aba2BE3751E7EE9E5520790",
-    ccipAdmin: zeroAddress,
-    tokenPool: zeroAddress,
+    ccipAdmin: "0x39f6934D0C15Ef7bff883280aD97749DfBeaE8d5",
+    tokenPool: "0xE9BD9035aAc87B84478C665f32FaAFA8858C626a",
     linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+  },
+  [polygonAmoy.id]: {
+    // For test deployment only
+    frankenCoin: "0x05C6eEb462A357Bf179e2a95e860eB000941EBaa",
+    equity: "0x7e8366A243f3C60FA1054e71F149e14c7D67fc9b",
+    wFPS: zeroAddress,
+    bridge: zeroAddress, // not used
+    xchf: zeroAddress, // not used
+    savings: zeroAddress,
+    roller: zeroAddress,
+    mintingHubV1: zeroAddress,
+    positionFactoryV1: zeroAddress,
+    mintingHubV2: zeroAddress,
+    positionFactoryV2: zeroAddress,
+
+    // CCIP addresses
+    router: zeroAddress,
+    chainSelector: "16015286601757825753",
+    rmnProxy: zeroAddress,
+    tokenAdminRegistry: zeroAddress,
+    registryModuleOwner: zeroAddress,
+    ccipAdmin: "0xDfE98B6eDAdFdA093D73C6773aB4e93D8E6119e3",
+    tokenPool: "0xcE2be1cC233802390ac77915529133758c0A8Ee3",
+    linkToken: zeroAddress,
   },
 };

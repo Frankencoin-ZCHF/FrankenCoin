@@ -61,7 +61,7 @@ const config: HardhatUserConfig = {
       timeout: 50_000,
     },
     amoy: {
-      url: `https://polygon-mainnet.g.alchemy.com/v2/${alchemy}`,
+      url: `https://polygon-amoy.g.alchemy.com/v2/${alchemy}`,
       chainId: 80002,
       gas: "auto",
       gasPrice: "auto",
