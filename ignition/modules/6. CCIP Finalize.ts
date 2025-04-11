@@ -35,8 +35,7 @@ console.log(chainUpdates);
 
 const CCIPFinalizeModule = buildModule("CCIPFinalize", (m) => {
   const ccipAdmin = m.contractAt("CCIPAdmin", ADDR.ccipAdmin);
-  m.call(ccipAdmin, "acceptAdmin", []);
-  m.call(ccipAdmin, "setTokenPool", [ADDR.tokenPool, chainUpdates]);
+  m.call(ccipAdmin, "acceptAdmin", [ADDR.tokenPool, chainUpdates]);
 
   return {};
 });

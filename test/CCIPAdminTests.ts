@@ -44,7 +44,7 @@ describe("CCIP Admin Tests", () => {
   const newAdmin = "0xc6ea8445A781a78be5892fA6c7F1856f0E44333F";
 
   async function deployFixture() {
-    const [minter, singleVoter, delegatee, delegator, registryModule] =
+    const [minter, singleVoter, delegatee, delegator] =
       await ethers.getSigners();
 
     const frankenCoinFactory = await ethers.getContractFactory("Frankencoin");
@@ -59,6 +59,11 @@ describe("CCIP Admin Tests", () => {
     );
     const tokenAdminRegistry = await tokenAdminRegistryFactory.deploy();
 
+    const registryModuleFactory = await ethers.getContractFactory(
+      "TestRegistryModule"
+    );
+    const registryModule = await registryModuleFactory.deploy();
+
     const equity = await ethers.getContractAt("Equity", await zchf.reserve());
 
     const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
@@ -66,9 +71,6 @@ describe("CCIP Admin Tests", () => {
       await tokenAdminRegistry.getAddress(),
       await zchf.getAddress()
     );
-    await (
-      await ccipAdmin.setTokenPool(await tokenPool.getAddress(), [])
-    ).wait();
 
     // Setup users
     await zchf.mintWithReserve(
@@ -138,14 +140,27 @@ describe("CCIP Admin Tests", () => {
 
   describe("registerToken", () => {
     it("should register a token", async () => {
-      const { ccipAdmin, registryModule } = await loadFixture(deployFixture);
-      await expect(ccipAdmin.registerToken(await registryModule.getAddress()))
-        .to.be.eventually.rejected.and.have.property("message")
-        // This is fine because the registry module is not deployed in this test setup
-        .that.include("function call to a non-contract account");
+      const { ccipAdmin, registryModule, tokenPool, zchf } = await loadFixture(
+        deployFixture
+      );
+      await expect(
+        ccipAdmin.registerToken(
+          await registryModule.getAddress(),
+          await tokenPool.getAddress(),
+          []
+        )
+      )
+        .emit(registryModule, "FunctionCalled")
+        .withArgs(
+          "registerAdminViaGetCCIPAdmin",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["address"],
+            [await zchf.getAddress()]
+          )
+        );
     });
 
-    it("should revert with AlreadySet", async () => {
+    it("should revert with AlreadyRegistered", async () => {
       const { ccipAdmin, registryModule, tokenAdminRegistry, zchf, tokenPool } =
         await loadFixture(deployFixture);
       await tokenAdminRegistry.setTokenConfig(await zchf.getAddress(), {
@@ -154,12 +169,95 @@ describe("CCIP Admin Tests", () => {
         pendingAdministrator: ethers.ZeroAddress,
       });
       await expect(
-        ccipAdmin.registerToken(await registryModule.getAddress())
-      ).revertedWithCustomError(ccipAdmin, "AlreadySet");
+        ccipAdmin.registerToken(
+          await registryModule.getAddress(),
+          await tokenPool.getAddress(),
+          []
+        )
+      ).revertedWithCustomError(ccipAdmin, "AlreadyRegistered");
+    });
+
+    it("should set the token pool", async () => {
+      const { zchf, tokenAdminRegistry, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
+      const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
+      const ccipAdmin = await ccipAdminFactory.deploy(
+        await tokenAdminRegistry.getAddress(),
+        await zchf.getAddress()
+      );
+
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+      expect(await ccipAdmin.tokenPool()).to.equal(
+        await tokenPool.getAddress()
+      );
+    });
+
+    it("should call the tokenAdminRegistry", async () => {
+      const { zchf, tokenAdminRegistry, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
+      const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
+      const ccipAdmin = await ccipAdminFactory.deploy(
+        await tokenAdminRegistry.getAddress(),
+        await zchf.getAddress()
+      );
+
+      const tx = ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+      await expect(tx)
+        .emit(tokenAdminRegistry, "FunctionCalled")
+        .withArgs(
+          "setPool",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["address", "address"],
+            [await zchf.getAddress(), await tokenPool.getAddress()]
+          )
+        );
+    });
+
+    it("should apply the chain update", async () => {
+      const { zchf, tokenAdminRegistry, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
+      const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
+      const ccipAdmin = await ccipAdminFactory.deploy(
+        await tokenAdminRegistry.getAddress(),
+        await zchf.getAddress()
+      );
+
+      const tx = ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        [remoteChainUpdate.chainToAdd]
+      );
+      expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs("applyChainUpdates");
     });
   });
 
-  describe("setTokenPool", () => {
+  describe("acceptAdmin", () => {
+    it("should accept admin", async () => {
+      const { tokenAdminRegistry, ccipAdmin, tokenPool, zchf } =
+        await loadFixture(deployFixture);
+
+      const tx = ccipAdmin.acceptAdmin(await tokenPool.getAddress(), []);
+      await expect(tx)
+        .emit(tokenAdminRegistry, "FunctionCalled")
+        .withArgs(
+          "acceptAdminRole",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["address"],
+            [await zchf.getAddress()]
+          )
+        );
+    });
+
     it("should set the token pool", async () => {
       const { zchf, tokenAdminRegistry, tokenPool } = await loadFixture(
         deployFixture
@@ -170,26 +268,10 @@ describe("CCIP Admin Tests", () => {
         await zchf.getAddress()
       );
 
-      await ccipAdmin.setTokenPool(await tokenPool.getAddress(), []);
+      await ccipAdmin.acceptAdmin(await tokenPool.getAddress(), []);
       expect(await ccipAdmin.tokenPool()).to.equal(
         await tokenPool.getAddress()
       );
-    });
-
-    it("should revert if already set", async () => {
-      const { zchf, tokenAdminRegistry, tokenPool } = await loadFixture(
-        deployFixture
-      );
-      const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
-      const ccipAdmin = await ccipAdminFactory.deploy(
-        await tokenAdminRegistry.getAddress(),
-        await zchf.getAddress()
-      );
-
-      await ccipAdmin.setTokenPool(await tokenPool.getAddress(), []);
-      await expect(
-        ccipAdmin.setTokenPool(await tokenPool.getAddress(), [])
-      ).to.be.revertedWithCustomError(ccipAdmin, "AlreadySet");
     });
 
     it("should call the tokenAdminRegistry", async () => {
@@ -202,7 +284,7 @@ describe("CCIP Admin Tests", () => {
         await zchf.getAddress()
       );
 
-      const tx = ccipAdmin.setTokenPool(await tokenPool.getAddress(), []);
+      const tx = ccipAdmin.acceptAdmin(await tokenPool.getAddress(), []);
       await expect(tx)
         .emit(tokenAdminRegistry, "FunctionCalled")
         .withArgs(
@@ -224,43 +306,12 @@ describe("CCIP Admin Tests", () => {
         await zchf.getAddress()
       );
 
-      const tx = ccipAdmin.setTokenPool(await tokenPool.getAddress(), [
+      const tx = ccipAdmin.acceptAdmin(await tokenPool.getAddress(), [
         remoteChainUpdate.chainToAdd,
       ]);
       expect(tx)
         .emit(tokenPool, "FunctionCalled")
         .withArgs("applyChainUpdates");
-    });
-  });
-
-  describe("acceptAdmin", () => {
-    it("should accept admin", async () => {
-      const { tokenAdminRegistry, ccipAdmin } = await loadFixture(
-        deployFixture
-      );
-
-      const tx = await ccipAdmin.acceptAdmin();
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenAdminRegistry.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("acceptAdminRole");
-    });
-  });
-
-  describe("acceptOwnership", () => {
-    it("should accept ownership", async () => {
-      const { tokenPool, ccipAdmin } = await loadFixture(deployFixture);
-      const tx = await ccipAdmin.acceptOwnership();
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("acceptOwnership");
     });
   });
 
@@ -369,45 +420,66 @@ describe("CCIP Admin Tests", () => {
 
   describe("applyRemotePoolUpdate", () => {
     it("should apply (add)", async () => {
-      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
-        deployFixture
-      );
+      const { ccipAdmin, singleVoter, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
       remotePoolUpdate.add = true;
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
       await ccipAdmin
         .connect(singleVoter)
         .proposeRemotePoolUpdate(remotePoolUpdate, []);
       await evm_increaseTime(7 * 24 * 3600);
-      const tx = await ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate);
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("addRemotePool");
+      const tx = ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate);
+      await expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs(
+          "addRemotePool",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["uint64", "bytes"],
+            [remotePoolUpdate.chain, remotePoolUpdate.poolAddress]
+          )
+        );
     });
 
     it("should apply (remove)", async () => {
-      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
-        deployFixture
-      );
+      const { ccipAdmin, singleVoter, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
       remotePoolUpdate.add = false;
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
       await ccipAdmin
         .connect(singleVoter)
         .proposeRemotePoolUpdate(remotePoolUpdate, []);
       await evm_increaseTime(7 * 24 * 3600);
-      const tx = await ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate);
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("removeRemotePool");
+      const tx = ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate);
+      await expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs(
+          "removeRemotePool",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["uint64", "bytes"],
+            [remotePoolUpdate.chain, remotePoolUpdate.poolAddress]
+          )
+        );
     });
 
     it("should revert if deadline not passed", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
       await ccipAdmin
         .connect(singleVoter)
         .proposeRemotePoolUpdate(remotePoolUpdate, []);
@@ -417,13 +489,43 @@ describe("CCIP Admin Tests", () => {
     });
 
     it("should revert if proposal is not known", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
       await expect(
         ccipAdmin.connect(singleVoter).applyRemotePoolUpdate(remotePoolUpdate)
       ).to.revertedWithCustomError(ccipAdmin, "UnknownProposal");
     });
 
     it("should remove the deadline", async () => {
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
+      const hash = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ["string", "(bool add,uint64 chain,bytes poolAddress)"],
+          ["remotePoolUpdate", remotePoolUpdate]
+        )
+      );
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemotePoolUpdate(remotePoolUpdate, []);
+      await evm_increaseTime(7 * 24 * 3600);
+      await ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate);
+      expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+
+    it("should revert if tokenpool is not set", async () => {
       const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
       const hash = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
@@ -436,15 +538,20 @@ describe("CCIP Admin Tests", () => {
         .connect(singleVoter)
         .proposeRemotePoolUpdate(remotePoolUpdate, []);
       await evm_increaseTime(7 * 24 * 3600);
-      await ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate);
-      expect(await ccipAdmin.proposals(hash)).to.equal(0);
+      await expect(
+        ccipAdmin.applyRemotePoolUpdate(remotePoolUpdate)
+      ).revertedWithCustomError(ccipAdmin, "TokenPoolNotSet");
     });
   });
 
   describe("applyRateLimit", () => {
     it("should apply", async () => {
-      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
-        deployFixture
+      const { ccipAdmin, singleVoter, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
       );
       const tx = await ccipAdmin
         .connect(singleVoter)
@@ -455,18 +562,32 @@ describe("CCIP Admin Tests", () => {
           []
         );
 
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("setChainRateLimiterConfig");
+      await expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs(
+          "setChainRateLimiterConfig",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            [
+              "uint64",
+              "(bool isEnabled, uint128 capacity, uint128 rate)",
+              "(bool isEnabled, uint128 capacity, uint128 rate)",
+            ],
+            [
+              chainLimiterUpdate.chain,
+              chainLimiterUpdate.inboundConfig,
+              chainLimiterUpdate.outboundConfig,
+            ]
+          )
+        );
     });
 
     it("should forward helpers", async () => {
-      const { ccipAdmin, delegatee, delegator, tokenPool } = await loadFixture(
-        deployFixture
+      const { ccipAdmin, delegatee, delegator, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
       );
       const tx = await ccipAdmin
         .connect(delegatee)
@@ -476,14 +597,23 @@ describe("CCIP Admin Tests", () => {
           chainLimiterUpdate.outboundConfig,
           [delegator.address]
         );
-
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("setChainRateLimiterConfig");
+      await expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs(
+          "setChainRateLimiterConfig",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            [
+              "uint64",
+              "(bool isEnabled, uint128 capacity, uint128 rate)",
+              "(bool isEnabled, uint128 capacity, uint128 rate)",
+            ],
+            [
+              chainLimiterUpdate.chain,
+              chainLimiterUpdate.inboundConfig,
+              chainLimiterUpdate.outboundConfig,
+            ]
+          )
+        );
     });
 
     it("should revert if not qualified", async () => {
@@ -496,6 +626,20 @@ describe("CCIP Admin Tests", () => {
           []
         )
       ).to.revertedWithCustomError(equity, "NotQualified");
+    });
+
+    it("should revert if tokenpool is not set", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await expect(
+        ccipAdmin
+          .connect(singleVoter)
+          .applyRateLimit(
+            chainLimiterUpdate.chain,
+            chainLimiterUpdate.inboundConfig,
+            chainLimiterUpdate.outboundConfig,
+            []
+          )
+      ).to.revertedWithCustomError(ccipAdmin, "TokenPoolNotSet");
     });
   });
 
@@ -517,6 +661,7 @@ describe("CCIP Admin Tests", () => {
 
     it("should revert if already proposed", async () => {
       const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+
       await ccipAdmin
         .connect(singleVoter)
         .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
@@ -558,28 +703,41 @@ describe("CCIP Admin Tests", () => {
 
   describe("applyRemoveChain", () => {
     it("should apply", async () => {
-      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
-        deployFixture
+      const { ccipAdmin, singleVoter, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
       );
+
       remotePoolUpdate.add = true;
       await ccipAdmin
         .connect(singleVoter)
         .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
       await evm_increaseTime(7 * 24 * 3600);
-      const tx = await ccipAdmin.applyRemoveChain(
-        remoteChainUpdate.chainToRemove
-      );
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("applyChainUpdates");
+
+      const tx = ccipAdmin.applyRemoveChain(remoteChainUpdate.chainToRemove);
+      expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs(
+          "applyChainUpdates",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["uint64[]", "uint64[]"],
+            [[remoteChainUpdate.chainToRemove], []]
+          )
+        );
     });
 
     it("should revert if deadline not passed", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
       await ccipAdmin
         .connect(singleVoter)
         .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
@@ -591,7 +749,14 @@ describe("CCIP Admin Tests", () => {
     });
 
     it("should revert if proposal is not known", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
       await expect(
         ccipAdmin
           .connect(singleVoter)
@@ -600,12 +765,18 @@ describe("CCIP Admin Tests", () => {
     });
 
     it("should remove the deadline", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
       const hash = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           ["string", "uint64"],
           ["removeChain", remoteChainUpdate.chainToRemove]
         )
+      );
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
       );
 
       await ccipAdmin
@@ -614,6 +785,17 @@ describe("CCIP Admin Tests", () => {
       await evm_increaseTime(7 * 24 * 3600);
       await ccipAdmin.applyRemoveChain(remoteChainUpdate.chainToRemove);
       expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+
+    it("should revert if tokenpool is not set", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeRemoveChain(remoteChainUpdate.chainToRemove, []);
+      await evm_increaseTime(7 * 24 * 3600);
+      await expect(
+        ccipAdmin.applyRemoveChain(remoteChainUpdate.chainToRemove)
+      ).to.revertedWithCustomError(ccipAdmin, "TokenPoolNotSet");
     });
   });
 
@@ -679,29 +861,46 @@ describe("CCIP Admin Tests", () => {
 
   describe("applyAddChain", () => {
     it("should apply", async () => {
-      const { ccipAdmin, singleVoter, tokenPool } = await loadFixture(
-        deployFixture
+      const { ccipAdmin, singleVoter, tokenPool, registryModule } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
       );
-      remotePoolUpdate.add = true;
       await ccipAdmin
         .connect(singleVoter)
         .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+
       await evm_increaseTime(7 * 24 * 3600);
-      const tx = await ccipAdmin.applyAddChain(remoteChainUpdate.chainToAdd);
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(1);
-      expect(decoded[0].args.name).to.equal("applyChainUpdates");
+
+      const tx = ccipAdmin.applyAddChain(remoteChainUpdate.chainToAdd);
+      await expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs(
+          "applyChainUpdates",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            [
+              "uint64[]",
+              "(uint64 remoteChainSelector,bytes[] remotePoolAddresses,bytes remoteTokenAddress,(bool isEnabled,uint128 capacity,uint128 rate) outboundRateLimiterConfig,(bool isEnabled,uint128 capacity,uint128 rate) inboundRateLimiterConfig)[]",
+            ],
+            [[], [remoteChainUpdate.chainToAdd]]
+          )
+        );
     });
 
     it("should revert if deadline not passed", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
       await ccipAdmin
         .connect(singleVoter)
         .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+
       await expect(
         ccipAdmin
           .connect(singleVoter)
@@ -710,7 +909,14 @@ describe("CCIP Admin Tests", () => {
     });
 
     it("should revert if proposal is not known", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+
       await expect(
         ccipAdmin
           .connect(singleVoter)
@@ -719,7 +925,8 @@ describe("CCIP Admin Tests", () => {
     });
 
     it("should remove the deadline", async () => {
-      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      const { ccipAdmin, singleVoter, registryModule, tokenPool } =
+        await loadFixture(deployFixture);
       const hash = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           [
@@ -729,6 +936,11 @@ describe("CCIP Admin Tests", () => {
           ["addChain", remoteChainUpdate.chainToAdd]
         )
       );
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
 
       await ccipAdmin
         .connect(singleVoter)
@@ -736,6 +948,18 @@ describe("CCIP Admin Tests", () => {
       await evm_increaseTime(7 * 24 * 3600);
       await ccipAdmin.applyAddChain(remoteChainUpdate.chainToAdd);
       expect(await ccipAdmin.proposals(hash)).to.equal(0);
+    });
+
+    it("should revert if tokenpool is not set", async () => {
+      const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeAddChain(remoteChainUpdate.chainToAdd, []);
+
+      await evm_increaseTime(7 * 24 * 3600);
+      await expect(
+        ccipAdmin.applyAddChain(remoteChainUpdate.chainToAdd)
+      ).revertedWithCustomError(ccipAdmin, "TokenPoolNotSet");
     });
   });
 
@@ -792,21 +1016,40 @@ describe("CCIP Admin Tests", () => {
 
   describe("applyAdminTransfer", () => {
     it("should apply", async () => {
-      const { ccipAdmin, singleVoter, tokenPool, zchf } = await loadFixture(
-        deployFixture
+      const {
+        ccipAdmin,
+        singleVoter,
+        tokenPool,
+        tokenAdminRegistry,
+        zchf,
+        registryModule,
+      } = await loadFixture(deployFixture);
+
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
       );
-      remotePoolUpdate.add = true;
       await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
+
       await evm_increaseTime(21 * 24 * 3600);
-      const tx = await ccipAdmin.applyAdminTransfer(newAdmin);
-      const receipt = await tx.wait();
-      const decoded = decodeFunctionCalledEvents(
-        receipt?.logs ?? [],
-        tokenPool.interface
-      );
-      expect(decoded.length).to.equal(2);
-      expect(decoded[0].args.name).to.equal("transferAdminRole");
-      expect(decoded[1].args.name).to.equal("transferOwnership");
+
+      const tx = ccipAdmin.applyAdminTransfer(newAdmin);
+      await expect(tx)
+        .emit(tokenAdminRegistry, "FunctionCalled")
+        .withArgs(
+          "transferAdminRole",
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["address", "address"],
+            [await zchf.getAddress(), newAdmin]
+          )
+        );
+      await expect(tx)
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs(
+          "transferOwnership",
+          ethers.AbiCoder.defaultAbiCoder().encode(["address"], [newAdmin])
+        );
     });
 
     it("should revert if deadline not passed", async () => {

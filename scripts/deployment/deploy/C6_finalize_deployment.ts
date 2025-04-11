@@ -62,22 +62,15 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     .map((chain: string) => getChainUpdate(ccipParamsFile, chain))
     .filter((x) => x !== undefined);
 
-  console.log("Registering CCIPAdmin as admin...");
+  console.log("Registering token...");
   const adminRegisterTx = await ccipAdmin.registerToken(
-    registryModuleOwnerAddress
-  );
-  console.log(`TX: ${adminRegisterTx.hash}`);
-  await adminRegisterTx.wait();
-  console.log("Registering CCIPAdmin as admin... Done");
-  console.log("Accepting admin... Done");
-  console.log(`Setting token pool ${tokenPoolDeployment.address}...`);
-  const setTokenPoolTx = await ccipAdmin.setTokenPool(
+    registryModuleOwnerAddress,
     tokenPoolDeployment.address,
     chainUpdates
   );
-  console.log(`TX: ${setTokenPoolTx.hash}`);
-  await setTokenPoolTx.wait();
-  console.log("Setting token pool... Done");
+  console.log(`TX: ${adminRegisterTx.hash}`);
+  await adminRegisterTx.wait();
+  console.log("Registering token... Done");
 };
 
 export default deploy;

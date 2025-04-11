@@ -71,7 +71,7 @@ console.log("BridgeAccounting Constructor Args");
 console.log(bridgeAccountArgs);
 
 const CCIPPrepareModule = buildModule("CCIPPrepare", (m) => {
-  const ccipAdmin = m.contract("CCIPAdmin", ccipAdminArgs); // @dev: it uses the Contract name as an identifier
+  const ccipAdmin = m.contract("CCIPAdmin", ccipAdminArgs);
   const tokenPool = m.contract("BurnMintTokenPool", tokenPoolArgs);
   m.call(tokenPool, "transferOwnership", [ccipAdmin]);
 

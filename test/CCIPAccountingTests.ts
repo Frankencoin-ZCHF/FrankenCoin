@@ -245,10 +245,11 @@ describe("CCIPAccountingTests", () => {
         const ccipAdminAddress = await mainnetCcipAdmin.getAddress();
         const tokenPoolAddress = await mainnetTokenPool.getAddress();
 
-        await expect(mainnetCcipAdmin.acceptAdmin())
+        await expect(
+          mainnetCcipAdmin.acceptAdmin(await mainnetTokenPool.getAddress(), [])
+        )
           .emit(mainnetTokenAdminRegistry, "AdministratorTransferred")
-          .withArgs(frankencoinAddress, ccipAdminAddress);
-        await expect(mainnetCcipAdmin.setTokenPool(tokenPoolAddress, []))
+          .withArgs(frankencoinAddress, ccipAdminAddress)
           .emit(mainnetTokenAdminRegistry, "PoolSet")
           .withArgs(frankencoinAddress, ethers.ZeroAddress, tokenPoolAddress)
           .emit(mainnetTokenPool, "OwnershipTransferred")
@@ -273,14 +274,15 @@ describe("CCIPAccountingTests", () => {
 
         await expect(
           bridgedCcipAdmin.registerToken(
-            await bridgedRegistryModule.getAddress()
+            await bridgedRegistryModule.getAddress(),
+            await bridgedTokenPool.getAddress(),
+            []
           )
         )
           .emit(bridgedRegistryModule, "AdministratorRegistered")
           .withArgs(frankencoinAddress, ccipAdminAddress)
           .emit(bridgedTokenAdminRegistry, "AdministratorTransferred")
-          .withArgs(frankencoinAddress, ccipAdminAddress);
-        await expect(bridgedCcipAdmin.setTokenPool(tokenPoolAddress, []))
+          .withArgs(frankencoinAddress, ccipAdminAddress)
           .emit(bridgedTokenAdminRegistry, "PoolSet")
           .withArgs(frankencoinAddress, ethers.ZeroAddress, tokenPoolAddress)
           .emit(bridgedTokenPool, "OwnershipTransferred")
@@ -343,15 +345,12 @@ describe("CCIPAccountingTests", () => {
         } = await loadFixture(deployFixture);
 
         await bridgedCcipAdmin.registerToken(
-          await bridgedRegistryModule.getAddress()
-        );
-        await mainnetCcipAdmin.acceptAdmin();
-        await mainnetCcipAdmin.setTokenPool(
-          await mainnetTokenPool.getAddress(),
+          await bridgedRegistryModule.getAddress(),
+          await bridgedTokenPool.getAddress(),
           []
         );
-        await bridgedCcipAdmin.setTokenPool(
-          await bridgedTokenPool.getAddress(),
+        await mainnetCcipAdmin.acceptAdmin(
+          await mainnetTokenPool.getAddress(),
           []
         );
 
@@ -434,15 +433,12 @@ describe("CCIPAccountingTests", () => {
         } = await loadFixture(deployFixture);
 
         await bridgedCcipAdmin.registerToken(
-          await bridgedRegistryModule.getAddress()
-        );
-        await mainnetCcipAdmin.acceptAdmin();
-        await mainnetCcipAdmin.setTokenPool(
-          await mainnetTokenPool.getAddress(),
+          await bridgedRegistryModule.getAddress(),
+          await bridgedTokenPool.getAddress(),
           []
         );
-        await bridgedCcipAdmin.setTokenPool(
-          await bridgedTokenPool.getAddress(),
+        await mainnetCcipAdmin.acceptAdmin(
+          await mainnetTokenPool.getAddress(),
           []
         );
         // mint profits

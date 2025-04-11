@@ -6,7 +6,6 @@ import {IGovernance} from "../equity/IGovernance.sol";
 import {ITokenPool} from "./ITokenPool.sol";
 import {TokenAdminRegistry} from "@chainlink/contracts-ccip/src/v0.8/ccip/tokenAdminRegistry/TokenAdminRegistry.sol";
 import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
-import {BridgeAccounting} from "../equity/BridgeAccounting.sol";
 import {IBasicFrankencoin} from "../stablecoin/IBasicFrankencoin.sol";
 import {RegistryModuleOwnerCustom} from "@chainlink/contracts-ccip/src/v0.8/ccip/tokenAdminRegistry/RegistryModuleOwnerCustom.sol";
 
@@ -33,7 +32,8 @@ contract CCIPAdmin {
     error TooEarly(uint64 deadline);
     error UnknownProposal(bytes32 hash);
     error ProposalAlreadyMade(bytes32 hash);
-    error AlreadySet();
+    error AlreadyRegistered();
+    error TokenPoolNotSet();
 
     event ProposalMade(bytes32 hash, uint64 deadline);
     event ProposalDenied(bytes32 hash);
@@ -63,44 +63,24 @@ contract CCIPAdmin {
     }
 
     /**
-    * @notice Registers the token in the CCIP system
-    * @dev Can only be called while the token admin is not set
-    * @param registry The registry to register the token with
-    */
-    function registerToken(RegistryModuleOwnerCustom registry) external {
-        if(TOKEN_ADMIN_REGISTRY.getTokenConfig(ZCHF).administrator != address(0)) {
-            revert AlreadySet();
+     * @notice Registers the token in the CCIP system
+     * @dev Can only be called while the token admin is not set
+     * @param registry The registry to register the token with
+     */
+    function registerToken(RegistryModuleOwnerCustom registry, ITokenPool _tokenPool, ITokenPool.ChainUpdate[] calldata chainsToAdd) external {
+        if (TOKEN_ADMIN_REGISTRY.getTokenConfig(ZCHF).administrator != address(0)) {
+            revert AlreadyRegistered();
         }
         registry.registerAdminViaGetCCIPAdmin(ZCHF);
-        acceptAdmin();
-    }
-
-    /**
-     * @notice Sets the token pool to administer, sets in in the TokenAdminRegistry, accept ownership, and applies the chain updates
-     * @dev The token pool can only be set once
-     * @param _tokenPool The token pool to set
-     * @param chainsToAdd The chains to add to the token pool
-     */
-    function setTokenPool(ITokenPool _tokenPool, ITokenPool.ChainUpdate[] calldata chainsToAdd) external {
-        if (address(tokenPool) != address(0)) revert AlreadySet();
-        tokenPool = _tokenPool;
-        TOKEN_ADMIN_REGISTRY.setPool(ZCHF, address(_tokenPool));
-        tokenPool.acceptOwnership();
-        tokenPool.applyChainUpdates(new uint64[](0), chainsToAdd);
+        acceptAdmin(_tokenPool, chainsToAdd);
     }
 
     /**
      * @notice Accepts the admin role transfer on the TokenAdminRegistry
      */
-    function acceptAdmin() public {
+    function acceptAdmin(ITokenPool _tokenPool, ITokenPool.ChainUpdate[] calldata chainsToAdd) public {
         TOKEN_ADMIN_REGISTRY.acceptAdminRole(ZCHF);
-    }
-
-    /**
-     * @notice Accepts ownership transfer on the TokenPool
-     */
-    function acceptOwnership() public {
-        tokenPool.acceptOwnership();
+        setTokenPool(_tokenPool, chainsToAdd);
     }
 
     /**
@@ -120,6 +100,8 @@ contract CCIPAdmin {
      * @param update RemotePoolUpdate information
      */
     function applyRemotePoolUpdate(RemotePoolUpdate memory update) external {
+        if (address(tokenPool) == address(0)) revert TokenPoolNotSet();
+
         enact(keccak256(abi.encode("remotePoolUpdate", update)));
         if (update.add) {
             tokenPool.addRemotePool(update.chain, update.poolAddress);
@@ -141,6 +123,8 @@ contract CCIPAdmin {
      * @param helpers Array of helper addresses for qualification check
      */
     function applyRateLimit(uint64 chain, RateLimiter.Config calldata inbound, RateLimiter.Config calldata outbound, address[] calldata helpers) external onlyQualified(helpers) {
+        if (address(tokenPool) == address(0)) revert TokenPoolNotSet();
+
         tokenPool.setChainRateLimiterConfig(chain, inbound, outbound);
         emit RateLimit(chain, inbound, outbound);
     }
@@ -162,6 +146,8 @@ contract CCIPAdmin {
      * @param chainId The chain to remove
      */
     function applyRemoveChain(uint64 chainId) external {
+        if (address(tokenPool) == address(0)) revert TokenPoolNotSet();
+
         enact(keccak256(abi.encode("removeChain", chainId)));
         uint64[] memory chainsToRemove = new uint64[](1);
         chainsToRemove[0] = chainId;
@@ -188,6 +174,8 @@ contract CCIPAdmin {
      * @param config RemoteChainUpdate information
      */
     function applyAddChain(ITokenPool.ChainUpdate memory config) external {
+        if (address(tokenPool) == address(0)) revert TokenPoolNotSet();
+
         enact(keccak256(abi.encode("addChain", config)));
         uint64[] memory chainsToRemove = new uint64[](0);
         ITokenPool.ChainUpdate[] memory chainsToAdd = new ITokenPool.ChainUpdate[](1);
@@ -216,7 +204,7 @@ contract CCIPAdmin {
     function applyAdminTransfer(address newAdmin) external {
         enact(keccak256(abi.encode("adminTransfer", newAdmin)));
         TOKEN_ADMIN_REGISTRY.transferAdminRole(ZCHF, newAdmin);
-        tokenPool.transferOwnership(newAdmin);
+        if (address(tokenPool) != address(0)) tokenPool.transferOwnership(newAdmin);
         emit AdminTransfered(newAdmin);
     }
 
@@ -255,5 +243,22 @@ contract CCIPAdmin {
         if (proposals[hash] > 0) revert ProposalAlreadyMade(hash);
         proposals[hash] = uint64(block.timestamp) + delayInDays * DAY;
         emit ProposalMade(hash, proposals[hash]);
+    }
+
+    /**
+     * @notice Sets the token pool to administer, sets it in the TokenAdminRegistry, accept ownership, and applies the chain updates
+     * @dev The token pool can only be set once
+     * @param _tokenPool The token pool to set
+     * @param chainsToAdd The chains to add to the token pool
+     */
+    function setTokenPool(ITokenPool _tokenPool, ITokenPool.ChainUpdate[] calldata chainsToAdd) internal {
+        TOKEN_ADMIN_REGISTRY.setPool(ZCHF, address(_tokenPool)); // This call prevents
+        _tokenPool.acceptOwnership();
+
+        if (chainsToAdd.length > 0) {
+            _tokenPool.applyChainUpdates(new uint64[](0), chainsToAdd);
+        }
+
+        tokenPool = _tokenPool;
     }
 }
