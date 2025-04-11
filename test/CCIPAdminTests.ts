@@ -5,6 +5,7 @@ import { ethers } from "hardhat";
 import { evm_increaseTime } from "./helper";
 
 describe("CCIP Admin Tests", () => {
+  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
   const remotePoolUpdate = {
     chain: 1234,
     poolAddress: "0x",
@@ -153,10 +154,7 @@ describe("CCIP Admin Tests", () => {
         .emit(registryModule, "FunctionCalled")
         .withArgs(
           "registerAdminViaGetCCIPAdmin",
-          ethers.AbiCoder.defaultAbiCoder().encode(
-            ["address"],
-            [await zchf.getAddress()]
-          )
+          abiCoder.encode(["address"], [await zchf.getAddress()])
         );
     });
 
@@ -214,7 +212,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenAdminRegistry, "FunctionCalled")
         .withArgs(
           "setPool",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             ["address", "address"],
             [await zchf.getAddress(), await tokenPool.getAddress()]
           )
@@ -251,10 +249,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenAdminRegistry, "FunctionCalled")
         .withArgs(
           "acceptAdminRole",
-          ethers.AbiCoder.defaultAbiCoder().encode(
-            ["address"],
-            [await zchf.getAddress()]
-          )
+          abiCoder.encode(["address"], [await zchf.getAddress()])
         );
     });
 
@@ -289,7 +284,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenAdminRegistry, "FunctionCalled")
         .withArgs(
           "setPool",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             ["address", "address"],
             [await zchf.getAddress(), await tokenPool.getAddress()]
           )
@@ -317,10 +312,7 @@ describe("CCIP Admin Tests", () => {
 
   describe("deny", () => {
     const hash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ["string", "uint64"],
-        ["removeChain", ethers.ZeroAddress]
-      )
+      abiCoder.encode(["string", "uint64"], ["removeChain", ethers.ZeroAddress])
     );
 
     it("should deny", async () => {
@@ -363,7 +355,7 @@ describe("CCIP Admin Tests", () => {
 
   describe("proposeRemotePoolUpdate", () => {
     const hash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
+      abiCoder.encode(
         ["string", "(bool add,uint64 chain,bytes poolAddress)"],
         ["remotePoolUpdate", remotePoolUpdate]
       )
@@ -438,7 +430,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenPool, "FunctionCalled")
         .withArgs(
           "addRemotePool",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             ["uint64", "bytes"],
             [remotePoolUpdate.chain, remotePoolUpdate.poolAddress]
           )
@@ -464,7 +456,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenPool, "FunctionCalled")
         .withArgs(
           "removeRemotePool",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             ["uint64", "bytes"],
             [remotePoolUpdate.chain, remotePoolUpdate.poolAddress]
           )
@@ -506,7 +498,7 @@ describe("CCIP Admin Tests", () => {
       const { ccipAdmin, singleVoter, registryModule, tokenPool } =
         await loadFixture(deployFixture);
       const hash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
+        abiCoder.encode(
           ["string", "(bool add,uint64 chain,bytes poolAddress)"],
           ["remotePoolUpdate", remotePoolUpdate]
         )
@@ -528,7 +520,7 @@ describe("CCIP Admin Tests", () => {
     it("should revert if tokenpool is not set", async () => {
       const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
       const hash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
+        abiCoder.encode(
           ["string", "(bool add,uint64 chain,bytes poolAddress)"],
           ["remotePoolUpdate", remotePoolUpdate]
         )
@@ -566,7 +558,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenPool, "FunctionCalled")
         .withArgs(
           "setChainRateLimiterConfig",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             [
               "uint64",
               "(bool isEnabled, uint128 capacity, uint128 rate)",
@@ -601,7 +593,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenPool, "FunctionCalled")
         .withArgs(
           "setChainRateLimiterConfig",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             [
               "uint64",
               "(bool isEnabled, uint128 capacity, uint128 rate)",
@@ -645,7 +637,7 @@ describe("CCIP Admin Tests", () => {
 
   describe("proposeRemoveChain", async () => {
     const hash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
+      abiCoder.encode(
         ["string", "uint64"],
         ["removeChain", remoteChainUpdate.chainToRemove]
       )
@@ -722,7 +714,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenPool, "FunctionCalled")
         .withArgs(
           "applyChainUpdates",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             ["uint64[]", "uint64[]"],
             [[remoteChainUpdate.chainToRemove], []]
           )
@@ -768,7 +760,7 @@ describe("CCIP Admin Tests", () => {
       const { ccipAdmin, singleVoter, registryModule, tokenPool } =
         await loadFixture(deployFixture);
       const hash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
+        abiCoder.encode(
           ["string", "uint64"],
           ["removeChain", remoteChainUpdate.chainToRemove]
         )
@@ -801,7 +793,7 @@ describe("CCIP Admin Tests", () => {
 
   describe("proposeAddChain", async () => {
     const hash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
+      abiCoder.encode(
         [
           "string",
           "(uint64 remoteChainSelector,bytes[] remotePoolAddresses,bytes remoteTokenAddress,(bool isEnabled,uint128 capacity,uint128 rate) outboundRateLimiterConfig,(bool isEnabled,uint128 capacity,uint128 rate) inboundRateLimiterConfig)",
@@ -879,7 +871,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenPool, "FunctionCalled")
         .withArgs(
           "applyChainUpdates",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             [
               "uint64[]",
               "(uint64 remoteChainSelector,bytes[] remotePoolAddresses,bytes remoteTokenAddress,(bool isEnabled,uint128 capacity,uint128 rate) outboundRateLimiterConfig,(bool isEnabled,uint128 capacity,uint128 rate) inboundRateLimiterConfig)[]",
@@ -928,7 +920,7 @@ describe("CCIP Admin Tests", () => {
       const { ccipAdmin, singleVoter, registryModule, tokenPool } =
         await loadFixture(deployFixture);
       const hash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
+        abiCoder.encode(
           [
             "string",
             "(uint64 remoteChainSelector,bytes[] remotePoolAddresses,bytes remoteTokenAddress,(bool isEnabled,uint128 capacity,uint128 rate) outboundRateLimiterConfig,(bool isEnabled,uint128 capacity,uint128 rate) inboundRateLimiterConfig)",
@@ -965,10 +957,7 @@ describe("CCIP Admin Tests", () => {
 
   describe("proposeAdminTransfer", async () => {
     const hash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ["string", "address"],
-        ["adminTransfer", newAdmin]
-      )
+      abiCoder.encode(["string", "address"], ["adminTransfer", newAdmin])
     );
 
     it("should propose", async () => {
@@ -1039,7 +1028,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenAdminRegistry, "FunctionCalled")
         .withArgs(
           "transferAdminRole",
-          ethers.AbiCoder.defaultAbiCoder().encode(
+          abiCoder.encode(
             ["address", "address"],
             [await zchf.getAddress(), newAdmin]
           )
@@ -1048,7 +1037,7 @@ describe("CCIP Admin Tests", () => {
         .emit(tokenPool, "FunctionCalled")
         .withArgs(
           "transferOwnership",
-          ethers.AbiCoder.defaultAbiCoder().encode(["address"], [newAdmin])
+          abiCoder.encode(["address"], [newAdmin])
         );
     });
 
@@ -1070,10 +1059,7 @@ describe("CCIP Admin Tests", () => {
     it("should remove the deadline", async () => {
       const { ccipAdmin, singleVoter } = await loadFixture(deployFixture);
       const hash = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
-          ["string", "address"],
-          ["adminTransfer", newAdmin]
-        )
+        abiCoder.encode(["string", "address"], ["adminTransfer", newAdmin])
       );
 
       await ccipAdmin.connect(singleVoter).proposeAdminTransfer(newAdmin, []);
@@ -1085,10 +1071,7 @@ describe("CCIP Admin Tests", () => {
 
   describe("deny", () => {
     const hash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ["string", "address"],
-        ["adminTransfer", newAdmin]
-      )
+      abiCoder.encode(["string", "address"], ["adminTransfer", newAdmin])
     );
 
     it("should deny", async () => {
@@ -1130,6 +1113,45 @@ describe("CCIP Admin Tests", () => {
         equity,
         "NotQualified"
       );
+    });
+  });
+
+  describe("migration", () => {
+    it("migrate to new admin deployment", async () => {
+      const {
+        ccipAdmin,
+        singleVoter,
+        tokenPool,
+        tokenAdminRegistry,
+        zchf,
+        registryModule,
+      } = await loadFixture(deployFixture);
+
+      await ccipAdmin.registerToken(
+        await registryModule.getAddress(),
+        await tokenPool.getAddress(),
+        []
+      );
+      const ccipAdminFactory = await ethers.getContractFactory("CCIPAdmin");
+      const newCcipAdmin = await ccipAdminFactory.deploy(
+        await tokenAdminRegistry.getAddress(),
+        await zchf.getAddress()
+      );
+      await ccipAdmin
+        .connect(singleVoter)
+        .proposeAdminTransfer(await ccipAdmin.getAddress(), []);
+
+      await evm_increaseTime(21 * 24 * 3600);
+
+      await ccipAdmin.applyAdminTransfer(await ccipAdmin.getAddress());
+      await expect(newCcipAdmin.acceptAdmin(await tokenPool.getAddress(), []))
+        .emit(tokenAdminRegistry, "FunctionCalled")
+        .withArgs(
+          "acceptAdminRole",
+          abiCoder.encode(["address"], [await zchf.getAddress()])
+        )
+        .emit(tokenPool, "FunctionCalled")
+        .withArgs("acceptOwnership", "0x");
     });
   });
 });
