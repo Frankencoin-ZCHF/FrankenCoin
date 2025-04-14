@@ -13,15 +13,17 @@ contract BridgeAccounting is CCIPReceiver {
 
     event ReceivedProfits(uint256 amount);
     event ReceivedLosses(uint256 losses);
-    event SenderAdded(uint64 indexed chain, bytes indexed sender);
+    event ReceivedSettlement(uint64 indexed chain, bytes indexed sender, uint256 losses, uint256 profits);
 
     error InvalidSender(uint64 chain, bytes sender);
 
-    constructor(IBasicFrankencoin zchf, ITokenAdminRegistry _registry, address router) CCIPReceiver(router) {
+    constructor(IBasicFrankencoin zchf, ITokenAdminRegistry registry, address router) CCIPReceiver(router) {
         ZCHF = zchf;
-        TOKEN_ADMIN_REGISTRY = _registry;
+        TOKEN_ADMIN_REGISTRY = registry;
     }
 
+    /// @notice Handles the profit and loss messages
+    /// @param any2EvmMessage The message
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
         _validateSender(any2EvmMessage);
 
@@ -33,8 +35,15 @@ contract BridgeAccounting is CCIPReceiver {
         if (losses > 0) {
             _handleLosses(losses);
         }
+
+        // After settling the balance of the contract should be 0
+        assert(ZCHF.balanceOf(address(this)) == 0);
+
+        emit ReceivedSettlement(any2EvmMessage.sourceChainSelector, any2EvmMessage.sender, losses, profits);
     }
 
+    /// @notice Validates the sender of the message by checking if the sender is a remote token.
+    /// @param any2EvmMessage The message
     function _validateSender(Client.Any2EVMMessage memory any2EvmMessage) internal view {
         TokenPool pool = TokenPool(TOKEN_ADMIN_REGISTRY.getPool(address(ZCHF)));
         bytes memory expectedSender = pool.getRemoteToken(any2EvmMessage.sourceChainSelector);
@@ -43,6 +52,7 @@ contract BridgeAccounting is CCIPReceiver {
         }
     }
 
+    /// @notice Sends the current balance (aka profits) to the Frankencoin contract
     function _handleProfits() internal {
         // Use total balance to remove dust
         uint256 balance = ZCHF.balanceOf(address(this));
@@ -50,12 +60,14 @@ contract BridgeAccounting is CCIPReceiver {
         emit ReceivedProfits(balance);
     }
 
+    /// @notice Handles the losses and burns the tokens received.
+    /// @param amount The amount of losses taken by the system
     function _handleLosses(uint256 amount) internal {
         ZCHF.coverLoss(address(this), amount); // to trigger the Loss event
         // the BridgedFrankencoin already minted new tokens and made the minter whole.
         // the tokens minted by the main Frankencoin are therefore a duplicate and need to be burned
         // otherwise a loss would have double the impact
-        ZCHF.burn(amount); 
+        ZCHF.burn(amount);
         emit ReceivedLosses(amount);
     }
 }

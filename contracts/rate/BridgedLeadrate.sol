@@ -21,11 +21,13 @@ contract BridgedLeadrate is AbstractLeadrate, CCIPReceiver {
     error InvalidSourceChain();
     error InvalidSender();
 
-    constructor(address router_, uint24 initialRatePPM, uint64 mainnetChainSelector, address mainnetLeadrate) AbstractLeadrate(initialRatePPM) CCIPReceiver(router_) {
+    constructor(address router, uint24 initialRatePPM, uint64 mainnetChainSelector, address mainnetLeadrate) AbstractLeadrate(initialRatePPM) CCIPReceiver(router) {
         MAINNET_CHAIN_SELECTOR = mainnetChainSelector;
         MAINNET_LEADRATE_ADDRESS = mainnetLeadrate;
     }
 
+    /// @notice Update the lead rate.
+    /// @param any2EvmMessage The message to process.
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
         if (any2EvmMessage.sourceChainSelector != MAINNET_CHAIN_SELECTOR) revert InvalidSourceChain();
         if (abi.decode(any2EvmMessage.sender, (address)) != MAINNET_LEADRATE_ADDRESS) revert InvalidSender();

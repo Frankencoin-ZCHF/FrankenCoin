@@ -19,37 +19,24 @@ contract BridgedGovernance is CCIPReceiver, Governance {
     error InvalidSourceChain();
     error InvalidSender();
 
-    constructor(address _router, uint64 _mainnetChainSelector, address _mainnetGovernanceAddress) CCIPReceiver(_router) {
-        MAINNET_CHAIN_SELECTOR = _mainnetChainSelector;
-        MAINNET_GOVERNANCE_ADDRESS = _mainnetGovernanceAddress;
+    constructor(address router, uint64 mainnetChainSelector, address mainnetGovernanceAddress) CCIPReceiver(router) {
+        MAINNET_CHAIN_SELECTOR = mainnetChainSelector;
+        MAINNET_GOVERNANCE_ADDRESS = mainnetGovernanceAddress;
     }
 
-    /**
-     * @notice Get the number of votes held by a holder.
-     * @param holder The address to check.
-     */
+    /// @notice Get the number of votes held by a holder.
+    /// @param holder The address to check.
     function votes(address holder) public view override returns (uint256) {
         return _votes[holder];
     }
 
-    /**
-     * @notice Get the total number of votes.
-     */
+    /// @notice Get the total number of votes.
     function totalVotes() public view override returns (uint256) {
         return _totalVotes;
     }
 
-    /**
-     * @notice Required for frankencoin contract
-     */
-    function totalSupply() public view returns (uint256) {
-        return totalVotes();
-    }
-
-    /**
-     * @notice Process a received message.
-     * @param any2EvmMessage The message to process.
-     */
+    /// @notice Process a sync message.
+    /// @param any2EvmMessage The message to process.
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
         if (any2EvmMessage.sourceChainSelector != MAINNET_CHAIN_SELECTOR) revert InvalidSourceChain();
         if (abi.decode(any2EvmMessage.sender, (address)) != MAINNET_GOVERNANCE_ADDRESS) revert InvalidSender();
@@ -58,13 +45,11 @@ contract BridgedGovernance is CCIPReceiver, Governance {
 
         _processSyncMessage(syncMessage);
 
-        emit MessageReceived({messageId: any2EvmMessage.messageId, sourceChain: any2EvmMessage.sourceChainSelector, totalVotes: syncMessage.totalVotes, syncedVotes: syncMessage.votes});
+        emit MessageReceived(any2EvmMessage.messageId, any2EvmMessage.sourceChainSelector, syncMessage.totalVotes, syncMessage.votes);
     }
 
-    /**
-     * @notice Updates internal state with received message
-     * @param syncMessage The message to process.
-     */
+    /// @notice Updates internal state with received message
+    /// @param syncMessage The message to process.
     function _processSyncMessage(SyncMessage memory syncMessage) internal {
         _totalVotes = syncMessage.totalVotes;
 

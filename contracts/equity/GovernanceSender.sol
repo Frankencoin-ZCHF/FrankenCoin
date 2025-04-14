@@ -22,66 +22,81 @@ contract GovernanceSender is CCIPSender {
         GOVERNANCE = _governance;
     }
 
-    function syncVotes(uint64 chain, address _receiver, address[] calldata _voters) external payable {
-        syncVotes(chain, _toReceiver(_receiver), _voters, "");
+    /// @notice Sync governance votes to destination
+    /// @param chain The chain selector of the destination chain.
+    /// @param receiver The address of the recipient on the destination chain.
+    /// @param voters The voters to sync.
+    function syncVotes(uint64 chain, address receiver, address[] calldata voters) external payable {
+        syncVotes(chain, _toReceiver(receiver), voters, "");
     }
 
-    function syncVotes(uint64 chain, address _receiver, address[] calldata _voters, Client.EVMExtraArgsV2 calldata _extraArgs) public payable {
-        syncVotes(chain, _toReceiver(_receiver), _voters, Client._argsToBytes(_extraArgs));
+    /// @notice Sync governance votes to destination
+    /// @param chain The chain selector of the destination chain.
+    /// @param receiver The address of the recipient on the destination chain.
+    /// @param voters The voters to sync.
+    /// @param extraArgs Extra arguments for CCIP
+    function syncVotes(uint64 chain, address receiver, address[] calldata voters, Client.EVMExtraArgsV2 calldata extraArgs) public payable {
+        syncVotes(chain, _toReceiver(receiver), voters, Client._argsToBytes(extraArgs));
     }
 
-    /**
-     * @notice Sync governance votes to destination paying with native token
-     * @dev extraArgs for CCIP can be provided such as gasLimit or out-of-order execution
-     *
-     * @param _receiver                 Address of the recipient on the destination chain
-     * @param chain Chain selector of the destination chain
-     * @param _voters                   Collection of addresses which votes and delegation should be synced
-     *
-     */
-    function syncVotes(uint64 chain, bytes memory _receiver, address[] calldata _voters, bytes memory _extraArgs) public payable {
-        SyncMessage memory syncMessage = _buildSyncMessage(_voters);
-        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), _extraArgs);
+    /// @notice Sync governance votes to destination paying with native token
+    /// @dev extraArgs for CCIP can be provided such as gasLimit or out-of-order execution
+    /// @param receiver Address of the recipient on the destination chain
+    /// @param chain Chain selector of the destination chain
+    /// @param voters Collection of addresses which votes and delegation should be synced
+    /// @param extraArgs Extra arguments for CCIP
+    function syncVotes(uint64 chain, bytes memory receiver, address[] calldata voters, bytes memory extraArgs) public payable {
+        SyncMessage memory syncMessage = _buildSyncMessage(voters);
+        Client.EVM2AnyMessage memory message = _constructMessage(receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), extraArgs);
         _send(chain, message);
-        emit VotesSynced(chain, _receiver, _voters);
+        emit VotesSynced(chain, receiver, voters);
     }
 
-    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken) external view returns (uint256) {
-        return getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, "");
+    /// @notice Returns the fee required to send the sync message.
+    /// @param chain The selector of the destination chain.
+    /// @param receiver The address of the recipient on the destination chain.
+    /// @param voters The voters to sync.
+    /// @param useNativeToken Whether to use native token or LINK
+    /// @return The fee required to send the sync message.
+    function getSyncFee(uint64 chain, address receiver, address[] calldata voters, bool useNativeToken) external view returns (uint256) {
+        return getSyncFee(chain, _toReceiver(receiver), voters, useNativeToken, "");
     }
 
-    function getSyncFee(uint64 chain, address _receiver, address[] calldata _voters, bool useNativeToken, Client.EVMExtraArgsV2 calldata extraArgs) external view returns (uint256) {
-        return getSyncFee(chain, _toReceiver(_receiver), _voters, useNativeToken, Client._argsToBytes(extraArgs));
+    /// @notice Returns the fee required to send the sync message.
+    /// @param chain The selector of the destination chain.
+    /// @param receiver The address of the recipient on the destination chain.
+    /// @param voters The voters to sync.
+    /// @param useNativeToken Whether to use native token or LINK
+    /// @param extraArgs Extra arguments for CCIP
+    /// @return The fee required to send the sync message.
+    function getSyncFee(uint64 chain, address receiver, address[] calldata voters, bool useNativeToken, Client.EVMExtraArgsV2 calldata extraArgs) external view returns (uint256) {
+        return getSyncFee(chain, _toReceiver(receiver), voters, useNativeToken, Client._argsToBytes(extraArgs));
     }
 
-    /**
-     * @notice Get the fee required to send a CCIP message.
-     * @param chain The selector of the destination chain.
-     * @param _voters                   Collection of addresses which votes and delegation should be synced
-     *
-     * @return uint256 The fee required to send the CCIP message.
-     */
-    function getSyncFee(uint64 chain, bytes memory _receiver, address[] calldata _voters, bool nativeToken, bytes memory extraArgs) public view returns (uint256) {
-        SyncMessage memory syncMessage = _buildSyncMessage(_voters);
-        Client.EVM2AnyMessage memory message = _constructMessage(_receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), nativeToken, extraArgs);
+    /// @notice Returns the fee required to send the sync message.
+    /// @param chain The selector of the destination chain.
+    /// @param receiver The address of the recipient on the destination chain.
+    /// @param voters The voters to sync.
+    /// @param nativeToken Whether to use native token or LINK
+    /// @param extraArgs Extra arguments for CCIP
+    /// @return The fee required to send the sync message.
+    function getSyncFee(uint64 chain, bytes memory receiver, address[] calldata voters, bool nativeToken, bytes memory extraArgs) public view returns (uint256) {
+        SyncMessage memory syncMessage = _buildSyncMessage(voters);
+        Client.EVM2AnyMessage memory message = _constructMessage(receiver, abi.encode(syncMessage), new Client.EVMTokenAmount[](0), nativeToken, extraArgs);
         return _calculateFee(chain, message);
     }
 
-    /**
-     * @notice Builds the CCIP payload to be sent
-     * @dev Gets the necessary information for voters from governance
-     * @param _voters           Voters to be synced
-     *
-     * @return SyncMessage The payload to be sent
-     */
-    function _buildSyncMessage(address[] calldata _voters) private view returns (SyncMessage memory) {
-        SyncVote[] memory _syncVotes = new SyncVote[](_voters.length);
+    /// @notice Returns the sync message.
+    /// @param voters The voters to sync.
+    /// @return The sync message.
+    function _buildSyncMessage(address[] calldata voters) private view returns (SyncMessage memory) {
+        SyncVote[] memory _syncVotes = new SyncVote[](voters.length);
 
         // omitted unchecked optimization for readability
-        for (uint256 i = 0; i < _voters.length; i++) {
-            _syncVotes[i] = SyncVote({voter: _voters[i], votes: GOVERNANCE.votes(_voters[i]), delegatee: GOVERNANCE.delegates(_voters[i])});
+        for (uint256 i = 0; i < voters.length; i++) {
+            _syncVotes[i] = SyncVote(voters[i], GOVERNANCE.votes(voters[i]), GOVERNANCE.delegates(voters[i]));
         }
 
-        return SyncMessage({votes: _syncVotes, totalVotes: GOVERNANCE.totalVotes()});
+        return SyncMessage(_syncVotes, GOVERNANCE.totalVotes());
     }
 }

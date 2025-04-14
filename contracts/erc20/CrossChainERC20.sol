@@ -14,14 +14,31 @@ abstract contract CrossChainERC20 is ERC20, CCIPSender {
 
     constructor(address router, address linkToken) CCIPSender(IRouterClient(router), linkToken) {}
 
+    /// @notice Transfers tokens to the target chain
+    /// @dev Requires the caller to approve this contract to spend the tokens.
+    /// @param targetChain The chain selector of the destination chain.
+    /// @param target The address of the recipient on the destination chain.
+    /// @param amount The amount of tokens to transfer.
     function transfer(uint64 targetChain, address target, uint256 amount) external payable {
         transfer(targetChain, _toReceiver(target), amount, "");
     }
 
+    /// @notice Transfers tokens to the target chain
+    /// @dev Requires the caller to approve this contract to spend the tokens.
+    /// @param targetChain The chain selector of the destination chain.
+    /// @param target The address of the recipient on the destination chain.
+    /// @param amount The amount of tokens to transfer.
+    /// @param extraArgs Extra arguments for CCIP
     function transfer(uint64 targetChain, address target, uint256 amount, Client.EVMExtraArgsV2 calldata extraArgs) external payable {
         transfer(targetChain, _toReceiver(target), amount, Client._argsToBytes(extraArgs));
     }
 
+    /// @notice Transfers tokens to the target chain
+    /// @dev Requires the caller to approve this contract to spend the tokens.
+    /// @param targetChain The chain selector of the destination chain.
+    /// @param target The address of the recipient on the destination chain.
+    /// @param amount The amount of tokens to transfer.
+    /// @param extraArgs Extra arguments for CCIP
     function transfer(uint64 targetChain, bytes memory target, uint256 amount, bytes memory extraArgs) public payable {
         _transfer(msg.sender, address(this), amount);
         _approve(address(this), address(ROUTER), amount);
