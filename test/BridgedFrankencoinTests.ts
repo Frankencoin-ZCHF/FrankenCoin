@@ -95,24 +95,34 @@ describe("BridgedFrankencoin", () => {
   });
 
   describe("initialize", () => {
-    it("should set the minter", async () => {
+    it("should set the minters", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
       const tx = await bridgedFrankencoin.initialize(
-        await owner.getAddress(),
-        ""
+        [await owner.getAddress(), await bridgedFrankencoin.getAddress()],
+        ["", ""]
       );
       const block = await tx.getBlock();
       expect(
         await bridgedFrankencoin.minters(await owner.getAddress())
       ).to.equal(block?.timestamp);
+      expect(
+        await bridgedFrankencoin.minters(await bridgedFrankencoin.getAddress())
+      ).to.equal(block?.timestamp);
     });
 
     it("should initialize only once", async () => {
       const { owner, bridgedFrankencoin } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await expect(
-        bridgedFrankencoin.initialize(await owner.getAddress(), "")
+        bridgedFrankencoin.initialize([await owner.getAddress()], [""])
       ).revertedWithCustomError(bridgedFrankencoin, "AlreadyInitialized");
+    });
+
+    it("should revert when array lenghts don't match", async () => {
+      const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
+      await expect(
+        bridgedFrankencoin.initialize([await owner.getAddress()], ["", ""])
+      ).revertedWithCustomError(bridgedFrankencoin, "InvalidInput");
     });
   });
 
@@ -147,7 +157,7 @@ describe("BridgedFrankencoin", () => {
 
     it("should revert AlreadyRegistered", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -165,7 +175,7 @@ describe("BridgedFrankencoin", () => {
     it("should collect profits", async () => {
       const { bridgedFrankencoin, owner, newMinter, bridgedGovernance } =
         await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -191,7 +201,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -227,7 +237,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await expect(
         bridgedFrankencoin
           .connect(newMinter)
@@ -239,7 +249,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.registerPosition(await newMinter.getAddress());
 
       expect(
@@ -251,7 +261,7 @@ describe("BridgedFrankencoin", () => {
   describe("denyMinter", () => {
     it("should revert if too late", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await expect(
         bridgedFrankencoin.denyMinter(await owner.getAddress(), [], "")
       ).revertedWithCustomError(bridgedFrankencoin, "TooLate");
@@ -266,7 +276,7 @@ describe("BridgedFrankencoin", () => {
         ccipLocalSimulatorConfig,
         mainnetGovernance,
       } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -299,7 +309,7 @@ describe("BridgedFrankencoin", () => {
         ccipLocalSimulatorConfig,
         mainnetGovernance,
       } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -348,7 +358,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.registerPosition(await newMinter.getAddress());
       await expect(
         bridgedFrankencoin.mint(
@@ -368,7 +378,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.registerPosition(await newMinter.getAddress());
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
@@ -401,7 +411,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await newMinter.getAddress(),
         ethers.parseEther("10000")
@@ -431,7 +441,7 @@ describe("BridgedFrankencoin", () => {
 
     it("should return true (minter)", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       expect(
         await bridgedFrankencoin.canMint(await owner.getAddress())
       ).to.equal(true);
@@ -441,7 +451,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.registerPosition(await newMinter.getAddress());
       expect(
         await bridgedFrankencoin.canMint(await newMinter.getAddress())
@@ -464,7 +474,7 @@ describe("BridgedFrankencoin", () => {
 
     it("should mint loss and accure it", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       const tx = bridgedFrankencoin.coverLoss(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -484,7 +494,7 @@ describe("BridgedFrankencoin", () => {
 
     it("should transfer from the reservice", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await bridgedFrankencoin.reserve(),
         ethers.parseEther("10000")
@@ -511,7 +521,7 @@ describe("BridgedFrankencoin", () => {
 
     it("should empty the reserve and accure the rest", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await bridgedFrankencoin.reserve(),
         ethers.parseEther("10000")
@@ -556,7 +566,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, newMinter, owner } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await newMinter.getAddress(),
         ethers.parseEther("10000")
@@ -585,7 +595,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, newMinter, owner } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await newMinter.getAddress(),
         ethers.parseEther("10000")
@@ -612,7 +622,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, newMinter, owner } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await newMinter.getAddress(),
         ethers.parseEther("10000")
@@ -637,7 +647,7 @@ describe("BridgedFrankencoin", () => {
   describe("synchronizeAccounting", () => {
     it("should transfer the reserve", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await bridgedFrankencoin.reserve(),
         ethers.parseEther("10000")
@@ -658,7 +668,7 @@ describe("BridgedFrankencoin", () => {
 
     it("should transfer the stats", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.coverLoss(
         await owner.getAddress(),
         ethers.parseEther("500")
@@ -685,7 +695,7 @@ describe("BridgedFrankencoin", () => {
       const { bridgedFrankencoin, owner, newMinter } = await loadFixture(
         deployFixture
       );
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -703,7 +713,7 @@ describe("BridgedFrankencoin", () => {
 
     it("should return true", async () => {
       const { bridgedFrankencoin, owner } = await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       expect(
         await bridgedFrankencoin.isMinter(await owner.getAddress())
       ).to.equal(true);
@@ -714,7 +724,7 @@ describe("BridgedFrankencoin", () => {
     it("should transfer tokens from sender", async () => {
       const { bridgedFrankencoin, owner, newMinter, ccipLocalSimulatorConfig } =
         await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       await bridgedFrankencoin.mint(
         await owner.getAddress(),
         ethers.parseEther("10000")
@@ -741,9 +751,10 @@ describe("BridgedFrankencoin", () => {
 
   describe("getCCIPAdmin", () => {
     it("should return the CCIP admin", async () => {
-      const { bridgedFrankencoin, owner, ccipAdmin } =
-        await loadFixture(deployFixture);
-      await bridgedFrankencoin.initialize(await owner.getAddress(), "");
+      const { bridgedFrankencoin, owner, ccipAdmin } = await loadFixture(
+        deployFixture
+      );
+      await bridgedFrankencoin.initialize([await owner.getAddress()], [""]);
       expect(await bridgedFrankencoin.getCCIPAdmin()).to.equal(
         await ccipAdmin.getAddress()
       );

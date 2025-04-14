@@ -52,16 +52,30 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const registryModuleOwnerAddress = ccipParams["registryModuleOwner"];
   const ccipAdminDeployment = await get("CCIPAdmin");
   const tokenPoolDeployment = await get("BurnMintTokenPool");
+  const savingsDeployment = await get("BridgedSavings");
+  const zchfDeployment = await get("BridgedFrankencoin");
 
   const ccipAdmin = await ethers.getContractAt(
     "CCIPAdmin",
     ccipAdminDeployment.address
   );
 
+  let zchfContract = await ethers.getContractAt(
+    "BridgedFrankencoin",
+    zchfDeployment.address
+  );
+
   const chainUpdates = (ccipParams["remoteChains"] as string[])
     .map((chain: string) => getChainUpdate(ccipParamsFile, chain))
     .filter((x) => x !== undefined);
 
+  console.log("Add pool and savings as minters...");
+  const txMinter = await zchfContract.initialize(
+    [tokenPoolDeployment.address, savingsDeployment.address],
+    ["CCIP Token Pool", "Bridged Savings"]
+  );
+  await txMinter.wait();
+  console.log("Add pool and savings as minters... Done");
   console.log("Registering token...");
   const adminRegisterTx = await ccipAdmin.registerToken(
     registryModuleOwnerAddress,

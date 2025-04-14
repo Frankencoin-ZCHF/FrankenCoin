@@ -59,6 +59,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     error NotMinter();
     error TooLate();
     error AlreadyInitialized();
+    error InvalidInput();
 
     modifier minterOnly() {
         if (!isMinter(msg.sender) && !isMinter(positions[msg.sender])) revert NotMinter();
@@ -85,11 +86,19 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
         return "ZCHF";
     }
 
-    function initialize(address _minter, string calldata _message) external {
+    /// @notice Initializes the bridged Frankencoin token.
+    /// @dev This function is only callable once.
+    /// @param _minters List of addresses that are allowed to mint Frankencoins.
+    /// @param _messages List of messages that are displayed to the user when the minter is applied.
+    function initialize(address[] calldata _minters, string[] calldata _messages) external {
         if (initialized) revert AlreadyInitialized();
-        minters[_minter] = block.timestamp;
+        if (_minters.length != _messages.length) revert InvalidInput();
+
+        for (uint256 i = 0; i < _minters.length; i++) {
+            minters[_minters[i]] = block.timestamp;
+            emit MinterApplied(_minters[i], 0, 0, _messages[i]);
+        }
         initialized = true;
-        emit MinterApplied(_minter, 0, 0, _message);
     }
 
     /**
@@ -253,7 +262,7 @@ contract BridgedFrankencoin is CrossChainERC20, ERC20PermitLight, IBasicFrankenc
     /*
      * @notice Used to register the token initialially in the CCIP environment
      */
-    function getCCIPAdmin() external view returns(address) {
+    function getCCIPAdmin() external view returns (address) {
         return CCIP_ADMIN;
     }
 }

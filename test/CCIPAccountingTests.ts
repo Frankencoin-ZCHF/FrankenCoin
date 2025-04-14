@@ -138,7 +138,7 @@ describe("CCIPAccountingTests", () => {
       ccipLocalSimulatorConfig.destinationRouter_
     );
 
-    await bridgedFrankencoin.initialize(await minter.getAddress(), "");
+    await bridgedFrankencoin.initialize([await minter.getAddress()], [""]);
 
     // setup tokenpools
     await mainnetTokenAdminRegistry.proposeAdministrator(

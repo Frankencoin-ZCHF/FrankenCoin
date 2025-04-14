@@ -55,13 +55,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await ccipAdminContract.getAddress()
   );
   await txOwnerTransfer.wait();
-
-  console.log("Add pool as minter");
-  const txMinter = await zchfContract.initialize(
-    await burnMintTokenPool.getAddress(),
-    "CCIP Token Pool"
-  );
-  await txMinter.wait();
 };
 
 export default deploy;
