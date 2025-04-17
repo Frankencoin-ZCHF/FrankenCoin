@@ -20,10 +20,10 @@ export interface ChainAddress {
   positionFactoryV2: Address;
 
   // stablecoin bridges
-  stablecoinBridgeXCHF?: Address;
-  xchf?: Address;
-  stablecoinBridgeVCHF?: Address;
-  vchf?: Address;
+  stablecoinBridgeXCHF: Address;
+  xchf: Address;
+  stablecoinBridgeVCHF: Address;
+  vchf: Address;
 
   // crosschain bridges
   bridgePolygonFrankencoin?: Address;
