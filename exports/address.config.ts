@@ -120,8 +120,8 @@ export const ADDRESS: Record<number, ChainAddress> = {
   },
   [polygonAmoy.id]: {
     // For test deployment only
-    frankenCoin: "0x8BBcbe81FFCa30DE315d4CF6fdF839F7A01Aa4E3",
-    equity: "0xF4B56a8dD79b37658d36B0313CeA7BC43BA8157C",
+    frankenCoin: "0xB6D2E9998C194e627Db2FcBa176313c35BFE52E8",
+    equity: "0xaCE43f0faaf47a04fD62167c423aAC8102181aeC",
     wFPS: zeroAddress,
     bridge: zeroAddress, // not used
     xchf: zeroAddress, // not used
@@ -134,12 +134,12 @@ export const ADDRESS: Record<number, ChainAddress> = {
 
     // CCIP addresses
     router: zeroAddress,
-    chainSelector: "16015286601757825753",
+    chainSelector: "16281711391670634445",
     rmnProxy: zeroAddress,
     tokenAdminRegistry: zeroAddress,
     registryModuleOwner: zeroAddress,
-    ccipAdmin: "0x357f74a97019D601D5702665172F6D4B89A4536b",
-    tokenPool: "0x763fE4f60528dbc560C206030faFB4Ab883D4d3E",
+    ccipAdmin: "0x23879A2CD236D5977D934171289c60E9Cbe471E8",
+    tokenPool: "0x59dB29840a092F43Df2D74514e5419Af2D4F4C8d",
     linkToken: zeroAddress,
   },
 };
