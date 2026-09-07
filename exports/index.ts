@@ -30,6 +30,7 @@ export * from "./abis/erc20/CrossChainReference";
 export * from "./abis/erc20/ERC20";
 export * from "./abis/erc20/ERC20PermitLight";
 export * from "./abis/erc20/IERC20";
+export * from "./abis/erc20/IERC4626";
 export * from "./abis/erc20/IERC677Receiver";
 
 export * from "./abis/MintingHubV1/MintingHubV1";
